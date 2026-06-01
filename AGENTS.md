@@ -151,7 +151,7 @@ Observables/
 
 ## 实现顺序建议
 
-1. **RoutedEvents**（路由事件，对照 `MvvmAIO.R3.SourceGenerators` 只读；`RoutedEvents.R3/README.md` 为规划）
+1. **RoutedEvents.Reactive** 与 `RoutedEvents.Package`
 2. 其余域 **`.Package`** 占位与生成器（SignalR、WebSocket、Mqtt、Grpc）按检查清单补齐
 3. **NuGet 发布**（`Pack` / `Publish` 目标；须维护者指定版本号）
 

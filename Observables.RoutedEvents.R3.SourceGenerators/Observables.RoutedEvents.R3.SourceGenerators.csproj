@@ -3,11 +3,12 @@
   <Import Project="..\Observables.SourceGenerators.R3.props" />
 
   <PropertyGroup>
-    <Description>Source generators for routed events (e.g. WPF) → R3 Observable.</Description>
+    <Description>Source generators for routed events (WPF / Avalonia) → R3 Observable.</Description>
   </PropertyGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\Observables.SourceGenerators.Shared\Observables.SourceGenerators.Shared.csproj" />
+    <PackageReference Include="R3" Version="1.3.0" PrivateAssets="all" />
   </ItemGroup>
 
 </Project>

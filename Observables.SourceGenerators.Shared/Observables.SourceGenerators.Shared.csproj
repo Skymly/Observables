@@ -21,7 +21,8 @@
   <ItemGroup>
     <InternalsVisibleTo Include="Observables.Events.R3.SourceGenerators" />
     <InternalsVisibleTo Include="Observables.Events.R3.SourceGenerators.Tests" />
-    <InternalsVisibleTo Include="Observables.RoutedEvents.R3" />
+    <InternalsVisibleTo Include="Observables.RoutedEvents.R3.SourceGenerators" />
+    <InternalsVisibleTo Include="Observables.RoutedEvents.R3.SourceGenerators.Tests" />
     <InternalsVisibleTo Include="Observables.Events.Reactive.SourceGenerators" />
     <InternalsVisibleTo Include="Observables.RoutedEvents" />
     <InternalsVisibleTo Include="Observables.RestAPI.Reactive.SourceGenerators" />

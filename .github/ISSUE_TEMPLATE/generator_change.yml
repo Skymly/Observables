@@ -1,0 +1,70 @@
+name: Source Generator / Diagnostic Change
+description: Changes to Roslyn generators, shared generator infrastructure, or diagnostic IDs
+title: "[Generator]: "
+labels:
+  - generator
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use **English**. Generator changes must stay in the correct projects (`*.R3.SourceGenerators`, `*.Reactive.SourceGenerators`, `*.SourceGenerators.Shared`). Do not mix **Shared** with a feature module in one Issue.
+
+  - type: dropdown
+    id: module
+    attributes:
+      label: Module
+      options:
+        - Shared (Observables.SourceGenerators.Shared)
+        - Events
+        - RoutedEvents
+        - RestAPI
+        - SignalR
+        - WebSocket
+        - Mqtt
+        - Grpc
+    validations:
+      required: true
+
+  - type: dropdown
+    id: backend
+    attributes:
+      label: Reactive backend
+      options:
+        - R3
+        - System.Reactive
+        - Both
+        - N/A (shared infrastructure only)
+    validations:
+      required: true
+
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary of change
+    validations:
+      required: true
+
+  - type: textarea
+    id: diagnostics
+    attributes:
+      label: Diagnostic IDs affected
+      description: e.g. OBS2001–OBS2002, OBS3001–OBS3005, or new IDs
+      placeholder: OBS#### — description
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: breaking
+    attributes:
+      label: Impact
+      options:
+        - label: This is a breaking change to generated code or public analyzer behavior
+        - label: Golden / Verify tests will need updating
+        - label: README or AGENTS.md should be updated
+
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+    validations:
+      required: true

@@ -1,0 +1,10 @@
+C:\Code\Skymly\Observables\Observables.Core\bin\Debug\netstandard2.0\Observables.Core.deps.json
+C:\Code\Skymly\Observables\Observables.Core\bin\Debug\netstandard2.0\Observables.Core.dll
+C:\Code\Skymly\Observables\Observables.Core\bin\Debug\netstandard2.0\Observables.Core.pdb
+C:\Code\Skymly\Observables\Observables.Core\obj\Debug\netstandard2.0\Observables.Core.csproj.AssemblyReference.cache
+C:\Code\Skymly\Observables\Observables.Core\obj\Debug\netstandard2.0\Observables.Core.GeneratedMSBuildEditorConfig.editorconfig
+C:\Code\Skymly\Observables\Observables.Core\obj\Debug\netstandard2.0\Observables.Core.AssemblyInfoInputs.cache
+C:\Code\Skymly\Observables\Observables.Core\obj\Debug\netstandard2.0\Observables.Core.AssemblyInfo.cs
+C:\Code\Skymly\Observables\Observables.Core\obj\Debug\netstandard2.0\Observables.Core.csproj.CoreCompileInputs.cache
+C:\Code\Skymly\Observables\Observables.Core\obj\Debug\netstandard2.0\Observables.Core.dll
+C:\Code\Skymly\Observables\Observables.Core\obj\Debug\netstandard2.0\Observables.Core.pdb

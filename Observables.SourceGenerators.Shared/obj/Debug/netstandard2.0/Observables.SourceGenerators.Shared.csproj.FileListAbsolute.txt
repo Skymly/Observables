@@ -1,0 +1,10 @@
+C:\Code\Skymly\Observables\Observables.SourceGenerators.Shared\bin\Debug\netstandard2.0\Observables.SourceGenerators.Shared.deps.json
+C:\Code\Skymly\Observables\Observables.SourceGenerators.Shared\bin\Debug\netstandard2.0\Observables.SourceGenerators.Shared.dll
+C:\Code\Skymly\Observables\Observables.SourceGenerators.Shared\bin\Debug\netstandard2.0\Observables.SourceGenerators.Shared.pdb
+C:\Code\Skymly\Observables\Observables.SourceGenerators.Shared\obj\Debug\netstandard2.0\Observables.SourceGenerators.Shared.csproj.AssemblyReference.cache
+C:\Code\Skymly\Observables\Observables.SourceGenerators.Shared\obj\Debug\netstandard2.0\Observables.SourceGenerators.Shared.GeneratedMSBuildEditorConfig.editorconfig
+C:\Code\Skymly\Observables\Observables.SourceGenerators.Shared\obj\Debug\netstandard2.0\Observables.SourceGenerators.Shared.AssemblyInfoInputs.cache
+C:\Code\Skymly\Observables\Observables.SourceGenerators.Shared\obj\Debug\netstandard2.0\Observables.SourceGenerators.Shared.AssemblyInfo.cs
+C:\Code\Skymly\Observables\Observables.SourceGenerators.Shared\obj\Debug\netstandard2.0\Observables.SourceGenerators.Shared.csproj.CoreCompileInputs.cache
+C:\Code\Skymly\Observables\Observables.SourceGenerators.Shared\obj\Debug\netstandard2.0\Observables.SourceGenerators.Shared.dll
+C:\Code\Skymly\Observables\Observables.SourceGenerators.Shared\obj\Debug\netstandard2.0\Observables.SourceGenerators.Shared.pdb

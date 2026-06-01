@@ -24,7 +24,8 @@
 
   <Folder Name="/RoutedEvents/">
     <Project Path="Observables.RoutedEvents/Observables.RoutedEvents.csproj" />
-    <Project Path="Observables.RoutedEvents.R3/Observables.RoutedEvents.R3.csproj" />
+    <Project Path="Observables.RoutedEvents.R3.SourceGenerators/Observables.RoutedEvents.R3.SourceGenerators.csproj" />
+    <Project Path="Observables.RoutedEvents.R3.SourceGenerators.Tests/Observables.RoutedEvents.R3.SourceGenerators.Tests.csproj" />
   </Folder>
 
   <Folder Name="/RestAPI/">

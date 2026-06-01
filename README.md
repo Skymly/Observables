@@ -26,8 +26,8 @@
 
 | 顺序 | 域 | R3 | System.Reactive |
 |------|-----|-----|-----------------|
-| 1 | **Events**（经典 .NET 事件） | `Events.R3.SourceGenerators`（已实现） | `Events.Reactive.SourceGenerators`（进行中） |
-| 2 | **RoutedEvents**（路由事件） | `RoutedEvents.R3`（骨架） | `Observables.RoutedEvents`（骨架） |
+| 1 | **Events**（经典 .NET 事件） | `Events.R3.SourceGenerators`（已实现） | `Events.Reactive.SourceGenerators`（已实现） |
+| 2 | **RoutedEvents**（路由事件） | `RoutedEvents.R3.SourceGenerators`（已实现） | `RoutedEvents.Reactive.SourceGenerators`（已实现） |
 | 3 | **RestAPI**（自 Refit.R3 迁入） | `RestAPI` + `RestAPI.R3.SourceGenerators` | `RestAPI.Reactive` + `RestAPI.Reactive.SourceGenerators` |
 | 4+ | SignalR、WebSocket、Mqtt、Grpc | 各域 `*.R3` 骨架 | 各域运行时骨架 |
 

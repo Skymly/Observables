@@ -1,0 +1,85 @@
+name: Bug Report
+description: Report incorrect generator output, runtime behavior, or build/test failures
+title: "[Bug]: "
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use **English** for the title and description. One issue should stay within a **single solution module** (see [AGENTS.md](https://github.com/Skymly/Observables/blob/main/AGENTS.md)).
+
+  - type: dropdown
+    id: module
+    attributes:
+      label: Solution module
+      description: Which `Observables.slnx` folder does this affect?
+      options:
+        - Shared
+        - Events
+        - RoutedEvents
+        - RestAPI
+        - SignalR
+        - WebSocket
+        - Mqtt
+        - Grpc
+        - Solution Items
+        - Unsure
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: Observables version or commit
+      description: NuGet version, git SHA, or "local main"
+      placeholder: e.g. commit abc1234 or 0.1.0-preview
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: What happened?
+      description: Expected vs actual behavior
+    validations:
+      required: true
+
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to reproduce
+      description: Minimal code, project setup, or test name
+      placeholder: |
+        1. ...
+        2. dotnet test ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      placeholder: |
+        - OS:
+        - .NET SDK:
+        - IDE (optional):
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Diagnostics / logs
+      description: Compiler diagnostics (e.g. OBS2xxx, OBS3xxx), stack traces, or build output
+      render: shell
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Checklist
+      options:
+        - label: I searched existing issues for duplicates
+          required: true
+        - label: This issue is limited to one module (no cross-feature scope)
+          required: true

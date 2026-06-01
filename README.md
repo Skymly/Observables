@@ -1,6 +1,6 @@
 # Observables
 
-面向 **反应式编程（Rx）** 的 Roslyn 源生成器套件。远端仓库：[github.com/Skymly/Observables](https://github.com/Skymly/Observables)（私有）；`main` 已与 `origin/main` 同步。
+面向 **反应式编程（Rx）** 的 Roslyn 源生成器套件。远端仓库：[github.com/Skymly/Observables](https://github.com/Skymly/Observables)（公开）。
 
 ## 运行时与包名
 
@@ -28,7 +28,7 @@
 |------|-----|-----|-----------------|
 | 1 | **Events**（经典 .NET 事件） | `Events.R3.SourceGenerators`（已实现） | `Events.Reactive.SourceGenerators`（已实现） |
 | 2 | **RoutedEvents**（路由事件） | `RoutedEvents.R3.SourceGenerators`（已实现） | `RoutedEvents.Reactive.SourceGenerators`（已实现） |
-| 3 | **RestAPI**（自 Refit.R3 迁入） | `RestAPI` + `RestAPI.R3.SourceGenerators` | `RestAPI.Reactive` + `RestAPI.Reactive.SourceGenerators` |
+| 3 | **RestAPI**（声明式 HTTP 客户端） | `RestAPI` + `RestAPI.R3.SourceGenerators` | `RestAPI.Reactive` + `RestAPI.Reactive.SourceGenerators` |
 | 4+ | SignalR、WebSocket、Mqtt、Grpc | 各域 `*.R3` 骨架 | 各域运行时骨架 |
 
 ## RestAPI
@@ -39,11 +39,6 @@
 <ProjectReference Include="Observables.RestAPI" />
 <ProjectReference Include="Observables.RestAPI.R3.SourceGenerators" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
 ```
-
-## 与 MVVMAIO / Refit.R3 的关系
-
-- **MVVMAIO**：事件生成计划存档后迁入 Observables（**Events.R3** 已完成；对照 `MvvmAIO.R3.SourceGenerators`）。
-- **Refit.R3**（`C:\Code\Refit.R3`）：**已迁入 RestAPI 域**，原仓库只读对照。
 
 ## 构建
 

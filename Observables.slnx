@@ -15,6 +15,7 @@
   </Folder>
 
   <Folder Name="/Events/">
+    <Project Path="Observables.Events.Package/Observables.Events.Package.csproj" />
     <Project Path="Observables.Events.Reactive.SourceGenerators/Observables.Events.Reactive.SourceGenerators.csproj" />
     <Project Path="Observables.Events.Reactive.SourceGenerators.Tests/Observables.Events.Reactive.SourceGenerators.Tests.csproj" />
     <Project Path="Observables.Events.R3.SourceGenerators/Observables.Events.R3.SourceGenerators.csproj" />
@@ -28,6 +29,7 @@
 
   <Folder Name="/RestAPI/">
     <Project Path="Observables.RestAPI.SourceGenerators.Shared/Observables.RestAPI.SourceGenerators.Shared.shproj" Id="a8f3c2e1-9b4d-4f6a-8c7e-2d1b0e9f4a3c" />
+    <Project Path="Observables.RestAPI.Package/Observables.RestAPI.Package.csproj" />
     <Project Path="Observables.RestAPI/Observables.RestAPI.csproj" />
     <Project Path="Observables.RestAPI.Reactive/Observables.RestAPI.Reactive.csproj" />
     <Project Path="Observables.RestAPI.HttpClientFactory/Observables.RestAPI.HttpClientFactory.csproj" />

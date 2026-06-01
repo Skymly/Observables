@@ -4,7 +4,7 @@
 
 - **类型**：个人项目（Skymly 工作区）
 - **远端**：https://github.com/Skymly/Observables（私有）；`origin/main` 已与本地 `main` 同步；文件夹名 `Observables` = 仓库名
-- **阶段**：**Events**（R3 + **Reactive** 生成器）、**RestAPI** 域已实现；**RoutedEvents** 实现待完成；各域 **`.Package` / NuGet** 尚未发布
+- **阶段**：**Events**（R3 + **Reactive** 生成器）、**RestAPI** 域已实现；**Events** / **RestAPI** 的 `.Package` 占位已入解决方案；**RoutedEvents** 生成器实现待完成；**NuGet 发布**尚未进行
 - **结构约定**：下文「仓库结构」与命名约定为权威
 
 ## 目标
@@ -33,7 +33,7 @@
 | **`Observables.<Feature>.SourceGenerators.Shared`** | 双生成器时 | 本域共享生成器逻辑（`.projitems`），由 R3 与 Reactive 两路生成器 Import。 |
 | **`Observables.<Feature>.R3.SourceGenerators`** | 是 | R3 源生成器（`IsRoslynComponent`）。 |
 | **`Observables.<Feature>.Reactive.SourceGenerators`** | 是 | System.Reactive 源生成器。 |
-| **`Observables.<Feature>.Package`** | 发布时 | **打包项目（每 Feature 一个）**：产出 **`Observables.<Feature>.R3`** 与 **`Observables.<Feature>.Reactive`** 两个 NuGet 包（**尚未创建**）。 |
+| **`Observables.<Feature>.Package`** | 发布时 | **打包项目（每 Feature 一个）**：产出 **`Observables.<Feature>.R3`** 与 **`Observables.<Feature>.Reactive`** 两个 NuGet 包（Events、RestAPI 占位已建，其余域待补）。 |
 
 可选扩展（**不**算第三个消费者主包）：如 `Observables.RestAPI.HttpClientFactory`，依赖域运行时，不捆绑生成器。
 
@@ -129,8 +129,8 @@ Observables/
 |--------|------|
 | **Solution Items** | `AGENTS.md`、`README.md`、公共 MSBuild props |
 | **Shared** | `Observables.Core`、`Observables.SourceGenerators.Shared` |
-| **Events** | `Events.R3.SourceGenerators`、`Events.Reactive.SourceGenerators`、测试 |
-| **RoutedEvents** / **RestAPI** / **SignalR** / … | 该域全部项目；RestAPI 含 `SourceGenerators.Shared`（shproj）与 **Tests** |
+| **Events** | 双路生成器、测试、`Events.Package` |
+| **RoutedEvents** / **RestAPI** / **SignalR** / … | 该域全部项目；RestAPI 含 `SourceGenerators.Shared`（shproj，`Id` 固定）、`RestAPI.Package`、**Tests** |
 | **RestAPI/Tests** | `RestAPI.Tests`、`Reactive.Tests`、`GeneratorTests`、`HttpClientFactory.Tests` |
 
 新增域时在 slnx 中增加同名 `/Feature/` 文件夹，勿按 R3/Reactive 横向分组。
@@ -149,20 +149,15 @@ Observables/
 
 ## 实现顺序建议
 
-1. **Events.Package** 与各域 `.Package` 占位
-2. **RoutedEvents**（路由事件，对照 `MvvmAIO.R3.SourceGenerators` 只读）
-3. 其余域（SignalR、WebSocket、Mqtt、Grpc）按检查清单补齐
+1. **RoutedEvents**（路由事件，对照 `MvvmAIO.R3.SourceGenerators` 只读；`RoutedEvents.R3/README.md` 为规划）
+2. 其余域 **`.Package`** 占位与生成器（SignalR、WebSocket、Mqtt、Grpc）按检查清单补齐
+3. **NuGet 发布**（`Pack` / `Publish` 目标；须维护者指定版本号）
 
 ## 构建与测试
 
 ```powershell
-# 与 CI 一致（Nuke，参考 MvvmAIO.R3.SourceGenerators）
+# 与 CI 一致（Nuke）
 dotnet run --project build/_build.csproj -- --target Ci --configuration Release
-
-# 或分步
-dotnet build Observables.slnx
-dotnet test Observables.Events.R3.SourceGenerators.Tests
-dotnet test --filter "FullyQualifiedName~RestAPI"
 ```
 
 | Nuke 目标 | 说明 |

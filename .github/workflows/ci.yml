@@ -1,0 +1,37 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: |
+            8.0.x
+            9.0.x
+
+      - name: Restore
+        run: dotnet restore Observables.slnx
+
+      - name: Build
+        run: dotnet build Observables.slnx --no-restore -c Release
+
+      - name: Test (solution)
+        run: dotnet test Observables.slnx --no-build -c Release --verbosity normal
+
+      # Explicit RestAPI test projects (included in slnx; kept for clarity if slnx layout changes)
+      - name: Test RestAPI
+        run: |
+          dotnet test Observables.RestAPI.Tests/Observables.RestAPI.Tests.csproj --no-build -c Release --verbosity normal
+          dotnet test Observables.RestAPI.Reactive.Tests/Observables.RestAPI.Reactive.Tests.csproj --no-build -c Release --verbosity normal
+          dotnet test Observables.RestAPI.GeneratorTests/Observables.RestAPI.GeneratorTests.csproj --no-build -c Release --verbosity normal
+          dotnet test Observables.RestAPI.HttpClientFactory.Tests/Observables.RestAPI.HttpClientFactory.Tests.csproj --no-build -c Release --verbosity normal

@@ -1,0 +1,18 @@
+<Project>
+
+  <PropertyGroup>
+    <RestApiInternalNamespace Condition=" '$(RestApiInternalNamespace)' == '' ">$(RootNamespace)</RestApiInternalNamespace>
+    <_RestApiMSBuildMinVersion>16.8.0</_RestApiMSBuildMinVersion>
+  </PropertyGroup>
+
+  <Target Name="_RestApiMSBuildVersionCheck"
+          Condition=" '$([System.Version]::Parse($(_RestApiMSBuildMinVersion)).CompareTo($([System.Version]::Parse($(MSBuildVersion)))))' &gt; '0' "
+          BeforeTargets="ResolveAssemblyReferences;Build;Rebuild">
+    <Error Text="Projects using Observables.RestAPI require MSBuild '$(_RestApiMSBuildMinVersion)' or later (current: '$(MSBuildVersion)')." />
+  </Target>
+
+  <Target Name="_RestApiProjectRestoreTypeCheck" BeforeTargets="ResolveAssemblyReferences;Build;Rebuild" DependsOnTargets="_GetRestoreProjectStyle">
+    <Error Condition="'$(RestoreProjectStyle)' == 'PackagesConfig'"
+           Text="Packages.config does not support analyzers. Migrate to PackageReference." />
+  </Target>
+</Project>

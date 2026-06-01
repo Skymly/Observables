@@ -1,0 +1,70 @@
+name: Feature Request
+description: Propose a new capability, feature domain, or public API
+title: "[Feature]: "
+labels:
+  - enhancement
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use **English**. Large work should be split **per solution module** (one Issue per module). See [AGENTS.md](https://github.com/Skymly/Observables/blob/main/AGENTS.md).
+
+  - type: dropdown
+    id: module
+    attributes:
+      label: Target solution module
+      options:
+        - Shared
+        - Events
+        - RoutedEvents
+        - RestAPI
+        - SignalR
+        - WebSocket
+        - Mqtt
+        - Grpc
+        - New feature domain
+        - Solution Items
+    validations:
+      required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem or motivation
+      description: What scenario are you trying to support?
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+      description: APIs, packages (`Observables.<Feature>.R3` / `.Reactive`), or generator behavior
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+    validations:
+      required: false
+
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      description: How will we know this is done? (tests, docs, sample usage)
+      placeholder: |
+        - [ ] ...
+        - [ ] dotnet test ...
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Checklist
+      options:
+        - label: I am not mixing multiple unrelated features in this issue
+          required: true

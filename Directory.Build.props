@@ -1,0 +1,12 @@
+<Project>
+
+  <PropertyGroup>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Authors>Skymly</Authors>
+    <Copyright>Copyright (c) Skymly. All rights reserved.</Copyright>
+    <Deterministic>true</Deterministic>
+  </PropertyGroup>
+
+</Project>

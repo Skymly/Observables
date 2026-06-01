@@ -26,6 +26,9 @@
     <Project Path="Observables.RoutedEvents/Observables.RoutedEvents.csproj" />
     <Project Path="Observables.RoutedEvents.R3.SourceGenerators/Observables.RoutedEvents.R3.SourceGenerators.csproj" />
     <Project Path="Observables.RoutedEvents.R3.SourceGenerators.Tests/Observables.RoutedEvents.R3.SourceGenerators.Tests.csproj" />
+    <Project Path="Observables.RoutedEvents.Reactive.SourceGenerators/Observables.RoutedEvents.Reactive.SourceGenerators.csproj" />
+    <Project Path="Observables.RoutedEvents.Reactive.SourceGenerators.Tests/Observables.RoutedEvents.Reactive.SourceGenerators.Tests.csproj" />
+    <Project Path="Observables.RoutedEvents.Package/Observables.RoutedEvents.Package.csproj" />
   </Folder>
 
   <Folder Name="/RestAPI/">

@@ -3,8 +3,10 @@
     <File Path="AGENTS.md" />
     <File Path="README.md" />
     <File Path="Directory.Build.props" />
+    <File Path="global.json" />
     <File Path="Observables.SourceGenerators.props" />
     <File Path="Observables.SourceGenerators.R3.props" />
+    <Project Path="build/_build.csproj" />
   </Folder>
 
   <Folder Name="/Shared/">

@@ -4,7 +4,7 @@
 
 - **类型**：个人项目（Skymly 工作区）
 - **远端**：https://github.com/Skymly/Observables（私有）；`origin/main` 已与本地 `main` 同步；文件夹名 `Observables` = 仓库名
-- **阶段**：**Events.R3**、**RestAPI** 域运行时与双路生成器已实现（PR #11–#20 已合并）；`Events.Reactive` 生成器与 **RoutedEvents** 实现待完成；各域 **`.Package` / NuGet** 尚未发布
+- **阶段**：**Events**（R3 + **Reactive** 生成器）、**RestAPI** 域已实现；**RoutedEvents** 实现待完成；各域 **`.Package` / NuGet** 尚未发布
 - **结构约定**：下文「仓库结构」与命名约定为权威
 
 ## 目标
@@ -117,7 +117,7 @@ Observables/
 ├── Observables.RestAPI.HttpClientFactory/            # 可选扩展
 │
 ├── Observables.Events.R3.SourceGenerators/
-├── Observables.Events.Reactive.SourceGenerators/     # 骨架
+├── Observables.Events.Reactive.SourceGenerators/
 │
 ├── Observables.<Feature>.…                           # 其余域（多为 .R3 骨架）
 └── Observables.slnx
@@ -140,7 +140,7 @@ Observables/
 | 域 | 运行时 | R3 生成器 | Reactive 生成器 | 测试 |
 |----|--------|-----------|-----------------|------|
 | **RestAPI** | `Observables.RestAPI` | `RestAPI.R3.SourceGenerators` | `RestAPI.Reactive.SourceGenerators` | Core / Reactive / Generator / HCF |
-| **Events** | — | `Events.R3.SourceGenerators` | `Events.Reactive.SourceGenerators`（骨架） | `Events.R3.SourceGenerators.Tests`（9 项，`OBS2001`–`OBS2002`） |
+| **Events** | — | `Events.R3.SourceGenerators` | `Events.Reactive.SourceGenerators` | `Events.R3` / `Events.Reactive` 测试各 9 项（`OBS2001`–`OBS2002`） |
 | **RoutedEvents** 等 | 骨架 | `*.R3` 骨架 | `Observables.<Feature>` 骨架 | — |
 
 **RestAPI 运行时**：`RestApiSettings`、`RestService.For<T>()`；命名空间 `Observables.RestAPI`。
@@ -149,10 +149,9 @@ Observables/
 
 ## 实现顺序建议
 
-1. **Events.Reactive** 生成器实现 + `Events.Package`
+1. **Events.Package** 与各域 `.Package` 占位
 2. **RoutedEvents**（路由事件，对照 `MvvmAIO.R3.SourceGenerators` 只读）
-3. **RestAPI.Package** 与各域 `.Package`
-4. 其余域（SignalR、WebSocket、Mqtt、Grpc）按检查清单补齐
+3. 其余域（SignalR、WebSocket、Mqtt、Grpc）按检查清单补齐
 
 ## 构建与测试
 

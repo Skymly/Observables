@@ -10,4 +10,6 @@ obj/
 
 ## Test / tooling
 TestResults/
+artifacts/
+.nuke/temp/
 *.VerifyTests/

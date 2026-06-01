@@ -157,10 +157,22 @@ Observables/
 ## 构建与测试
 
 ```powershell
+# 与 CI 一致（Nuke，参考 MvvmAIO.R3.SourceGenerators）
+dotnet run --project build/_build.csproj -- --target Ci --configuration Release
+
+# 或分步
 dotnet build Observables.slnx
 dotnet test Observables.Events.R3.SourceGenerators.Tests
 dotnet test --filter "FullyQualifiedName~RestAPI"
 ```
+
+| Nuke 目标 | 说明 |
+|-----------|------|
+| **Ci** | `Clean` → `Restore` → `Compile` → **UnitTest**（显式跑全部测试项目） |
+| **Pack** | 打包 `*.Package`（若项目存在且可 pack） |
+| **Publish** | 推送 `artifacts/package`（需 `NUGET_API_KEY`） |
+
+CI：`.github/workflows/ci.yml` 调用 Nuke **Ci**（`windows-latest`，.NET 8 + 10）。
 
 ## 工作约定
 

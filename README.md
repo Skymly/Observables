@@ -50,7 +50,11 @@
 ```powershell
 cd Observables
 dotnet build Observables.slnx
-dotnet test Observables.slnx
+
+# 完整 CI（Nuke，与 GitHub Actions 一致）
+dotnet run --project build/_build.csproj -- --target Ci --configuration Release
 ```
+
+需 **.NET 10 SDK**（`global.json` 用于 Nuke `build/`）；库与测试目标为 **netstandard2.0** / **net8.0** 等，另需 **.NET 8 SDK**。
 
 代理与贡献者请参阅 [AGENTS.md](./AGENTS.md)。

@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <IsPackable>false</IsPackable>
+    <IncludeBuildOutput>false</IncludeBuildOutput>
+    <DevelopmentDependency>true</DevelopmentDependency>
+    <Description>Packaging placeholder for Observables.RestAPI.R3 and Observables.RestAPI.Reactive NuGet packages (not publishing yet).</Description>
+  </PropertyGroup>
+
+  <!--
+    Future: dual PackageId Observables.RestAPI.R3 / Observables.RestAPI.Reactive
+    bundling runtime, optional Reactive bridge, and matching analyzers.
+  -->
+
+  <ItemGroup>
+    <ProjectReference Include="..\Observables.RestAPI\Observables.RestAPI.csproj" />
+    <ProjectReference Include="..\Observables.RestAPI.Reactive\Observables.RestAPI.Reactive.csproj" />
+    <ProjectReference Include="..\Observables.RestAPI.R3.SourceGenerators\Observables.RestAPI.R3.SourceGenerators.csproj" ReferenceOutputAssembly="false" />
+    <ProjectReference Include="..\Observables.RestAPI.Reactive.SourceGenerators\Observables.RestAPI.Reactive.SourceGenerators.csproj" ReferenceOutputAssembly="false" />
+  </ItemGroup>
+
+</Project>

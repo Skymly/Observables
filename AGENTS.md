@@ -4,7 +4,7 @@
 
 - **类型**：个人项目（Skymly 工作区）
 - **远端**：https://github.com/Skymly/Observables（私有）；`origin/main` 已与本地 `main` 同步；文件夹名 `Observables` = 仓库名
-- **阶段**：**Events**、**RestAPI**、**RoutedEvents**（R3 生成器）已实现；**RoutedEvents.Reactive** 与 **Package** 待完成；**NuGet 发布**尚未进行
+- **阶段**：**Events**、**RestAPI**、**RoutedEvents**（R3 + Reactive 生成器，`.Package` 占位）已实现；**NuGet 发布**尚未进行
 - **结构约定**：下文「仓库结构」与命名约定为权威
 
 ## 目标
@@ -130,7 +130,7 @@ Observables/
 | **Solution Items** | `AGENTS.md`、`README.md`、公共 MSBuild props |
 | **Shared** | `Observables.Core`、`Observables.SourceGenerators.Shared` |
 | **Events** | 双路生成器、测试、`Events.Package` |
-| **RoutedEvents** | `RoutedEvents.R3.SourceGenerators`、测试；`Observables.RoutedEvents` 运行时占位 |
+| **RoutedEvents** | R3/Reactive 生成器、测试、`RoutedEvents.Package`；`Observables.RoutedEvents` 运行时占位 |
 | **RestAPI** / **SignalR** / … | 该域全部项目；RestAPI 含 `SourceGenerators.Shared`（shproj，`Id` 固定）、`RestAPI.Package`、**Tests** |
 | **RestAPI/Tests** | `RestAPI.Tests`、`Reactive.Tests`、`GeneratorTests`、`HttpClientFactory.Tests` |
 
@@ -142,7 +142,7 @@ Observables/
 |----|--------|-----------|-----------------|------|
 | **RestAPI** | `Observables.RestAPI` | `RestAPI.R3.SourceGenerators` | `RestAPI.Reactive.SourceGenerators` | Core / Reactive / Generator / HCF |
 | **Events** | — | `Events.R3.SourceGenerators` | `Events.Reactive.SourceGenerators` | `Events.R3` / `Events.Reactive` 测试各 9 项（`OBS2001`–`OBS2002`） |
-| **RoutedEvents** | 占位 | `RoutedEvents.R3.SourceGenerators` | 待实现 | Generator 测试（Avalonia / WPF 门控） |
+| **RoutedEvents** | 占位 | `RoutedEvents.R3` + `RoutedEvents.Reactive` 生成器 | 已实现 | R3/Reactive 生成器测试 |
 | **SignalR** 等 | 骨架 | `*.R3` 骨架 | `Observables.<Feature>` 骨架 | — |
 
 **RestAPI 运行时**：`RestApiSettings`、`RestService.For<T>()`；命名空间 `Observables.RestAPI`。
@@ -151,8 +151,7 @@ Observables/
 
 ## 实现顺序建议
 
-1. **RoutedEvents.Reactive** 与 `RoutedEvents.Package`
-2. 其余域 **`.Package`** 占位与生成器（SignalR、WebSocket、Mqtt、Grpc）按检查清单补齐
+1. 其余域 **`.Package`** 占位与生成器（SignalR、WebSocket、Mqtt、Grpc）按检查清单补齐
 3. **NuGet 发布**（`Pack` / `Publish` 目标；须维护者指定版本号）
 
 ## 构建与测试

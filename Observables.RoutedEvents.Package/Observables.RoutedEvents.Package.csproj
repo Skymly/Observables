@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <IsPackable>false</IsPackable>
+    <IncludeBuildOutput>false</IncludeBuildOutput>
+    <DevelopmentDependency>true</DevelopmentDependency>
+    <Description>Packaging placeholder for Observables.RoutedEvents.R3 and Observables.RoutedEvents.Reactive NuGet packages (not publishing yet).</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Observables.RoutedEvents.R3.SourceGenerators\Observables.RoutedEvents.R3.SourceGenerators.csproj" ReferenceOutputAssembly="false" />
+    <ProjectReference Include="..\Observables.RoutedEvents.Reactive.SourceGenerators\Observables.RoutedEvents.Reactive.SourceGenerators.csproj" ReferenceOutputAssembly="false" />
+  </ItemGroup>
+
+</Project>

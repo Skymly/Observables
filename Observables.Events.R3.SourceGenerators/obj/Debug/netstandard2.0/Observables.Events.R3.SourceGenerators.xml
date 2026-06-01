@@ -1,0 +1,52 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>Observables.Events.R3.SourceGenerators</name>
+    </assembly>
+    <members>
+        <member name="T:Observables.Events.R3.SourceGenerators.EventsBootstrapSyntaxFactory">
+            <summary>Post-initialization bootstrap sources built with SyntaxFactory.</summary>
+        </member>
+        <member name="M:Observables.Events.R3.SourceGenerators.ObservableEventsGenerator.IsStaticFromEventsEntryMemberAccess(Microsoft.CodeAnalysis.SyntaxNode)">
+            <summary>
+            Matches <c>ObservableEventsStatics.OBS_<em>StableHint</em>.FromEvents</c> (static entry property), not <c>receiver.FromEvents()</c>.
+            </summary>
+        </member>
+        <member name="M:Observables.Events.R3.SourceGenerators.ObservableEventsGenerator.TryGetStaticObservableEventsTargetFromMemberAccess(Microsoft.CodeAnalysis.Compilation,Microsoft.CodeAnalysis.CSharp.Syntax.MemberAccessExpressionSyntax,Microsoft.CodeAnalysis.INamedTypeSymbol@)">
+            <summary>
+            When semantic binding cannot resolve the static entry property yet, recover the declaring type from
+            <c>ObservableEventsStatics.OBS_<em>StableHint</em>.FromEvents</c> syntax so generation still runs.
+            </summary>
+        </member>
+        <member name="M:Observables.Events.R3.SourceGenerators.ObservableEventsGenerator.TryGetTypeFromObservableEventsStaticsNested(Microsoft.CodeAnalysis.ISymbol,Microsoft.CodeAnalysis.INamedTypeSymbol,Microsoft.CodeAnalysis.Compilation,Microsoft.CodeAnalysis.INamedTypeSymbol@)">
+            <summary>
+            Parses <c>ObservableEventsStatics.OBS_<em>StableHint</em>.FromEvents</c> from semantic model (expects the static entry property on the nested partial class).
+            </summary>
+        </member>
+        <member name="M:Observables.Events.R3.SourceGenerators.ObservableEventsGenerator.TryResolveNamedTypeByStableHint(Microsoft.CodeAnalysis.Compilation,System.String,Microsoft.CodeAnalysis.INamedTypeSymbol@)">
+            <remarks>
+            Must match identifiers produced via <see cref="M:Observables.SourceGenerators.Shared.Extensions.INamedTypeSymbolExtensions.GetSafeHintName(Microsoft.CodeAnalysis.INamedTypeSymbol)"/>.
+            </remarks>
+        </member>
+        <member name="M:Observables.Events.R3.SourceGenerators.ObservableEventsGenerator.GetPublicInstanceEventsFromTypeAndBases(Microsoft.CodeAnalysis.INamedTypeSymbol)">
+            <summary>
+            Public instance events declared on <paramref name="type"/> and its non-generic class base types (excluding <see cref="T:System.Object"/>),
+            with derived declarations taking precedence over the same event name on a base type.
+            When <paramref name="type"/> is an interface, events declared on the interface and all its base interfaces are collected.
+            </summary>
+        </member>
+        <member name="M:Observables.Events.R3.SourceGenerators.ObservableEventsGenerator.IsLegacySenderReceiverDelegate(Microsoft.CodeAnalysis.INamedTypeSymbol,Microsoft.CodeAnalysis.IMethodSymbol,Microsoft.CodeAnalysis.Compilation)">
+            <summary>
+            Custom <c>void (object, TSecond)</c> delegate excluding <c>System.EventHandler</c> / <c>System.EventHandler&lt;T&gt;</c> (those use <c>Observable.FromEventHandler</c>), implemented with <c>R3.Observable.FromEvent</c>.
+            </summary>
+        </member>
+        <member name="M:Observables.Events.R3.SourceGenerators.ObservableEventsGenerator.IsClassicSystemEventHandler(Microsoft.CodeAnalysis.INamedTypeSymbol,Microsoft.CodeAnalysis.Compilation,Microsoft.CodeAnalysis.INamedTypeSymbol@)">
+            <returns><see langword="null"/> for non-generic <c>System.EventHandler</c>; otherwise the generic event-args type.</returns>
+        </member>
+        <member name="T:Observables.Events.R3.SourceGenerators.ObservableEventsSyntaxFactory">
+            <summary>
+            Roslyn syntax helpers for <see cref="T:Observables.Events.R3.SourceGenerators.ObservableEventsGenerator"/> (avoids string-built source).
+            </summary>
+        </member>
+    </members>
+</doc>

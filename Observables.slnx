@@ -16,6 +16,7 @@
 
   <Folder Name="/Events/">
     <Project Path="Observables.Events.Reactive.SourceGenerators/Observables.Events.Reactive.SourceGenerators.csproj" />
+    <Project Path="Observables.Events.Reactive.SourceGenerators.Tests/Observables.Events.Reactive.SourceGenerators.Tests.csproj" />
     <Project Path="Observables.Events.R3.SourceGenerators/Observables.Events.R3.SourceGenerators.csproj" />
     <Project Path="Observables.Events.R3.SourceGenerators.Tests/Observables.Events.R3.SourceGenerators.Tests.csproj" />
   </Folder>

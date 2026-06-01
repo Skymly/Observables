@@ -1,0 +1,15 @@
+<Project>
+
+  <Import Project="Observables.SourceGenerators.props" />
+
+  <PropertyGroup>
+    <ObservablesReactiveBackend>R3</ObservablesReactiveBackend>
+  </PropertyGroup>
+
+  <!-- R3 程序集引用在实现各生成器时按包添加，例如：
+  <ItemGroup>
+    <PackageReference Include="R3" Version="..." PrivateAssets="all" />
+  </ItemGroup>
+  -->
+
+</Project>

@@ -3,8 +3,8 @@
 ## 项目状态
 
 - **类型**：个人项目（Skymly 工作区）
-- **远端**：见根 [`AGENTS.md`](../AGENTS.md)「已知远端」；本地 `main`，`origin` 已配置，**尚未推送**；文件夹名 `Observables` = 仓库名
-- **阶段**：**Events.R3**、**RestAPI** 域运行时与双路生成器已实现；`Events.Reactive` 生成器与 **RoutedEvents** 实现待完成；各域 **`.Package` / NuGet** 尚未建立
+- **远端**：https://github.com/Skymly/Observables（私有）；`origin/main` 已与本地 `main` 同步；文件夹名 `Observables` = 仓库名
+- **阶段**：**Events.R3**、**RestAPI** 域运行时与双路生成器已实现（PR #11–#20 已合并）；`Events.Reactive` 生成器与 **RoutedEvents** 实现待完成；各域 **`.Package` / NuGet** 尚未发布
 - **结构约定**：下文「仓库结构」与命名约定为权威
 
 ## 目标

@@ -13,6 +13,7 @@ namespace Observables.Events.R3.SourceGenerators;
 internal static class ObservableEventsSyntaxFactory
 {
     private static readonly NameSyntax R3Name = ParseName("global::R3");
+    private static readonly NameSyntax EventObservableName = ParseName(ObservableEventsConstants.EventObservableMetadataName);
 
     public static TypeSyntax R3ObservableType(TypeSyntax elementType) =>
         QualifiedName(
@@ -74,7 +75,7 @@ internal static class ObservableEventsSyntaxFactory
         return R3ObservableType(TupleType(SeparatedList(tupleElements)));
     }
 
-    public static TypeSyntax GetFromEventHandlersSenderReceiverReturnTypeSyntax(ImmutableArray<IParameterSymbol> parameters) =>
+    public static TypeSyntax GetEventHandlersSenderReceiverReturnTypeSyntax(ImmutableArray<IParameterSymbol> parameters) =>
         R3ObservableType(
             TupleType(
                 SeparatedList(
@@ -97,7 +98,7 @@ internal static class ObservableEventsSyntaxFactory
             ParseName("global::R3.Unit"),
             IdentifierName("Default"));
 
-    private static ExpressionSyntax FromEventHandlerFactoryZeroArgs() =>
+    private static ExpressionSyntax EventHandlerFactoryZeroArgs() =>
         SimpleLambdaExpression(
             Parameter(Identifier("h")),
             ParenthesizedLambdaExpression(
@@ -106,7 +107,7 @@ internal static class ObservableEventsSyntaxFactory
                     IdentifierName("h"),
                     ArgumentList(SingletonSeparatedList(Argument(R3UnitDefaultExpression()))))));
 
-    private static ExpressionSyntax FromEventHandlerFactoryOneArg(string argName = "arg1") =>
+    private static ExpressionSyntax EventHandlerFactoryOneArg(string argName = "arg1") =>
         SimpleLambdaExpression(
             Parameter(Identifier("h")),
             SimpleLambdaExpression(
@@ -115,7 +116,7 @@ internal static class ObservableEventsSyntaxFactory
                     IdentifierName("h"),
                     ArgumentList(SingletonSeparatedList(Argument(IdentifierName(argName)))))));
 
-    public static ExpressionSyntax FromEventHandlerFactorySenderAndArgs() =>
+    public static ExpressionSyntax EventHandlerFactorySenderAndArgs() =>
         SimpleLambdaExpression(
             Parameter(Identifier("h")),
             ParenthesizedLambdaExpression(
@@ -129,7 +130,7 @@ internal static class ObservableEventsSyntaxFactory
                     IdentifierName("h"),
                     ArgumentList(SingletonSeparatedList(Argument(IdentifierName("e")))))));
 
-    private static ExpressionSyntax FromEventHandlerFactoryTuple(ImmutableArray<IParameterSymbol> parameters)
+    private static ExpressionSyntax EventHandlerFactoryTuple(ImmutableArray<IParameterSymbol> parameters)
     {
         var argNames = parameters.Select(static (_, i) => $"arg{i + 1}").ToArray();
         var lambdaParams = SeparatedList(argNames.Select(static n => Parameter(Identifier(n))));
@@ -143,7 +144,7 @@ internal static class ObservableEventsSyntaxFactory
                     ArgumentList(SingletonSeparatedList(Argument(TupleExpression(tupleArgs)))))));
     }
 
-    private static ExpressionSyntax FromEventHandlerFactoryLegacyTuple() =>
+    private static ExpressionSyntax EventHandlerFactoryLegacyTuple() =>
         SimpleLambdaExpression(
             Parameter(Identifier("h")),
             ParenthesizedLambdaExpression(
@@ -249,7 +250,7 @@ internal static class ObservableEventsSyntaxFactory
             Parameter(Identifier(handlerParameter)),
             subscriptionExpression);
 
-    public static InvocationExpressionSyntax ObservableFromEventInvocation(
+    public static InvocationExpressionSyntax RxFromEventInvocation(
         TypeSyntax delegateType,
         TypeSyntax elementType,
         ExpressionSyntax handlerLambda,
@@ -258,8 +259,8 @@ internal static class ObservableEventsSyntaxFactory
         InvocationExpression(
             MemberAccessExpression(
                 SyntaxKind.SimpleMemberAccessExpression,
-                ParseName("global::R3.Observable"),
-                GenericName(Identifier("FromEvent"))
+                EventObservableName,
+                GenericName(Identifier("Event"))
                     .WithTypeArgumentList(
                         TypeArgumentList(SeparatedList<TypeSyntax>([delegateType, elementType])))),
             ArgumentList(
@@ -271,21 +272,21 @@ internal static class ObservableEventsSyntaxFactory
                     Argument(LiteralExpression(SyntaxKind.DefaultLiteralExpression, Token(SyntaxKind.DefaultKeyword))),
                 ])));
 
-    public static InvocationExpressionSyntax ObservableFromEventHandlerInvocation(
+    public static InvocationExpressionSyntax RxFromEventHandlerInvocation(
         TypeSyntax? eventArgsType,
         ExpressionSyntax addExpression,
         ExpressionSyntax removeExpression)
     {
-        SimpleNameSyntax fromEventHandler = eventArgsType is null
-            ? IdentifierName("FromEventHandler")
-            : GenericName(Identifier("FromEventHandler"))
+        SimpleNameSyntax eventHandlerName = eventArgsType is null
+            ? IdentifierName("EventHandler")
+            : GenericName(Identifier("EventHandler"))
                 .WithTypeArgumentList(TypeArgumentList(SingletonSeparatedList(eventArgsType)));
 
         return InvocationExpression(
             MemberAccessExpression(
                 SyntaxKind.SimpleMemberAccessExpression,
-                ParseName("global::R3.Observable"),
-                fromEventHandler),
+                EventObservableName,
+                eventHandlerName),
             ArgumentList(
                 SeparatedList(
                 [
@@ -295,7 +296,7 @@ internal static class ObservableEventsSyntaxFactory
                 ])));
     }
 
-    public static ExpressionSyntax BuildFromEventObservableExpression(
+    public static ExpressionSyntax BuildEventObservableExpression(
         INamedTypeSymbol delegateType,
         ImmutableArray<IParameterSymbol> parameters,
         ExpressionSyntax eventAccessor)
@@ -306,10 +307,10 @@ internal static class ObservableEventsSyntaxFactory
 
         if (parameters.Length == 0)
         {
-            return ObservableFromEventInvocation(
+            return RxFromEventInvocation(
                 delegateTypeSyntax,
                 ParseTypeName("global::R3.Unit"),
-                FromEventHandlerFactoryZeroArgs(),
+                EventHandlerFactoryZeroArgs(),
                 add,
                 remove);
         }
@@ -317,10 +318,10 @@ internal static class ObservableEventsSyntaxFactory
         if (parameters.Length == 1)
         {
             var elementType = ParseTypeName(ObservableEventsConstants.QualifiedType(parameters[0].Type));
-            return ObservableFromEventInvocation(
+            return RxFromEventInvocation(
                 delegateTypeSyntax,
                 elementType,
-                FromEventHandlerFactoryOneArg(),
+                EventHandlerFactoryOneArg(),
                 add,
                 remove);
         }
@@ -328,25 +329,25 @@ internal static class ObservableEventsSyntaxFactory
         if (parameters.Length == 2 && parameters[0].Type.SpecialType == SpecialType.System_Object)
         {
             var elementType = ParseTypeName(ObservableEventsConstants.QualifiedType(parameters[1].Type));
-            return ObservableFromEventInvocation(
+            return RxFromEventInvocation(
                 delegateTypeSyntax,
                 elementType,
-                FromEventHandlerFactorySenderAndArgs(),
+                EventHandlerFactorySenderAndArgs(),
                 add,
                 remove);
         }
 
         var tupleTypes = parameters.Select(static p => ParseTypeName(ObservableEventsConstants.QualifiedType(p.Type)));
         var tupleType = TupleType(SeparatedList(tupleTypes.Select(static t => TupleElement(t))));
-        return ObservableFromEventInvocation(
+        return RxFromEventInvocation(
             delegateTypeSyntax,
             tupleType,
-            FromEventHandlerFactoryTuple(parameters),
+            EventHandlerFactoryTuple(parameters),
             add,
             remove);
     }
 
-    public static ExpressionSyntax BuildLegacySenderReceiverFromEventExpression(
+    public static ExpressionSyntax BuildLegacySenderReceiverEventExpression(
         INamedTypeSymbol delegateType,
         ImmutableArray<IParameterSymbol> parameters,
         ExpressionSyntax eventAccessor)
@@ -355,10 +356,10 @@ internal static class ObservableEventsSyntaxFactory
         var p0 = ParseTypeName(ObservableEventsConstants.QualifiedType(parameters[0].Type));
         var p1 = ParseTypeName(ObservableEventsConstants.QualifiedType(parameters[1].Type));
         var tupleType = TupleType(SeparatedList([TupleElement(p0), TupleElement(p1)]));
-        return ObservableFromEventInvocation(
+        return RxFromEventInvocation(
             delegateTypeSyntax,
             tupleType,
-            FromEventHandlerFactoryLegacyTuple(),
+            EventHandlerFactoryLegacyTuple(),
             EventSubscriptionAdd(eventAccessor),
             EventSubscriptionRemove(eventAccessor));
     }

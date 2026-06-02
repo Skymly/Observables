@@ -79,16 +79,16 @@ public sealed partial class ObservableEventsGenerator
     private static string GetEntryKindSourceTag(ObservableEventsEntryKind entryKind) =>
         entryKind switch
         {
-            ObservableEventsEntryKind.FromEvents => "FromEvents",
-            ObservableEventsEntryKind.FromEventHandlers => "FromEventHandlers",
+            ObservableEventsEntryKind.Events => "Events",
+            ObservableEventsEntryKind.EventHandlers => "EventHandlers",
             _ => throw new System.ArgumentOutOfRangeException(nameof(entryKind)),
         };
 
     private static string GetInterfaceNameSuffix(ObservableEventsEntryKind entryKind) =>
         entryKind switch
         {
-            ObservableEventsEntryKind.FromEvents => "Events",
-            ObservableEventsEntryKind.FromEventHandlers => "EventHandlers",
+            ObservableEventsEntryKind.Events => "Events",
+            ObservableEventsEntryKind.EventHandlers => "EventHandlers",
             _ => throw new System.ArgumentOutOfRangeException(nameof(entryKind)),
         };
 
@@ -236,8 +236,8 @@ public sealed partial class ObservableEventsGenerator
     {
         var suffix = entryKind switch
         {
-            ObservableEventsEntryKind.FromEvents => "EventsImpl",
-            ObservableEventsEntryKind.FromEventHandlers => "EventHandlersImpl",
+            ObservableEventsEntryKind.Events => "EventsImpl",
+            ObservableEventsEntryKind.EventHandlers => "EventHandlersImpl",
             _ => throw new System.ArgumentOutOfRangeException(nameof(entryKind)),
         };
         return $"{type.Name}{suffix}";
@@ -255,7 +255,7 @@ public sealed partial class ObservableEventsGenerator
             return null;
         }
 
-        if (entryKind is ObservableEventsEntryKind.FromEvents)
+        if (entryKind is ObservableEventsEntryKind.Events)
         {
             return ObservableEventsSyntaxFactory.GetObservableReturnTypeSyntax(invoke.Parameters);
         }
@@ -270,7 +270,7 @@ public sealed partial class ObservableEventsGenerator
 
         if (IsLegacySenderReceiverDelegate(delegateType, invoke, compilation))
         {
-            return ObservableEventsSyntaxFactory.GetFromEventHandlersSenderReceiverReturnTypeSyntax(invoke.Parameters);
+            return ObservableEventsSyntaxFactory.GetEventHandlersSenderReceiverReturnTypeSyntax(invoke.Parameters);
         }
 
         return null;

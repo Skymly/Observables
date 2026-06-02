@@ -45,26 +45,26 @@ private static bool IsObservableEventsInstanceEntryInvocation(SyntaxNode node)
         return false;
     }
 
-    return methodName is ObservableEventsConstants.FromEventsEntryMethodName
-        or ObservableEventsConstants.FromEventHandlersEntryMethodName;
+    return methodName is ObservableEventsConstants.EventsEntryMethodName
+        or ObservableEventsConstants.EventHandlersEntryMethodName;
 }
 
 /// <summary>
-/// Matches <c>ObservableEventsStatics.OBS_<em>StableHint</em>.FromEvents</c> (static entry property), not <c>receiver.FromEvents()</c>.
+/// Matches <c>ObservableEventsStatics.OBS_<em>StableHint</em>.Events</c> (static entry property), not <c>receiver.Events()</c>.
 /// </summary>
-private static bool IsStaticFromEventsEntryMemberAccess(SyntaxNode node)
+private static bool IsStaticEventsEntryMemberAccess(SyntaxNode node)
 {
     if (node is not MemberAccessExpressionSyntax ma)
     {
         return false;
     }
 
-    if (!string.Equals(ma.Name.Identifier.ValueText, ObservableEventsConstants.FromEventsEntryMethodName, System.StringComparison.Ordinal))
+    if (!string.Equals(ma.Name.Identifier.ValueText, ObservableEventsConstants.EventsEntryMethodName, System.StringComparison.Ordinal))
     {
         return false;
     }
 
-    // Exclude instance extension call shape: source.FromEvents()
+    // Exclude instance extension call shape: source.Events()
     if (ma.Parent is InvocationExpressionSyntax inv && ReferenceEquals(inv.Expression, ma))
     {
         return false;
@@ -99,10 +99,10 @@ private static ObservableEventTargetSets CollectObservableEventTargets(
     }
 
     // Use pooled hash sets for better performance with large candidate sets
-    var fromEvents = new System.Collections.Generic.HashSet<INamedTypeSymbol>(SymbolEqualityComparer.Default);
-    var fromHandlers = new System.Collections.Generic.HashSet<INamedTypeSymbol>(SymbolEqualityComparer.Default);
-    var fromEventsGenericConstraints = new Dictionary<string, GenericConstraintTarget>(System.StringComparer.Ordinal);
-    var fromHandlersGenericConstraints = new Dictionary<string, GenericConstraintTarget>(System.StringComparer.Ordinal);
+    var events = new System.Collections.Generic.HashSet<INamedTypeSymbol>(SymbolEqualityComparer.Default);
+    var eventHandlers = new System.Collections.Generic.HashSet<INamedTypeSymbol>(SymbolEqualityComparer.Default);
+    var eventsGenericConstraints = new Dictionary<string, GenericConstraintTarget>(System.StringComparer.Ordinal);
+    var eventHandlersGenericConstraints = new Dictionary<string, GenericConstraintTarget>(System.StringComparer.Ordinal);
 
     foreach (var candidate in candidates)
     {
@@ -111,40 +111,40 @@ private static ObservableEventTargetSets CollectObservableEventTargets(
             var semanticModel = compilation.GetSemanticModel(invocation.SyntaxTree);
             if (semanticModel.GetSymbolInfo(invocation).Symbol is IMethodSymbol methodSymbol)
             {
-                if (methodSymbol.Name == ObservableEventsConstants.FromEventsEntryMethodName
+                if (methodSymbol.Name == ObservableEventsConstants.EventsEntryMethodName
                     && TryGetBootstrapObservableEventsExtensionTarget(
                         invocation,
                         semanticModel,
                         methodSymbol,
                         bootstrapType,
-                        ObservableEventsConstants.FromEventsEntryMethodName,
-                        out var fromEventsTarget))
+                        ObservableEventsConstants.EventsEntryMethodName,
+                        out var eventsTarget))
                 {
-                    if (fromEventsTarget.IsGenericType)
+                    if (eventsTarget.IsGenericType)
                     {
-                        fromEventsTarget = fromEventsTarget.OriginalDefinition;
+                        eventsTarget = eventsTarget.OriginalDefinition;
                     }
 
-                    fromEvents.Add(fromEventsTarget);
+                    events.Add(eventsTarget);
                 }
-                else if (methodSymbol.Name == ObservableEventsConstants.FromEventsEntryMethodName
+                else if (methodSymbol.Name == ObservableEventsConstants.EventsEntryMethodName
                          && TryGetBootstrapGenericConstraintTarget(
                              invocation,
                              semanticModel,
                              methodSymbol,
                              bootstrapType,
-                             ObservableEventsConstants.FromEventsEntryMethodName,
-                             out var fromEventsGenericConstraintTarget))
+                             ObservableEventsConstants.EventsEntryMethodName,
+                             out var eventsGenericConstraintTarget))
                 {
-                    fromEventsGenericConstraints[fromEventsGenericConstraintTarget.Key] = fromEventsGenericConstraintTarget;
+                    eventsGenericConstraints[eventsGenericConstraintTarget.Key] = eventsGenericConstraintTarget;
                 }
-                else if (methodSymbol.Name == ObservableEventsConstants.FromEventHandlersEntryMethodName
+                else if (methodSymbol.Name == ObservableEventsConstants.EventHandlersEntryMethodName
                          && TryGetBootstrapObservableEventsExtensionTarget(
                              invocation,
                              semanticModel,
                              methodSymbol,
                              bootstrapType,
-                             ObservableEventsConstants.FromEventHandlersEntryMethodName,
+                             ObservableEventsConstants.EventHandlersEntryMethodName,
                              out var handlerTarget))
                 {
                     if (handlerTarget.IsGenericType)
@@ -152,18 +152,18 @@ private static ObservableEventTargetSets CollectObservableEventTargets(
                         handlerTarget = handlerTarget.OriginalDefinition;
                     }
 
-                    fromHandlers.Add(handlerTarget);
+                    eventHandlers.Add(handlerTarget);
                 }
-                else if (methodSymbol.Name == ObservableEventsConstants.FromEventHandlersEntryMethodName
+                else if (methodSymbol.Name == ObservableEventsConstants.EventHandlersEntryMethodName
                          && TryGetBootstrapGenericConstraintTarget(
                              invocation,
                              semanticModel,
                              methodSymbol,
                              bootstrapType,
-                             ObservableEventsConstants.FromEventHandlersEntryMethodName,
+                             ObservableEventsConstants.EventHandlersEntryMethodName,
                              out var handlerGenericConstraintTarget))
                 {
-                    fromHandlersGenericConstraints[handlerGenericConstraintTarget.Key] = handlerGenericConstraintTarget;
+                    eventHandlersGenericConstraints[handlerGenericConstraintTarget.Key] = handlerGenericConstraintTarget;
                 }
             }
 
@@ -171,11 +171,11 @@ private static ObservableEventTargetSets CollectObservableEventTargets(
         }
 
         if (ObservableEventsConstants.StaticObservableEventsGenerationEnabled
-            && candidate is MemberAccessExpressionSyntax staticFromEvents
-            && IsStaticFromEventsEntryMemberAccess(staticFromEvents))
+            && candidate is MemberAccessExpressionSyntax staticEvents
+            && IsStaticEventsEntryMemberAccess(staticEvents))
         {
-            var semanticModel = compilation.GetSemanticModel(staticFromEvents.SyntaxTree);
-            if (semanticModel.GetSymbolInfo(staticFromEvents).Symbol is { } staticSymbol
+            var semanticModel = compilation.GetSemanticModel(staticEvents.SyntaxTree);
+            if (semanticModel.GetSymbolInfo(staticEvents).Symbol is { } staticSymbol
                 && TryGetTypeFromObservableEventsStaticsNested(staticSymbol, bootstrapType, compilation, out var staticTarget))
             {
                 if (staticTarget.IsGenericType)
@@ -183,19 +183,19 @@ private static ObservableEventTargetSets CollectObservableEventTargets(
                     staticTarget = staticTarget.OriginalDefinition;
                 }
 
-                fromEvents.Add(staticTarget);
+                events.Add(staticTarget);
                 continue;
             }
 
             // Cold compile: static entry property not bound until nested type exists.
-            if (TryGetStaticObservableEventsTargetFromMemberAccess(compilation, staticFromEvents, out var syntaxOnlyStatic))
+            if (TryGetStaticObservableEventsTargetFromMemberAccess(compilation, staticEvents, out var syntaxOnlyStatic))
             {
                 if (syntaxOnlyStatic.IsGenericType)
                 {
                     syntaxOnlyStatic = syntaxOnlyStatic.OriginalDefinition;
                 }
 
-                fromEvents.Add(syntaxOnlyStatic);
+                events.Add(syntaxOnlyStatic);
             }
         }
     }
@@ -212,23 +212,23 @@ private static ObservableEventTargetSets CollectObservableEventTargets(
             .ToImmutableArray();
 
     return new ObservableEventTargetSets(
-        Order(fromEvents),
-        Order(fromHandlers),
-        OrderGeneric(fromEventsGenericConstraints),
-        OrderGeneric(fromHandlersGenericConstraints));
+        Order(events),
+        Order(eventHandlers),
+        OrderGeneric(eventsGenericConstraints),
+        OrderGeneric(eventHandlersGenericConstraints));
 }
 
 /// <summary>
 /// When semantic binding cannot resolve the static entry property yet, recover the declaring type from
-/// <c>ObservableEventsStatics.OBS_<em>StableHint</em>.FromEvents</c> syntax so generation still runs.
+/// <c>ObservableEventsStatics.OBS_<em>StableHint</em>.Events</c> syntax so generation still runs.
 /// </summary>
 private static bool TryGetStaticObservableEventsTargetFromMemberAccess(
     Compilation compilation,
-    MemberAccessExpressionSyntax fromEventsAccess,
+    MemberAccessExpressionSyntax eventsAccess,
     out INamedTypeSymbol namedType)
 {
     namedType = null!;
-    if (fromEventsAccess.Expression is not MemberAccessExpressionSyntax
+    if (eventsAccess.Expression is not MemberAccessExpressionSyntax
         {
             Expression: IdentifierNameSyntax { Identifier.ValueText: "ObservableEventsStatics" },
             Name: SimpleNameSyntax staticHintNameSyntax,
@@ -237,7 +237,7 @@ private static bool TryGetStaticObservableEventsTargetFromMemberAccess(
         return false;
     }
 
-    if (!string.Equals(fromEventsAccess.Name.Identifier.ValueText, ObservableEventsConstants.FromEventsEntryMethodName, System.StringComparison.Ordinal))
+    if (!string.Equals(eventsAccess.Name.Identifier.ValueText, ObservableEventsConstants.EventsEntryMethodName, System.StringComparison.Ordinal))
     {
         return false;
     }
@@ -285,7 +285,7 @@ private static bool TryGetBootstrapObservableEventsExtensionTarget(
         return true;
     }
 
-    // Reduced extension inference: FromEvents() on explicit receiver without TypeArguments surfaced on symbol.
+    // Reduced extension inference: Events() on explicit receiver without TypeArguments surfaced on symbol.
     if (invocation.Expression is MemberAccessExpressionSyntax { Expression: ExpressionSyntax receiver })
     {
         if (semanticModel.GetTypeInfo(receiver).Type is INamedTypeSymbol receiverNamed)
@@ -376,7 +376,7 @@ private static bool ContainsTypeParameter(ITypeSymbol type)
 }
 
 /// <summary>
-/// Parses <c>ObservableEventsStatics.OBS_<em>StableHint</em>.FromEvents</c> from semantic model (expects the static entry property on the nested partial class).
+/// Parses <c>ObservableEventsStatics.OBS_<em>StableHint</em>.Events</c> from semantic model (expects the static entry property on the nested partial class).
 /// </summary>
 private static bool TryGetTypeFromObservableEventsStaticsNested(
     ISymbol symbol,
@@ -386,7 +386,7 @@ private static bool TryGetTypeFromObservableEventsStaticsNested(
 {
     namedType = null!;
 
-    if (symbol.Name != ObservableEventsConstants.FromEventsEntryMethodName)
+    if (symbol.Name != ObservableEventsConstants.EventsEntryMethodName)
     {
         return false;
     }

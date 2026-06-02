@@ -14,10 +14,10 @@ internal static class ObservableEventsDiagnosticDescriptors
         defaultSeverity: DiagnosticSeverity.Warning,
         isEnabledByDefault: true);
 
-    public static readonly DiagnosticDescriptor InvalidFromEventHandlersDelegate = new(
+    public static readonly DiagnosticDescriptor InvalidEventHandlersDelegate = new(
         id: "OBS2002",
-        title: "FromEventHandlers requires EventHandler or legacy object-sender delegate shape",
-        messageFormat: "The event '{0}' is unsupported for FromEventHandlers (needs System.EventHandler, System.EventHandler<T>, or void delegate with (object, T) parameters).",
+        title: "EventHandlers requires EventHandler or legacy object-sender delegate shape",
+        messageFormat: "The event '{0}' is unsupported for EventHandlers (needs System.EventHandler, System.EventHandler<T>, or void delegate with (object, T) parameters).",
         category: Category,
         defaultSeverity: DiagnosticSeverity.Warning,
         isEnabledByDefault: true);

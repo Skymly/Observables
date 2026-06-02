@@ -27,6 +27,38 @@ internal static class EventsBootstrapSyntaxFactory
                 NamespaceDeclaration(BootstrapNamespaceName)
                     .AddMembers(CreateBootstrapExtensionsClass(includeStatics)));
 
+    public static CompilationUnitSyntax CreateEventObservableBridgeCompilationUnit()
+    {
+        const string bridgeClass = """
+            internal static class EventObservable
+            {
+                public static global::R3.Observable<T> Event<TDelegate, T>(
+                    global::System.Func<global::System.Action<T>, TDelegate> conversion,
+                    global::System.Action<TDelegate> addHandler,
+                    global::System.Action<TDelegate> removeHandler,
+                    global::System.Threading.CancellationToken cancellationToken = default)
+                    => global::R3.Observable.FromEvent(conversion, addHandler, removeHandler, cancellationToken);
+
+                public static global::R3.Observable<(object? sender, global::System.EventArgs e)> EventHandler(
+                    global::System.Action<global::System.EventHandler> addHandler,
+                    global::System.Action<global::System.EventHandler> removeHandler,
+                    global::System.Threading.CancellationToken cancellationToken = default)
+                    => global::R3.Observable.FromEventHandler(addHandler, removeHandler, cancellationToken);
+
+                public static global::R3.Observable<(object? sender, TEventArgs e)> EventHandler<TEventArgs>(
+                    global::System.Action<global::System.EventHandler<TEventArgs>> addHandler,
+                    global::System.Action<global::System.EventHandler<TEventArgs>> removeHandler,
+                    global::System.Threading.CancellationToken cancellationToken = default)
+                    => global::R3.Observable.FromEventHandler(addHandler, removeHandler, cancellationToken);
+            }
+            """;
+
+        return CompilationUnit()
+            .AddMembers(
+                FileScopedNamespaceDeclaration(BootstrapNamespaceName)
+                    .AddMembers(ParseMemberDeclaration(bridgeClass)!));
+    }
+
     public static CompilationUnitSyntax CreateObservableEventsStaticsShellCompilationUnit() =>
         CompilationUnit()
             .AddMembers(
@@ -39,8 +71,8 @@ internal static class EventsBootstrapSyntaxFactory
     {
         var methods = new List<MemberDeclarationSyntax>
         {
-            CreateNullReturningExtension("FromEvents"),
-            CreateNullReturningExtension("FromEventHandlers"),
+            CreateNullReturningExtension("Events"),
+            CreateNullReturningExtension("EventHandlers"),
         };
 
         if (includeStatics)

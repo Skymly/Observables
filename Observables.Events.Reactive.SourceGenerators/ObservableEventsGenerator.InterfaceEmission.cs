@@ -125,8 +125,8 @@ private static string GenerateEventImplAndExtensionSource(
 
     var methodName = entryKind switch
     {
-        ObservableEventsEntryKind.FromEvents => ObservableEventsConstants.FromEventsEntryMethodName,
-        ObservableEventsEntryKind.FromEventHandlers => ObservableEventsConstants.FromEventHandlersEntryMethodName,
+        ObservableEventsEntryKind.Events => ObservableEventsConstants.EventsEntryMethodName,
+        ObservableEventsEntryKind.EventHandlers => ObservableEventsConstants.EventHandlersEntryMethodName,
         _ => throw new System.ArgumentOutOfRangeException(nameof(entryKind)),
     };
 
@@ -204,17 +204,17 @@ private static ClassDeclarationSyntax CreateEventImplClass(
     {
         switch (entryKind)
         {
-            case ObservableEventsEntryKind.FromEvents:
-                if (TryCreateEventObservableProperty(evt, accessor, context, out var fromEventsProp, includeXmlDocumentation: false))
+            case ObservableEventsEntryKind.Events:
+                if (TryCreateEventObservableProperty(evt, accessor, context, out var eventsProp, includeXmlDocumentation: false))
                 {
-                    members.Add(fromEventsProp);
+                    members.Add(eventsProp);
                 }
 
                 break;
-            case ObservableEventsEntryKind.FromEventHandlers:
-                if (TryCreateEventHandlerObservableProperty(evt, accessor, compilation, context, out var fromHandlersProp, includeXmlDocumentation: false))
+            case ObservableEventsEntryKind.EventHandlers:
+                if (TryCreateEventHandlerObservableProperty(evt, accessor, compilation, context, out var eventHandlersProp, includeXmlDocumentation: false))
                 {
-                    members.Add(fromHandlersProp);
+                    members.Add(eventHandlersProp);
                 }
 
                 break;

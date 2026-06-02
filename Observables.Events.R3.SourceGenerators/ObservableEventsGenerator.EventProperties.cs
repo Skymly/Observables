@@ -34,7 +34,7 @@ private static bool TryCreateEventObservableProperty(
     }
 
     var returnType = ObservableEventsSyntaxFactory.GetObservableReturnTypeSyntax(invoke.Parameters);
-    var bodyExpression = ObservableEventsSyntaxFactory.BuildFromEventObservableExpression(
+    var bodyExpression = ObservableEventsSyntaxFactory.BuildEventObservableExpression(
         delegateType,
         invoke.Parameters,
         eventAccessorExpression);
@@ -62,13 +62,13 @@ private static bool TryCreateEventHandlerObservableProperty(
     property = null!;
     if (evt.Type is not INamedTypeSymbol delegateType || delegateType.DelegateInvokeMethod is not IMethodSymbol invoke)
     {
-        ReportInvalidFromEventHandlersDelegate(evt, context);
+        ReportInvalidEventHandlersDelegate(evt, context);
         return false;
     }
 
     if (!invoke.ReturnsVoid)
     {
-        ReportInvalidFromEventHandlersDelegate(evt, context);
+        ReportInvalidEventHandlersDelegate(evt, context);
         return false;
     }
 
@@ -82,7 +82,7 @@ private static bool TryCreateEventHandlerObservableProperty(
         var eventArgsType = genericEventArgs is null
             ? SyntaxFactory.ParseTypeName("global::System.EventArgs")
             : SyntaxFactory.ParseTypeName(ObservableEventsConstants.QualifiedType(genericEventArgs));
-        bodyExpression = ObservableEventsSyntaxFactory.ObservableFromEventHandlerInvocation(
+        bodyExpression = ObservableEventsSyntaxFactory.RxFromEventHandlerInvocation(
             genericEventArgs is null ? null : eventArgsType,
             add,
             remove);
@@ -90,15 +90,15 @@ private static bool TryCreateEventHandlerObservableProperty(
     }
     else if (IsLegacySenderReceiverDelegate(delegateType, invoke, compilation))
     {
-        bodyExpression = ObservableEventsSyntaxFactory.BuildLegacySenderReceiverFromEventExpression(
+        bodyExpression = ObservableEventsSyntaxFactory.BuildLegacySenderReceiverEventExpression(
             delegateType,
             invoke.Parameters,
             eventAccessorExpression);
-        returnType = ObservableEventsSyntaxFactory.GetFromEventHandlersSenderReceiverReturnTypeSyntax(invoke.Parameters);
+        returnType = ObservableEventsSyntaxFactory.GetEventHandlersSenderReceiverReturnTypeSyntax(invoke.Parameters);
     }
     else
     {
-        ReportInvalidFromEventHandlersDelegate(evt, context);
+        ReportInvalidEventHandlersDelegate(evt, context);
         return false;
     }
 

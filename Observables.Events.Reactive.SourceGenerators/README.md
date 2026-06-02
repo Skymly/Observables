@@ -2,8 +2,8 @@
 
 Classic .NET events → `System.Reactive` `IObservable<T>` (parity with `Observables.Events.R3.SourceGenerators`).
 
-- **FromEvents** — `Observable.FromEvent` by delegate shape
-- **FromEventHandlers** — `EventHandler` / `(object, T)` via `FromEvent` + sender/args tuple
+- **Events** — `Observable.FromEvent` by delegate shape
+- **EventHandlers** — `EventHandler` / `(object, T)` via `FromEvent` + sender/args tuple
 
 Generated code namespace: `Observables.Events.Reactive`.
 

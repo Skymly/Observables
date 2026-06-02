@@ -13,21 +13,21 @@ internal readonly struct ObservableEventTargetSets
         ImmutableArray<GenericConstraintTarget>.Empty);
 
     public ObservableEventTargetSets(
-        ImmutableArray<INamedTypeSymbol> fromEventsTypes,
-        ImmutableArray<INamedTypeSymbol> fromEventHandlersTypes,
-        ImmutableArray<GenericConstraintTarget> fromEventsGenericConstraintTargets,
-        ImmutableArray<GenericConstraintTarget> fromEventHandlersGenericConstraintTargets)
+        ImmutableArray<INamedTypeSymbol> eventsTypes,
+        ImmutableArray<INamedTypeSymbol> eventHandlersTypes,
+        ImmutableArray<GenericConstraintTarget> eventsGenericConstraintTargets,
+        ImmutableArray<GenericConstraintTarget> eventHandlersGenericConstraintTargets)
     {
-        FromEventsTypes = fromEventsTypes;
-        FromEventHandlersTypes = fromEventHandlersTypes;
-        FromEventsGenericConstraintTargets = fromEventsGenericConstraintTargets;
-        FromEventHandlersGenericConstraintTargets = fromEventHandlersGenericConstraintTargets;
+        EventsTypes = eventsTypes;
+        EventHandlersTypes = eventHandlersTypes;
+        EventsGenericConstraintTargets = eventsGenericConstraintTargets;
+        EventHandlersGenericConstraintTargets = eventHandlersGenericConstraintTargets;
     }
 
-    public ImmutableArray<INamedTypeSymbol> FromEventsTypes { get; }
-    public ImmutableArray<INamedTypeSymbol> FromEventHandlersTypes { get; }
-    public ImmutableArray<GenericConstraintTarget> FromEventsGenericConstraintTargets { get; }
-    public ImmutableArray<GenericConstraintTarget> FromEventHandlersGenericConstraintTargets { get; }
+    public ImmutableArray<INamedTypeSymbol> EventsTypes { get; }
+    public ImmutableArray<INamedTypeSymbol> EventHandlersTypes { get; }
+    public ImmutableArray<GenericConstraintTarget> EventsGenericConstraintTargets { get; }
+    public ImmutableArray<GenericConstraintTarget> EventHandlersGenericConstraintTargets { get; }
 }
 
 internal readonly struct GenericConstraintTarget

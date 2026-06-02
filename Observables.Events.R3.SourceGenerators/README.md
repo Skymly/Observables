@@ -13,11 +13,11 @@ public class ClickSource
 }
 
 ClickSource source = new();
-var stream = source.FromEvents().Click;
+var stream = source.Events().Click;
 ```
 
-- **FromEvents** — 将事件转为 `R3.Observable`（按委托签名推断元素类型）
-- **FromEventHandlers** — 使用 `R3.Observable.FromEventHandler`（`EventHandler` / `(object, T)` 形态）
+- **Events** — 将事件转为 `R3.Observable`（按委托签名推断元素类型）
+- **EventHandlers** — 使用生成命名空间内的 `EventObservable.EventHandler`（转发至 R3；`EventHandler` / `(object, T)` 形态）
 
 生成代码位于命名空间 `Observables.Events.R3.SourceGenerators`（`internal` 接口与实现）。
 

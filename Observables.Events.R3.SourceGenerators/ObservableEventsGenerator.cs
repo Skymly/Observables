@@ -26,12 +26,17 @@ public sealed partial class ObservableEventsGenerator : IIncrementalGenerator
                 SourceText.From(
                     GeneratedSourceHeader.ToSource(EventsBootstrapSyntaxFactory.CreateNullEventsCompilationUnit()),
                     Encoding.UTF8));
+            ctx.AddSource(
+                "Observables.Events.R3.EventObservable.g.cs",
+                SourceText.From(
+                    GeneratedSourceHeader.ToSource(EventsBootstrapSyntaxFactory.CreateEventObservableBridgeCompilationUnit()),
+                    Encoding.UTF8));
         });
         RegisterObservableEventsStaticsShellPostInit(context);
 
         var observableEventsCandidates = context.SyntaxProvider.CreateSyntaxProvider(
             static (syntax, _) => IsObservableEventsInstanceEntryInvocation(syntax)
-                || (ObservableEventsConstants.StaticObservableEventsGenerationEnabled && IsStaticFromEventsEntryMemberAccess(syntax)),
+                || (ObservableEventsConstants.StaticObservableEventsGenerationEnabled && IsStaticEventsEntryMemberAccess(syntax)),
             static (syntaxContext, _) => syntaxContext.Node);
 
         var inputs = observableEventsCandidates.Collect()
@@ -43,14 +48,14 @@ public sealed partial class ObservableEventsGenerator : IIncrementalGenerator
             var targets = CollectObservableEventTargets(input.Compilation, input.Candidates);
 
             EmitInterfaceBasedSources(
-                targets.FromEventsTypes,
-                targets.FromEventsGenericConstraintTargets,
-                input.Compilation, spc, ObservableEventsEntryKind.FromEvents);
+                targets.EventsTypes,
+                targets.EventsGenericConstraintTargets,
+                input.Compilation, spc, ObservableEventsEntryKind.Events);
 
             EmitInterfaceBasedSources(
-                targets.FromEventHandlersTypes,
-                targets.FromEventHandlersGenericConstraintTargets,
-                input.Compilation, spc, ObservableEventsEntryKind.FromEventHandlers);
+                targets.EventHandlersTypes,
+                targets.EventHandlersGenericConstraintTargets,
+                input.Compilation, spc, ObservableEventsEntryKind.EventHandlers);
         });
     }
 }

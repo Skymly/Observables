@@ -10,7 +10,7 @@ namespace Observables.Events.R3.SourceGenerators.Tests;
 public sealed class ObservableEventsGeneratorTests
 {
     [Fact]
-    public Task Generates_FromEvents_wrapper_for_action_event()
+    public Task Generates_Events_wrapper_for_action_event()
     {
         const string source = """
             namespace Demo;
@@ -22,7 +22,7 @@ public sealed class ObservableEventsGeneratorTests
 
             public static class Usage
             {
-                public static void Run(ClickSource s) => s.FromEvents();
+                public static void Run(ClickSource s) => s.Events();
             }
             """;
 
@@ -34,7 +34,7 @@ public sealed class ObservableEventsGeneratorTests
     }
 
     [Fact]
-    public void Generates_FromEvents_wrapper_for_interface_type()
+    public void Generates_Events_wrapper_for_interface_type()
     {
         const string source = """
             namespace Demo;
@@ -53,8 +53,8 @@ public sealed class ObservableEventsGeneratorTests
             {
                 public static void Run(INotifyMore s)
                 {
-                    _ = s.FromEvents().SomethingChanged;
-                    _ = s.FromEvents().MoreChanged;
+                    _ = s.Events().SomethingChanged;
+                    _ = s.Events().MoreChanged;
                 }
             }
             """;
@@ -70,7 +70,7 @@ public sealed class ObservableEventsGeneratorTests
     }
 
     [Fact]
-    public void Generates_FromEventHandlers_wrapper_for_interface_type()
+    public void Generates_EventHandlers_wrapper_for_interface_type()
     {
         const string source = """
             namespace Demo;
@@ -84,7 +84,7 @@ public sealed class ObservableEventsGeneratorTests
             {
                 public static void Run(INotifyPropertyChanged s)
                 {
-                    _ = s.FromEventHandlers().PropertyChanged;
+                    _ = s.EventHandlers().PropertyChanged;
                 }
             }
             """;
@@ -96,11 +96,11 @@ public sealed class ObservableEventsGeneratorTests
 
         Assert.Empty(output.Diagnostics.Where(static d => d.Severity == DiagnosticSeverity.Error));
         Assert.Contains("PropertyChanged", snapshot);
-        Assert.Contains("FromEventHandler", snapshot);
+        Assert.Contains("EventObservable.EventHandler", snapshot);
     }
 
     [Fact]
-    public void Generates_FromEvents_wrapper_for_generic_class()
+    public void Generates_Events_wrapper_for_generic_class()
     {
         const string source = """
             namespace Demo;
@@ -114,7 +114,7 @@ public sealed class ObservableEventsGeneratorTests
             {
                 public static void Run(GenericSource<string> s)
                 {
-                    _ = s.FromEvents().ValueChanged;
+                    _ = s.Events().ValueChanged;
                 }
             }
             """;
@@ -129,7 +129,7 @@ public sealed class ObservableEventsGeneratorTests
     }
 
     [Fact]
-    public void Generates_FromEvents_wrapper_for_generic_constraints()
+    public void Generates_Events_wrapper_for_generic_constraints()
     {
         const string source = """
             namespace Demo;
@@ -154,9 +154,9 @@ public sealed class ObservableEventsGeneratorTests
                 public static void Run<TSource>(TSource source)
                     where TSource : BaseSource, IFirst, ISecond
                 {
-                    _ = source.FromEvents().BaseChanged;
-                    _ = source.FromEvents().FirstChanged;
-                    _ = source.FromEvents().SecondChanged;
+                    _ = source.Events().BaseChanged;
+                    _ = source.Events().FirstChanged;
+                    _ = source.Events().SecondChanged;
                 }
             }
             """;
@@ -178,7 +178,7 @@ public sealed class ObservableEventsGeneratorTests
     }
 
     [Fact]
-    public void Generates_FromEventHandlers_wrapper_for_generic_constraints()
+    public void Generates_EventHandlers_wrapper_for_generic_constraints()
     {
         const string source = """
             namespace Demo;
@@ -198,8 +198,8 @@ public sealed class ObservableEventsGeneratorTests
                 public static void Run<TSource>(TSource source)
                     where TSource : BaseSource, IFirst
                 {
-                    _ = source.FromEventHandlers().BaseChanged;
-                    _ = source.FromEventHandlers().FirstChanged;
+                    _ = source.EventHandlers().BaseChanged;
+                    _ = source.EventHandlers().FirstChanged;
                 }
             }
             """;
@@ -211,7 +211,7 @@ public sealed class ObservableEventsGeneratorTests
 
         Assert.Empty(output.Diagnostics.Where(static d => d.Severity == DiagnosticSeverity.Error));
         Assert.Contains("where TSource : global::Demo.BaseSource, global::Demo.IFirst", snapshot);
-        Assert.Contains("global::R3.Observable.FromEventHandler<global::System.EventArgs>", snapshot);
+        Assert.Contains("global::Observables.Events.R3.EventObservable.EventHandler<global::System.EventArgs>", snapshot);
         Assert.Contains("((global::Demo.BaseSource)_sender).BaseChanged", snapshot);
         Assert.Contains("((global::Demo.IFirst)_sender).FirstChanged", snapshot);
         Assert.Contains("IBaseSource_FirstEventHandlers", snapshot);
@@ -243,9 +243,9 @@ public sealed class ObservableEventsGeneratorTests
             {
                 public static void Run(DerivedSource s)
                 {
-                    _ = s.FromEvents().BaseChanged;
-                    _ = s.FromEvents().DerivedChanged;
-                    _ = s.FromEvents().Notified;
+                    _ = s.Events().BaseChanged;
+                    _ = s.Events().DerivedChanged;
+                    _ = s.Events().Notified;
                 }
             }
             """;
@@ -261,7 +261,7 @@ public sealed class ObservableEventsGeneratorTests
         Assert.Contains("interface INotifyEvents", snapshot);
         Assert.Contains("interface IDerivedSourceEvents : IBaseSourceEvents", snapshot);
         Assert.Contains("class DerivedSourceEventsImpl : IDerivedSourceEvents", snapshot);
-        Assert.Contains("IDerivedSourceEvents FromEvents(this global::Demo.DerivedSource source)", snapshot);
+        Assert.Contains("IDerivedSourceEvents Events(this global::Demo.DerivedSource source)", snapshot);
 
         Assert.Contains("DerivedChanged", snapshot);
         Assert.Contains("BaseChanged", snapshot);
@@ -282,7 +282,7 @@ public sealed class ObservableEventsGeneratorTests
 
             public static class Usage
             {
-                public static void Run(MixedSource s) => s.FromEvents();
+                public static void Run(MixedSource s) => s.Events();
             }
             """;
 
@@ -310,7 +310,7 @@ public sealed class ObservableEventsGeneratorTests
 
             public static class Usage
             {
-                public static void Run(MixedHandlerSource s) => s.FromEventHandlers();
+                public static void Run(MixedHandlerSource s) => s.EventHandlers();
             }
             """;
 

@@ -32,18 +32,18 @@ sealed class Build : NukeBuild
     /// </summary>
     static readonly string[] TestProjectRelativePaths =
     [
-        "Observables.Events.R3.SourceGenerators.Tests/Observables.Events.R3.SourceGenerators.Tests.csproj",
-        "Observables.Events.Reactive.SourceGenerators.Tests/Observables.Events.Reactive.SourceGenerators.Tests.csproj",
-        "Observables.RestAPI.Tests/Observables.RestAPI.Tests.csproj",
-        "Observables.RestAPI.Reactive.Tests/Observables.RestAPI.Reactive.Tests.csproj",
-        "Observables.RestAPI.GeneratorTests/Observables.RestAPI.GeneratorTests.csproj",
-        "Observables.RestAPI.HttpClientFactory.Tests/Observables.RestAPI.HttpClientFactory.Tests.csproj",
+        "Observables.Events/Observables.Events.R3.SourceGenerators.Tests/Observables.Events.R3.SourceGenerators.Tests.csproj",
+        "Observables.Events/Observables.Events.Reactive.SourceGenerators.Tests/Observables.Events.Reactive.SourceGenerators.Tests.csproj",
+        "Observables.RestAPI/Observables.RestAPI.Tests/Observables.RestAPI.Tests.csproj",
+        "Observables.RestAPI/Observables.RestAPI.Reactive.Tests/Observables.RestAPI.Reactive.Tests.csproj",
+        "Observables.RestAPI/Observables.RestAPI.GeneratorTests/Observables.RestAPI.GeneratorTests.csproj",
+        "Observables.RestAPI/Observables.RestAPI.HttpClientFactory.Tests/Observables.RestAPI.HttpClientFactory.Tests.csproj",
     ];
 
     static readonly string[] PackProjectRelativePaths =
     [
-        "Observables.Events.Package/Observables.Events.Package.csproj",
-        "Observables.RestAPI.Package/Observables.RestAPI.Package.csproj",
+        "Observables.Events/Observables.Events.Package/Observables.Events.Package.csproj",
+        "Observables.RestAPI/Observables.RestAPI.Package/Observables.RestAPI.Package.csproj",
     ];
 
     public static int Main() => Execute<Build>(x => x.Ci);

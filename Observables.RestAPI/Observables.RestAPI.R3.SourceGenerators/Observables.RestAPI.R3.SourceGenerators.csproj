@@ -1,6 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-  <Import Project="..\Observables.SourceGenerators.R3.props" />
+  <Import Project="..\..\Observables.SourceGenerators.R3.props" />
 
   <PropertyGroup>
     <Description>Source generator for declarative REST clients → R3 Observable.</Description>
@@ -10,7 +10,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Observables.SourceGenerators.Shared\Observables.SourceGenerators.Shared.csproj" />
+    <ProjectReference Include="..\..\Observables.Shared\Observables.SourceGenerators.Shared\Observables.SourceGenerators.Shared.csproj" />
     <PackageReference Include="R3" Version="1.3.0" PrivateAssets="all" />
   </ItemGroup>
 

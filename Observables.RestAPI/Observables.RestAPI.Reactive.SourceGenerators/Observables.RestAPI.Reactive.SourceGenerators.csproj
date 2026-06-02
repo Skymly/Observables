@@ -1,6 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-  <Import Project="..\Observables.SourceGenerators.props" />
+  <Import Project="..\..\Observables.SourceGenerators.props" />
 
   <PropertyGroup>
     <Description>Source generator for declarative REST clients → System.Reactive IObservable.</Description>
@@ -10,7 +10,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Observables.SourceGenerators.Shared\Observables.SourceGenerators.Shared.csproj" />
+    <ProjectReference Include="..\..\Observables.Shared\Observables.SourceGenerators.Shared\Observables.SourceGenerators.Shared.csproj" />
   </ItemGroup>
 
   <Import Project="..\Observables.RestAPI.SourceGenerators.Shared\Observables.RestAPI.SourceGenerators.Shared.projitems" Label="Shared" />

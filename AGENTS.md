@@ -104,24 +104,26 @@ IObservable 等桥接     →  Observables.<Feature>.Reactive（按需；与 Rea
 
 ```
 Observables/
-├── Observables.Core/
-├── Observables.SourceGenerators.Shared/
-├── Observables.SourceGenerators.props
+├── Observables.SourceGenerators.props                # 仓库根 MSBuild
 ├── Observables.SourceGenerators.R3.props
-│
-├── Observables.RestAPI/                              # 运行时
-├── Observables.RestAPI.Reactive/                     # SR 桥接
-├── Observables.RestAPI.SourceGenerators.Shared/
-├── Observables.RestAPI.R3.SourceGenerators/
-├── Observables.RestAPI.Reactive.SourceGenerators/
-├── Observables.RestAPI.HttpClientFactory/            # 可选扩展
-│
-├── Observables.Events.R3.SourceGenerators/
-├── Observables.Events.Reactive.SourceGenerators/
-│
-├── Observables.<Feature>.…                           # 其余域（多为 .R3 骨架）
+├── Observables.Shared/
+│   ├── Observables.Core/
+│   └── Observables.SourceGenerators.Shared/
+├── Observables.Events/                               # 域文件夹 = Observables.<Feature>
+│   ├── Observables.Events/Observables.Events.csproj  # 运行时 + targets/（同名子夹，避免 SDK  glob 同级项目）
+│   ├── Observables.Events.Package/
+│   ├── Observables.Events.R3.SourceGenerators/
+│   └── …
+├── Observables.RestAPI/
+│   ├── Observables.RestAPI/Observables.RestAPI.csproj
+│   ├── Observables.RestAPI.Reactive/
+│   ├── Observables.RestAPI.SourceGenerators.Shared/
+│   └── …
+├── Observables.SignalR/ … Observables.Grpc/          # 其余域（多为骨架）
 └── Observables.slnx
 ```
+
+磁盘上**每个 Feature 一个父目录** `Observables.<Feature>/`，其下为同名或后缀项目文件夹；`slnx` 中 `/Events/`、`/RestAPI/` 等虚拟文件夹与物理目录对应，勿在仓库根再并列散落 `Observables.<Feature>.*` 项目夹。
 
 ### 解决方案文件夹（`Observables.slnx`）
 
@@ -129,7 +131,7 @@ Observables/
 |--------|------|
 | **Solution Items** | `AGENTS.md`、`README.md`、公共 MSBuild props |
 | **Shared** | `Observables.Core`、`Observables.SourceGenerators.Shared` |
-| **Events** | 双路生成器、测试、`Events.Package`；`Observables.Events/targets/observables.events.props`（`ObservableRoutedEvents` 默认 `false`） |
+| **Events** | 双路生成器、测试、`Events.Package`；`Observables.Events/Observables.Events/targets/observables.events.props`（`ObservableRoutedEvents` 默认 `false`） |
 | **RestAPI** / **SignalR** / … | 该域全部项目；RestAPI 含 `SourceGenerators.Shared`（shproj，`Id` 固定）、`RestAPI.Package`、**Tests** |
 | **RestAPI/Tests** | `RestAPI.Tests`、`Reactive.Tests`、`GeneratorTests`、`HttpClientFactory.Tests` |
 

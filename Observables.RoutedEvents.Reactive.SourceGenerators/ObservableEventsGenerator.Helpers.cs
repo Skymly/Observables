@@ -60,10 +60,10 @@ private static void ReportInvalidDelegate(IEventSymbol evt, SourceProductionCont
         evt.Name));
 }
 
-private static void ReportInvalidFromEventHandlersDelegate(IEventSymbol evt, SourceProductionContext context)
+private static void ReportInvalidEventHandlersDelegate(IEventSymbol evt, SourceProductionContext context)
 {
     context.ReportDiagnostic(Diagnostic.Create(
-        RoutedEventsDiagnosticDescriptors.InvalidFromEventHandlersDelegate,
+        RoutedEventsDiagnosticDescriptors.InvalidEventHandlersDelegate,
         evt.Locations.FirstOrDefault(),
         evt.Name));
 }

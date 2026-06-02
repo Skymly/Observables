@@ -2,10 +2,10 @@ namespace Observables.RoutedEvents.R3.SourceGenerators;
 
 internal enum ObservableEventsEntryKind
 {
-    FromEvents,
-    FromEventHandlers,
-    FromRoutedEvents,
-    FromRoutedEventHandlers,
-    FromAttachedRoutedEvent,
-    FromAttachedRoutedEventHandler,
+    Events,
+    EventHandlers,
+    RoutedEvents,
+    RoutedEventHandlers,
+    AttachedRoutedEvent,
+    AttachedRoutedEventHandler,
 }

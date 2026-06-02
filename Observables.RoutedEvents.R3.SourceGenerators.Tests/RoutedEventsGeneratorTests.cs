@@ -19,8 +19,8 @@ public sealed class RoutedEventsGeneratorTests
                 {
                     public static void Run(Avalonia.Controls.Button button)
                     {
-                        _ = button.FromRoutedEvents().Click;
-                        _ = button.FromRoutedEventHandlers(Avalonia.Interactivity.RoutingStrategies.Bubble, handledEventsToo: true).Click;
+                        _ = button.RoutedEvents().Click;
+                        _ = button.RoutedEventHandlers(Avalonia.Interactivity.RoutingStrategies.Bubble, handledEventsToo: true).Click;
                     }
                 }
             }
@@ -43,8 +43,8 @@ public sealed class RoutedEventsGeneratorTests
                 {
                     public static void Run(Avalonia.Controls.Panel panel)
                     {
-                        _ = panel.FromAttachedRoutedEvent(Avalonia.Controls.Button.ClickEvent, Avalonia.Interactivity.RoutingStrategies.Bubble, handledEventsToo: true);
-                        _ = panel.FromAttachedRoutedEventHandler(Avalonia.Controls.Button.ClickEvent);
+                        _ = panel.AttachedRoutedEvent(Avalonia.Controls.Button.ClickEvent, Avalonia.Interactivity.RoutingStrategies.Bubble, handledEventsToo: true);
+                        _ = panel.AttachedRoutedEventHandler(Avalonia.Controls.Button.ClickEvent);
                     }
                 }
             }
@@ -57,8 +57,8 @@ public sealed class RoutedEventsGeneratorTests
         string snapshot = GeneratorTestHarness.ToSnapshot(output);
 
         Assert.Empty(output.Diagnostics.Where(static d => d.Severity == DiagnosticSeverity.Error));
-        Assert.Contains("FromAttachedRoutedEvent<TEventArgs>", snapshot);
-        Assert.Contains("FromAttachedRoutedEventHandler<TEventArgs>", snapshot);
+        Assert.Contains("AttachedRoutedEvent<TEventArgs>", snapshot);
+        Assert.Contains("AttachedRoutedEventHandler<TEventArgs>", snapshot);
         Assert.Contains("source.AddHandler", snapshot);
         Assert.Contains("routedEvent", snapshot);
         Assert.Contains("handledEventsToo", snapshot);
@@ -72,7 +72,7 @@ public sealed class RoutedEventsGeneratorTests
             {
                 public static class Usage
                 {
-                    public static void Run(System.Windows.Controls.Button button) => button.FromRoutedEvents();
+                    public static void Run(System.Windows.Controls.Button button) => button.RoutedEvents();
                 }
             }
             """;

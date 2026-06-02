@@ -26,12 +26,17 @@ public void Initialize(IncrementalGeneratorInitializationContext context)
             SourceText.From(
                 GeneratedSourceHeader.ToSource(EventsBootstrapSyntaxFactory.CreateNullEventsCompilationUnit()),
                 Encoding.UTF8));
+        ctx.AddSource(
+            "Observables.RoutedEvents.R3.EventObservable.g.cs",
+            SourceText.From(
+                GeneratedSourceHeader.ToSource(EventsBootstrapSyntaxFactory.CreateEventObservableBridgeCompilationUnit()),
+                Encoding.UTF8));
     });
     RegisterObservableEventsStaticsShellPostInit(context);
 
     var observableEventsCandidates = context.SyntaxProvider.CreateSyntaxProvider(
         static (syntax, _) => IsObservableEventsInstanceEntryInvocation(syntax)
-            || (ObservableEventsConstants.StaticObservableEventsGenerationEnabled && IsStaticFromEventsEntryMemberAccess(syntax)),
+            || (ObservableEventsConstants.StaticObservableEventsGenerationEnabled && IsStaticEventsEntryMemberAccess(syntax)),
         static (syntaxContext, _) => syntaxContext.Node);
 
     var inputs = observableEventsCandidates.Collect()
@@ -53,30 +58,30 @@ public void Initialize(IncrementalGeneratorInitializationContext context)
         var targets = CollectObservableEventTargets(input.Compilation, input.Candidates, input.UseWpf);
 
         EmitInterfaceBasedSources(
-            targets.FromRoutedEventsTypes,
+            targets.RoutedEventsTypes,
             ImmutableArray<GenericConstraintTarget>.Empty,
-            input.Compilation, spc, ObservableEventsEntryKind.FromRoutedEvents, input.UseWpf);
+            input.Compilation, spc, ObservableEventsEntryKind.RoutedEvents, input.UseWpf);
 
         EmitInterfaceBasedSources(
-            targets.FromRoutedEventHandlersTypes,
+            targets.RoutedEventHandlersTypes,
             ImmutableArray<GenericConstraintTarget>.Empty,
-            input.Compilation, spc, ObservableEventsEntryKind.FromRoutedEventHandlers, input.UseWpf);
+            input.Compilation, spc, ObservableEventsEntryKind.RoutedEventHandlers, input.UseWpf);
 
-        foreach (var target in targets.FromAttachedRoutedEventsTypes)
+        foreach (var target in targets.AttachedRoutedEventsTypes)
         {
-            var source = GenerateAttachedRoutedEventSourceForTarget(target, ObservableEventsEntryKind.FromAttachedRoutedEvent);
+            var source = GenerateAttachedRoutedEventSourceForTarget(target, ObservableEventsEntryKind.AttachedRoutedEvent);
             if (!string.IsNullOrWhiteSpace(source))
             {
-                spc.AddSource($"{target.ReceiverType.GetSafeHintName()}.FromAttachedRoutedEvent.g.cs", SourceText.From(source, Encoding.UTF8));
+                spc.AddSource($"{target.ReceiverType.GetSafeHintName()}.AttachedRoutedEvent.g.cs", SourceText.From(source, Encoding.UTF8));
             }
         }
 
-        foreach (var target in targets.FromAttachedRoutedEventHandlersTypes)
+        foreach (var target in targets.AttachedRoutedEventHandlersTypes)
         {
-            var source = GenerateAttachedRoutedEventSourceForTarget(target, ObservableEventsEntryKind.FromAttachedRoutedEventHandler);
+            var source = GenerateAttachedRoutedEventSourceForTarget(target, ObservableEventsEntryKind.AttachedRoutedEventHandler);
             if (!string.IsNullOrWhiteSpace(source))
             {
-                spc.AddSource($"{target.ReceiverType.GetSafeHintName()}.FromAttachedRoutedEventHandler.g.cs", SourceText.From(source, Encoding.UTF8));
+                spc.AddSource($"{target.ReceiverType.GetSafeHintName()}.AttachedRoutedEventHandler.g.cs", SourceText.From(source, Encoding.UTF8));
             }
         }
     });

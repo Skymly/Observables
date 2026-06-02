@@ -6,7 +6,7 @@ Routed events → `IObservable<T>` (parity with `Observables.RoutedEvents.R3.Sou
 
 ## Entry points
 
-Same as R3: `FromRoutedEvents`, `FromRoutedEventHandlers`, `FromAttachedRoutedEvent`, `FromAttachedRoutedEventHandler`.
+Same as R3: `RoutedEvents`, `RoutedEventHandlers`, `AttachedRoutedEvent`, `AttachedRoutedEventHandler`.
 
 Generated namespace: `Observables.RoutedEvents.Reactive`.
 

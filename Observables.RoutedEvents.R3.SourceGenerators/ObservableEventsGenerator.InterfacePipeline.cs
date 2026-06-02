@@ -71,20 +71,20 @@ private static Dictionary<INamedTypeSymbol, EventInterfaceDescriptor> BuildEvent
 private static string GetEntryKindSourceTag(ObservableEventsEntryKind entryKind) =>
     entryKind switch
     {
-        ObservableEventsEntryKind.FromEvents => "FromEvents",
-        ObservableEventsEntryKind.FromEventHandlers => "FromEventHandlers",
-        ObservableEventsEntryKind.FromRoutedEvents => "FromRoutedEvents",
-        ObservableEventsEntryKind.FromRoutedEventHandlers => "FromRoutedEventHandlers",
+        ObservableEventsEntryKind.Events => "Events",
+        ObservableEventsEntryKind.EventHandlers => "EventHandlers",
+        ObservableEventsEntryKind.RoutedEvents => "RoutedEvents",
+        ObservableEventsEntryKind.RoutedEventHandlers => "RoutedEventHandlers",
         _ => throw new System.ArgumentOutOfRangeException(nameof(entryKind)),
     };
 
 private static string GetInterfaceNameSuffix(ObservableEventsEntryKind entryKind) =>
     entryKind switch
     {
-        ObservableEventsEntryKind.FromEvents => "Events",
-        ObservableEventsEntryKind.FromEventHandlers => "EventHandlers",
-        ObservableEventsEntryKind.FromRoutedEvents => "RoutedEvents",
-        ObservableEventsEntryKind.FromRoutedEventHandlers => "RoutedEventHandlers",
+        ObservableEventsEntryKind.Events => "Events",
+        ObservableEventsEntryKind.EventHandlers => "EventHandlers",
+        ObservableEventsEntryKind.RoutedEvents => "RoutedEvents",
+        ObservableEventsEntryKind.RoutedEventHandlers => "RoutedEventHandlers",
         _ => throw new System.ArgumentOutOfRangeException(nameof(entryKind)),
     };
 
@@ -95,8 +95,8 @@ private static bool IsEventIncludedForEntryKind(
     bool useWpf) =>
     entryKind switch
     {
-        ObservableEventsEntryKind.FromEvents or ObservableEventsEntryKind.FromEventHandlers => true,
-        ObservableEventsEntryKind.FromRoutedEvents or ObservableEventsEntryKind.FromRoutedEventHandlers =>
+        ObservableEventsEntryKind.Events or ObservableEventsEntryKind.EventHandlers => true,
+        ObservableEventsEntryKind.RoutedEvents or ObservableEventsEntryKind.RoutedEventHandlers =>
             IsRoutedClrEvent(evt, compilation, useWpf)
             || TryGetAvaloniaRoutedClrEventField(evt, compilation, out _, out _),
         _ => false,
@@ -234,10 +234,10 @@ private static string GetEventImplName(INamedTypeSymbol type, ObservableEventsEn
 {
     var suffix = entryKind switch
     {
-        ObservableEventsEntryKind.FromEvents => "EventsImpl",
-        ObservableEventsEntryKind.FromEventHandlers => "EventHandlersImpl",
-        ObservableEventsEntryKind.FromRoutedEvents => "RoutedEventsImpl",
-        ObservableEventsEntryKind.FromRoutedEventHandlers => "RoutedEventHandlersImpl",
+        ObservableEventsEntryKind.Events => "EventsImpl",
+        ObservableEventsEntryKind.EventHandlers => "EventHandlersImpl",
+        ObservableEventsEntryKind.RoutedEvents => "RoutedEventsImpl",
+        ObservableEventsEntryKind.RoutedEventHandlers => "RoutedEventHandlersImpl",
         _ => throw new System.ArgumentOutOfRangeException(nameof(entryKind)),
     };
     return $"{type.Name}{suffix}";
@@ -255,7 +255,7 @@ private static TypeSyntax? GetEventInterfacePropertyType(
         || !invoke.ReturnsVoid)
         return null;
 
-    if (entryKind is ObservableEventsEntryKind.FromEvents or ObservableEventsEntryKind.FromRoutedEvents)
+    if (entryKind is ObservableEventsEntryKind.Events or ObservableEventsEntryKind.RoutedEvents)
         return ObservableEventsSyntaxFactory.GetObservableReturnTypeSyntax(invoke.Parameters);
 
     if (IsClassicSystemEventHandler(delegateType, compilation, out var genericEventArgs))
@@ -267,7 +267,7 @@ private static TypeSyntax? GetEventInterfacePropertyType(
     }
 
     if (IsLegacySenderReceiverDelegate(delegateType, invoke, compilation))
-        return ObservableEventsSyntaxFactory.GetFromEventHandlersSenderReceiverReturnTypeSyntax(invoke.Parameters);
+        return ObservableEventsSyntaxFactory.GetEventHandlersSenderReceiverReturnTypeSyntax(invoke.Parameters);
 
     return null;
 }

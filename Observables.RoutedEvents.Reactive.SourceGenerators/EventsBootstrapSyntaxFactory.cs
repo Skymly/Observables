@@ -27,6 +27,25 @@ internal static class EventsBootstrapSyntaxFactory
                 NamespaceDeclaration(BootstrapNamespaceName)
                     .AddMembers(CreateBootstrapExtensionsClass(includeStatics)));
 
+    public static CompilationUnitSyntax CreateEventObservableBridgeCompilationUnit()
+    {
+        const string bridgeClass = """
+            internal static class EventObservable
+            {
+                public static global::System.IObservable<T> Event<TDelegate, T>(
+                    global::System.Func<global::System.Action<T>, TDelegate> conversion,
+                    global::System.Action<TDelegate> addHandler,
+                    global::System.Action<TDelegate> removeHandler)
+                    => global::System.Reactive.Linq.Observable.FromEvent(conversion, addHandler, removeHandler);
+            }
+            """;
+
+        return CompilationUnit()
+            .AddMembers(
+                FileScopedNamespaceDeclaration(BootstrapNamespaceName)
+                    .AddMembers(ParseMemberDeclaration(bridgeClass)!));
+    }
+
     public static CompilationUnitSyntax CreateObservableEventsStaticsShellCompilationUnit() =>
         CompilationUnit()
             .AddMembers(
@@ -39,22 +58,22 @@ internal static class EventsBootstrapSyntaxFactory
     {
         var methods = new List<MemberDeclarationSyntax>
         {
-            CreateNullReturningExtension("FromRoutedEvents"),
+            CreateNullReturningExtension("RoutedEvents"),
             CreateNullReturningExtension(
-                "FromRoutedEvents",
+                "RoutedEvents",
                 Parameter(Identifier("routes")).WithType(ParseTypeName("global::System.Object")),
                 Parameter(Identifier("handledEventsToo"))
                     .WithType(PredefinedType(Token(SyntaxKind.BoolKeyword)))
                     .WithDefault(EqualsValueClause(LiteralExpression(SyntaxKind.FalseLiteralExpression)))),
-            CreateNullReturningExtension("FromRoutedEventHandlers"),
+            CreateNullReturningExtension("RoutedEventHandlers"),
             CreateNullReturningExtension(
-                "FromRoutedEventHandlers",
+                "RoutedEventHandlers",
                 Parameter(Identifier("routes")).WithType(ParseTypeName("global::System.Object")),
                 Parameter(Identifier("handledEventsToo"))
                     .WithType(PredefinedType(Token(SyntaxKind.BoolKeyword)))
                     .WithDefault(EqualsValueClause(LiteralExpression(SyntaxKind.FalseLiteralExpression)))),
             CreateNullReturningExtension(
-                "FromAttachedRoutedEvent",
+                "AttachedRoutedEvent",
                 Parameter(Identifier("routedEvent")).WithType(ParseTypeName("global::System.Object")),
                 Parameter(Identifier("routes"))
                     .WithType(ParseTypeName("global::System.Object"))
@@ -63,7 +82,7 @@ internal static class EventsBootstrapSyntaxFactory
                     .WithType(PredefinedType(Token(SyntaxKind.BoolKeyword)))
                     .WithDefault(EqualsValueClause(LiteralExpression(SyntaxKind.FalseLiteralExpression)))),
             CreateNullReturningExtension(
-                "FromAttachedRoutedEventHandler",
+                "AttachedRoutedEventHandler",
                 Parameter(Identifier("routedEvent")).WithType(ParseTypeName("global::System.Object")),
                 Parameter(Identifier("routes"))
                     .WithType(ParseTypeName("global::System.Object"))

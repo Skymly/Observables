@@ -126,10 +126,10 @@ private static string GenerateEventImplAndExtensionSource(
 
     var methodName = entryKind switch
     {
-        ObservableEventsEntryKind.FromEvents => ObservableEventsConstants.FromEventsEntryMethodName,
-        ObservableEventsEntryKind.FromEventHandlers => ObservableEventsConstants.FromEventHandlersEntryMethodName,
-        ObservableEventsEntryKind.FromRoutedEvents => ObservableEventsConstants.FromRoutedEventsEntryMethodName,
-        ObservableEventsEntryKind.FromRoutedEventHandlers => ObservableEventsConstants.FromRoutedEventHandlersEntryMethodName,
+        ObservableEventsEntryKind.Events => ObservableEventsConstants.EventsEntryMethodName,
+        ObservableEventsEntryKind.EventHandlers => ObservableEventsConstants.EventHandlersEntryMethodName,
+        ObservableEventsEntryKind.RoutedEvents => ObservableEventsConstants.RoutedEventsEntryMethodName,
+        ObservableEventsEntryKind.RoutedEventHandlers => ObservableEventsConstants.RoutedEventHandlersEntryMethodName,
         _ => throw new System.ArgumentOutOfRangeException(nameof(entryKind)),
     };
 
@@ -142,7 +142,7 @@ private static string GenerateEventImplAndExtensionSource(
     }
 
     var useAvaloniaRoutedExtension = HasAvaloniaRoutedClrEvents(type, compilation)
-        && entryKind is ObservableEventsEntryKind.FromRoutedEvents or ObservableEventsEntryKind.FromRoutedEventHandlers;
+        && entryKind is ObservableEventsEntryKind.RoutedEvents or ObservableEventsEntryKind.RoutedEventHandlers;
 
     var extensionMembers = new List<MemberDeclarationSyntax>();
     if (useAvaloniaRoutedExtension)
@@ -214,7 +214,7 @@ private static ClassDeclarationSyntax CreateEventImplClass(
 
     var senderType = SyntaxFactory.ParseTypeName(ObservableEventsConstants.QualifiedType(type));
     var useAvaloniaRoutedImpl = HasAvaloniaRoutedClrEvents(type, compilation)
-        && entryKind is ObservableEventsEntryKind.FromRoutedEvents or ObservableEventsEntryKind.FromRoutedEventHandlers;
+        && entryKind is ObservableEventsEntryKind.RoutedEvents or ObservableEventsEntryKind.RoutedEventHandlers;
 
     var members = new List<MemberDeclarationSyntax>();
     if (useAvaloniaRoutedImpl)
@@ -287,15 +287,15 @@ private static ClassDeclarationSyntax CreateEventImplClass(
     {
         switch (entryKind)
         {
-            case ObservableEventsEntryKind.FromEvents:
-                if (TryCreateEventObservableProperty(evt, accessor, context, out var fromEventsProp, includeXmlDocumentation: false))
-                    members.Add(fromEventsProp);
+            case ObservableEventsEntryKind.Events:
+                if (TryCreateEventObservableProperty(evt, accessor, context, out var eventsProp, includeXmlDocumentation: false))
+                    members.Add(eventsProp);
                 break;
-            case ObservableEventsEntryKind.FromEventHandlers:
-                if (TryCreateEventHandlerObservableProperty(evt, accessor, compilation, context, out var fromHandlersProp, includeXmlDocumentation: false))
-                    members.Add(fromHandlersProp);
+            case ObservableEventsEntryKind.EventHandlers:
+                if (TryCreateEventHandlerObservableProperty(evt, accessor, compilation, context, out var eventHandlersProp, includeXmlDocumentation: false))
+                    members.Add(eventHandlersProp);
                 break;
-            case ObservableEventsEntryKind.FromRoutedEvents:
+            case ObservableEventsEntryKind.RoutedEvents:
                 if (TryGetAvaloniaRoutedClrEventField(evt, compilation, out var routedEventField, out var eventArgsType))
                 {
                     members.Add(
@@ -313,7 +313,7 @@ private static ClassDeclarationSyntax CreateEventImplClass(
                 }
 
                 break;
-            case ObservableEventsEntryKind.FromRoutedEventHandlers:
+            case ObservableEventsEntryKind.RoutedEventHandlers:
                 if (TryGetAvaloniaRoutedClrEventField(evt, compilation, out var routedHandlerField, out var handlerArgsType))
                 {
                     members.Add(

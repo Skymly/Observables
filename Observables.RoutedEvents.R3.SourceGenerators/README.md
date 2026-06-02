@@ -8,10 +8,10 @@ Roslyn source generator for WPF / Avalonia **routed events** → R3 `Observable<
 
 | API | Description |
 |-----|-------------|
-| `FromRoutedEvents()` | Routed CLR events → `Observable<TEventArgs>` (interface + properties) |
-| `FromRoutedEventHandlers()` | Same filter, `Observable<(object? sender, TEventArgs e)>` |
-| `FromAttachedRoutedEvent` | Avalonia attached routed events on a receiver |
-| `FromAttachedRoutedEventHandler` | Attached routed events, handler tuple shape |
+| `RoutedEvents()` | Routed CLR events → `Observable<TEventArgs>` (interface + properties) |
+| `RoutedEventHandlers()` | Same filter, `Observable<(object? sender, TEventArgs e)>` |
+| `AttachedRoutedEvent` | Avalonia attached routed events on a receiver |
+| `AttachedRoutedEventHandler` | Attached routed events, handler tuple shape |
 
 Generated code namespace: `Observables.RoutedEvents.R3` (`internal` interfaces and implementations).
 
@@ -23,7 +23,7 @@ Generated code namespace: `Observables.RoutedEvents.R3` (`internal` interfaces a
 ## Diagnostics
 
 - `OBS4001` — unsupported event delegate for routed observable generation
-- `OBS4002` — unsupported delegate for `FromRoutedEventHandlers`
+- `OBS4002` — unsupported delegate for `RoutedEventHandlers`
 
 ## Tests
 

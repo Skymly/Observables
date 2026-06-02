@@ -14,10 +14,10 @@ internal static class RoutedEventsDiagnosticDescriptors
         defaultSeverity: DiagnosticSeverity.Warning,
         isEnabledByDefault: true);
 
-    public static readonly DiagnosticDescriptor InvalidFromEventHandlersDelegate = new(
+    public static readonly DiagnosticDescriptor InvalidEventHandlersDelegate = new(
         id: "OBS4002",
-        title: "FromRoutedEventHandlers requires EventHandler or legacy object-sender delegate shape",
-        messageFormat: "The event '{0}' is unsupported for FromRoutedEventHandlers (needs System.EventHandler, System.EventHandler<T>, or void delegate with (object, T) parameters).",
+        title: "RoutedEventHandlers requires EventHandler or legacy object-sender delegate shape",
+        messageFormat: "The event '{0}' is unsupported for RoutedEventHandlers (needs System.EventHandler, System.EventHandler<T>, or void delegate with (object, T) parameters).",
         category: Category,
         defaultSeverity: DiagnosticSeverity.Warning,
         isEnabledByDefault: true);

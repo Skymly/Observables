@@ -1,23 +1,13 @@
-<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.Build.Traversal/4.1.82">
 
   <PropertyGroup>
-    <TargetFramework>netstandard2.0</TargetFramework>
     <IsPackable>false</IsPackable>
-    <IncludeBuildOutput>false</IncludeBuildOutput>
-    <DevelopmentDependency>true</DevelopmentDependency>
-    <Description>Packaging placeholder for Observables.RestAPI.R3 and Observables.RestAPI.Reactive NuGet packages (not publishing yet).</Description>
+    <Description>Traversal root for Observables.RestAPI.R3 and Observables.RestAPI.Reactive NuGet packages.</Description>
   </PropertyGroup>
 
-  <!--
-    Future: dual PackageId Observables.RestAPI.R3 / Observables.RestAPI.Reactive
-    bundling runtime, optional Reactive bridge, and matching analyzers.
-  -->
-
   <ItemGroup>
-    <ProjectReference Include="..\Observables.RestAPI\Observables.RestAPI.csproj" />
-    <ProjectReference Include="..\Observables.RestAPI.Reactive\Observables.RestAPI.Reactive.csproj" />
-    <ProjectReference Include="..\Observables.RestAPI.R3.SourceGenerators\Observables.RestAPI.R3.SourceGenerators.csproj" ReferenceOutputAssembly="false" />
-    <ProjectReference Include="..\Observables.RestAPI.Reactive.SourceGenerators\Observables.RestAPI.Reactive.SourceGenerators.csproj" ReferenceOutputAssembly="false" />
+    <ProjectReference Include="Observables.RestAPI.R3.csproj" />
+    <ProjectReference Include="Observables.RestAPI.Reactive.Pack.csproj" />
   </ItemGroup>
 
 </Project>

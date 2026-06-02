@@ -20,7 +20,45 @@
 | **`Observables.<Feature>`** | 域运行时（按需；纯生成域如 Events 可不建） |
 | **`Observables.<Feature>.Reactive`** | System.Reactive 桥接运行时（按需） |
 | **`Observables.<Feature>.R3.SourceGenerators`** / **`.Reactive.SourceGenerators`** | 双路源生成器 |
-| **`Observables.<Feature>.Package`** | 发布时打包，产出上述两个 NuGet 包（尚未发布） |
+| **`Observables.<Feature>.Package`** | 发布时打包，产出上述两个 NuGet 包 |
+
+### 预览版 NuGet（`0.1.0-preview1`）
+
+| 包 ID | 说明 |
+|-------|------|
+| `Observables.Events.R3` | Events 生成器 + R3 依赖（DevelopmentDependency） |
+| `Observables.Events.Reactive` | Events 生成器 + System.Reactive 依赖 |
+| `Observables.RestAPI.R3` | RestAPI 运行时 + R3 生成器 |
+| `Observables.RestAPI.Reactive` | RestAPI + Reactive 桥接 + 生成器 |
+
+```xml
+<PackageReference Include="Observables.Events.R3" Version="0.1.0-preview1" />
+<PackageReference Include="R3" Version="1.3.0" />
+```
+
+从 [GitHub Packages](https://github.com/orgs/Skymly/packages) 安装时，在 `nuget.config` 中增加：
+
+```xml
+<packageSources>
+  <add key="nuget.org" value="https://api.nuget.org/v3/index.json" />
+  <add key="github" value="https://nuget.pkg.github.com/Skymly/index.json" />
+</packageSources>
+<packageSourceCredentials>
+  <github>
+    <add key="Username" value="YOUR_GITHUB_USERNAME" />
+    <add key="ClearTextPassword" value="YOUR_GITHUB_PAT_WITH_PACKAGES_READ" />
+  </github>
+</packageSourceCredentials>
+```
+
+本地打包与校验：
+
+```powershell
+dotnet run --project build/_build.csproj -- --target PackVerify --configuration Release
+# 推送（维护者，需 NUGET_API_KEY / GITHUB_TOKEN）
+$env:VERSION = '0.1.0-preview1'
+dotnet run --project build/_build.csproj -- --target Publish --configuration Release
+```
 
 ## 域实现状态
 

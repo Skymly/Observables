@@ -1,0 +1,29 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <Import Project="..\..\eng\Observables.Package.props" />
+  <Import Project="..\..\eng\PackRoslynAnalyzer.targets" />
+  <Import Project="..\..\eng\PackReferencedProjects.targets" />
+
+  <PropertyGroup>
+    <TargetFrameworks>netstandard2.0;net8.0;net9.0</TargetFrameworks>
+    <IsPackable>true</IsPackable>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <IncludeBuildOutput>false</IncludeBuildOutput>
+    <DevelopmentDependency>false</DevelopmentDependency>
+    <SuppressDependenciesWhenPacking>false</SuppressDependenciesWhenPacking>
+    <PackageId>Observables.RestAPI.Reactive</PackageId>
+    <Description>Declarative type-safe HTTP client for System.Reactive IObservable.</Description>
+    <PackageTags>observables;restapi;system.reactive;http;source-generator</PackageTags>
+    <ObservablesPackGeneratorProject>..\Observables.RestAPI.Reactive.SourceGenerators\Observables.RestAPI.Reactive.SourceGenerators.csproj</ObservablesPackGeneratorProject>
+    <ObservablesPackGeneratorAssemblyName>Observables.RestAPI.Reactive.SourceGenerators.dll</ObservablesPackGeneratorAssemblyName>
+    <ObservablesPackGeneratorOutputDir>$(MSBuildProjectDirectory)\..\Observables.RestAPI.Reactive.SourceGenerators\bin\$(Configuration)\netstandard2.0\</ObservablesPackGeneratorOutputDir>
+    <ObservablesPackPackagePropsFile>$(MSBuildProjectDirectory)\build\Observables.RestAPI.Reactive.props</ObservablesPackPackagePropsFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ObservablesPackLibProjectReference Include="..\Observables.RestAPI\Observables.RestAPI.csproj" />
+    <ObservablesPackLibProjectReference Include="..\Observables.RestAPI.Reactive\Observables.RestAPI.Reactive.csproj" />
+    <PackageReference Include="System.Reactive" Version="6.0.1" />
+  </ItemGroup>
+
+</Project>

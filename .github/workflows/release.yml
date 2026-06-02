@@ -1,0 +1,67 @@
+name: Release
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Package version (e.g. 0.1.0-preview1)
+        required: true
+        default: 0.1.0-preview1
+
+permissions:
+  contents: write
+  packages: write
+
+jobs:
+  release:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET SDKs
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: |
+            8.0.x
+            10.0.x
+
+      - name: Resolve version
+        id: version
+        shell: pwsh
+        run: |
+          $v = '${{ github.event.release.tag_name }}'
+          if ([string]::IsNullOrWhiteSpace($v)) {
+            $v = '${{ inputs.version }}'
+          }
+          if ($v.StartsWith('v')) { $v = $v.Substring(1) }
+          if ([string]::IsNullOrWhiteSpace($v)) { throw 'Version is required' }
+          "value=$v" >> $env:GITHUB_OUTPUT
+
+      - name: Pack and verify
+        shell: pwsh
+        env:
+          VERSION: ${{ steps.version.outputs.value }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          dotnet run --project build/_build.csproj -- --target PackVerify --configuration Release
+
+      - name: Publish to NuGet.org
+        if: env.NUGET_API_KEY != ''
+        shell: pwsh
+        env:
+          NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
+          VERSION: ${{ steps.version.outputs.value }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          dotnet run --project build/_build.csproj -- --target Publish --configuration Release
+
+      - name: Upload release assets
+        if: github.event_name == 'release'
+        uses: softprops/action-gh-release@v2
+        with:
+          files: artifacts/package/*.nupkg

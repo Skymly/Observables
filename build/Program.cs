@@ -1,4 +1,7 @@
 using System;
+using System.Collections.Generic;
+using System.IO;
+using System.IO.Compression;
 using System.Linq;
 
 using Nuke.Common;
@@ -17,10 +20,13 @@ sealed class Build : NukeBuild
     [Parameter("Package version override")]
     readonly string? Version = Environment.GetEnvironmentVariable("VERSION");
 
-    [Parameter("NuGet API key (required for Publish target)")]
+    [Parameter("NuGet API key (required for nuget.org Publish)")]
     readonly string? NuGetApiKey =
         Environment.GetEnvironmentVariable("NUGET_API_KEY")
         ?? Environment.GetEnvironmentVariable("APIKEY");
+
+    [Parameter("GitHub token with packages:write (required for GitHub Packages Publish)")]
+    readonly string? GitHubToken = Environment.GetEnvironmentVariable("GITHUB_TOKEN");
 
     AbsolutePath Root => RootDirectory;
     AbsolutePath SolutionFile => Root / "Observables.slnx";
@@ -42,8 +48,18 @@ sealed class Build : NukeBuild
 
     static readonly string[] PackProjectRelativePaths =
     [
-        "Observables.Events/Observables.Events.Package/Observables.Events.Package.csproj",
-        "Observables.RestAPI/Observables.RestAPI.Package/Observables.RestAPI.Package.csproj",
+        "Observables.Events/Observables.Events.Package/Observables.Events.R3.csproj",
+        "Observables.Events/Observables.Events.Package/Observables.Events.Reactive.csproj",
+        "Observables.RestAPI/Observables.RestAPI.Package/Observables.RestAPI.R3.csproj",
+        "Observables.RestAPI/Observables.RestAPI.Package/Observables.RestAPI.Reactive.Pack.csproj",
+    ];
+
+    static readonly string[] ExpectedPackageIds =
+    [
+        "Observables.Events.R3",
+        "Observables.Events.Reactive",
+        "Observables.RestAPI.R3",
+        "Observables.RestAPI.Reactive",
     ];
 
     public static int Main() => Execute<Build>(x => x.Ci);
@@ -97,7 +113,7 @@ sealed class Build : NukeBuild
         });
 
     Target Pack => _ => _
-        .DependsOn(Compile)
+        .DependsOn(UnitTest)
         .Executes(() =>
         {
             PackageOutputDirectory.CreateOrCleanDirectory();
@@ -107,7 +123,7 @@ sealed class Build : NukeBuild
                 AbsolutePath projectFile = Root / relativePath;
                 if (!projectFile.FileExists())
                 {
-                    continue;
+                    throw new InvalidOperationException($"Pack project not found: {projectFile}");
                 }
 
                 DotNetPack(s =>
@@ -115,7 +131,6 @@ sealed class Build : NukeBuild
                     s = s
                         .SetProject(projectFile)
                         .SetConfiguration(Configuration)
-                        .EnableNoBuild()
                         .SetProperty("PackageOutputPath", PackageOutputDirectory)
                         .SetProperty("ContinuousIntegrationBuild", "true");
 
@@ -129,18 +144,71 @@ sealed class Build : NukeBuild
             }
         });
 
-    Target Publish => _ => _
+    Target PackVerify => _ => _
         .DependsOn(Pack)
-        .Requires(() => !string.IsNullOrWhiteSpace(NuGetApiKey))
         .Executes(() =>
         {
-            DotNetNuGetPush(s => s
-                .SetTargetPath(PackageOutputDirectory / "*.nupkg")
-                .SetApiKey(NuGetApiKey)
-                .SetSource("https://api.nuget.org/v3/index.json")
-                .EnableSkipDuplicate());
+            string versionSuffix = string.IsNullOrWhiteSpace(Version) ? "0.1.0-preview1" : Version;
+
+            foreach (string packageId in ExpectedPackageIds)
+            {
+                AbsolutePath nupkg = PackageOutputDirectory / $"{packageId}.{versionSuffix}.nupkg";
+                Assert.FileExists(nupkg, $"Expected package: {nupkg}");
+
+                using ZipArchive archive = ZipFile.OpenRead(nupkg);
+                HashSet<string> entries = archive.Entries
+                    .Select(e => e.FullName.Replace('\\', '/'))
+                    .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+                bool hasAnalyzer = entries.Any(e => e.StartsWith("analyzers/dotnet/roslyn4.12/cs/", StringComparison.OrdinalIgnoreCase)
+                    && e.EndsWith(".dll", StringComparison.OrdinalIgnoreCase));
+                Assert.True(hasAnalyzer, $"{packageId}: missing analyzer DLL under analyzers/dotnet/roslyn4.12/cs/");
+
+                if (packageId.StartsWith("Observables.Events.", StringComparison.Ordinal))
+                {
+                    Assert.True(
+                        entries.Contains("buildTransitive/observables.events.props"),
+                        $"{packageId}: missing buildTransitive/observables.events.props");
+                }
+
+                if (packageId.StartsWith("Observables.RestAPI.", StringComparison.Ordinal))
+                {
+                    bool hasLib = entries.Any(e => e.StartsWith("lib/", StringComparison.OrdinalIgnoreCase)
+                        && e.EndsWith(".dll", StringComparison.OrdinalIgnoreCase));
+                    Assert.True(hasLib, $"{packageId}: missing runtime assemblies under lib/");
+                }
+            }
+        });
+
+    Target Publish => _ => _
+        .DependsOn(PackVerify)
+        .Requires(() => !string.IsNullOrWhiteSpace(NuGetApiKey) || !string.IsNullOrWhiteSpace(GitHubToken))
+        .Executes(() =>
+        {
+            AbsolutePath packages = PackageOutputDirectory / "*.nupkg";
+
+            if (!string.IsNullOrWhiteSpace(NuGetApiKey))
+            {
+                DotNetNuGetPush(s => s
+                    .SetTargetPath(packages)
+                    .SetApiKey(NuGetApiKey)
+                    .SetSource("https://api.nuget.org/v3/index.json")
+                    .EnableSkipDuplicate());
+            }
+
+            if (!string.IsNullOrWhiteSpace(GitHubToken))
+            {
+                DotNetNuGetPush(s => s
+                    .SetTargetPath(packages)
+                    .SetApiKey(GitHubToken)
+                    .SetSource("https://nuget.pkg.github.com/Skymly/index.json")
+                    .EnableSkipDuplicate());
+            }
         });
 
     Target Ci => _ => _
         .DependsOn(UnitTest);
+
+    Target CiPack => _ => _
+        .DependsOn(PackVerify);
 }

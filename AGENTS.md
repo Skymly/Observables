@@ -4,7 +4,7 @@
 
 - **类型**：个人项目（Skymly 工作区）
 - **远端**：https://github.com/Skymly/Observables（私有）；`origin/main` 已与本地 `main` 同步；文件夹名 `Observables` = 仓库名
-- **阶段**：**Events**（经典 + 路由事件，R3/Reactive 生成器）、**RestAPI** 已实现；**NuGet 发布**尚未进行
+- **阶段**：**Events**、**RestAPI** 已实现；**NuGet 预览包** `0.1.0-preview1`（4 包）已配置，推送须维护者批准
 - **结构约定**：下文「仓库结构」与命名约定为权威
 
 ## 目标
@@ -33,7 +33,7 @@
 | **`Observables.<Feature>.SourceGenerators.Shared`** | 双生成器时 | 本域共享生成器逻辑（`.projitems`），由 R3 与 Reactive 两路生成器 Import。 |
 | **`Observables.<Feature>.R3.SourceGenerators`** | 是 | R3 源生成器（`IsRoslynComponent`）。 |
 | **`Observables.<Feature>.Reactive.SourceGenerators`** | 是 | System.Reactive 源生成器。 |
-| **`Observables.<Feature>.Package`** | 发布时 | **打包项目（每 Feature 一个）**：产出 **`Observables.<Feature>.R3`** 与 **`Observables.<Feature>.Reactive`** 两个 NuGet 包（Events、RestAPI 占位已建，其余域待补）。 |
+| **`Observables.<Feature>.Package`** | 发布时 | **Traversal 根** + 两个可 pack 子项目（`Observables.<Feature>.R3.csproj` 等），产出 **`Observables.<Feature>.R3`** 与 **`Observables.<Feature>.Reactive`**。Events、RestAPI 已实现；其余域待补。 |
 
 可选扩展（**不**算第三个消费者主包）：如 `Observables.RestAPI.HttpClientFactory`，依赖域运行时，不捆绑生成器。
 
@@ -163,11 +163,13 @@ dotnet run --project build/_build.csproj -- --target Ci --configuration Release
 
 | Nuke 目标 | 说明 |
 |-----------|------|
-| **Ci** | `Clean` → `Restore` → `Compile` → **UnitTest**（显式跑全部测试项目） |
-| **Pack** | 打包 `*.Package`（若项目存在且可 pack） |
-| **Publish** | 推送 `artifacts/package`（需 `NUGET_API_KEY`） |
+| **Ci** | `Clean` → `Restore` → `Compile` → **UnitTest** |
+| **Pack** | 打包 4 个 pack 子项目 → `artifacts/package/`（依赖 **UnitTest**） |
+| **PackVerify** | 断言 nupkg 含 analyzer、Events `observables.events.props`、RestAPI `lib/` |
+| **CiPack** | CI 用：`Pack` + `PackVerify` |
+| **Publish** | 推送到 nuget.org（`NUGET_API_KEY`）与 GitHub Packages（`GITHUB_TOKEN`，`packages:write`） |
 
-CI：`.github/workflows/ci.yml` 调用 Nuke **Ci**（`windows-latest`，.NET 8 + 10）。
+CI：`.github/workflows/ci.yml` — **build-test**（Ci）、**pack**（CiPack）。发版：`.github/workflows/release.yml`（`workflow_dispatch` 或 GitHub Release）。
 
 ## 工作约定
 

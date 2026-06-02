@@ -59,3 +59,37 @@ jobs:
           name: test-results
           path: TestResults/
           if-no-files-found: warn
+
+  pack:
+    runs-on: windows-latest
+    needs: build-test
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET SDKs
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: |
+            8.0.x
+            10.0.x
+
+      - name: Cache NuGet packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj', '**/global.json') }}
+          restore-keys: |
+            ${{ runner.os }}-nuget-
+
+      - name: Pack and verify via Nuke
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          dotnet run --project build/_build.csproj -- --target CiPack --configuration Release
+
+      - name: Upload packages
+        uses: actions/upload-artifact@v4
+        with:
+          name: nuget-packages
+          path: artifacts/package/*.nupkg
+          if-no-files-found: error

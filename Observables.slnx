@@ -1,69 +1,61 @@
-<Solution>
-  <Folder Name="/Solution Items/">
-    <File Path="AGENTS.md" />
-    <File Path="README.md" />
-    <File Path="Directory.Build.props" />
-    <File Path="global.json" />
-    <File Path="Observables.SourceGenerators.props" />
-    <File Path="Observables.SourceGenerators.R3.props" />
-    <Project Path="build/_build.csproj" />
-  </Folder>
-
-  <Folder Name="/Shared/">
-    <Project Path="Observables.Core/Observables.Core.csproj" />
-    <Project Path="Observables.SourceGenerators.Shared/Observables.SourceGenerators.Shared.csproj" />
-  </Folder>
-
-  <Folder Name="/Events/">
-    <Project Path="Observables.Events.Package/Observables.Events.Package.csproj" />
-    <Project Path="Observables.Events.Reactive.SourceGenerators/Observables.Events.Reactive.SourceGenerators.csproj" />
-    <Project Path="Observables.Events.Reactive.SourceGenerators.Tests/Observables.Events.Reactive.SourceGenerators.Tests.csproj" />
-    <Project Path="Observables.Events.R3.SourceGenerators/Observables.Events.R3.SourceGenerators.csproj" />
-    <Project Path="Observables.Events.R3.SourceGenerators.Tests/Observables.Events.R3.SourceGenerators.Tests.csproj" />
-  </Folder>
-
-  <Folder Name="/RoutedEvents/">
-    <Project Path="Observables.RoutedEvents/Observables.RoutedEvents.csproj" />
-    <Project Path="Observables.RoutedEvents.R3.SourceGenerators/Observables.RoutedEvents.R3.SourceGenerators.csproj" />
-    <Project Path="Observables.RoutedEvents.R3.SourceGenerators.Tests/Observables.RoutedEvents.R3.SourceGenerators.Tests.csproj" />
-    <Project Path="Observables.RoutedEvents.Reactive.SourceGenerators/Observables.RoutedEvents.Reactive.SourceGenerators.csproj" />
-    <Project Path="Observables.RoutedEvents.Reactive.SourceGenerators.Tests/Observables.RoutedEvents.Reactive.SourceGenerators.Tests.csproj" />
-    <Project Path="Observables.RoutedEvents.Package/Observables.RoutedEvents.Package.csproj" />
-  </Folder>
-
-  <Folder Name="/RestAPI/">
-    <Project Path="Observables.RestAPI.SourceGenerators.Shared/Observables.RestAPI.SourceGenerators.Shared.shproj" Id="a8f3c2e1-9b4d-4f6a-8c7e-2d1b0e9f4a3c" />
-    <Project Path="Observables.RestAPI.Package/Observables.RestAPI.Package.csproj" />
-    <Project Path="Observables.RestAPI/Observables.RestAPI.csproj" />
-    <Project Path="Observables.RestAPI.Reactive/Observables.RestAPI.Reactive.csproj" />
-    <Project Path="Observables.RestAPI.HttpClientFactory/Observables.RestAPI.HttpClientFactory.csproj" />
-    <Project Path="Observables.RestAPI.Reactive.SourceGenerators/Observables.RestAPI.Reactive.SourceGenerators.csproj" />
-    <Project Path="Observables.RestAPI.R3.SourceGenerators/Observables.RestAPI.R3.SourceGenerators.csproj" />
-    <Folder Name="/Tests/">
-      <Project Path="Observables.RestAPI.Tests/Observables.RestAPI.Tests.csproj" />
-      <Project Path="Observables.RestAPI.GeneratorTests/Observables.RestAPI.GeneratorTests.csproj" />
-      <Project Path="Observables.RestAPI.Reactive.Tests/Observables.RestAPI.Reactive.Tests.csproj" />
-      <Project Path="Observables.RestAPI.HttpClientFactory.Tests/Observables.RestAPI.HttpClientFactory.Tests.csproj" />
-    </Folder>
-  </Folder>
-
-  <Folder Name="/SignalR/">
-    <Project Path="Observables.SignalR/Observables.SignalR.csproj" />
-    <Project Path="Observables.SignalR.R3/Observables.SignalR.R3.csproj" />
-  </Folder>
-
-  <Folder Name="/WebSocket/">
-    <Project Path="Observables.WebSocket/Observables.WebSocket.csproj" />
-    <Project Path="Observables.WebSocket.R3/Observables.WebSocket.R3.csproj" />
-  </Folder>
-
-  <Folder Name="/Mqtt/">
-    <Project Path="Observables.Mqtt/Observables.Mqtt.csproj" />
-    <Project Path="Observables.Mqtt.R3/Observables.Mqtt.R3.csproj" />
-  </Folder>
-
-  <Folder Name="/Grpc/">
-    <Project Path="Observables.Grpc/Observables.Grpc.csproj" />
-    <Project Path="Observables.Grpc.R3/Observables.Grpc.R3.csproj" />
-  </Folder>
-</Solution>
+<Solution>
+  <Folder Name="/Solution Items/">
+    <File Path="AGENTS.md" />
+    <File Path="README.md" />
+    <File Path="Directory.Build.props" />
+    <File Path="global.json" />
+    <File Path="Observables.SourceGenerators.props" />
+    <File Path="Observables.SourceGenerators.R3.props" />
+    <Project Path="build/_build.csproj" />
+  </Folder>
+
+  <Folder Name="/Shared/">
+    <Project Path="Observables.Core/Observables.Core.csproj" />
+    <Project Path="Observables.SourceGenerators.Shared/Observables.SourceGenerators.Shared.csproj" />
+  </Folder>
+
+  <Folder Name="/Events/">
+    <Project Path="Observables.Events/Observables.Events.csproj" />
+    <Project Path="Observables.Events.Package/Observables.Events.Package.csproj" />
+    <Project Path="Observables.Events.Reactive.SourceGenerators/Observables.Events.Reactive.SourceGenerators.csproj" />
+    <Project Path="Observables.Events.Reactive.SourceGenerators.Tests/Observables.Events.Reactive.SourceGenerators.Tests.csproj" />
+    <Project Path="Observables.Events.R3.SourceGenerators/Observables.Events.R3.SourceGenerators.csproj" />
+    <Project Path="Observables.Events.R3.SourceGenerators.Tests/Observables.Events.R3.SourceGenerators.Tests.csproj" />
+  </Folder>
+
+  <Folder Name="/RestAPI/">
+    <Project Path="Observables.RestAPI.SourceGenerators.Shared/Observables.RestAPI.SourceGenerators.Shared.shproj" Id="a8f3c2e1-9b4d-4f6a-8c7e-2d1b0e9f4a3c" />
+    <Project Path="Observables.RestAPI.Package/Observables.RestAPI.Package.csproj" />
+    <Project Path="Observables.RestAPI/Observables.RestAPI.csproj" />
+    <Project Path="Observables.RestAPI.Reactive/Observables.RestAPI.Reactive.csproj" />
+    <Project Path="Observables.RestAPI.HttpClientFactory/Observables.RestAPI.HttpClientFactory.csproj" />
+    <Project Path="Observables.RestAPI.Reactive.SourceGenerators/Observables.RestAPI.Reactive.SourceGenerators.csproj" />
+    <Project Path="Observables.RestAPI.R3.SourceGenerators/Observables.RestAPI.R3.SourceGenerators.csproj" />
+    <Folder Name="/Tests/">
+      <Project Path="Observables.RestAPI.Tests/Observables.RestAPI.Tests.csproj" />
+      <Project Path="Observables.RestAPI.GeneratorTests/Observables.RestAPI.GeneratorTests.csproj" />
+      <Project Path="Observables.RestAPI.Reactive.Tests/Observables.RestAPI.Reactive.Tests.csproj" />
+      <Project Path="Observables.RestAPI.HttpClientFactory.Tests/Observables.RestAPI.HttpClientFactory.Tests.csproj" />
+    </Folder>
+  </Folder>
+
+  <Folder Name="/SignalR/">
+    <Project Path="Observables.SignalR/Observables.SignalR.csproj" />
+    <Project Path="Observables.SignalR.R3/Observables.SignalR.R3.csproj" />
+  </Folder>
+
+  <Folder Name="/WebSocket/">
+    <Project Path="Observables.WebSocket/Observables.WebSocket.csproj" />
+    <Project Path="Observables.WebSocket.R3/Observables.WebSocket.R3.csproj" />
+  </Folder>
+
+  <Folder Name="/Mqtt/">
+    <Project Path="Observables.Mqtt/Observables.Mqtt.csproj" />
+    <Project Path="Observables.Mqtt.R3/Observables.Mqtt.R3.csproj" />
+  </Folder>
+
+  <Folder Name="/Grpc/">
+    <Project Path="Observables.Grpc/Observables.Grpc.csproj" />
+    <Project Path="Observables.Grpc.R3/Observables.Grpc.R3.csproj" />
+  </Folder>
+</Solution>

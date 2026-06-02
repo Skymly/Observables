@@ -3,10 +3,11 @@ using System.Collections.Immutable;
 using System.Linq;
 using System.Text;
 using Microsoft.CodeAnalysis;
+using Observables.SourceGenerators.Shared;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Text;
-using Observables.SourceGenerators.Shared;
+using Observables.SourceGenerators.Shared.Diagnostics;
 using Observables.SourceGenerators.Shared.Extensions;
 
 namespace Observables.Events.R3.SourceGenerators;
@@ -36,7 +37,7 @@ private static string GenerateGenericConstraintEventSource(
     SourceProductionContext context,
     ObservableEventsEntryKind entryKind)
 {
-    var suffix = entryKind == ObservableEventsEntryKind.FromEvents ? "Events" : "EventHandlers";
+    var suffix = entryKind == ObservableEventsEntryKind.Events ? "Events" : "EventHandlers";
     var constraintParts = target.ConstraintTypes.Select(static t =>
     {
         var n = t.Name;
@@ -70,9 +71,9 @@ private static string GenerateGenericConstraintEventSource(
 
     members.Add(combinedIface);
 
-    var methodName = entryKind == ObservableEventsEntryKind.FromEvents
-        ? ObservableEventsConstants.FromEventsEntryMethodName
-        : ObservableEventsConstants.FromEventHandlersEntryMethodName;
+    var methodName = entryKind == ObservableEventsEntryKind.Events
+        ? ObservableEventsConstants.EventsEntryMethodName
+        : ObservableEventsConstants.EventHandlersEntryMethodName;
     var extensionMethod = ObservableEventsSyntaxFactory.CreateFromSenderExtensionMethod(
         methodName,
         SyntaxFactory.ParseTypeName(combinedIfaceName),
@@ -132,12 +133,12 @@ private static ClassDeclarationSyntax CreateGenericConstraintImplClass(
         var accessor = ObservableEventsSyntaxFactory.CastSenderMemberAccess(
             SyntaxFactory.ParseTypeName(ObservableEventsConstants.QualifiedType(evt.ContainingType)),
             evt.Name);
-        if (entryKind == ObservableEventsEntryKind.FromEvents)
+        if (entryKind == ObservableEventsEntryKind.Events)
         {
-            if (TryCreateEventObservableProperty(evt, accessor, context, out var prop, includeXmlDocumentation: false))
+            if (TryCreateEventObservableProperty(evt, accessor, context, entryKind, out var prop, includeXmlDocumentation: false))
                 memberList.Add(prop);
         }
-        else if (TryCreateEventHandlerObservableProperty(evt, accessor, compilation, context, out var prop, includeXmlDocumentation: false))
+        else if (TryCreateEventHandlerObservableProperty(evt, accessor, compilation, context, entryKind, out var prop, includeXmlDocumentation: false))
         {
             memberList.Add(prop);
         }

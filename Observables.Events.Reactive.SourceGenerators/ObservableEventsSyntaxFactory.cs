@@ -378,4 +378,166 @@ internal static class ObservableEventsSyntaxFactory
             EventSubscriptionAdd(eventAccessor),
             EventSubscriptionRemove(eventAccessor));
     }
+
+    public static SeparatedSyntaxList<ArgumentSyntax> AvaloniaRoutedImplConstructorArguments()
+    {
+        var routingStrategies = ParseName("global::Avalonia.Interactivity.RoutingStrategies");
+        var routesDefault = BinaryExpression(
+            SyntaxKind.BitwiseOrExpression,
+            MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression, routingStrategies, IdentifierName("Direct")),
+            MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression, routingStrategies, IdentifierName("Bubble")));
+
+        return SeparatedList(
+        [
+            Argument(IdentifierName("source")),
+            Argument(routesDefault),
+            Argument(LiteralExpression(SyntaxKind.FalseLiteralExpression, Token(SyntaxKind.FalseKeyword))),
+        ]);
+    }
+
+    public static MethodDeclarationSyntax CreateAvaloniaRoutedExtensionMethod(
+        string methodName,
+        TypeSyntax returnType,
+        TypeSyntax receiverType,
+        TypeSyntax implementationType)
+    {
+        return MethodDeclaration(returnType, Identifier(methodName))
+            .AddModifiers(Token(SyntaxKind.PublicKeyword), Token(SyntaxKind.StaticKeyword))
+            .AddParameterListParameters(
+                Parameter(Identifier("source"))
+                    .WithType(receiverType)
+                    .AddModifiers(Token(SyntaxKind.ThisKeyword)),
+                Parameter(Identifier("routes"))
+                    .WithType(ParseTypeName("global::Avalonia.Interactivity.RoutingStrategies")),
+                Parameter(Identifier("handledEventsToo"))
+                    .WithType(PredefinedType(Token(SyntaxKind.BoolKeyword)))
+                    .WithDefault(
+                        EqualsValueClause(LiteralExpression(SyntaxKind.FalseLiteralExpression, Token(SyntaxKind.FalseKeyword)))))
+            .WithExpressionBody(
+                ArrowExpressionClause(
+                    ObjectCreationExpression(implementationType)
+                        .WithArgumentList(
+                            ArgumentList(
+                                SeparatedList(
+                                [
+                                    Argument(IdentifierName("source")),
+                                    Argument(IdentifierName("routes")),
+                                    Argument(IdentifierName("handledEventsToo")),
+                                ])))))
+            .WithSemicolonToken(Token(SyntaxKind.SemicolonToken));
+    }
+
+    public static MethodDeclarationSyntax CreateAttachedRoutedEventMethod(
+        string methodName,
+        TypeSyntax returnType,
+        TypeSyntax receiverType,
+        ExpressionSyntax bodyExpression)
+    {
+        var routedEventType = ParseTypeName("global::Avalonia.Interactivity.RoutedEvent<TEventArgs>");
+        var routesType = ParseTypeName("global::Avalonia.Interactivity.RoutingStrategies");
+        var routingStrategies = ParseName("global::Avalonia.Interactivity.RoutingStrategies");
+        var routesDefault = BinaryExpression(
+            SyntaxKind.BitwiseOrExpression,
+            MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression, routingStrategies, IdentifierName("Direct")),
+            MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression, routingStrategies, IdentifierName("Bubble")));
+
+        return MethodDeclaration(returnType, Identifier(methodName))
+            .AddModifiers(Token(SyntaxKind.PublicKeyword), Token(SyntaxKind.StaticKeyword))
+            .WithTypeParameterList(TypeParameterList(SingletonSeparatedList(TypeParameter("TEventArgs"))))
+            .WithConstraintClauses(
+                SingletonList(
+                    TypeParameterConstraintClause("TEventArgs")
+                        .WithConstraints(
+                            SingletonSeparatedList<TypeParameterConstraintSyntax>(
+                                TypeConstraint(ParseTypeName("global::Avalonia.Interactivity.RoutedEventArgs"))))))
+            .AddParameterListParameters(
+                Parameter(Identifier("source"))
+                    .WithType(receiverType)
+                    .AddModifiers(Token(SyntaxKind.ThisKeyword)),
+                Parameter(Identifier("routedEvent"))
+                    .WithType(routedEventType),
+                Parameter(Identifier("routes"))
+                    .WithType(routesType)
+                    .WithDefault(EqualsValueClause(routesDefault)),
+                Parameter(Identifier("handledEventsToo"))
+                    .WithType(PredefinedType(Token(SyntaxKind.BoolKeyword)))
+                    .WithDefault(
+                        EqualsValueClause(LiteralExpression(SyntaxKind.FalseLiteralExpression, Token(SyntaxKind.FalseKeyword)))))
+            .WithExpressionBody(ArrowExpressionClause(bodyExpression))
+            .WithSemicolonToken(Token(SyntaxKind.SemicolonToken));
+    }
+
+    public static PropertyDeclarationSyntax CreateAvaloniaRoutedEventProperty(
+        IEventSymbol evt,
+        IFieldSymbol routedEventField,
+        INamedTypeSymbol eventArgsType,
+        bool useEventHandlers,
+        SyntaxTriviaList? documentation = null)
+    {
+        var eventArgs = ParseTypeName(ObservableEventsConstants.QualifiedType(eventArgsType));
+        var eventFieldAccess = MemberAccessExpression(
+            SyntaxKind.SimpleMemberAccessExpression,
+            ParseName(ObservableEventsConstants.QualifiedType(routedEventField.ContainingType)),
+            IdentifierName(routedEventField.Name));
+
+        var addHandler = InvocationExpression(
+            MemberAccessExpression(
+                SyntaxKind.SimpleMemberAccessExpression,
+                IdentifierName("_sender"),
+                GenericName(Identifier("AddHandler"))
+                    .WithTypeArgumentList(TypeArgumentList(SingletonSeparatedList(eventArgs)))),
+            ArgumentList(
+                SeparatedList(
+                [
+                    Argument(eventFieldAccess),
+                    Argument(IdentifierName("h")),
+                    Argument(IdentifierName("_routes")),
+                    Argument(IdentifierName("_handledEventsToo")),
+                ])));
+
+        var removeHandler = InvocationExpression(
+            MemberAccessExpression(
+                SyntaxKind.SimpleMemberAccessExpression,
+                IdentifierName("_sender"),
+                GenericName(Identifier("RemoveHandler"))
+                    .WithTypeArgumentList(TypeArgumentList(SingletonSeparatedList(eventArgs)))),
+            ArgumentList(
+                SeparatedList(
+                [
+                    Argument(eventFieldAccess),
+                    Argument(IdentifierName("h")),
+                ])));
+
+        var subscribeHandler = HandlerSubscriptionLambda(addHandler);
+        var unsubscribeHandler = HandlerSubscriptionLambda(removeHandler);
+        ExpressionSyntax body;
+        TypeSyntax returnType;
+        if (useEventHandlers)
+        {
+            returnType = ObservableSenderArgsTupleType(eventArgs);
+            body = ObservableFromEventHandlerInvocation(eventArgs, subscribeHandler, unsubscribeHandler);
+        }
+        else
+        {
+            returnType = IoObservableType(eventArgs);
+            body = ObservableFromEventInvocation(
+                SystemEventHandlerType(eventArgs),
+                eventArgs,
+                FromEventHandlerFactorySenderAndArgs(),
+                subscribeHandler,
+                unsubscribeHandler);
+        }
+
+        var property = PropertyDeclaration(returnType, Identifier(evt.Name))
+            .AddModifiers(Token(SyntaxKind.PublicKeyword))
+            .WithExpressionBody(ArrowExpressionClause(body))
+            .WithSemicolonToken(Token(SyntaxKind.SemicolonToken));
+
+        if (documentation is { Count: > 0 })
+        {
+            property = property.WithLeadingTrivia(documentation.Value);
+        }
+
+        return property;
+    }
 }

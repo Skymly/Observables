@@ -34,8 +34,6 @@ sealed class Build : NukeBuild
     [
         "Observables.Events.R3.SourceGenerators.Tests/Observables.Events.R3.SourceGenerators.Tests.csproj",
         "Observables.Events.Reactive.SourceGenerators.Tests/Observables.Events.Reactive.SourceGenerators.Tests.csproj",
-        "Observables.RoutedEvents.R3.SourceGenerators.Tests/Observables.RoutedEvents.R3.SourceGenerators.Tests.csproj",
-        "Observables.RoutedEvents.Reactive.SourceGenerators.Tests/Observables.RoutedEvents.Reactive.SourceGenerators.Tests.csproj",
         "Observables.RestAPI.Tests/Observables.RestAPI.Tests.csproj",
         "Observables.RestAPI.Reactive.Tests/Observables.RestAPI.Reactive.Tests.csproj",
         "Observables.RestAPI.GeneratorTests/Observables.RestAPI.GeneratorTests.csproj",
@@ -46,7 +44,6 @@ sealed class Build : NukeBuild
     [
         "Observables.Events.Package/Observables.Events.Package.csproj",
         "Observables.RestAPI.Package/Observables.RestAPI.Package.csproj",
-        "Observables.RoutedEvents.Package/Observables.RoutedEvents.Package.csproj",
     ];
 
     public static int Main() => Execute<Build>(x => x.Ci);

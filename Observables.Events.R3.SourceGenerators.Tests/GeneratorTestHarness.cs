@@ -4,8 +4,10 @@ using System.Collections.Immutable;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.Text;
 using Observables.Events.R3.SourceGenerators;
 
 namespace Observables.Events.R3.SourceGenerators.Tests;
@@ -29,7 +31,7 @@ internal static class GeneratorTestHarness
     {
         string source = BuildHarnessDocument(userSource);
         CSharpParseOptions parseOptions = CSharpParseOptions.Default.WithLanguageVersion(languageVersion);
-        SyntaxTree syntaxTree = CSharpSyntaxTree.ParseText(source, parseOptions);
+        SyntaxTree syntaxTree = CSharpSyntaxTree.ParseText(source, parseOptions, path: "/0/Test0.cs");
 
         CSharpCompilation compilation = CSharpCompilation.Create(
             assemblyName: "GeneratorTests",
@@ -43,7 +45,9 @@ internal static class GeneratorTestHarness
     public static GeneratorRunOutput Run(
         string userSource,
         LanguageVersion languageVersion = LanguageVersion.Preview,
-        IIncrementalGenerator[]? generators = null)
+        IIncrementalGenerator[]? generators = null,
+        bool useWpf = false,
+        bool observableRoutedEvents = false)
     {
         (CSharpCompilation compilation, _) =
             CreateHarnessCompilation(userSource, languageVersion);
@@ -144,6 +148,7 @@ internal static class GeneratorTestHarness
 
         return platform.Append(MetadataReference.CreateFromFile(r3));
     }
+
 }
 
 internal sealed record GeneratorRunOutput(

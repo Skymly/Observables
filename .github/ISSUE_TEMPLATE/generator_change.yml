@@ -16,7 +16,6 @@ body:
       options:
         - Shared (Observables.SourceGenerators.Shared)
         - Events
-        - RoutedEvents
         - RestAPI
         - SignalR
         - WebSocket

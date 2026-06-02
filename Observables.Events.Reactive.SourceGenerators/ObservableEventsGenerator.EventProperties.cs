@@ -17,19 +17,20 @@ private static bool TryCreateEventObservableProperty(
     IEventSymbol evt,
     ExpressionSyntax eventAccessorExpression,
     SourceProductionContext context,
+    ObservableEventsEntryKind entryKind,
     out PropertyDeclarationSyntax property,
     bool includeXmlDocumentation = true)
 {
     property = null!;
     if (evt.Type is not INamedTypeSymbol delegateType || delegateType.DelegateInvokeMethod is not IMethodSymbol invoke)
     {
-        ReportInvalidDelegate(evt, context);
+        ReportInvalidDelegate(evt, context, entryKind);
         return false;
     }
 
     if (!invoke.ReturnsVoid)
     {
-        ReportInvalidDelegate(evt, context);
+        ReportInvalidDelegate(evt, context, entryKind);
         return false;
     }
 
@@ -56,19 +57,20 @@ private static bool TryCreateEventHandlerObservableProperty(
     ExpressionSyntax eventAccessorExpression,
     Compilation compilation,
     SourceProductionContext context,
+    ObservableEventsEntryKind entryKind,
     out PropertyDeclarationSyntax property,
     bool includeXmlDocumentation = true)
 {
     property = null!;
     if (evt.Type is not INamedTypeSymbol delegateType || delegateType.DelegateInvokeMethod is not IMethodSymbol invoke)
     {
-        ReportInvalidFromEventHandlersDelegate(evt, context);
+        ReportInvalidEventHandlersDelegate(evt, context, entryKind);
         return false;
     }
 
     if (!invoke.ReturnsVoid)
     {
-        ReportInvalidFromEventHandlersDelegate(evt, context);
+        ReportInvalidEventHandlersDelegate(evt, context, entryKind);
         return false;
     }
 
@@ -98,7 +100,7 @@ private static bool TryCreateEventHandlerObservableProperty(
     }
     else
     {
-        ReportInvalidFromEventHandlersDelegate(evt, context);
+        ReportInvalidEventHandlersDelegate(evt, context, entryKind);
         return false;
     }
 

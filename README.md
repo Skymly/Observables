@@ -26,10 +26,11 @@
 
 | 顺序 | 域 | R3 | System.Reactive |
 |------|-----|-----|-----------------|
-| 1 | **Events**（经典 .NET 事件） | `Events.R3.SourceGenerators`（已实现） | `Events.Reactive.SourceGenerators`（已实现） |
-| 2 | **RoutedEvents**（路由事件） | `RoutedEvents.R3.SourceGenerators`（已实现） | `RoutedEvents.Reactive.SourceGenerators`（已实现） |
-| 3 | **RestAPI**（声明式 HTTP 客户端） | `RestAPI` + `RestAPI.R3.SourceGenerators` | `RestAPI.Reactive` + `RestAPI.Reactive.SourceGenerators` |
-| 4+ | SignalR、WebSocket、Mqtt、Grpc | 各域 `*.R3` 骨架 | 各域运行时骨架 |
+| 1 | **Events**（经典 + 路由 .NET 事件） | `Events.R3.SourceGenerators`（已实现） | `Events.Reactive.SourceGenerators`（已实现） |
+| 2 | **RestAPI**（声明式 HTTP 客户端） | `RestAPI` + `RestAPI.R3.SourceGenerators` | `RestAPI.Reactive` + `RestAPI.Reactive.SourceGenerators` |
+| 3+ | SignalR、WebSocket、Mqtt、Grpc | 各域 `*.R3` 骨架 | 各域运行时骨架 |
+
+路由事件生成默认关闭；在消费者项目中设置 `<ObservableRoutedEvents>true</ObservableRoutedEvents>`（见 `Observables.Events/targets/observables.events.props`）。
 
 ## RestAPI
 

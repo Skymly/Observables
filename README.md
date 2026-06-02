@@ -55,8 +55,23 @@
 
 ```powershell
 dotnet run --project build/_build.csproj -- --target PackVerify --configuration Release
-# 推送（维护者，需 NUGET_API_KEY / GITHUB_TOKEN）
+```
+
+**发布到 NuGet**（与 [MvvmAIO.Markup](https://github.com/MvvmAIO/MvvmAIO.Markup) 相同：由维护者推送 `v*` tag 触发 CI，而非 PR/main 自动发布）：
+
+```powershell
+# 1. 确认 eng/Observables.Package.props 中 PackageVersion 与 tag 一致
+git tag -a v0.1.0-preview1 -m "0.1.0-preview1"
+git push origin v0.1.0-preview1
+# 2. GitHub Actions「Publish NuGet」workflow 使用 secrets 执行 Publish
+```
+
+本地手动推送（可选）：
+
+```powershell
 $env:VERSION = '0.1.0-preview1'
+$env:NUGET_API_KEY = '...'
+$env:GITHUB_TOKEN = '...'
 dotnet run --project build/_build.csproj -- --target Publish --configuration Release
 ```
 

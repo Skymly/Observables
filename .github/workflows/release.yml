@@ -1,25 +1,27 @@
-name: Release
+name: Publish NuGet
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 on:
-  release:
-    types: [published]
+  push:
+    tags:
+      - "v*"
   workflow_dispatch:
     inputs:
       version:
-        description: Package version (e.g. 0.1.0-preview1)
+        description: "Package version (e.g. 0.1.0-preview1)"
         required: true
-        default: 0.1.0-preview1
 
 permissions:
-  contents: write
+  contents: read
   packages: write
 
 jobs:
-  release:
+  publish:
+    if: contains(fromJson('["Skymly","wys0610"]'), github.actor)
     runs-on: windows-latest
+
     steps:
       - uses: actions/checkout@v4
 
@@ -31,37 +33,61 @@ jobs:
             10.0.x
 
       - name: Resolve version
-        id: version
-        shell: pwsh
+        shell: bash
         run: |
-          $v = '${{ github.event.release.tag_name }}'
-          if ([string]::IsNullOrWhiteSpace($v)) {
-            $v = '${{ inputs.version }}'
-          }
-          if ($v.StartsWith('v')) { $v = $v.Substring(1) }
-          if ([string]::IsNullOrWhiteSpace($v)) { throw 'Version is required' }
-          "value=$v" >> $env:GITHUB_OUTPUT
+          if [[ "${GITHUB_EVENT_NAME}" == "workflow_dispatch" ]]; then
+            VERSION="${{ github.event.inputs.version }}"
+          elif [[ "${GITHUB_REF_NAME}" == v* ]]; then
+            VERSION="${GITHUB_REF_NAME#v}"
+          else
+            echo "Error: tag must start with 'v'. Current ref: ${GITHUB_REF_NAME}"
+            exit 1
+          fi
 
-      - name: Pack and verify
+          if [[ -z "${VERSION}" ]]; then
+            echo "Error: VERSION is empty"
+            exit 1
+          fi
+
+          echo "Publishing version: ${VERSION}"
+          echo "VERSION=${VERSION}" >> "$GITHUB_ENV"
+
+      - name: Pack, verify, and publish via Nuke
         shell: pwsh
         env:
-          VERSION: ${{ steps.version.outputs.value }}
-        run: |
-          $ErrorActionPreference = 'Stop'
-          dotnet run --project build/_build.csproj -- --target PackVerify --configuration Release
-
-      - name: Publish to NuGet.org
-        if: env.NUGET_API_KEY != ''
-        shell: pwsh
-        env:
+          VERSION: ${{ env.VERSION }}
           NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
-          VERSION: ${{ steps.version.outputs.value }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           $ErrorActionPreference = 'Stop'
-          dotnet run --project build/_build.csproj -- --target Publish --configuration Release
+          dotnet run --project build/_build.csproj -- --target Publish --configuration Release 2>&1 | Tee-Object -FilePath publish.log
 
-      - name: Upload release assets
-        if: github.event_name == 'release'
-        uses: softprops/action-gh-release@v2
+      - name: Upload publish log
+        if: always()
+        uses: actions/upload-artifact@v4
         with:
-          files: artifacts/package/*.nupkg
+          name: nuget-publish-log
+          path: publish.log
+          if-no-files-found: warn
+
+      - name: Upload package artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nuget-packages
+          path: artifacts/package/*.nupkg
+          if-no-files-found: warn
+
+      - name: Write publish summary
+        if: always()
+        shell: bash
+        run: |
+          {
+            echo "## NuGet Publish Summary"
+            echo ""
+            echo "- Version: \`${VERSION:-unknown}\`"
+            echo "- Trigger: \`${GITHUB_EVENT_NAME}\`"
+            echo "- Ref: \`${GITHUB_REF}\`"
+            echo "- Actor: \`${GITHUB_ACTOR}\`"
+            echo "- Job status: \`${{ job.status }}\`"
+          } >> "$GITHUB_STEP_SUMMARY"

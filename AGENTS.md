@@ -152,7 +152,36 @@ Observables/
 ## 实现顺序建议
 
 1. 其余域 **`.Package`** 占位与生成器（SignalR、WebSocket、Mqtt、Grpc）按检查清单补齐
-3. **NuGet 发布**（`Pack` / `Publish` 目标；须维护者指定版本号）
+3. **NuGet 发布**（见下文「版本、Tag 与 NuGet」；须维护者指定版本号并推送 tag）
+
+## 版本、Tag 与 NuGet（代理与维护者）
+
+### 代理（规划与执行）
+
+遵循工作区根 [`../AGENTS.md`](../AGENTS.md) 的 Tag / 版本号约定，本仓库补充：
+
+| 场景 | 代理行为 |
+|------|----------|
+| 用户**未**提及新版本号 / tag | 计划与实现中**不得**写入默认 tag、**不得**改 `eng/Observables.Package.props` 等处的 `PackageVersion`、**不得**执行 `git tag` / `git push --tags` / `Publish` / `gh release create` |
+| 用户**明确**给出版本（如 `0.1.0-preview1`） | 可将打包工程、文档、CI 配置对齐到该版本；仍**不**擅自打 tag 或推 NuGet，除非用户当次任务明确要求 |
+| 发版说明、PR 描述 | 可列出「合并后由维护者执行的命令」草稿；标注为**待批准**步骤 |
+
+**CI 不会在 PR 或 push `main` 时 Publish**；仅验证与打包 artifact（见下节）。
+
+### 维护者发版（tag 触发，对齐 MvvmAIO.Markup）
+
+1. 在 `main` 上确认 `eng/Observables.Package.props`（或当次发版 PR）中的 **`PackageVersion` 与 tag 一致**。
+2. 配置仓库 Secrets：`NUGET_API_KEY`；`GITHUB_TOKEN`（或 PAT，`packages:write`，用于 GitHub Packages）。
+3. 推送 **annotated tag**（须 `v` 前缀，与 MvvmAIO 一致）：
+
+```powershell
+git tag -a v0.1.0-preview1 -m "0.1.0-preview1"
+git push origin v0.1.0-preview1
+```
+
+4. [`.github/workflows/release.yml`](.github/workflows/release.yml) 在 **`push` `v*` tag** 时运行 Nuke **`Publish`**（`PackVerify` → nuget.org + GitHub Packages）。仅允许维护者账号（workflow 内 `github.actor` 校验）。
+5. 可选：同一 tag 上在 GitHub 创建 Release 并附上 `artifacts/package` 中的 `.nupkg`（workflow **不**自动创建 Release）。
+6. 紧急重发可用 **workflow_dispatch** 并手动填写 `version`（仍受 actor 限制）。
 
 ## 构建与测试
 
@@ -169,7 +198,10 @@ dotnet run --project build/_build.csproj -- --target Ci --configuration Release
 | **CiPack** | CI 用：`Pack` + `PackVerify` |
 | **Publish** | 推送到 nuget.org（`NUGET_API_KEY`）与 GitHub Packages（`GITHUB_TOKEN`，`packages:write`） |
 
-CI：`.github/workflows/ci.yml` — **build-test**（Ci）、**pack**（CiPack）。发版：`.github/workflows/release.yml`（`workflow_dispatch` 或 GitHub Release）。
+| Workflow | 触发 | 作用 |
+|----------|------|------|
+| [`ci.yml`](.github/workflows/ci.yml) | PR / push `main` | **Ci** + **CiPack**（测与打包 artifact，**不** Publish） |
+| [`release.yml`](.github/workflows/release.yml) | push tag `v*` / `workflow_dispatch` | **Publish**（须 Secrets + 维护者 actor） |
 
 ## 工作约定
 

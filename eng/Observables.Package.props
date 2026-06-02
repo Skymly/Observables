@@ -1,0 +1,27 @@
+<Project>
+
+  <PropertyGroup>
+    <Version>0.1.0-preview1</Version>
+    <PackageVersion>0.1.0-preview1</PackageVersion>
+    <Authors>Skymly</Authors>
+    <Copyright>Copyright (c) Skymly. All rights reserved.</Copyright>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageProjectUrl>https://github.com/Skymly/Observables</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/Skymly/Observables.git</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
+    <EmbedUntrackedSources>true</EmbedUntrackedSources>
+    <Deterministic>true</Deterministic>
+    <ContinuousIntegrationBuild Condition="'$(CI)' == 'true'">true</ContinuousIntegrationBuild>
+    <ObservablesAnalyzerRoslynFolder>analyzers/dotnet/roslyn4.12/cs</ObservablesAnalyzerRoslynFolder>
+    <ObservablesSharedGeneratorProject>$(MSBuildThisFileDirectory)../Observables.Shared/Observables.SourceGenerators.Shared/Observables.SourceGenerators.Shared.csproj</ObservablesSharedGeneratorProject>
+    <NoWarn>$(NoWarn);NU5128</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="$(MSBuildThisFileDirectory)../LICENSE" Pack="true" PackagePath="\" Visible="false" Condition="Exists('$(MSBuildThisFileDirectory)../LICENSE')" />
+    <PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" PrivateAssets="all" />
+  </ItemGroup>
+
+</Project>

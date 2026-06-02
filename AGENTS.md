@@ -4,7 +4,7 @@
 
 - **类型**：个人项目（Skymly 工作区）
 - **远端**：https://github.com/Skymly/Observables（私有）；`origin/main` 已与本地 `main` 同步；文件夹名 `Observables` = 仓库名
-- **阶段**：**Events**（经典 + 路由事件，R3/Reactive 生成器）、**RestAPI** 已实现；**NuGet 发布**尚未进行
+- **阶段**：**Events**、**RestAPI** 已实现；**NuGet 预览包** `0.1.0-preview1`（4 包）已配置，推送须维护者批准
 - **结构约定**：下文「仓库结构」与命名约定为权威
 
 ## 目标
@@ -33,7 +33,7 @@
 | **`Observables.<Feature>.SourceGenerators.Shared`** | 双生成器时 | 本域共享生成器逻辑（`.projitems`），由 R3 与 Reactive 两路生成器 Import。 |
 | **`Observables.<Feature>.R3.SourceGenerators`** | 是 | R3 源生成器（`IsRoslynComponent`）。 |
 | **`Observables.<Feature>.Reactive.SourceGenerators`** | 是 | System.Reactive 源生成器。 |
-| **`Observables.<Feature>.Package`** | 发布时 | **打包项目（每 Feature 一个）**：产出 **`Observables.<Feature>.R3`** 与 **`Observables.<Feature>.Reactive`** 两个 NuGet 包（Events、RestAPI 占位已建，其余域待补）。 |
+| **`Observables.<Feature>.Package`** | 发布时 | **Traversal 根** + 两个可 pack 子项目（`Observables.<Feature>.R3.csproj` 等），产出 **`Observables.<Feature>.R3`** 与 **`Observables.<Feature>.Reactive`**。Events、RestAPI 已实现；其余域待补。 |
 
 可选扩展（**不**算第三个消费者主包）：如 `Observables.RestAPI.HttpClientFactory`，依赖域运行时，不捆绑生成器。
 
@@ -104,24 +104,26 @@ IObservable 等桥接     →  Observables.<Feature>.Reactive（按需；与 Rea
 
 ```
 Observables/
-├── Observables.Core/
-├── Observables.SourceGenerators.Shared/
-├── Observables.SourceGenerators.props
+├── Observables.SourceGenerators.props                # 仓库根 MSBuild
 ├── Observables.SourceGenerators.R3.props
-│
-├── Observables.RestAPI/                              # 运行时
-├── Observables.RestAPI.Reactive/                     # SR 桥接
-├── Observables.RestAPI.SourceGenerators.Shared/
-├── Observables.RestAPI.R3.SourceGenerators/
-├── Observables.RestAPI.Reactive.SourceGenerators/
-├── Observables.RestAPI.HttpClientFactory/            # 可选扩展
-│
-├── Observables.Events.R3.SourceGenerators/
-├── Observables.Events.Reactive.SourceGenerators/
-│
-├── Observables.<Feature>.…                           # 其余域（多为 .R3 骨架）
+├── Observables.Shared/
+│   ├── Observables.Core/
+│   └── Observables.SourceGenerators.Shared/
+├── Observables.Events/                               # 域文件夹 = Observables.<Feature>
+│   ├── Observables.Events/Observables.Events.csproj  # 运行时 + targets/（同名子夹，避免 SDK  glob 同级项目）
+│   ├── Observables.Events.Package/
+│   ├── Observables.Events.R3.SourceGenerators/
+│   └── …
+├── Observables.RestAPI/
+│   ├── Observables.RestAPI/Observables.RestAPI.csproj
+│   ├── Observables.RestAPI.Reactive/
+│   ├── Observables.RestAPI.SourceGenerators.Shared/
+│   └── …
+├── Observables.SignalR/ … Observables.Grpc/          # 其余域（多为骨架）
 └── Observables.slnx
 ```
+
+磁盘上**每个 Feature 一个父目录** `Observables.<Feature>/`，其下为同名或后缀项目文件夹；`slnx` 中 `/Events/`、`/RestAPI/` 等虚拟文件夹与物理目录对应，勿在仓库根再并列散落 `Observables.<Feature>.*` 项目夹。
 
 ### 解决方案文件夹（`Observables.slnx`）
 
@@ -129,7 +131,7 @@ Observables/
 |--------|------|
 | **Solution Items** | `AGENTS.md`、`README.md`、公共 MSBuild props |
 | **Shared** | `Observables.Core`、`Observables.SourceGenerators.Shared` |
-| **Events** | 双路生成器、测试、`Events.Package`；`Observables.Events/targets/observables.events.props`（`ObservableRoutedEvents` 默认 `false`） |
+| **Events** | 双路生成器、测试、`Events.Package`；`Observables.Events/Observables.Events/targets/observables.events.props`（`ObservableRoutedEvents` 默认 `false`） |
 | **RestAPI** / **SignalR** / … | 该域全部项目；RestAPI 含 `SourceGenerators.Shared`（shproj，`Id` 固定）、`RestAPI.Package`、**Tests** |
 | **RestAPI/Tests** | `RestAPI.Tests`、`Reactive.Tests`、`GeneratorTests`、`HttpClientFactory.Tests` |
 
@@ -150,7 +152,36 @@ Observables/
 ## 实现顺序建议
 
 1. 其余域 **`.Package`** 占位与生成器（SignalR、WebSocket、Mqtt、Grpc）按检查清单补齐
-3. **NuGet 发布**（`Pack` / `Publish` 目标；须维护者指定版本号）
+3. **NuGet 发布**（见下文「版本、Tag 与 NuGet」；须维护者指定版本号并推送 tag）
+
+## 版本、Tag 与 NuGet（代理与维护者）
+
+### 代理（规划与执行）
+
+遵循工作区根 [`../AGENTS.md`](../AGENTS.md) 的 Tag / 版本号约定，本仓库补充：
+
+| 场景 | 代理行为 |
+|------|----------|
+| 用户**未**提及新版本号 / tag | 计划与实现中**不得**写入默认 tag、**不得**改 `eng/Observables.Package.props` 等处的 `PackageVersion`、**不得**执行 `git tag` / `git push --tags` / `Publish` / `gh release create` |
+| 用户**明确**给出版本（如 `0.1.0-preview1`） | 可将打包工程、文档、CI 配置对齐到该版本；仍**不**擅自打 tag 或推 NuGet，除非用户当次任务明确要求 |
+| 发版说明、PR 描述 | 可列出「合并后由维护者执行的命令」草稿；标注为**待批准**步骤 |
+
+**CI 不会在 PR 或 push `main` 时 Publish**；仅验证与打包 artifact（见下节）。
+
+### 维护者发版（tag 触发，对齐 MvvmAIO.Markup）
+
+1. 在 `main` 上确认 `eng/Observables.Package.props`（或当次发版 PR）中的 **`PackageVersion` 与 tag 一致**。
+2. 配置仓库 Secrets：`NUGET_API_KEY`；`GITHUB_TOKEN`（或 PAT，`packages:write`，用于 GitHub Packages）。
+3. 推送 **annotated tag**（须 `v` 前缀，与 MvvmAIO 一致）：
+
+```powershell
+git tag -a v0.1.0-preview1 -m "0.1.0-preview1"
+git push origin v0.1.0-preview1
+```
+
+4. [`.github/workflows/release.yml`](.github/workflows/release.yml) 在 **`push` `v*` tag** 时运行 Nuke **`Publish`**（`PackVerify` → nuget.org + GitHub Packages）。仅允许维护者账号（workflow 内 `github.actor` 校验）。
+5. 可选：同一 tag 上在 GitHub 创建 Release 并附上 `artifacts/package` 中的 `.nupkg`（workflow **不**自动创建 Release）。
+6. 紧急重发可用 **workflow_dispatch** 并手动填写 `version`（仍受 actor 限制）。
 
 ## 构建与测试
 
@@ -161,11 +192,16 @@ dotnet run --project build/_build.csproj -- --target Ci --configuration Release
 
 | Nuke 目标 | 说明 |
 |-----------|------|
-| **Ci** | `Clean` → `Restore` → `Compile` → **UnitTest**（显式跑全部测试项目） |
-| **Pack** | 打包 `*.Package`（若项目存在且可 pack） |
-| **Publish** | 推送 `artifacts/package`（需 `NUGET_API_KEY`） |
+| **Ci** | `Clean` → `Restore` → `Compile` → **UnitTest** |
+| **Pack** | 打包 4 个 pack 子项目 → `artifacts/package/`（依赖 **UnitTest**） |
+| **PackVerify** | 断言 nupkg 含 analyzer、Events `observables.events.props`、RestAPI `lib/` |
+| **CiPack** | CI 用：`Pack` + `PackVerify` |
+| **Publish** | 推送到 nuget.org（`NUGET_API_KEY`）与 GitHub Packages（`GITHUB_TOKEN`，`packages:write`） |
 
-CI：`.github/workflows/ci.yml` 调用 Nuke **Ci**（`windows-latest`，.NET 8 + 10）。
+| Workflow | 触发 | 作用 |
+|----------|------|------|
+| [`ci.yml`](.github/workflows/ci.yml) | PR / push `main` | **Ci** + **CiPack**（测与打包 artifact，**不** Publish） |
+| [`release.yml`](.github/workflows/release.yml) | push tag `v*` / `workflow_dispatch` | **Publish**（须 Secrets + 维护者 actor） |
 
 ## 工作约定
 

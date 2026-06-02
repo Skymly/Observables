@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.Build.Traversal/4.1.82">
+
+  <PropertyGroup>
+    <IsPackable>false</IsPackable>
+    <Description>Traversal root for Observables.Events.R3 and Observables.Events.Reactive NuGet packages.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="Observables.Events.R3.csproj" />
+    <ProjectReference Include="Observables.Events.Reactive.csproj" />
+  </ItemGroup>
+
+</Project>

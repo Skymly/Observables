@@ -1,0 +1,32 @@
+<Project>
+
+  <!--
+    Pack referenced library outputs into lib/$(TargetFramework)/ for meta-packages.
+    Uses TargetsForTfmSpecificContentInPackage so libs are collected when IncludeBuildOutput=false.
+    Define ObservablesPackLibProjectReference items on the pack project.
+  -->
+
+  <PropertyGroup>
+    <TargetsForTfmSpecificContentInPackage>$(TargetsForTfmSpecificContentInPackage);ObservablesPackCollectLibOutputs</TargetsForTfmSpecificContentInPackage>
+  </PropertyGroup>
+
+  <Target Name="ObservablesPackCollectLibOutputs" Returns="@(TfmSpecificPackageFile)">
+    <MSBuild
+      Projects="@(ObservablesPackLibProjectReference)"
+      Targets="Build"
+      Properties="TargetFramework=$(TargetFramework);Configuration=$(Configuration)" />
+    <MSBuild
+      Projects="@(ObservablesPackLibProjectReference)"
+      Targets="GetTargetPath"
+      Properties="TargetFramework=$(TargetFramework);Configuration=$(Configuration)">
+      <Output TaskParameter="TargetOutputs" ItemName="_ObservablesPackLibPath" />
+    </MSBuild>
+    <ItemGroup>
+      <TfmSpecificPackageFile Include="@(_ObservablesPackLibPath)">
+        <PackagePath>lib/$(TargetFramework)/%(Filename)%(Extension)</PackagePath>
+        <BuildAction>None</BuildAction>
+      </TfmSpecificPackageFile>
+    </ItemGroup>
+  </Target>
+
+</Project>

@@ -1,0 +1,42 @@
+<Project>
+
+  <!--
+    Required on importing pack project:
+      ObservablesPackGeneratorProject       - path to generator csproj
+      ObservablesPackGeneratorAssemblyName  - e.g. Observables.Events.R3.SourceGenerators.dll
+      ObservablesPackGeneratorOutputDir     - .../bin/$(Configuration)/netstandard2.0/
+      ObservablesPackPackagePropsFile       - build/*.props (packed to build/ and buildTransitive/)
+    Optional:
+      ObservablesPackSharedGeneratorProject, ObservablesPackSharedOutputDir
+  -->
+
+  <PropertyGroup>
+    <ObservablesPackSharedGeneratorProject Condition="'$(ObservablesPackSharedGeneratorProject)' == ''">$(ObservablesSharedGeneratorProject)</ObservablesPackSharedGeneratorProject>
+    <ObservablesPackSharedOutputDir Condition="'$(ObservablesPackSharedOutputDir)' == ''">$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)../Observables.Shared/Observables.SourceGenerators.Shared/bin/$(Configuration)/netstandard2.0/'))</ObservablesPackSharedOutputDir>
+  </PropertyGroup>
+
+  <Target Name="ObservablesPackBuildAnalyzerInputs" BeforeTargets="GenerateNuspec">
+    <MSBuild Projects="$(ObservablesPackGeneratorProject)" Targets="Build" Properties="Configuration=$(Configuration);NoBuild=false" />
+    <MSBuild Projects="$(ObservablesPackSharedGeneratorProject)" Targets="Build" Properties="Configuration=$(Configuration);NoBuild=false" />
+  </Target>
+
+  <Target Name="ObservablesPackIncludeAnalyzers"
+          DependsOnTargets="ObservablesPackBuildAnalyzerInputs"
+          BeforeTargets="_GetPackageFiles">
+    <PropertyGroup>
+      <_ObservablesPackGeneratorDll>$(ObservablesPackGeneratorOutputDir)$(ObservablesPackGeneratorAssemblyName)</_ObservablesPackGeneratorDll>
+      <_ObservablesPackSharedDll>$(ObservablesPackSharedOutputDir)Observables.SourceGenerators.Shared.dll</_ObservablesPackSharedDll>
+    </PropertyGroup>
+    <Error Condition="!Exists('$(_ObservablesPackGeneratorDll)')"
+           Text="Observables pack: missing generator assembly '$(_ObservablesPackGeneratorDll)'." />
+    <Error Condition="!Exists('$(_ObservablesPackSharedDll)')"
+           Text="Observables pack: missing shared assembly '$(_ObservablesPackSharedDll)'." />
+    <ItemGroup>
+      <None Include="$(_ObservablesPackGeneratorDll)" Pack="true" PackagePath="$(ObservablesAnalyzerRoslynFolder)" Visible="false" />
+      <None Include="$(_ObservablesPackSharedDll)" Pack="true" PackagePath="$(ObservablesAnalyzerRoslynFolder)" Visible="false" />
+      <None Include="$(ObservablesPackPackagePropsFile)" Pack="true" PackagePath="build/$(PackageId).props" Visible="false" Condition="'$(ObservablesPackPackagePropsFile)' != '' and Exists('$(ObservablesPackPackagePropsFile)')" />
+      <None Include="$(ObservablesPackPackagePropsFile)" Pack="true" PackagePath="buildTransitive/$(PackageId).props" Visible="false" Condition="'$(ObservablesPackPackagePropsFile)' != '' and Exists('$(ObservablesPackPackagePropsFile)')" />
+    </ItemGroup>
+  </Target>
+
+</Project>

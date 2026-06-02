@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <IsPackable>false</IsPackable>
+    <Description>MSBuild integration for Observables.Events source generators (ObservableRoutedEvents).</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="targets\observables.events.props" Pack="true" PackagePath="buildTransitive\observables.events.props" />
+  </ItemGroup>
+
+</Project>

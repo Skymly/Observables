@@ -1,3 +1,4 @@
+using System;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
@@ -10,7 +11,7 @@ namespace Observables.Events.Reactive.SourceGenerators.Tests;
 public sealed class ObservableEventsGeneratorTests
 {
     [Fact]
-    public Task Generates_FromEvents_wrapper_for_action_event()
+    public Task Generates_Events_wrapper_for_action_event()
     {
         const string source = """
             namespace Demo;
@@ -22,7 +23,7 @@ public sealed class ObservableEventsGeneratorTests
 
             public static class Usage
             {
-                public static void Run(ClickSource s) => s.FromEvents();
+                public static void Run(ClickSource s) => s.Events();
             }
             """;
 
@@ -34,7 +35,7 @@ public sealed class ObservableEventsGeneratorTests
     }
 
     [Fact]
-    public void Generates_FromEvents_wrapper_for_interface_type()
+    public void Generates_Events_wrapper_for_interface_type()
     {
         const string source = """
             namespace Demo;
@@ -53,8 +54,8 @@ public sealed class ObservableEventsGeneratorTests
             {
                 public static void Run(INotifyMore s)
                 {
-                    _ = s.FromEvents().SomethingChanged;
-                    _ = s.FromEvents().MoreChanged;
+                    _ = s.Events().SomethingChanged;
+                    _ = s.Events().MoreChanged;
                 }
             }
             """;
@@ -70,7 +71,7 @@ public sealed class ObservableEventsGeneratorTests
     }
 
     [Fact]
-    public void Generates_FromEventHandlers_wrapper_for_interface_type()
+    public void Generates_EventHandlers_wrapper_for_interface_type()
     {
         const string source = """
             namespace Demo;
@@ -84,7 +85,7 @@ public sealed class ObservableEventsGeneratorTests
             {
                 public static void Run(INotifyPropertyChanged s)
                 {
-                    _ = s.FromEventHandlers().PropertyChanged;
+                    _ = s.EventHandlers().PropertyChanged;
                 }
             }
             """;
@@ -96,11 +97,11 @@ public sealed class ObservableEventsGeneratorTests
 
         Assert.Empty(output.Diagnostics.Where(static d => d.Severity == DiagnosticSeverity.Error));
         Assert.Contains("PropertyChanged", snapshot);
-        Assert.Contains("FromEventHandler", snapshot);
+        Assert.Contains("System.Reactive.Linq.Observable.FromEvent", snapshot);
     }
 
     [Fact]
-    public void Generates_FromEvents_wrapper_for_generic_class()
+    public void Generates_Events_wrapper_for_generic_class()
     {
         const string source = """
             namespace Demo;
@@ -114,7 +115,7 @@ public sealed class ObservableEventsGeneratorTests
             {
                 public static void Run(GenericSource<string> s)
                 {
-                    _ = s.FromEvents().ValueChanged;
+                    _ = s.Events().ValueChanged;
                 }
             }
             """;
@@ -129,7 +130,7 @@ public sealed class ObservableEventsGeneratorTests
     }
 
     [Fact]
-    public void Generates_FromEvents_wrapper_for_generic_constraints()
+    public void Generates_Events_wrapper_for_generic_constraints()
     {
         const string source = """
             namespace Demo;
@@ -154,9 +155,9 @@ public sealed class ObservableEventsGeneratorTests
                 public static void Run<TSource>(TSource source)
                     where TSource : BaseSource, IFirst, ISecond
                 {
-                    _ = source.FromEvents().BaseChanged;
-                    _ = source.FromEvents().FirstChanged;
-                    _ = source.FromEvents().SecondChanged;
+                    _ = source.Events().BaseChanged;
+                    _ = source.Events().FirstChanged;
+                    _ = source.Events().SecondChanged;
                 }
             }
             """;
@@ -178,7 +179,7 @@ public sealed class ObservableEventsGeneratorTests
     }
 
     [Fact]
-    public void Generates_FromEventHandlers_wrapper_for_generic_constraints()
+    public void Generates_EventHandlers_wrapper_for_generic_constraints()
     {
         const string source = """
             namespace Demo;
@@ -198,8 +199,8 @@ public sealed class ObservableEventsGeneratorTests
                 public static void Run<TSource>(TSource source)
                     where TSource : BaseSource, IFirst
                 {
-                    _ = source.FromEventHandlers().BaseChanged;
-                    _ = source.FromEventHandlers().FirstChanged;
+                    _ = source.EventHandlers().BaseChanged;
+                    _ = source.EventHandlers().FirstChanged;
                 }
             }
             """;
@@ -243,9 +244,9 @@ public sealed class ObservableEventsGeneratorTests
             {
                 public static void Run(DerivedSource s)
                 {
-                    _ = s.FromEvents().BaseChanged;
-                    _ = s.FromEvents().DerivedChanged;
-                    _ = s.FromEvents().Notified;
+                    _ = s.Events().BaseChanged;
+                    _ = s.Events().DerivedChanged;
+                    _ = s.Events().Notified;
                 }
             }
             """;
@@ -261,7 +262,7 @@ public sealed class ObservableEventsGeneratorTests
         Assert.Contains("interface INotifyEvents", snapshot);
         Assert.Contains("interface IDerivedSourceEvents : IBaseSourceEvents", snapshot);
         Assert.Contains("class DerivedSourceEventsImpl : IDerivedSourceEvents", snapshot);
-        Assert.Contains("IDerivedSourceEvents FromEvents(this global::Demo.DerivedSource source)", snapshot);
+        Assert.Contains("IDerivedSourceEvents Events(this global::Demo.DerivedSource source)", snapshot);
 
         Assert.Contains("DerivedChanged", snapshot);
         Assert.Contains("BaseChanged", snapshot);
@@ -282,7 +283,7 @@ public sealed class ObservableEventsGeneratorTests
 
             public static class Usage
             {
-                public static void Run(MixedSource s) => s.FromEvents();
+                public static void Run(MixedSource s) => s.Events();
             }
             """;
 
@@ -310,7 +311,7 @@ public sealed class ObservableEventsGeneratorTests
 
             public static class Usage
             {
-                public static void Run(MixedHandlerSource s) => s.FromEventHandlers();
+                public static void Run(MixedHandlerSource s) => s.EventHandlers();
             }
             """;
 
@@ -323,4 +324,227 @@ public sealed class ObservableEventsGeneratorTests
         Assert.Contains("OBS2002", snapshot);
         Assert.Contains("Good", snapshot);
     }
+
+    [Fact]
+    public Task Generates_Avalonia_routed_event_wrappers()
+    {
+        const string source = AvaloniaStubs + """
+            namespace Demo
+            {
+                public static class Usage
+                {
+                    public static void Run(Avalonia.Controls.Button button)
+                    {
+                        _ = button.RoutedEvents().Click;
+                        _ = button.RoutedEventHandlers(Avalonia.Interactivity.RoutingStrategies.Bubble, handledEventsToo: true).Click;
+                    }
+                }
+            }
+            """;
+
+        GeneratorRunOutput output = GeneratorTestHarness.Run(
+            source,
+            generators: [new ObservableEventsGenerator()],
+            observableRoutedEvents: true);
+
+        return Verifier.Verify(GeneratorTestHarness.ToSnapshot(output));
+    }
+
+    [Fact]
+    public void Generates_Avalonia_attached_routed_event_extensions()
+    {
+        const string source = AvaloniaStubs + """
+            namespace Demo
+            {
+                public static class Usage
+                {
+                    public static void Run(Avalonia.Controls.Panel panel)
+                    {
+                        _ = panel.AttachedRoutedEvent(Avalonia.Controls.Button.ClickEvent, Avalonia.Interactivity.RoutingStrategies.Bubble, handledEventsToo: true);
+                        _ = panel.AttachedRoutedEventHandler(Avalonia.Controls.Button.ClickEvent);
+                    }
+                }
+            }
+            """;
+
+        GeneratorRunOutput output = GeneratorTestHarness.Run(
+            source,
+            generators: [new ObservableEventsGenerator()],
+            observableRoutedEvents: true);
+
+        Assert.Empty(output.Diagnostics.Where(static d => d.Severity == DiagnosticSeverity.Error));
+        Assert.Contains(
+            output.GeneratedSources,
+            static s => s.HintName.Contains("AttachedRoutedEvent.g.cs", StringComparison.Ordinal));
+        Assert.Contains(
+            output.GeneratedSources,
+            static s => s.HintName.Contains("AttachedRoutedEventHandler.g.cs", StringComparison.Ordinal));
+
+        string snapshot = GeneratorTestHarness.ToSnapshot(output);
+        Assert.Contains("AttachedRoutedEvent<TEventArgs>", snapshot);
+        Assert.Contains("AttachedRoutedEventHandler<TEventArgs>", snapshot);
+        Assert.Contains("source.AddHandler", snapshot);
+        Assert.Contains("routedEvent", snapshot);
+        Assert.Contains("handledEventsToo", snapshot);
+    }
+
+    [Fact]
+    public void Does_not_emit_Wpf_routed_events_without_UseWPF()
+    {
+        const string source = WpfStubs + """
+            namespace Demo
+            {
+                public static class Usage
+                {
+                    public static void Run(System.Windows.Controls.Button button) => button.RoutedEvents();
+                }
+            }
+            """;
+
+        GeneratorRunOutput output = GeneratorTestHarness.Run(
+            source,
+            generators: [new ObservableEventsGenerator()],
+            useWpf: false,
+            observableRoutedEvents: true);
+
+        string snapshot = GeneratorTestHarness.ToSnapshot(output);
+
+        Assert.Empty(output.Diagnostics.Where(static d => d.Severity == DiagnosticSeverity.Error));
+        Assert.DoesNotContain("IButtonRoutedEvents", snapshot);
+    }
+
+    [Fact]
+    public void Does_not_emit_routed_events_when_ObservableRoutedEvents_false()
+    {
+        const string source = """
+            namespace Demo;
+
+            public class ClickSource
+            {
+                public event System.Action? Click;
+            }
+
+            public static class Usage
+            {
+                public static void Run(ClickSource s) => s.Events();
+            }
+            """;
+
+        GeneratorRunOutput output = GeneratorTestHarness.Run(
+            source,
+            generators: [new ObservableEventsGenerator()],
+            observableRoutedEvents: false);
+
+        string snapshot = GeneratorTestHarness.ToSnapshot(output);
+
+        Assert.Empty(output.Diagnostics.Where(static d => d.Severity == DiagnosticSeverity.Error));
+        Assert.DoesNotContain("IButtonRoutedEvents", snapshot);
+        Assert.DoesNotContain(".RoutedEvents.g.cs", snapshot);
+        Assert.Contains("IClickSourceEvents", snapshot);
+    }
+
+    private const string AvaloniaStubs = """
+        namespace Avalonia.Interactivity
+        {
+            [System.Flags]
+            public enum RoutingStrategies
+            {
+                Direct = 1,
+                Bubble = 2,
+                Tunnel = 4,
+            }
+
+            public class RoutedEventArgs : System.EventArgs
+            {
+            }
+
+            public class RoutedEvent<TEventArgs>
+                where TEventArgs : RoutedEventArgs
+            {
+            }
+        }
+
+        namespace Avalonia.Controls
+        {
+            public class Control
+            {
+                public void AddHandler<TEventArgs>(
+                    Avalonia.Interactivity.RoutedEvent<TEventArgs> routedEvent,
+                    System.EventHandler<TEventArgs>? handler,
+                    Avalonia.Interactivity.RoutingStrategies routes = Avalonia.Interactivity.RoutingStrategies.Direct | Avalonia.Interactivity.RoutingStrategies.Bubble,
+                    bool handledEventsToo = false)
+                    where TEventArgs : Avalonia.Interactivity.RoutedEventArgs
+                {
+                }
+
+                public void RemoveHandler<TEventArgs>(
+                    Avalonia.Interactivity.RoutedEvent<TEventArgs> routedEvent,
+                    System.EventHandler<TEventArgs>? handler)
+                    where TEventArgs : Avalonia.Interactivity.RoutedEventArgs
+                {
+                }
+            }
+
+            public class Panel : Control
+            {
+            }
+
+            public class Button : Control
+            {
+                public static readonly Avalonia.Interactivity.RoutedEvent<Avalonia.Interactivity.RoutedEventArgs> ClickEvent = new();
+
+                public event System.EventHandler<Avalonia.Interactivity.RoutedEventArgs>? Click
+                {
+                    add => AddHandler(ClickEvent, value);
+                    remove => RemoveHandler(ClickEvent, value);
+                }
+            }
+        }
+
+        """;
+
+    private const string WpfStubs = """
+        namespace System.Windows
+        {
+            public class RoutedEvent
+            {
+            }
+
+            public class RoutedEventArgs : System.EventArgs
+            {
+            }
+        }
+
+        namespace System.Windows.Controls
+        {
+            public class UIElement
+            {
+                public void AddHandler(System.Windows.RoutedEvent routedEvent, System.Delegate handler, bool handledEventsToo)
+                {
+                }
+
+                public void RemoveHandler(System.Windows.RoutedEvent routedEvent, System.Delegate handler)
+                {
+                }
+            }
+
+            public class Button : UIElement
+            {
+                public static readonly System.Windows.RoutedEvent ClickEvent = new();
+
+                public event System.Windows.RoutedEventHandler? Click
+                {
+                    add => AddHandler(ClickEvent, value, false);
+                    remove => RemoveHandler(ClickEvent, value);
+                }
+            }
+        }
+
+        namespace System.Windows
+        {
+            public delegate void RoutedEventHandler(object sender, RoutedEventArgs e);
+        }
+
+        """;
 }
+

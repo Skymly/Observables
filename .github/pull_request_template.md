@@ -12,7 +12,6 @@ Closes #
 
 - [ ] Shared
 - [ ] Events
-- [ ] RoutedEvents
 - [ ] RestAPI
 - [ ] SignalR
 - [ ] WebSocket

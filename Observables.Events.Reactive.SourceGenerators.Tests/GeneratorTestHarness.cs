@@ -29,7 +29,7 @@ internal static class GeneratorTestHarness
     {
         string source = BuildHarnessDocument(userSource);
         CSharpParseOptions parseOptions = CSharpParseOptions.Default.WithLanguageVersion(languageVersion);
-        SyntaxTree syntaxTree = CSharpSyntaxTree.ParseText(source, parseOptions);
+        SyntaxTree syntaxTree = CSharpSyntaxTree.ParseText(source, parseOptions, path: "/0/Test0.cs");
 
         CSharpCompilation compilation = CSharpCompilation.Create(
             assemblyName: "GeneratorTests",
@@ -43,7 +43,9 @@ internal static class GeneratorTestHarness
     public static GeneratorRunOutput Run(
         string userSource,
         LanguageVersion languageVersion = LanguageVersion.Preview,
-        IIncrementalGenerator[]? generators = null)
+        IIncrementalGenerator[]? generators = null,
+        bool useWpf = false,
+        bool observableRoutedEvents = false)
     {
         (CSharpCompilation compilation, _) =
             CreateHarnessCompilation(userSource, languageVersion);
@@ -136,13 +138,13 @@ internal static class GeneratorTestHarness
             .Split(Path.PathSeparator, StringSplitOptions.RemoveEmptyEntries)
             .Select(static path => MetadataReference.CreateFromFile(path));
 
-        string r3 = typeof(global::System.Reactive.Unit).Assembly.Location;
-        if (!File.Exists(r3))
+        string reactive = typeof(System.Reactive.Unit).Assembly.Location;
+        if (!File.Exists(reactive))
         {
-            throw new InvalidOperationException($"Required test reference not found: {r3}");
+            throw new InvalidOperationException($"Required test reference not found: {reactive}");
         }
 
-        return platform.Append(MetadataReference.CreateFromFile(r3));
+        return platform.Append(MetadataReference.CreateFromFile(reactive));
     }
 }
 

@@ -10,7 +10,7 @@ using Microsoft.CodeAnalysis.Text;
 using Observables.SourceGenerators.Shared.Diagnostics;
 using Observables.SourceGenerators.Shared.Extensions;
 
-namespace Observables.RoutedEvents.R3.SourceGenerators;
+namespace Observables.Events.R3.SourceGenerators;
 
 public sealed partial class ObservableEventsGenerator
 {
@@ -19,10 +19,10 @@ private static string GenerateAttachedRoutedEventSourceForTarget(
     ObservableEventsEntryKind entryKind)
 {
     var receiverType = SyntaxFactory.ParseTypeName(ObservableEventsConstants.QualifiedType(target.ReceiverType));
-    var observableMethod = entryKind == ObservableEventsEntryKind.FromAttachedRoutedEvent
-        ? ObservableEventsConstants.FromAttachedRoutedEventEntryMethodName
-        : ObservableEventsConstants.FromAttachedRoutedEventHandlerEntryMethodName;
-    var returnType = entryKind == ObservableEventsEntryKind.FromAttachedRoutedEvent
+    var observableMethod = entryKind == ObservableEventsEntryKind.AttachedRoutedEvent
+        ? ObservableEventsConstants.AttachedRoutedEventEntryMethodName
+        : ObservableEventsConstants.AttachedRoutedEventHandlerEntryMethodName;
+    var returnType = entryKind == ObservableEventsEntryKind.AttachedRoutedEvent
         ? SyntaxFactory.ParseTypeName("global::R3.Observable<TEventArgs>")
         : SyntaxFactory.ParseTypeName("global::R3.Observable<(object? sender, TEventArgs e)>");
 
@@ -63,14 +63,14 @@ private static string GenerateAttachedRoutedEventSourceForTarget(
 
     var subscribeHandler = ObservableEventsSyntaxFactory.HandlerSubscriptionLambda(addHandler);
     var unsubscribeHandler = ObservableEventsSyntaxFactory.HandlerSubscriptionLambda(removeHandler);
-    ExpressionSyntax body = entryKind == ObservableEventsEntryKind.FromAttachedRoutedEvent
-        ? ObservableEventsSyntaxFactory.ObservableFromEventInvocation(
+    ExpressionSyntax body = entryKind == ObservableEventsEntryKind.AttachedRoutedEvent
+        ? ObservableEventsSyntaxFactory.RxFromEventInvocation(
             SyntaxFactory.ParseTypeName("global::System.EventHandler<TEventArgs>"),
             SyntaxFactory.IdentifierName("TEventArgs"),
-            ObservableEventsSyntaxFactory.FromEventHandlerFactorySenderAndArgs(),
+            ObservableEventsSyntaxFactory.EventHandlerFactorySenderAndArgs(),
             subscribeHandler,
             unsubscribeHandler)
-        : ObservableEventsSyntaxFactory.ObservableFromEventHandlerInvocation(
+        : ObservableEventsSyntaxFactory.RxFromEventHandlerInvocation(
             SyntaxFactory.IdentifierName("TEventArgs"),
             subscribeHandler,
             unsubscribeHandler);

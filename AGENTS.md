@@ -4,7 +4,7 @@
 
 - **类型**：个人项目（Skymly 工作区）
 - **远端**：https://github.com/Skymly/Observables（私有）；`origin/main` 已与本地 `main` 同步；文件夹名 `Observables` = 仓库名
-- **阶段**：**Events**、**RestAPI**、**RoutedEvents**（R3 + Reactive 生成器，`.Package` 占位）已实现；**NuGet 发布**尚未进行
+- **阶段**：**Events**（经典 + 路由事件，R3/Reactive 生成器）、**RestAPI** 已实现；**NuGet 发布**尚未进行
 - **结构约定**：下文「仓库结构」与命名约定为权威
 
 ## 目标
@@ -96,7 +96,7 @@ IObservable 等桥接     →  Observables.<Feature>.Reactive（按需；与 Rea
 3. 建立 `*.SourceGenerators.Shared`（若两路生成器共享逻辑）
 4. 建立 `*.R3.SourceGenerators` 与 `*.Reactive.SourceGenerators`
 5. 建立 `*.Package`，产出 `.R3` / `.Reactive` 两个包
-6. 诊断 ID 按域分段（如 Events `OBS2xxx`、RestAPI `OBS3001`–`OBS3005`、RoutedEvents `OBS4001`–`OBS4002`）
+6. 诊断 ID 按域分段（如 Events `OBS2001`–`OBS2004`、RestAPI `OBS3001`–`OBS3005`）
 
 ---
 
@@ -129,8 +129,7 @@ Observables/
 |--------|------|
 | **Solution Items** | `AGENTS.md`、`README.md`、公共 MSBuild props |
 | **Shared** | `Observables.Core`、`Observables.SourceGenerators.Shared` |
-| **Events** | 双路生成器、测试、`Events.Package` |
-| **RoutedEvents** | R3/Reactive 生成器、测试、`RoutedEvents.Package`；`Observables.RoutedEvents` 运行时占位 |
+| **Events** | 双路生成器、测试、`Events.Package`；`Observables.Events/targets/observables.events.props`（`ObservableRoutedEvents` 默认 `false`） |
 | **RestAPI** / **SignalR** / … | 该域全部项目；RestAPI 含 `SourceGenerators.Shared`（shproj，`Id` 固定）、`RestAPI.Package`、**Tests** |
 | **RestAPI/Tests** | `RestAPI.Tests`、`Reactive.Tests`、`GeneratorTests`、`HttpClientFactory.Tests` |
 
@@ -141,8 +140,7 @@ Observables/
 | 域 | 运行时 | R3 生成器 | Reactive 生成器 | 测试 |
 |----|--------|-----------|-----------------|------|
 | **RestAPI** | `Observables.RestAPI` | `RestAPI.R3.SourceGenerators` | `RestAPI.Reactive.SourceGenerators` | Core / Reactive / Generator / HCF |
-| **Events** | — | `Events.R3.SourceGenerators` | `Events.Reactive.SourceGenerators` | `Events.R3` / `Events.Reactive` 测试各 9 项（`OBS2001`–`OBS2002`） |
-| **RoutedEvents** | 占位 | `RoutedEvents.R3` + `RoutedEvents.Reactive` 生成器 | 已实现 | R3/Reactive 生成器测试 |
+| **Events** | `Observables.Events`（props） | `Events.R3.SourceGenerators` | `Events.Reactive.SourceGenerators` | R3/Reactive 生成器测试（经典 + 路由；路由需 `ObservableRoutedEvents=true`） |
 | **SignalR** 等 | 骨架 | `*.R3` 骨架 | `Observables.<Feature>` 骨架 | — |
 
 **RestAPI 运行时**：`RestApiSettings`、`RestService.For<T>()`；命名空间 `Observables.RestAPI`。
@@ -184,8 +182,7 @@ CI：`.github/workflows/ci.yml` 调用 Nuke **Ci**（`windows-latest`，.NET 8 +
 | 模块 | 范围 |
 |------|------|
 | **Shared** | `Observables.Core`、`Observables.SourceGenerators.Shared` |
-| **Events** | `/Events/` |
-| **RoutedEvents** | `/RoutedEvents/` |
+| **Events** | `/Events/`（含 `Observables.Events/targets`、Shared 诊断 `OBS2001`–`OBS2004`） |
 | **RestAPI** | `/RestAPI/`（含 `SourceGenerators.Shared`、Tests） |
 | **SignalR** / **WebSocket** / **Mqtt** / **Grpc** | 各对应文件夹 |
 | **Solution Items** | 根 `AGENTS.md`、props、`Observables.slnx`；按变更归入 **Shared** 或相关 Feature 的 Issue |

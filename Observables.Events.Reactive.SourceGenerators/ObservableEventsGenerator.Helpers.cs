@@ -52,18 +52,32 @@ private static string ToIdentifier(string value)
     return builder.ToString();
 }
 
-private static void ReportInvalidDelegate(IEventSymbol evt, SourceProductionContext context)
+private static void ReportInvalidDelegate(
+    IEventSymbol evt,
+    SourceProductionContext context,
+    ObservableEventsEntryKind entryKind)
 {
+    var descriptor = entryKind is ObservableEventsEntryKind.RoutedEvents or ObservableEventsEntryKind.RoutedEventHandlers
+        or ObservableEventsEntryKind.AttachedRoutedEvent or ObservableEventsEntryKind.AttachedRoutedEventHandler
+        ? ObservableEventsDiagnosticDescriptors.InvalidRoutedEventDelegate
+        : ObservableEventsDiagnosticDescriptors.InvalidEventDelegate;
     context.ReportDiagnostic(Diagnostic.Create(
-        ObservableEventsDiagnosticDescriptors.InvalidEventDelegate,
+        descriptor,
         evt.Locations.FirstOrDefault(),
         evt.Name));
 }
 
-private static void ReportInvalidFromEventHandlersDelegate(IEventSymbol evt, SourceProductionContext context)
+private static void ReportInvalidEventHandlersDelegate(
+    IEventSymbol evt,
+    SourceProductionContext context,
+    ObservableEventsEntryKind entryKind)
 {
+    var descriptor = entryKind is ObservableEventsEntryKind.RoutedEvents or ObservableEventsEntryKind.RoutedEventHandlers
+        or ObservableEventsEntryKind.AttachedRoutedEvent or ObservableEventsEntryKind.AttachedRoutedEventHandler
+        ? ObservableEventsDiagnosticDescriptors.InvalidRoutedEventHandlersDelegate
+        : ObservableEventsDiagnosticDescriptors.InvalidEventHandlersDelegate;
     context.ReportDiagnostic(Diagnostic.Create(
-        ObservableEventsDiagnosticDescriptors.InvalidFromEventHandlersDelegate,
+        descriptor,
         evt.Locations.FirstOrDefault(),
         evt.Name));
 }

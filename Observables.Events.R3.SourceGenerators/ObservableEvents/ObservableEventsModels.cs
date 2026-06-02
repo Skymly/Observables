@@ -9,25 +9,41 @@ internal readonly struct ObservableEventTargetSets
     public static readonly ObservableEventTargetSets Empty = new(
         ImmutableArray<INamedTypeSymbol>.Empty,
         ImmutableArray<INamedTypeSymbol>.Empty,
+        ImmutableArray<INamedTypeSymbol>.Empty,
+        ImmutableArray<INamedTypeSymbol>.Empty,
         ImmutableArray<GenericConstraintTarget>.Empty,
-        ImmutableArray<GenericConstraintTarget>.Empty);
+        ImmutableArray<GenericConstraintTarget>.Empty,
+        ImmutableArray<AttachedRoutedEventTarget>.Empty,
+        ImmutableArray<AttachedRoutedEventTarget>.Empty);
 
     public ObservableEventTargetSets(
-        ImmutableArray<INamedTypeSymbol> fromEventsTypes,
-        ImmutableArray<INamedTypeSymbol> fromEventHandlersTypes,
-        ImmutableArray<GenericConstraintTarget> fromEventsGenericConstraintTargets,
-        ImmutableArray<GenericConstraintTarget> fromEventHandlersGenericConstraintTargets)
+        ImmutableArray<INamedTypeSymbol> eventsTypes,
+        ImmutableArray<INamedTypeSymbol> eventHandlersTypes,
+        ImmutableArray<INamedTypeSymbol> routedEventsTypes,
+        ImmutableArray<INamedTypeSymbol> routedEventHandlersTypes,
+        ImmutableArray<GenericConstraintTarget> eventsGenericConstraintTargets,
+        ImmutableArray<GenericConstraintTarget> eventHandlersGenericConstraintTargets,
+        ImmutableArray<AttachedRoutedEventTarget> attachedRoutedEventsTypes,
+        ImmutableArray<AttachedRoutedEventTarget> attachedRoutedEventHandlersTypes)
     {
-        FromEventsTypes = fromEventsTypes;
-        FromEventHandlersTypes = fromEventHandlersTypes;
-        FromEventsGenericConstraintTargets = fromEventsGenericConstraintTargets;
-        FromEventHandlersGenericConstraintTargets = fromEventHandlersGenericConstraintTargets;
+        EventsTypes = eventsTypes;
+        EventHandlersTypes = eventHandlersTypes;
+        RoutedEventsTypes = routedEventsTypes;
+        RoutedEventHandlersTypes = routedEventHandlersTypes;
+        EventsGenericConstraintTargets = eventsGenericConstraintTargets;
+        EventHandlersGenericConstraintTargets = eventHandlersGenericConstraintTargets;
+        AttachedRoutedEventsTypes = attachedRoutedEventsTypes;
+        AttachedRoutedEventHandlersTypes = attachedRoutedEventHandlersTypes;
     }
 
-    public ImmutableArray<INamedTypeSymbol> FromEventsTypes { get; }
-    public ImmutableArray<INamedTypeSymbol> FromEventHandlersTypes { get; }
-    public ImmutableArray<GenericConstraintTarget> FromEventsGenericConstraintTargets { get; }
-    public ImmutableArray<GenericConstraintTarget> FromEventHandlersGenericConstraintTargets { get; }
+    public ImmutableArray<INamedTypeSymbol> EventsTypes { get; }
+    public ImmutableArray<INamedTypeSymbol> EventHandlersTypes { get; }
+    public ImmutableArray<INamedTypeSymbol> RoutedEventsTypes { get; }
+    public ImmutableArray<INamedTypeSymbol> RoutedEventHandlersTypes { get; }
+    public ImmutableArray<GenericConstraintTarget> EventsGenericConstraintTargets { get; }
+    public ImmutableArray<GenericConstraintTarget> EventHandlersGenericConstraintTargets { get; }
+    public ImmutableArray<AttachedRoutedEventTarget> AttachedRoutedEventsTypes { get; }
+    public ImmutableArray<AttachedRoutedEventTarget> AttachedRoutedEventHandlersTypes { get; }
 }
 
 internal readonly struct GenericConstraintTarget
@@ -42,6 +58,16 @@ internal readonly struct GenericConstraintTarget
 
     public ImmutableArray<INamedTypeSymbol> ConstraintTypes { get; }
     public string Key { get; }
+}
+
+internal readonly struct AttachedRoutedEventTarget
+{
+    public AttachedRoutedEventTarget(INamedTypeSymbol receiverType)
+    {
+        ReceiverType = receiverType;
+    }
+
+    public INamedTypeSymbol ReceiverType { get; }
 }
 
 internal sealed class EventInterfaceDescriptor

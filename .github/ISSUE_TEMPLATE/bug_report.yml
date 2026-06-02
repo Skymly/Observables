@@ -17,7 +17,6 @@ body:
       options:
         - Shared
         - Events
-        - RoutedEvents
         - RestAPI
         - SignalR
         - WebSocket

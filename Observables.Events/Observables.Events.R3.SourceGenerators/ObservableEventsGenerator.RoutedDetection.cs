@@ -57,8 +57,9 @@ private static bool TryGetAvaloniaRoutedClrEventField(
     routedEventField = null!;
     eventArgsType = null!;
 
-    var routedEventType = compilation.GetTypeByMetadataName("Avalonia.Interactivity.RoutedEvent`1");
-    if (routedEventType is null)
+    var routedEventGenericType = compilation.GetTypeByMetadataName("Avalonia.Interactivity.RoutedEvent`1");
+    var routedEventNonGenericType = compilation.GetTypeByMetadataName("Avalonia.Interactivity.RoutedEvent");
+    if (routedEventGenericType is null && routedEventNonGenericType is null)
     {
         return false;
     }
@@ -76,18 +77,56 @@ private static bool TryGetAvaloniaRoutedClrEventField(
             if (member is not IFieldSymbol field
                 || !field.IsStatic
                 || field.IsImplicitlyDeclared
-                || field.Type is not INamedTypeSymbol fieldType
-                || !SymbolEqualityComparer.Default.Equals(fieldType.OriginalDefinition, routedEventType)
-                || fieldType.TypeArguments.Length != 1
-                || fieldType.TypeArguments[0] is not INamedTypeSymbol argsType)
+                || field.Type is not INamedTypeSymbol fieldType)
             {
                 continue;
             }
 
-            routedEventField = field;
-            eventArgsType = argsType;
-            return true;
+            var normalizedFieldType = fieldType.WithNullableAnnotation(NullableAnnotation.None);
+
+            if (routedEventGenericType is not null
+                && SymbolEqualityComparer.Default.Equals(normalizedFieldType.OriginalDefinition, routedEventGenericType)
+                && fieldType.TypeArguments.Length == 1
+                && fieldType.TypeArguments[0] is INamedTypeSymbol genericArgsType)
+            {
+                routedEventField = field;
+                eventArgsType = genericArgsType;
+                return true;
+            }
+
+            if (routedEventNonGenericType is not null
+                && SymbolEqualityComparer.Default.Equals(normalizedFieldType, routedEventNonGenericType)
+                && TryGetAvaloniaRoutedEventArgsType(evt, compilation, out INamedTypeSymbol nonGenericArgsType))
+            {
+                routedEventField = field;
+                eventArgsType = nonGenericArgsType;
+                return true;
+            }
         }
+    }
+
+    return false;
+}
+
+private static bool TryGetAvaloniaRoutedEventArgsType(
+    IEventSymbol evt,
+    Compilation compilation,
+    out INamedTypeSymbol eventArgsType)
+{
+    eventArgsType = null!;
+
+    var routedEventArgs = compilation.GetTypeByMetadataName("Avalonia.Interactivity.RoutedEventArgs");
+    if (evt.Type is INamedTypeSymbol { TypeArguments.Length: 1 } handlerType
+        && handlerType.TypeArguments[0] is INamedTypeSymbol argsFromHandler)
+    {
+        eventArgsType = argsFromHandler;
+        return true;
+    }
+
+    if (routedEventArgs is not null)
+    {
+        eventArgsType = routedEventArgs;
+        return true;
     }
 
     return false;

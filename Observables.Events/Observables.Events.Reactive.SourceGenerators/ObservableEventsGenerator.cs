@@ -140,6 +140,11 @@ public sealed partial class ObservableEventsGenerator : IIncrementalGenerator
 
     private static bool IsGeneratorTestRoutedGeneration(Compilation compilation, ImmutableArray<SyntaxNode> candidates)
     {
+        if (string.Equals(compilation.AssemblyName, "Observables.Samples.Events.Routed", System.StringComparison.Ordinal))
+        {
+            return true;
+        }
+
         if (!string.Equals(compilation.AssemblyName, "GeneratorTests", System.StringComparison.Ordinal))
         {
             return false;

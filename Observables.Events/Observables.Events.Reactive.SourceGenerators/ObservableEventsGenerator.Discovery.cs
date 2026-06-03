@@ -118,7 +118,9 @@ private static ObservableEventTargetSets CollectObservableEventTargets(
     // Cache Avalonia detection to avoid repeated metadata lookups
     var avaloniaRoutedEventType = compilation.GetTypeByMetadataName("Avalonia.Interactivity.RoutedEvent`1");
     var avaloniaRoutedEventTypeNonGeneric = compilation.GetTypeByMetadataName("Avalonia.Interactivity.RoutedEvent");
-    var useAvalonia = avaloniaRoutedEventType is not null || avaloniaRoutedEventTypeNonGeneric is not null;
+    var useAvalonia = avaloniaRoutedEventType is not null
+        || avaloniaRoutedEventTypeNonGeneric is not null
+        || string.Equals(compilation.AssemblyName, "Observables.Samples.Events.Routed", System.StringComparison.Ordinal);
 
     foreach (var candidate in candidates)
     {

@@ -1,27 +1,29 @@
-<Project Sdk="Microsoft.NET.Sdk">
-
-  <Import Project="..\..\eng\Observables.Package.props" />
-  <Import Project="..\..\eng\PackRoslynAnalyzer.targets" />
-
-  <PropertyGroup>
-    <TargetFramework>netstandard2.0</TargetFramework>
-    <IsPackable>true</IsPackable>
-    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
-    <IncludeBuildOutput>false</IncludeBuildOutput>
-    <DevelopmentDependency>true</DevelopmentDependency>
-    <SuppressDependenciesWhenPacking>false</SuppressDependenciesWhenPacking>
-    <PackageId>Observables.Events.Reactive</PackageId>
-    <Description>Roslyn source generators for classic .NET events to System.Reactive IObservable.</Description>
-    <PackageTags>observables;events;system.reactive;source-generator;roslyn</PackageTags>
-    <ObservablesPackGeneratorProject>..\Observables.Events.Reactive.SourceGenerators\Observables.Events.Reactive.SourceGenerators.csproj</ObservablesPackGeneratorProject>
-    <ObservablesPackGeneratorAssemblyName>Observables.Events.Reactive.SourceGenerators.dll</ObservablesPackGeneratorAssemblyName>
-    <ObservablesPackGeneratorOutputDir>$(MSBuildProjectDirectory)\..\Observables.Events.Reactive.SourceGenerators\bin\$(Configuration)\netstandard2.0\</ObservablesPackGeneratorOutputDir>
-    <ObservablesPackPackagePropsFile>$(MSBuildProjectDirectory)\build\Observables.Events.Reactive.props</ObservablesPackPackagePropsFile>
-  </PropertyGroup>
-
-  <ItemGroup>
-    <PackageReference Include="System.Reactive" Version="6.0.1" />
-    <None Include="..\Observables.Events\targets\observables.events.props" Pack="true" PackagePath="buildTransitive\observables.events.props" Visible="false" />
-  </ItemGroup>
-
-</Project>
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <Import Project="..\..\eng\Observables.Package.props" />
+  <Import Project="..\..\eng\PackRoslynAnalyzer.targets" />
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <IsPackable>true</IsPackable>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <IncludeBuildOutput>false</IncludeBuildOutput>
+    <DevelopmentDependency>true</DevelopmentDependency>
+    <SuppressDependenciesWhenPacking>false</SuppressDependenciesWhenPacking>
+    <PackageId>Observables.Events.Reactive</PackageId>
+    <Description>Roslyn source generators for classic .NET events to System.Reactive IObservable.</Description>
+    <PackageTags>observables;events;system.reactive;source-generator;roslyn</PackageTags>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <ObservablesPackGeneratorProject>..\Observables.Events.Reactive.SourceGenerators\Observables.Events.Reactive.SourceGenerators.csproj</ObservablesPackGeneratorProject>
+    <ObservablesPackGeneratorAssemblyName>Observables.Events.Reactive.SourceGenerators.dll</ObservablesPackGeneratorAssemblyName>
+    <ObservablesPackGeneratorOutputDir>$(MSBuildProjectDirectory)\..\Observables.Events.Reactive.SourceGenerators\bin\$(Configuration)\netstandard2.0\</ObservablesPackGeneratorOutputDir>
+    <ObservablesPackPackagePropsFile>$(MSBuildProjectDirectory)\build\Observables.Events.Reactive.props</ObservablesPackPackagePropsFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="System.Reactive" Version="6.0.1" />
+    <None Include="README.Events.Reactive.pack.md" Pack="true" PackagePath="README.md" Visible="false" />
+    <None Include="..\Observables.Events\targets\observables.events.props" Pack="true" PackagePath="buildTransitive\observables.events.props" Visible="false" />
+  </ItemGroup>
+
+</Project>

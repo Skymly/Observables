@@ -1,0 +1,10 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>Observables.NuGetSmoke.Events.Reactive</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Observables.Events.Reactive" Version="$(ObservablesConsumerPackageVersion)" />
+    <PackageReference Include="System.Reactive" Version="6.0.1" />
+  </ItemGroup>
+</Project>

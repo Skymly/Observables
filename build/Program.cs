@@ -8,7 +8,6 @@ using Nuke.Common;
 using Nuke.Common.Execution;
 using Nuke.Common.IO;
 using Nuke.Common.Tools.DotNet;
-
 using static Nuke.Common.Tools.DotNet.DotNetTasks;
 
 [UnsetVisualStudioEnvironmentVariables]
@@ -19,6 +18,9 @@ sealed class Build : NukeBuild
 
     [Parameter("Package version override")]
     readonly string? Version = Environment.GetEnvironmentVariable("VERSION");
+
+    [Parameter("NuGet consumer smoke feed: Local (artifacts/package) or Published (nuget.org)")]
+    readonly NuGetConsumerFeed ConsumerFeed = NuGetConsumerFeed.Local;
 
     [Parameter("NuGet API key (required for nuget.org Publish)")]
     readonly string? NuGetApiKey =
@@ -32,6 +34,16 @@ sealed class Build : NukeBuild
     AbsolutePath SolutionFile => Root / "Observables.slnx";
     AbsolutePath TestResultsDirectory => Root / "TestResults";
     AbsolutePath PackageOutputDirectory => Root / "artifacts" / "package";
+    AbsolutePath NuGetSmokeDirectory => Root / "eng" / "nuget-smoke";
+    AbsolutePath NuGetSmokeLocalConfig => NuGetSmokeDirectory / "nuget.config.local";
+
+    static readonly string[] NuGetConsumerProjectRelativePaths =
+    [
+        "eng/nuget-smoke/Events.R3.Consumer/Events.R3.Consumer.csproj",
+        "eng/nuget-smoke/Events.Reactive.Consumer/Events.Reactive.Consumer.csproj",
+        "eng/nuget-smoke/RestAPI.R3.Consumer/RestAPI.R3.Consumer.csproj",
+        "eng/nuget-smoke/RestAPI.Reactive.Consumer/RestAPI.Reactive.Consumer.csproj",
+    ];
 
     /// <summary>
     /// All test projects (slnx does not discover every test project via <c>dotnet test</c>).
@@ -177,6 +189,41 @@ sealed class Build : NukeBuild
                         && e.EndsWith(".dll", StringComparison.OrdinalIgnoreCase));
                     Assert.True(hasLib, $"{packageId}: missing runtime assemblies under lib/");
                 }
+
+                Assert.True(
+                    entries.Contains("README.md"),
+                    $"{packageId}: missing package README.md at package root");
+            }
+        });
+
+    Target NuGetConsumerSmoke => _ => _
+        .DependsOn(ConsumerFeed == NuGetConsumerFeed.Local ? Pack : null)
+        .Executes(() =>
+        {
+            string packageVersion = string.IsNullOrWhiteSpace(Version) ? "0.1.0-preview1" : Version;
+            string? previousNuGetConfig = Environment.GetEnvironmentVariable("NUGET_CONFIG");
+
+            if (ConsumerFeed == NuGetConsumerFeed.Local)
+            {
+                Environment.SetEnvironmentVariable("NUGET_CONFIG", NuGetSmokeLocalConfig);
+            }
+
+            try
+            {
+                foreach (string relativePath in NuGetConsumerProjectRelativePaths)
+                {
+                    AbsolutePath projectFile = Root / relativePath;
+                    Assert.FileExists(projectFile, $"Consumer project not found: {projectFile}");
+
+                    DotNetBuild(s => s
+                        .SetProjectFile(projectFile)
+                        .SetConfiguration(Configuration)
+                        .SetProperty("ObservablesConsumerPackageVersion", packageVersion));
+                }
+            }
+            finally
+            {
+                Environment.SetEnvironmentVariable("NUGET_CONFIG", previousNuGetConfig);
             }
         });
 
@@ -210,5 +257,17 @@ sealed class Build : NukeBuild
         .DependsOn(UnitTest);
 
     Target CiPack => _ => _
-        .DependsOn(PackVerify);
+        .DependsOn(PackVerify)
+        .DependsOn(NuGetConsumerSmoke)
+        .OnlyWhenStatic(() => ConsumerFeed == NuGetConsumerFeed.Local);
+
+    Target NuGetConsumerSmokePublished => _ => _
+        .DependsOn(NuGetConsumerSmoke)
+        .OnlyWhenStatic(() => ConsumerFeed == NuGetConsumerFeed.Published);
+}
+
+enum NuGetConsumerFeed
+{
+    Local,
+    Published,
 }

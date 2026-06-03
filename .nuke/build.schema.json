@@ -1,6 +1,14 @@
 {
   "$schema": "http://json-schema.org/draft-04/schema#",
   "definitions": {
+    "NuGetConsumerFeed": {
+      "type": "string",
+      "description": "",
+      "enum": [
+        "Local",
+        "Published"
+      ]
+    },
     "Host": {
       "type": "string",
       "enum": [
@@ -28,6 +36,8 @@
         "CiPack",
         "Clean",
         "Compile",
+        "NuGetConsumerSmoke",
+        "NuGetConsumerSmokePublished",
         "Pack",
         "PackVerify",
         "Publish",
@@ -109,6 +119,10 @@
         "Configuration": {
           "type": "string",
           "description": "Build configuration (Debug/Release)"
+        },
+        "ConsumerFeed": {
+          "description": "NuGet consumer smoke feed: Local (artifacts/package) or Published (nuget.org)",
+          "$ref": "#/definitions/NuGetConsumerFeed"
         },
         "GitHubToken": {
           "type": "string",

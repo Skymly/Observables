@@ -9,7 +9,7 @@ internal static class DiagnosticDescriptors
         new(
             "OBS3001",
             "Observables.RestAPI types must have HTTP method attributes",
-            "Method {0}.{1} either has no Observables.RestAPI HTTP method attribute or you've used something other than a string literal for the 'path' argument",
+            "Method {0}.{1} has no Observables.RestAPI HTTP method attribute or uses a non-literal path argument",
             "Observables.RestAPI",
             DiagnosticSeverity.Warning,
             true
@@ -29,7 +29,7 @@ internal static class DiagnosticDescriptors
         new(
             "OBS3003",
             "Unsupported return type",
-            "Return type '{0}' is not supported by Observables.RestAPI.",
+            "Return type '{0}' is not supported by Observables.RestAPI",
             "Observables.RestAPI",
             DiagnosticSeverity.Error,
             true
@@ -39,7 +39,7 @@ internal static class DiagnosticDescriptors
         new(
             "OBS3004",
             "Path template mismatch",
-            "Path template for method '{0}' does not match its parameters.",
+            "Path template for method '{0}' does not match its parameters",
             "Observables.RestAPI",
             DiagnosticSeverity.Error,
             true
@@ -49,7 +49,7 @@ internal static class DiagnosticDescriptors
         new(
             "OBS3005",
             "SystemReactive package required for IObservable",
-            "Return type '{0}' requires PackageReference to Observables.RestAPI.Reactive.",
+            "Return type '{0}' requires PackageReference to Observables.RestAPI.Reactive",
             "Observables.RestAPI",
             DiagnosticSeverity.Error,
             true

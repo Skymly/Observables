@@ -47,6 +47,20 @@ public sealed class RuntimeTests
         Assert.Equal(7, received.Id);
     }
 
+    [Fact]
+    public async Task TaskGet_throws_ApiException_on_404()
+    {
+        var mockHttp = new MockHttpMessageHandler();
+        mockHttp.When(HttpMethod.Get, "https://api.example.com/users/404")
+            .Respond(HttpStatusCode.NotFound);
+
+        var client = mockHttp.ToHttpClient();
+        client.BaseAddress = new Uri("https://api.example.com");
+
+        var api = RestService.For<IUserApi>(client);
+        await Assert.ThrowsAsync<ApiException>(() => api.GetUser(404));
+    }
+
     public interface IUserApi
     {
         [Get("/users/{id}")]

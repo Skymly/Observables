@@ -168,20 +168,29 @@ Observables/
 
 **CI 不会在 PR 或 push `main` 时 Publish**；仅验证与打包 artifact（见下节）。
 
+### 预览版 vs 稳定版（发版产物）
+
+| 版本类型 | Git tag（`v*`） | NuGet（nuget.org + GitHub Packages） | GitHub Release |
+|----------|-----------------|--------------------------------------|----------------|
+| **预览**（如 `0.1.0-preview1`） | **要** | **要** | **不要** |
+| **稳定**（无 `-preview` 等预发布后缀） | **要** | **要** | **要**（维护者批准；可附 `.nupkg`） |
+
+- **预览版**：只打 tag 并推 NuGet；**禁止** `gh release create`、禁止为预览 tag 开 GitHub Release、禁止在 `release.yml` 为预览 tag 上传 Release 附件。
+- **稳定版**：tag + NuGet 后，维护者可另建 GitHub Release（非 CI 自动步骤，除非日后单独约定）。
+
 ### 维护者发版（tag 触发，对齐 MvvmAIO.Markup）
 
-1. 在 `main` 上确认 `eng/Observables.Package.props`（或当次发版 PR）中的 **`PackageVersion` 与 tag 一致**。
+1. 在 `main` 上确认 `eng/Observables.Package.props` 中的 **`PackageVersion` 与 tag 一致**（tag 为 `v` + 版本号，如 `v0.1.0-preview1`）。
 2. 配置仓库 Secrets：`NUGET_API_KEY`；`GITHUB_TOKEN`（或 PAT，`packages:write`，用于 GitHub Packages）。
-3. 推送 **annotated tag**（须 `v` 前缀，与 MvvmAIO 一致）：
+3. 推送 **annotated tag**（须 `v` 前缀）：
 
 ```powershell
 git tag -a v0.1.0-preview1 -m "0.1.0-preview1"
 git push origin v0.1.0-preview1
 ```
 
-4. [`.github/workflows/release.yml`](.github/workflows/release.yml) 在 **`push` `v*` tag** 时运行 Nuke **`Publish`**（`PackVerify` → nuget.org + GitHub Packages）。仅允许维护者账号（workflow 内 `github.actor` 校验）。
-5. 可选：同一 tag 上在 GitHub 创建 Release 并附上 `artifacts/package` 中的 `.nupkg`（workflow **不**自动创建 Release）。
-6. 紧急重发可用 **workflow_dispatch** 并手动填写 `version`（仍受 actor 限制）。
+4. [`.github/workflows/release.yml`](.github/workflows/release.yml) 在 **`push` `v*` tag** 时运行 Nuke **`Publish`**（`PackVerify` → nuget.org + GitHub Packages）。仅允许维护者账号（workflow 内 `github.actor` 校验）。**不**创建 GitHub Release。
+5. 紧急重发可用 **workflow_dispatch** 并手动填写 `version`（仍受 actor 限制；同样**不**发 GitHub Release）。
 
 ## 构建与测试
 

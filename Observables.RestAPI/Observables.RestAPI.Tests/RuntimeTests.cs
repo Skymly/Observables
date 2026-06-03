@@ -41,12 +41,10 @@ public sealed class RuntimeTests
         client.BaseAddress = new Uri("https://api.example.com");
 
         var api = RestService.For<IUserApi>(client);
-        User? received = null;
-        using var subscription = api.GetUserObservable(7).Subscribe(user => received = user);
+        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+        User received = await api.GetUserObservable(7).FirstAsync(cts.Token);
 
-        await Task.Delay(250);
-        Assert.NotNull(received);
-        Assert.Equal(7, received!.Id);
+        Assert.Equal(7, received.Id);
     }
 
     public interface IUserApi

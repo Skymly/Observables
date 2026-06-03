@@ -43,6 +43,8 @@ sealed class Build : NukeBuild
         "eng/nuget-smoke/Events.Reactive.Consumer/Events.Reactive.Consumer.csproj",
         "eng/nuget-smoke/RestAPI.R3.Consumer/RestAPI.R3.Consumer.csproj",
         "eng/nuget-smoke/RestAPI.Reactive.Consumer/RestAPI.Reactive.Consumer.csproj",
+        "eng/nuget-smoke/SignalR.R3.Consumer/SignalR.R3.Consumer.csproj",
+        "eng/nuget-smoke/SignalR.Reactive.Consumer/SignalR.Reactive.Consumer.csproj",
     ];
 
     /// <summary>
@@ -56,6 +58,7 @@ sealed class Build : NukeBuild
         "Observables.RestAPI/Observables.RestAPI.Reactive.Tests/Observables.RestAPI.Reactive.Tests.csproj",
         "Observables.RestAPI/Observables.RestAPI.GeneratorTests/Observables.RestAPI.GeneratorTests.csproj",
         "Observables.RestAPI/Observables.RestAPI.HttpClientFactory.Tests/Observables.RestAPI.HttpClientFactory.Tests.csproj",
+        "Observables.SignalR/Observables.SignalR.R3.SourceGenerators.Tests/Observables.SignalR.R3.SourceGenerators.Tests.csproj",
     ];
 
     static readonly string[] PackProjectRelativePaths =
@@ -64,6 +67,8 @@ sealed class Build : NukeBuild
         "Observables.Events/Observables.Events.Package/Observables.Events.Reactive.csproj",
         "Observables.RestAPI/Observables.RestAPI.Package/Observables.RestAPI.R3.csproj",
         "Observables.RestAPI/Observables.RestAPI.Package/Observables.RestAPI.Reactive.Pack.csproj",
+        "Observables.SignalR/Observables.SignalR.Package/Observables.SignalR.R3.csproj",
+        "Observables.SignalR/Observables.SignalR.Package/Observables.SignalR.Reactive.Pack.csproj",
     ];
 
     static readonly string[] ExpectedPackageIds =
@@ -72,6 +77,8 @@ sealed class Build : NukeBuild
         "Observables.Events.Reactive",
         "Observables.RestAPI.R3",
         "Observables.RestAPI.Reactive",
+        "Observables.SignalR.R3",
+        "Observables.SignalR.Reactive",
     ];
 
     public static int Main() => Execute<Build>(x => x.Ci);
@@ -183,7 +190,8 @@ sealed class Build : NukeBuild
                         $"{packageId}: missing buildTransitive/observables.events.props");
                 }
 
-                if (packageId.StartsWith("Observables.RestAPI.", StringComparison.Ordinal))
+                if (packageId.StartsWith("Observables.RestAPI.", StringComparison.Ordinal)
+                    || packageId.StartsWith("Observables.SignalR.", StringComparison.Ordinal))
                 {
                     bool hasLib = entries.Any(e => e.StartsWith("lib/", StringComparison.OrdinalIgnoreCase)
                         && e.EndsWith(".dll", StringComparison.OrdinalIgnoreCase));

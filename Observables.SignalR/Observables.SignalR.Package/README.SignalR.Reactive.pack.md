@@ -1,0 +1,22 @@
+# Observables.SignalR.Reactive
+
+Declarative SignalR hub client interfaces for [System.Reactive](https://github.com/dotnet/reactive) `IObservable<T>`.
+
+## Install
+
+```xml
+<PackageReference Include="Observables.SignalR.Reactive" Version="0.1.0-preview2" />
+<PackageReference Include="System.Reactive" Version="6.0.1" />
+```
+
+## Usage
+
+Same hub attributes as the R3 package; use `IObservable<T>` return types and `HubService.For<T>(connection)`.
+
+## Diagnostics
+
+`OBS4001`–`OBS4006` — see [Observables](https://github.com/Skymly/Observables).
+
+## License
+
+MIT

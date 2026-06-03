@@ -160,7 +160,7 @@ sealed class Build : NukeBuild
         .DependsOn(Pack)
         .Executes(() =>
         {
-            string versionSuffix = string.IsNullOrWhiteSpace(Version) ? "0.1.0-preview1" : Version;
+            string versionSuffix = string.IsNullOrWhiteSpace(Version) ? "0.1.0-preview2" : Version;
 
             foreach (string packageId in ExpectedPackageIds)
             {
@@ -200,7 +200,7 @@ sealed class Build : NukeBuild
         .DependsOn(ConsumerFeed == NuGetConsumerFeed.Local ? Pack : null)
         .Executes(() =>
         {
-            string packageVersion = string.IsNullOrWhiteSpace(Version) ? "0.1.0-preview1" : Version;
+            string packageVersion = string.IsNullOrWhiteSpace(Version) ? "0.1.0-preview2" : Version;
             string? previousNuGetConfig = Environment.GetEnvironmentVariable("NUGET_CONFIG");
 
             if (ConsumerFeed == NuGetConsumerFeed.Local)

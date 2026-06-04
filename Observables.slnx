@@ -74,9 +74,23 @@
 
   <Folder Name="/SignalR/">
 
+    <Project Path="Observables.SignalR/Observables.SignalR.SourceGenerators.Shared/Observables.SignalR.SourceGenerators.Shared.shproj" Id="b4e2f8a1-6c3d-4e9f-9a2b-1d0c8e7f5a4b" />
+
+    <Project Path="Observables.SignalR/Observables.SignalR.Package/Observables.SignalR.Package.csproj" />
+
     <Project Path="Observables.SignalR/Observables.SignalR/Observables.SignalR.csproj" />
 
-    <Project Path="Observables.SignalR/Observables.SignalR.R3/Observables.SignalR.R3.csproj" />
+    <Project Path="Observables.SignalR/Observables.SignalR.Reactive/Observables.SignalR.Reactive.csproj" />
+
+    <Project Path="Observables.SignalR/Observables.SignalR.Reactive.SourceGenerators/Observables.SignalR.Reactive.SourceGenerators.csproj" />
+
+    <Project Path="Observables.SignalR/Observables.SignalR.R3.SourceGenerators/Observables.SignalR.R3.SourceGenerators.csproj" />
+
+    <Folder Name="/Tests/">
+
+      <Project Path="Observables.SignalR/Observables.SignalR.R3.SourceGenerators.Tests/Observables.SignalR.R3.SourceGenerators.Tests.csproj" />
+
+    </Folder>
 
   </Folder>
 

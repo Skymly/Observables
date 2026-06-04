@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <Import Project="..\..\Observables.SourceGenerators.props" />
+
+  <PropertyGroup>
+    <Description>Source generator for SignalR hub proxies → System.Reactive IObservable.</Description>
+    <DefineConstants>$(DefineConstants);ROSLYN_4;SIGNALR_REACTIVE</DefineConstants>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\Observables.Shared\Observables.SourceGenerators.Shared\Observables.SourceGenerators.Shared.csproj" />
+    <PackageReference Include="System.Reactive" Version="6.0.1" PrivateAssets="all" />
+  </ItemGroup>
+
+  <Import Project="..\Observables.SignalR.SourceGenerators.Shared\Observables.SignalR.SourceGenerators.Shared.projitems" Label="Shared" />
+
+</Project>

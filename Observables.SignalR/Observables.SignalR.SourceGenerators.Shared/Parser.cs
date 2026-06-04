@@ -1,0 +1,454 @@
+using System.Collections.Immutable;
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
+
+namespace Observables.SignalR.Generators;
+
+internal static class Parser
+{
+    static readonly SymbolDisplayFormat DisplayFormat =
+        SymbolDisplayFormat.FullyQualifiedFormat.WithMiscellaneousOptions(
+            SymbolDisplayMiscellaneousOptions.IncludeNullableReferenceTypeModifier);
+
+#if SIGNALR_R3
+    const string ObservableMetadataName = "R3.Observable`1";
+    const string UnitMetadataName = "R3.Unit";
+#else
+    const string ObservableMetadataName = "System.IObservable`1";
+    const string UnitMetadataName = "System.Reactive.Unit";
+#endif
+
+    public static (List<Diagnostic> diagnostics, ContextGenerationModel model) GenerateHubStubs(
+        CSharpCompilation compilation,
+        ImmutableArray<InterfaceDeclarationSyntax> candidateInterfaces,
+        CancellationToken cancellationToken)
+    {
+        var diagnostics = new List<Diagnostic>();
+        var hubAttribute = compilation.GetTypeByMetadataName("Observables.SignalR.HubAttribute");
+        if (hubAttribute is null)
+        {
+            diagnostics.Add(Diagnostic.Create(DiagnosticDescriptors.SignalRCoreNotReferenced, null));
+            return (diagnostics, new ContextGenerationModel(ImmutableEquatableArray.Empty<HubInterfaceModel>()));
+        }
+
+        var invokeAttribute = compilation.GetTypeByMetadataName("Observables.SignalR.HubInvokeAttribute");
+        var sendAttribute = compilation.GetTypeByMetadataName("Observables.SignalR.HubSendAttribute");
+        var streamAttribute = compilation.GetTypeByMetadataName("Observables.SignalR.HubStreamAttribute");
+        var onAttribute = compilation.GetTypeByMetadataName("Observables.SignalR.HubOnAttribute");
+        var observableType = compilation.GetTypeByMetadataName(ObservableMetadataName);
+        var unitType = compilation.GetTypeByMetadataName(UnitMetadataName);
+
+        var interfaces = new List<HubInterfaceModel>();
+
+        foreach (var group in candidateInterfaces.GroupBy(static i => i.SyntaxTree))
+        {
+            var semanticModel = compilation.GetSemanticModel(group.Key);
+            foreach (var ifaceSyntax in group)
+            {
+                if (semanticModel.GetDeclaredSymbol(ifaceSyntax, cancellationToken) is not INamedTypeSymbol ifaceSymbol)
+                {
+                    continue;
+                }
+
+                if (!HasHubAttribute(ifaceSymbol, hubAttribute))
+                {
+                    continue;
+                }
+
+                var nullable = compilation.Options.NullableContextOptions == NullableContextOptions.Enable
+                    || semanticModel.GetNullableContext(ifaceSyntax.SpanStart) == NullableContext.Enabled
+                        ? Nullability.Enabled
+                        : Nullability.Disabled;
+
+                var members = new List<HubMemberModel>();
+                foreach (var member in ifaceSymbol.GetMembers())
+                {
+                    if (member.DeclaredAccessibility != Accessibility.Public || member.IsStatic)
+                    {
+                        continue;
+                    }
+
+                    switch (member)
+                    {
+                        case IMethodSymbol method when method.MethodKind == MethodKind.Ordinary:
+                            TryAddMethod(
+                                method,
+                                ifaceSymbol,
+                                invokeAttribute,
+                                sendAttribute,
+                                streamAttribute,
+                                observableType,
+                                unitType,
+                                members,
+                                diagnostics,
+                                ifaceSyntax);
+                            break;
+                        case IPropertySymbol property:
+                            TryAddProperty(
+                                property,
+                                onAttribute,
+                                observableType,
+                                members,
+                                diagnostics,
+                                ifaceSyntax);
+                            break;
+                    }
+                }
+
+                if (members.Count == 0)
+                {
+                    continue;
+                }
+
+                var className = $"{ifaceSymbol.Name.TrimStart('I')}GeneratedProxy";
+                interfaces.Add(
+                    new HubInterfaceModel(
+                        $"{className}.SignalR.g.cs",
+                        className,
+                        ifaceSymbol.ToDisplayString(DisplayFormat),
+#if SIGNALR_R3
+                        "Observables.SignalR.Generated",
+#else
+                        "Observables.SignalR.Reactive.Generated",
+#endif
+                        members.ToImmutableEquatableArray(),
+                        nullable));
+            }
+        }
+
+        return (diagnostics, new ContextGenerationModel(interfaces.ToImmutableEquatableArray()));
+    }
+
+    static void TryAddMethod(
+        IMethodSymbol method,
+        INamedTypeSymbol ifaceSymbol,
+        INamedTypeSymbol? invokeAttribute,
+        INamedTypeSymbol? sendAttribute,
+        INamedTypeSymbol? streamAttribute,
+        INamedTypeSymbol? observableType,
+        INamedTypeSymbol? unitType,
+        List<HubMemberModel> members,
+        List<Diagnostic> diagnostics,
+        InterfaceDeclarationSyntax ifaceSyntax)
+    {
+        var boundary = GetBoundaryKind(method, invokeAttribute, sendAttribute, streamAttribute);
+        if (boundary is null)
+        {
+            diagnostics.Add(
+                Diagnostic.Create(
+                    DiagnosticDescriptors.InvalidHubMember,
+                    method.Locations.FirstOrDefault(),
+                    ifaceSymbol.Name,
+                    method.Name));
+            return;
+        }
+
+        if (!TryGetLiteralMethodName(method, boundary.Value, out var hubMethodName, out var location))
+        {
+            diagnostics.Add(
+                Diagnostic.Create(
+                    DiagnosticDescriptors.InvalidHubMember,
+                    location ?? method.Locations.FirstOrDefault(),
+                    ifaceSymbol.Name,
+                    method.Name));
+            return;
+        }
+
+        foreach (var parameter in method.Parameters)
+        {
+            if (IsUnsupportedStreamingParameter(parameter.Type))
+            {
+                diagnostics.Add(
+                    Diagnostic.Create(
+                        DiagnosticDescriptors.UnsupportedStreamingParameter,
+                        parameter.Locations.FirstOrDefault(),
+                        parameter.Name,
+                        method.Name));
+                return;
+            }
+        }
+
+        if (!TryParseObservableReturn(method.ReturnType, observableType, unitType, boundary.Value, out var resultType, out var returnDisplay))
+        {
+            diagnostics.Add(
+                Diagnostic.Create(
+                    DiagnosticDescriptors.UnsupportedReturnType,
+                    method.Locations.FirstOrDefault(),
+                    method.ReturnType.ToDisplayString(DisplayFormat)));
+            return;
+        }
+
+        var (declarations, names, hasCt) = BuildParameters(method);
+        members.Add(
+            new HubMemberModel(
+                method.Name,
+                hubMethodName,
+                boundary.Value,
+                false,
+                returnDisplay,
+                resultType,
+                declarations.ToImmutableEquatableArray(),
+                names.ToImmutableEquatableArray(),
+                hasCt));
+    }
+
+    static void TryAddProperty(
+        IPropertySymbol property,
+        INamedTypeSymbol? onAttribute,
+        INamedTypeSymbol? observableType,
+        List<HubMemberModel> members,
+        List<Diagnostic> diagnostics,
+        InterfaceDeclarationSyntax ifaceSyntax)
+    {
+        if (onAttribute is null || !HasAttribute(property, onAttribute))
+        {
+            if (property.GetAttributes().Length > 0 || property.Name is not "Hub")
+            {
+                diagnostics.Add(
+                    Diagnostic.Create(
+                        DiagnosticDescriptors.InvalidHubMember,
+                        property.Locations.FirstOrDefault(),
+                        property.ContainingType.Name,
+                        property.Name));
+            }
+
+            return;
+        }
+
+        if (!TryGetLiteralMethodNameFromProperty(property, out var hubMethodName, out var location))
+        {
+            diagnostics.Add(
+                Diagnostic.Create(
+                    DiagnosticDescriptors.InvalidHubMember,
+                    location ?? property.Locations.FirstOrDefault(),
+                    property.ContainingType.Name,
+                    property.Name));
+            return;
+        }
+
+        if (!TryParseObservableReturn(property.Type, observableType, unitType: null, HubBoundaryKind.On, out var resultType, out var returnDisplay))
+        {
+            diagnostics.Add(
+                Diagnostic.Create(
+                    DiagnosticDescriptors.UnsupportedReturnType,
+                    property.Locations.FirstOrDefault(),
+                    property.Type.ToDisplayString(DisplayFormat)));
+            return;
+        }
+
+        members.Add(
+            new HubMemberModel(
+                property.Name,
+                hubMethodName,
+                HubBoundaryKind.On,
+                true,
+                returnDisplay,
+                resultType,
+                ImmutableEquatableArray.Empty<string>(),
+                ImmutableEquatableArray.Empty<string>(),
+                false));
+    }
+
+    static HubBoundaryKind? GetBoundaryKind(
+        IMethodSymbol method,
+        INamedTypeSymbol? invokeAttribute,
+        INamedTypeSymbol? sendAttribute,
+        INamedTypeSymbol? streamAttribute)
+    {
+        if (invokeAttribute is not null && HasAttribute(method, invokeAttribute))
+        {
+            return HubBoundaryKind.Invoke;
+        }
+
+        if (sendAttribute is not null && HasAttribute(method, sendAttribute))
+        {
+            return HubBoundaryKind.Send;
+        }
+
+        if (streamAttribute is not null && HasAttribute(method, streamAttribute))
+        {
+            return HubBoundaryKind.Stream;
+        }
+
+        return null;
+    }
+
+    static bool HasHubAttribute(INamedTypeSymbol ifaceSymbol, INamedTypeSymbol hubAttribute)
+    {
+        foreach (var attribute in ifaceSymbol.GetAttributes())
+        {
+            if (SymbolEqualityComparer.Default.Equals(attribute.AttributeClass, hubAttribute))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    static bool HasAttribute(ISymbol symbol, INamedTypeSymbol attributeType)
+    {
+        foreach (var attribute in symbol.GetAttributes())
+        {
+            if (SymbolEqualityComparer.Default.Equals(attribute.AttributeClass, attributeType))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    static bool TryGetLiteralMethodName(
+        IMethodSymbol method,
+        HubBoundaryKind boundary,
+        out string hubMethodName,
+        out Location? badLocation)
+    {
+        var attributeClass = boundary switch
+        {
+            HubBoundaryKind.Invoke => "HubInvokeAttribute",
+            HubBoundaryKind.Send => "HubSendAttribute",
+            HubBoundaryKind.Stream => "HubStreamAttribute",
+            _ => throw new ArgumentOutOfRangeException(nameof(boundary)),
+        };
+
+        AttributeData? attribute = null;
+        foreach (var candidate in method.GetAttributes())
+        {
+            if (candidate.AttributeClass?.Name == attributeClass)
+            {
+                attribute = candidate;
+                break;
+            }
+        }
+
+        return TryResolveMethodName(attribute, method.Name, out hubMethodName, out badLocation);
+    }
+
+    static bool TryGetLiteralMethodNameFromProperty(
+        IPropertySymbol property,
+        out string hubMethodName,
+        out Location? badLocation)
+    {
+        AttributeData? attribute = null;
+        foreach (var candidate in property.GetAttributes())
+        {
+            if (candidate.AttributeClass?.Name == "HubOnAttribute")
+            {
+                attribute = candidate;
+                break;
+            }
+        }
+
+        return TryResolveMethodName(attribute, property.Name, out hubMethodName, out badLocation);
+    }
+
+    static bool TryResolveMethodName(
+        AttributeData? attribute,
+        string fallbackName,
+        out string hubMethodName,
+        out Location? badLocation)
+    {
+        badLocation = null;
+        hubMethodName = fallbackName;
+
+        if (attribute is null)
+        {
+            return true;
+        }
+
+        if (attribute.ConstructorArguments.Length == 0
+            || attribute.ConstructorArguments[0].IsNull)
+        {
+            return true;
+        }
+
+        if (attribute.ConstructorArguments[0].Value is string literal && !string.IsNullOrWhiteSpace(literal))
+        {
+            hubMethodName = literal;
+            return true;
+        }
+
+        badLocation = attribute.ApplicationSyntaxReference?.GetSyntax().GetLocation();
+        return false;
+    }
+
+    static bool TryParseObservableReturn(
+        ITypeSymbol returnType,
+        INamedTypeSymbol? observableType,
+        INamedTypeSymbol? unitType,
+        HubBoundaryKind boundary,
+        out string resultTypeDisplay,
+        out string returnTypeDisplay)
+    {
+        resultTypeDisplay = string.Empty;
+        returnTypeDisplay = returnType.ToDisplayString(DisplayFormat);
+
+        if (observableType is null || returnType is not INamedTypeSymbol named
+            || !SymbolEqualityComparer.Default.Equals(named.OriginalDefinition, observableType))
+        {
+            return false;
+        }
+
+        if (named.TypeArguments.Length != 1)
+        {
+            return false;
+        }
+
+        resultTypeDisplay = named.TypeArguments[0].ToDisplayString(DisplayFormat);
+
+        if (boundary == HubBoundaryKind.Send)
+        {
+            if (unitType is null
+                || !SymbolEqualityComparer.Default.Equals(named.TypeArguments[0], unitType))
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    static (List<string> declarations, List<string> names, bool hasCancellationToken) BuildParameters(
+        IMethodSymbol method)
+    {
+        var declarations = new List<string>();
+        var names = new List<string>();
+        var hasCt = false;
+
+        for (var i = 0; i < method.Parameters.Length; i++)
+        {
+            var parameter = method.Parameters[i];
+            if (i == method.Parameters.Length - 1 && IsCancellationToken(parameter.Type))
+            {
+                hasCt = true;
+                declarations.Add(
+                    $"{parameter.Type.ToDisplayString(DisplayFormat)} {parameter.Name} = default");
+                continue;
+            }
+
+            names.Add(parameter.Name);
+            declarations.Add($"{parameter.Type.ToDisplayString(DisplayFormat)} {parameter.Name}");
+        }
+
+        return (declarations, names, hasCt);
+    }
+
+    static bool IsCancellationToken(ITypeSymbol type) =>
+        type.Name == "CancellationToken"
+        && type.ContainingNamespace?.ToDisplayString() == "System.Threading";
+
+    static bool IsUnsupportedStreamingParameter(ITypeSymbol type)
+    {
+        if (type is not INamedTypeSymbol named)
+        {
+            return false;
+        }
+
+        var def = named.OriginalDefinition.ToDisplayString(DisplayFormat);
+        return def is "global::System.Collections.Generic.IAsyncEnumerable<T>"
+            or "global::System.Threading.Channels.ChannelReader<T>";
+    }
+}

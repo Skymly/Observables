@@ -4,7 +4,7 @@
 
 - **类型**：个人项目（Skymly 工作区）
 - **远端**：https://github.com/Skymly/Observables（私有）；`origin/main` 已与本地 `main` 同步；文件夹名 `Observables` = 仓库名
-- **阶段**：**Events**、**RestAPI** 已实现；**NuGet 预览包** `0.1.0-preview2`（4 包，含包 README）；Nuke `PackVerify` + `eng/nuget-smoke` 消费者校验已就绪
+- **阶段**：**Events**、**RestAPI**、**SignalR** 已实现；**NuGet 预览包** `0.1.0-preview3`（6 包，含包 README）；Nuke `PackVerify` + `eng/nuget-smoke` 消费者校验已就绪
 - **下一 Feature**：**SignalR** 已实现（运行时 + R3/Reactive 生成器 + 打包）；设计见 [`docs/design/signalr.md`](docs/design/signalr.md)；Issue [#44](https://github.com/Skymly/Observables/issues/44)
 - **结构约定**：下文「仓库结构」与命名约定为权威
 

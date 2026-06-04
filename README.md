@@ -22,7 +22,7 @@
 | **`Observables.<Feature>.R3.SourceGenerators`** / **`.Reactive.SourceGenerators`** | 双路源生成器 |
 | **`Observables.<Feature>.Package`** | 发布时打包，产出上述两个 NuGet 包 |
 
-### 预览版 NuGet（`0.1.0-preview2`）
+### 预览版 NuGet（`0.1.0-preview3`）
 
 | 包 ID | 说明 |
 |-------|------|
@@ -30,9 +30,11 @@
 | `Observables.Events.Reactive` | Events 生成器 + System.Reactive 依赖 |
 | `Observables.RestAPI.R3` | RestAPI 运行时 + R3 生成器 |
 | `Observables.RestAPI.Reactive` | RestAPI + Reactive 桥接 + 生成器 |
+| `Observables.SignalR.R3` | SignalR 运行时 + R3 生成器 |
+| `Observables.SignalR.Reactive` | SignalR + Reactive 桥接 + 生成器 |
 
 ```xml
-<PackageReference Include="Observables.Events.R3" Version="0.1.0-preview2" />
+<PackageReference Include="Observables.Events.R3" Version="0.1.0-preview3" />
 <PackageReference Include="R3" Version="1.3.0" />
 ```
 

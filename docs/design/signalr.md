@@ -198,7 +198,8 @@ R3 包不引用 System.Reactive，反之亦然（约定）。
 | `Observables.SignalR.Package` | **已发布** | `Observables.SignalR.R3` / `.Reactive` 两包 |
 | `Observables.SignalR.R3.SourceGenerators.Tests` | **已发布** | 生成器单测 |
 | `Observables.SignalR.Reactive.SourceGenerators.Tests` | **已发布** | Verify 快照 + 生成器单测 |
-| `Observables.SignalR.Tests` | 未建 | 可选运行时桥接 E2E（非 preview3 范围） |
+| `Observables.SignalR.Tests` | **已发布** | TestServer + 真实 Hub E2E（Invoke/Send/Stream/On，R3） |
+| `Observables.SignalR.Reactive.Tests` | **已发布** | 同上（System.Reactive） |
 
 配套：
 

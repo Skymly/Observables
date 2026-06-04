@@ -60,6 +60,8 @@ sealed class Build : NukeBuild
         "Observables.RestAPI/Observables.RestAPI.HttpClientFactory.Tests/Observables.RestAPI.HttpClientFactory.Tests.csproj",
         "Observables.SignalR/Observables.SignalR.R3.SourceGenerators.Tests/Observables.SignalR.R3.SourceGenerators.Tests.csproj",
         "Observables.SignalR/Observables.SignalR.Reactive.SourceGenerators.Tests/Observables.SignalR.Reactive.SourceGenerators.Tests.csproj",
+        "Observables.SignalR/Observables.SignalR.Tests/Observables.SignalR.Tests.csproj",
+        "Observables.SignalR/Observables.SignalR.Reactive.Tests/Observables.SignalR.Reactive.Tests.csproj",
     ];
 
     static readonly string[] PackProjectRelativePaths =

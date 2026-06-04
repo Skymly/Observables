@@ -20,8 +20,8 @@ public static class SignalRObservable
         Observable.FromAsync(async ct =>
         {
             using var linked = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, ct);
-            return await connection
-                .InvokeAsync<T>(methodName, args, linked.Token)
+            return await HubConnectionArgs
+                .InvokeAsync<T>(connection, methodName, args, linked.Token)
                 .ConfigureAwait(false);
         });
 
@@ -39,7 +39,7 @@ public static class SignalRObservable
         Observable.FromAsync(async ct =>
         {
             using var linked = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, ct);
-            await connection.SendAsync(methodName, args, linked.Token).ConfigureAwait(false);
+            await HubConnectionArgs.SendAsync(connection, methodName, args, linked.Token).ConfigureAwait(false);
             return Unit.Default;
         });
 
@@ -57,8 +57,8 @@ public static class SignalRObservable
         Observable.Create<T>(async (observer, ct) =>
         {
             using var linked = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, ct);
-            await foreach (var item in connection
-                               .StreamAsync<T>(methodName, args, linked.Token)
+            await foreach (var item in HubConnectionArgs
+                               .StreamAsync<T>(connection, methodName, args, linked.Token)
                                .ConfigureAwait(false))
             {
                 observer.OnNext(item);

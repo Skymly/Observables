@@ -4,8 +4,8 @@
 
 - **类型**：个人项目（Skymly 工作区）
 - **远端**：https://github.com/Skymly/Observables（私有）；`origin/main` 已与本地 `main` 同步；文件夹名 `Observables` = 仓库名
-- **阶段**：**Events**、**RestAPI**、**SignalR** 已实现；**NuGet 预览包** `0.1.0-preview3`（6 包，含包 README）；Nuke `PackVerify` + `eng/nuget-smoke` 消费者校验已就绪
-- **下一 Feature**：**Mqtt**（**设计期**）；**SignalR** 已发布（NuGet `0.1.0-preview3`）；设计见 [`docs/design/mqtt.md`](docs/design/mqtt.md)；Issue [#50](https://github.com/Skymly/Observables/issues/50)
+- **阶段**：**Events**、**RestAPI**、**SignalR**、**Mqtt** 已实现；**NuGet 预览包** `0.1.0-preview3`（8 包，含包 README）；Nuke `PackVerify` + `eng/nuget-smoke` 消费者校验已就绪
+- **下一 Feature**：**WebSocket**（骨架）；**Mqtt**、**SignalR** 已实现（NuGet `0.1.0-preview3` 含 8 包）；Mqtt 设计见 [`docs/design/mqtt.md`](docs/design/mqtt.md)；Issue [#50](https://github.com/Skymly/Observables/issues/50)
 - **结构约定**：下文「仓库结构」与命名约定为权威
 
 ## 目标
@@ -145,7 +145,7 @@ Observables/
 | **RestAPI** | `Observables.RestAPI` | `RestAPI.R3.SourceGenerators` | `RestAPI.Reactive.SourceGenerators` | Core / Reactive / Generator / HCF |
 | **Events** | `Observables.Events`（props） | `Events.R3.SourceGenerators` | `Events.Reactive.SourceGenerators` | R3/Reactive 生成器测试（经典 + 路由；路由需 `ObservableRoutedEvents=true`） |
 | **SignalR** | `Observables.SignalR` | `SignalR.R3.SourceGenerators` | `SignalR.Reactive.SourceGenerators` | R3 + Reactive 生成器测试 |
-| **Mqtt** | 骨架（`Observables.Mqtt`） | `Observables.Mqtt.R3` 占位 | — | — |
+| **Mqtt** | `Observables.Mqtt` | `Mqtt.R3.SourceGenerators` | `Mqtt.Reactive.SourceGenerators` | R3 + Reactive 生成器测试 |
 | **WebSocket** / **Grpc** 等 | 骨架 | `*.R3` 骨架 | — | — |
 
 **RestAPI 运行时**：`RestApiSettings`、`RestService.For<T>()`；命名空间 `Observables.RestAPI`。
@@ -154,8 +154,7 @@ Observables/
 
 ## 实现顺序建议
 
-1. **Mqtt**：按 [`docs/design/mqtt.md`](docs/design/mqtt.md) 设计 Issue 链实施（Shared → R3 → Reactive → Package → Docs/Samples）
-2. 其余域（**WebSocket**、**Grpc**）按检查清单补齐
+1. 其余域（**WebSocket**、**Grpc**）按检查清单补齐；**Mqtt** 用户文档见 Observables.Docs follow-up
 3. **NuGet 发布**（见下文「版本、Tag 与 NuGet」；须维护者指定版本号并推送 tag / `workflow_dispatch`）
 
 ## 版本、Tag 与 NuGet（代理与维护者）

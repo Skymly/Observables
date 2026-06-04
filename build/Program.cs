@@ -45,6 +45,8 @@ sealed class Build : NukeBuild
         "eng/nuget-smoke/RestAPI.Reactive.Consumer/RestAPI.Reactive.Consumer.csproj",
         "eng/nuget-smoke/SignalR.R3.Consumer/SignalR.R3.Consumer.csproj",
         "eng/nuget-smoke/SignalR.Reactive.Consumer/SignalR.Reactive.Consumer.csproj",
+        "eng/nuget-smoke/Mqtt.R3.Consumer/Mqtt.R3.Consumer.csproj",
+        "eng/nuget-smoke/Mqtt.Reactive.Consumer/Mqtt.Reactive.Consumer.csproj",
     ];
 
     /// <summary>
@@ -62,6 +64,8 @@ sealed class Build : NukeBuild
         "Observables.SignalR/Observables.SignalR.Reactive.SourceGenerators.Tests/Observables.SignalR.Reactive.SourceGenerators.Tests.csproj",
         "Observables.SignalR/Observables.SignalR.Tests/Observables.SignalR.Tests.csproj",
         "Observables.SignalR/Observables.SignalR.Reactive.Tests/Observables.SignalR.Reactive.Tests.csproj",
+        "Observables.Mqtt/Observables.Mqtt.R3.SourceGenerators.Tests/Observables.Mqtt.R3.SourceGenerators.Tests.csproj",
+        "Observables.Mqtt/Observables.Mqtt.Reactive.SourceGenerators.Tests/Observables.Mqtt.Reactive.SourceGenerators.Tests.csproj",
     ];
 
     static readonly string[] PackProjectRelativePaths =
@@ -72,6 +76,8 @@ sealed class Build : NukeBuild
         "Observables.RestAPI/Observables.RestAPI.Package/Observables.RestAPI.Reactive.Pack.csproj",
         "Observables.SignalR/Observables.SignalR.Package/Observables.SignalR.R3.csproj",
         "Observables.SignalR/Observables.SignalR.Package/Observables.SignalR.Reactive.Pack.csproj",
+        "Observables.Mqtt/Observables.Mqtt.Package/Observables.Mqtt.R3.csproj",
+        "Observables.Mqtt/Observables.Mqtt.Package/Observables.Mqtt.Reactive.Pack.csproj",
     ];
 
     static readonly string[] ExpectedPackageIds =
@@ -82,6 +88,8 @@ sealed class Build : NukeBuild
         "Observables.RestAPI.Reactive",
         "Observables.SignalR.R3",
         "Observables.SignalR.Reactive",
+        "Observables.Mqtt.R3",
+        "Observables.Mqtt.Reactive",
     ];
 
     public static int Main() => Execute<Build>(x => x.Ci);
@@ -194,7 +202,8 @@ sealed class Build : NukeBuild
                 }
 
                 if (packageId.StartsWith("Observables.RestAPI.", StringComparison.Ordinal)
-                    || packageId.StartsWith("Observables.SignalR.", StringComparison.Ordinal))
+                    || packageId.StartsWith("Observables.SignalR.", StringComparison.Ordinal)
+                    || packageId.StartsWith("Observables.Mqtt.", StringComparison.Ordinal))
                 {
                     bool hasLib = entries.Any(e => e.StartsWith("lib/", StringComparison.OrdinalIgnoreCase)
                         && e.EndsWith(".dll", StringComparison.OrdinalIgnoreCase));

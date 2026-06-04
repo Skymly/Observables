@@ -1,0 +1,32 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <Import Project="..\..\eng\Observables.Package.props" />
+  <Import Project="..\..\eng\PackRoslynAnalyzer.targets" />
+  <Import Project="..\..\eng\PackReferencedProjects.targets" />
+
+  <PropertyGroup>
+    <TargetFrameworks>netstandard2.0;net8.0;net9.0</TargetFrameworks>
+    <IsPackable>true</IsPackable>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <IncludeBuildOutput>false</IncludeBuildOutput>
+    <DevelopmentDependency>false</DevelopmentDependency>
+    <SuppressDependenciesWhenPacking>false</SuppressDependenciesWhenPacking>
+    <PackageId>Observables.Mqtt.Reactive</PackageId>
+    <Description>Declarative MQTT topic proxies for System.Reactive IObservable.</Description>
+    <PackageTags>observables;mqtt;system.reactive;source-generator</PackageTags>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <ObservablesPackGeneratorProject>..\Observables.Mqtt.Reactive.SourceGenerators\Observables.Mqtt.Reactive.SourceGenerators.csproj</ObservablesPackGeneratorProject>
+    <ObservablesPackGeneratorAssemblyName>Observables.Mqtt.Reactive.SourceGenerators.dll</ObservablesPackGeneratorAssemblyName>
+    <ObservablesPackGeneratorOutputDir>$(MSBuildProjectDirectory)\..\Observables.Mqtt.Reactive.SourceGenerators\bin\$(Configuration)\netstandard2.0\</ObservablesPackGeneratorOutputDir>
+    <ObservablesPackPackagePropsFile>$(MSBuildProjectDirectory)\build\Observables.Mqtt.Reactive.props</ObservablesPackPackagePropsFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ObservablesPackLibProjectReference Include="..\Observables.Mqtt\Observables.Mqtt.csproj" />
+    <ObservablesPackLibProjectReference Include="..\Observables.Mqtt.Reactive\Observables.Mqtt.Reactive.csproj" />
+    <PackageReference Include="System.Reactive" Version="6.0.1" />
+    <PackageReference Include="MQTTnet" Version="4.3.7.1207" />
+    <None Include="README.Mqtt.Reactive.pack.md" Pack="true" PackagePath="README.md" Visible="false" />
+  </ItemGroup>
+
+</Project>

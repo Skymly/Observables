@@ -23,7 +23,7 @@ public static class SystemReactiveSignalRAdapter
         Observable.FromAsync(ct =>
         {
             using var linked = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, ct);
-            return connection.InvokeAsync<T>(methodName, args, linked.Token);
+            return HubConnectionArgs.InvokeAsync<T>(connection, methodName, args, linked.Token);
         });
 
     public static IObservable<System.Reactive.Unit> FromSend(
@@ -40,7 +40,7 @@ public static class SystemReactiveSignalRAdapter
         Observable.FromAsync(async ct =>
         {
             using var linked = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, ct);
-            await connection.SendAsync(methodName, args, linked.Token).ConfigureAwait(false);
+            await HubConnectionArgs.SendAsync(connection, methodName, args, linked.Token).ConfigureAwait(false);
             return System.Reactive.Unit.Default;
         });
 
@@ -71,8 +71,8 @@ public static class SystemReactiveSignalRAdapter
     {
         try
         {
-            await foreach (var item in connection
-                               .StreamAsync<T>(methodName, args, cancellationToken)
+            await foreach (var item in HubConnectionArgs
+                               .StreamAsync<T>(connection, methodName, args, cancellationToken)
                                .ConfigureAwait(false))
             {
                 observer.OnNext(item);

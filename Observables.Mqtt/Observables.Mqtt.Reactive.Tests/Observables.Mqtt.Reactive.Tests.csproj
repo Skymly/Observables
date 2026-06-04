@@ -1,0 +1,34 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFrameworks>net8.0;net9.0</TargetFrameworks>
+    <RootNamespace>Observables.Mqtt.Reactive.Tests</RootNamespace>
+    <IsPackable>false</IsPackable>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Using Include="Xunit" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
+    <PackageReference Include="MQTTnet" Version="4.3.7.1207" />
+    <PackageReference Include="System.Reactive" Version="6.0.1" />
+    <PackageReference Include="xunit.v3" Version="3.2.2" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="3.1.5">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Observables.Mqtt.Reactive\Observables.Mqtt.Reactive.csproj" />
+    <ProjectReference Include="..\Observables.Mqtt.Reactive.SourceGenerators\Observables.Mqtt.Reactive.SourceGenerators.csproj"
+                      OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Include="..\Observables.Mqtt.Tests\Infrastructure\MqttTestBroker.cs" Link="Infrastructure\MqttTestBroker.cs" />
+    <Compile Include="..\Observables.Mqtt.Tests\Infrastructure\MqttTestBrokerFixture.cs" Link="Infrastructure\MqttTestBrokerFixture.cs" />
+  </ItemGroup>
+
+</Project>

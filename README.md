@@ -32,6 +32,8 @@
 | `Observables.RestAPI.Reactive` | RestAPI + Reactive 桥接 + 生成器 |
 | `Observables.SignalR.R3` | SignalR 运行时 + R3 生成器 |
 | `Observables.SignalR.Reactive` | SignalR + Reactive 桥接 + 生成器 |
+| `Observables.Mqtt.R3` | MQTT 运行时 + R3 生成器 |
+| `Observables.Mqtt.Reactive` | MQTT + Reactive 桥接 + 生成器 |
 
 ```xml
 <PackageReference Include="Observables.Events.R3" Version="0.1.0-preview3" />

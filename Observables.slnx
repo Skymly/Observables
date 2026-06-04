@@ -110,9 +110,25 @@
 
   <Folder Name="/Mqtt/">
 
+    <Project Path="Observables.Mqtt/Observables.Mqtt.SourceGenerators.Shared/Observables.Mqtt.SourceGenerators.Shared.shproj" Id="c8f3a2e1-7b4d-4f9a-8e2c-5d1b0a9f6e3d" />
+
+    <Project Path="Observables.Mqtt/Observables.Mqtt.Package/Observables.Mqtt.Package.csproj" />
+
     <Project Path="Observables.Mqtt/Observables.Mqtt/Observables.Mqtt.csproj" />
 
-    <Project Path="Observables.Mqtt/Observables.Mqtt.R3/Observables.Mqtt.R3.csproj" />
+    <Project Path="Observables.Mqtt/Observables.Mqtt.Reactive/Observables.Mqtt.Reactive.csproj" />
+
+    <Project Path="Observables.Mqtt/Observables.Mqtt.Reactive.SourceGenerators/Observables.Mqtt.Reactive.SourceGenerators.csproj" />
+
+    <Project Path="Observables.Mqtt/Observables.Mqtt.R3.SourceGenerators/Observables.Mqtt.R3.SourceGenerators.csproj" />
+
+    <Folder Name="/Tests/">
+
+      <Project Path="Observables.Mqtt/Observables.Mqtt.R3.SourceGenerators.Tests/Observables.Mqtt.R3.SourceGenerators.Tests.csproj" />
+
+      <Project Path="Observables.Mqtt/Observables.Mqtt.Reactive.SourceGenerators.Tests/Observables.Mqtt.Reactive.SourceGenerators.Tests.csproj" />
+
+    </Folder>
 
   </Folder>
 

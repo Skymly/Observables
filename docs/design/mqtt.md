@@ -1,6 +1,6 @@
 # Mqtt Feature — 开发设计文档
 
-> 状态：**设计期（design spike）**，对应 Issue [#50](https://github.com/Skymly/Observables/issues/50)。本文不含实现，作为后续按域拆分 Issue/PR 的依据。
+> 状态：**已实现**（待合并 PR）；NuGet 将随下一预览发布（`Observables.Mqtt.R3` / `Observables.Mqtt.Reactive`）。对应 Issue [#50](https://github.com/Skymly/Observables/issues/50)。实现细节以代码为准。
 > 命名、打包、诊断分段等约定以仓库根 [`AGENTS.md`](../../AGENTS.md) 为权威，本文在其框架内细化 Mqtt 域。
 
 ## 1. 目标与定位

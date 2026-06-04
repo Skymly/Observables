@@ -4,7 +4,7 @@
 
 - **类型**：个人项目（Skymly 工作区）
 - **远端**：https://github.com/Skymly/Observables（私有）；`origin/main` 已与本地 `main` 同步；文件夹名 `Observables` = 仓库名
-- **阶段**：**Events**、**RestAPI**、**SignalR**、**Mqtt** 已实现；**NuGet 预览包** `0.1.0-preview3`（8 包，含包 README）；Nuke `PackVerify` + `eng/nuget-smoke` 消费者校验已就绪
+- **阶段**：**Events**、**RestAPI**、**SignalR**、**Mqtt** 已实现；**NuGet 预览包** `0.1.0-preview4`（8 包，含包 README）；Nuke `PackVerify` + `eng/nuget-smoke` 消费者校验已就绪
 - **下一 Feature**：**WebSocket**（骨架）；Mqtt 设计见 [`docs/design/mqtt.md`](docs/design/mqtt.md)（用户文档 [Observables.Docs](https://github.com/Skymly/Observables.Docs) `mqtt.md`）
 - **结构约定**：下文「仓库结构」与命名约定为权威
 
@@ -206,7 +206,7 @@ dotnet run --project build/_build.csproj -- --target Ci --configuration Release
 |-----------|------|
 | **Ci** | `Clean` → `Restore` → `Compile` → **UnitTest** |
 | **Pack** | 打包 4 个 pack 子项目 → `artifacts/package/`（依赖 **UnitTest**） |
-| **PackVerify** | 断言 nupkg 含 analyzer、Events `observables.events.props`、RestAPI/SignalR `lib/`（6 包） |
+| **PackVerify** | 断言 nupkg 含 analyzer、Events `observables.events.props`、RestAPI/SignalR/Mqtt `lib/`（8 包） |
 | **CiPack** | CI 用：`Pack` + `PackVerify` |
 | **Publish** | 推送到 nuget.org（`NUGET_API_KEY`）与 GitHub Packages（`GITHUB_TOKEN`，`packages:write`） |
 

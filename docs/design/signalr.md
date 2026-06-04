@@ -1,6 +1,6 @@
 # SignalR Feature — 开发设计文档
 
-> 状态：**已实现并发布** — NuGet `0.1.0-preview3`（`Observables.SignalR.R3` / `Observables.SignalR.Reactive`）。本文保留设计决策与项目清单；实现细节以代码与 [`docs/signalr.md`](../signalr.md) 为准。对应 Issue [#44](https://github.com/Skymly/Observables/issues/44)。
+> 状态：**已实现并发布** — NuGet `0.1.0-preview4`（`Observables.SignalR.R3` / `Observables.SignalR.Reactive`）。本文保留设计决策与项目清单；实现细节以代码与 [`docs/signalr.md`](../signalr.md) 为准。对应 Issue [#44](https://github.com/Skymly/Observables/issues/44)。
 > 命名、打包、诊断分段等约定以仓库根 [`AGENTS.md`](../../AGENTS.md) 为权威，本文在其框架内细化 SignalR 域。
 
 ## 1. 目标与定位

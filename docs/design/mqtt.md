@@ -24,7 +24,7 @@
 |----|------|
 | `Observables.Mqtt/` | **已实现**：运行时、双路生成器、Package、生成器测试、**进程内 Broker E2E**（`Mqtt.Tests` / `Mqtt.Reactive.Tests`） |
 | slnx `/Mqtt/` | 运行时、生成器、Package、Tests |
-| NuGet | **未发布**（`0.1.0-preview3` 仍为 6 包；CiPack **8 包** 含 Mqtt） |
+| NuGet | **`0.1.0-preview4`**（8 包，含 Mqtt） |
 | 用户文档 | [Observables.Docs](https://github.com/Skymly/Observables.Docs) `mqtt.md` / `zh/mqtt.md` |
 | 示例 | [Observables.Samples.Mqtt](https://github.com/Skymly/Observables.Samples)（需 `UseLocalObservables=true` 直至下一预览 NuGet） |
 

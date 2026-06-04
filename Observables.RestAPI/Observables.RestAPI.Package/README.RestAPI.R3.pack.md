@@ -5,7 +5,7 @@ Declarative HTTP client interfaces for [R3](https://github.com/Cysharp/R3) `Obse
 ## Install
 
 ```xml
-<PackageReference Include="Observables.RestAPI.R3" Version="0.1.0-preview3" />
+<PackageReference Include="Observables.RestAPI.R3" Version="0.1.0-preview4" />
 <PackageReference Include="R3" Version="1.3.0" />
 ```
 

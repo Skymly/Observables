@@ -59,7 +59,9 @@ public static class MqttObservable
 
                 try
                 {
-                    var payload = e.ApplicationMessage.PayloadSegment.ToArray();
+                    var payload = e.ApplicationMessage.PayloadSegment.Count == 0
+                        ? Array.Empty<byte>()
+                        : e.ApplicationMessage.PayloadSegment.ToArray();
                     observer.OnNext(DeserializePayload<T>(payload));
                 }
                 catch (Exception ex)

@@ -128,6 +128,10 @@
 
       <Project Path="Observables.Mqtt/Observables.Mqtt.Reactive.SourceGenerators.Tests/Observables.Mqtt.Reactive.SourceGenerators.Tests.csproj" />
 
+      <Project Path="Observables.Mqtt/Observables.Mqtt.Tests/Observables.Mqtt.Tests.csproj" />
+
+      <Project Path="Observables.Mqtt/Observables.Mqtt.Reactive.Tests/Observables.Mqtt.Reactive.Tests.csproj" />
+
     </Folder>
 
   </Folder>

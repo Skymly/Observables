@@ -66,6 +66,8 @@ sealed class Build : NukeBuild
         "Observables.SignalR/Observables.SignalR.Reactive.Tests/Observables.SignalR.Reactive.Tests.csproj",
         "Observables.Mqtt/Observables.Mqtt.R3.SourceGenerators.Tests/Observables.Mqtt.R3.SourceGenerators.Tests.csproj",
         "Observables.Mqtt/Observables.Mqtt.Reactive.SourceGenerators.Tests/Observables.Mqtt.Reactive.SourceGenerators.Tests.csproj",
+        "Observables.Mqtt/Observables.Mqtt.Tests/Observables.Mqtt.Tests.csproj",
+        "Observables.Mqtt/Observables.Mqtt.Reactive.Tests/Observables.Mqtt.Reactive.Tests.csproj",
     ];
 
     static readonly string[] PackProjectRelativePaths =

@@ -1,6 +1,6 @@
 # SignalR Feature — 开发设计文档
 
-> 状态：**设计期（design spike）**，对应 Issue [#44](https://github.com/Skymly/Observables/issues/44)。本文不含实现，作为后续按域拆分 Issue/PR 的依据。
+> 状态：**已实现并发布** — NuGet `0.1.0-preview3`（`Observables.SignalR.R3` / `Observables.SignalR.Reactive`）。本文保留设计决策与项目清单；实现细节以代码与 [`docs/signalr.md`](../signalr.md) 为准。对应 Issue [#44](https://github.com/Skymly/Observables/issues/44)。
 > 命名、打包、诊断分段等约定以仓库根 [`AGENTS.md`](../../AGENTS.md) 为权威，本文在其框架内细化 SignalR 域。
 
 ## 1. 目标与定位
@@ -186,19 +186,19 @@ R3 包不引用 System.Reactive，反之亦然（约定）。
 
 ## 6. slnx / 项目清单
 
-物理目录 `Observables.SignalR/`（域父目录），slnx 中新增 `/SignalR/` 虚拟文件夹（含 `Tests` 子夹）。当前仅有 `Observables.SignalR`、`Observables.SignalR.R3` 骨架。
+物理目录 `Observables.SignalR/`（域父目录），slnx `/SignalR/` 虚拟文件夹（含 `Tests` 子夹）。
 
 | 项目 | 现状 | 说明 |
 |------|------|------|
-| `Observables.SignalR` | 骨架（需补特性 + 运行时 + R3 桥接） | 域运行时 |
-| `Observables.SignalR.Reactive` | **待建** | System.Reactive 桥接运行时 |
-| `Observables.SignalR.SourceGenerators.Shared` | **待建**（shproj） | 双生成器共享：Parser、Emitter、模型、`DiagnosticDescriptors`（OBS4xxx） |
-| `Observables.SignalR.R3.SourceGenerators` | **待建** | R3 生成器（Import Shared） |
-| `Observables.SignalR.Reactive.SourceGenerators` | **待建** | Reactive 生成器（Import Shared） |
-| `Observables.SignalR.Package` | **待建** | 产出 `Observables.SignalR.R3` / `.Reactive` 两包；含 `build/*.props`、各 `README.*.pack.md`、analyzer DLL 打包（`PackRoslynAnalyzer.targets` + `PackReferencedProjects.targets`） |
-| `Observables.SignalR.R3.SourceGenerators.Tests` | **待建** | Verify 快照 + 生成器单测 |
-| `Observables.SignalR.Reactive.SourceGenerators.Tests` | **待建** | 同上（Reactive） |
-| `Observables.SignalR.Tests` | 可选 | 运行时桥接单测（用内存/伪 `HubConnection`） |
+| `Observables.SignalR` | **已发布** | 特性、`HubService`、`SignalRObservable`（R3 桥接） |
+| `Observables.SignalR.Reactive` | **已发布** | `SystemReactiveSignalRAdapter` |
+| `Observables.SignalR.SourceGenerators.Shared` | **已发布** | Parser、Emitter、OBS4xxx |
+| `Observables.SignalR.R3.SourceGenerators` | **已发布** | R3 生成器 |
+| `Observables.SignalR.Reactive.SourceGenerators` | **已发布** | Reactive 生成器 |
+| `Observables.SignalR.Package` | **已发布** | `Observables.SignalR.R3` / `.Reactive` 两包 |
+| `Observables.SignalR.R3.SourceGenerators.Tests` | **已发布** | 生成器单测 |
+| `Observables.SignalR.Reactive.SourceGenerators.Tests` | **已发布** | Verify 快照 + 生成器单测 |
+| `Observables.SignalR.Tests` | 未建 | 可选运行时桥接 E2E（非 preview3 范围） |
 
 配套：
 

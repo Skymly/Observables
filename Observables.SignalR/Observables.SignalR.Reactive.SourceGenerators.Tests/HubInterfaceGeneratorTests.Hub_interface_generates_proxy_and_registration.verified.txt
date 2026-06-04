@@ -1,0 +1,50 @@
+Diagnostics:
+  <none>
+
+Generated Sources:
+--- ChatHubGeneratedProxy.SignalR.g.cs ---
+#nullable enable
+#pragma warning disable
+namespace Observables.SignalR.Reactive.Generated
+{
+    [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+    [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
+    internal sealed class ChatHubGeneratedProxy : global::IChatHub
+    {
+        private readonly global::Microsoft.AspNetCore.SignalR.Client.HubConnection _connection;
+
+        public ChatHubGeneratedProxy(global::Microsoft.AspNetCore.SignalR.Client.HubConnection connection)
+        {
+            _connection = connection;
+        }
+
+    public global::System.IObservable<global::System.Int32> GetUserCount() =>
+        global::Observables.SignalR.Reactive.SystemReactiveSignalRAdapter.FromInvoke<global::System.Int32>(_connection, "GetUserCount", global::System.Array.Empty<object?>(), default);
+
+    private global::System.IObservable<global::ChatMessage>? _ReceiveMessage;
+    public global::System.IObservable<global::ChatMessage> ReceiveMessage =>
+        _ReceiveMessage ??= global::Observables.SignalR.Reactive.SystemReactiveSignalRAdapter.FromOn<global::ChatMessage>(_connection, "ReceiveMessage");
+
+    }
+}
+#pragma warning restore
+
+--- HubProxyRegistration.g.cs ---
+
+#pragma warning disable
+namespace Observables.SignalR.Reactive.Generated
+{
+    [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+    [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
+    internal static class HubProxyRegistration
+    {
+#if NET5_0_OR_GREATER
+        [System.Runtime.CompilerServices.ModuleInitializer]
+        internal static void Initialize()
+        {
+            global::Observables.SignalR.HubService.RegisterGeneratedFactory(typeof(global::IChatHub), static c => new Observables.SignalR.Reactive.Generated.ChatHubGeneratedProxy(c));
+        }
+#endif
+    }
+}
+#pragma warning restore

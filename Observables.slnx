@@ -90,6 +90,8 @@
 
       <Project Path="Observables.SignalR/Observables.SignalR.R3.SourceGenerators.Tests/Observables.SignalR.R3.SourceGenerators.Tests.csproj" />
 
+      <Project Path="Observables.SignalR/Observables.SignalR.Reactive.SourceGenerators.Tests/Observables.SignalR.Reactive.SourceGenerators.Tests.csproj" />
+
     </Folder>
 
   </Folder>

@@ -69,6 +69,17 @@ ISensorHub hub = MqttService.For<ISensorHub>(client);
 
 对不声明接口、仅按 topic 字符串订阅的场景：`MqttObservable.FromSubscribe` / `FromPublish`（见运行时）。
 
+### 3.3 依赖：MQTTnet 4.x（用户文档）
+
+**Observables.Mqtt** 元包传递依赖 **[MQTTnet 4.3.7.1207](https://www.nuget.org/packages/MQTTnet/4.3.7.1207)**（4.x 线），**未**采用 MQTTnet 5.x。原因摘要（用户向全文见 [Observables.Docs `mqtt.md`](https://github.com/Skymly/Observables.Docs/blob/main/docs/mqtt.md)）：
+
+| 因素 | 说明 |
+|------|------|
+| TFM | 元包含 `netstandard2.0`；MQTTnet 5 仅 .NET 8+ |
+| API | 运行时基于 `IMqttClient` / `MqttFactory` 等 4.x 公共面；升 5 为 Mqtt 域 breaking 迁移 |
+| 范围 | 首版 pub/sub；MQTTnet 5 + MQTT 5 高级特性为 follow-up |
+| 协议 | 线协议 3.1.1 / 5.0 由应用 `ConnectAsync` 配置；Observables 不依赖 MQTT-5-only 线特性 |
+
 ## 4. 诊断（OBS5xxx）
 
 | ID | 级别 | 场景 |
@@ -102,7 +113,7 @@ ISensorHub hub = MqttService.For<ISensorHub>(client);
 5. ~~进程内 Broker E2E~~ ✅（PR [#54](https://github.com/Skymly/Observables/pull/54)）
 6. ~~用户文档（Observables.Docs）~~ ✅
 7. ~~Samples.Mqtt~~ ✅（Observables.Samples）
-8. **follow-up**：MQTT 5 请求-响应、断开重连策略、JSON sourcegen for AOT
+8. **follow-up**：MQTTnet 5 迁移、MQTT 5 请求-响应、断开重连策略、JSON sourcegen for AOT
 
 ## 8. 非目标
 

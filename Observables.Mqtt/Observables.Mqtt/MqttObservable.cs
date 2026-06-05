@@ -44,12 +44,6 @@ public static class MqttObservable
     public static Observable<T> FromSubscribe<T>(IMqttClient client, string topicFilter) =>
         Observable.Create<T>(async (observer, ct) =>
         {
-            await client
-                .SubscribeAsync(
-                    new MqttTopicFilterBuilder().WithTopic(topicFilter).Build(),
-                    ct)
-                .ConfigureAwait(false);
-
             async Task Handler(MqttApplicationMessageReceivedEventArgs e)
             {
                 if (!TopicMatches(topicFilter, e.ApplicationMessage.Topic))
@@ -75,6 +69,12 @@ public static class MqttObservable
             client.ApplicationMessageReceivedAsync += Handler;
             try
             {
+                await client
+                    .SubscribeAsync(
+                        new MqttTopicFilterBuilder().WithTopic(topicFilter).Build(),
+                        ct)
+                    .ConfigureAwait(false);
+
                 await Task.Delay(Timeout.Infinite, ct).ConfigureAwait(false);
             }
             finally

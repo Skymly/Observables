@@ -61,10 +61,6 @@ public static class SystemReactiveMqttAdapter
             {
                 try
                 {
-                    await client
-                        .SubscribeAsync(new MqttTopicFilterBuilder().WithTopic(topicFilter).Build())
-                        .ConfigureAwait(false);
-
                     handler = async e =>
                     {
                         if (!TopicMatches(topicFilter, e.ApplicationMessage.Topic))
@@ -91,6 +87,10 @@ public static class SystemReactiveMqttAdapter
                     {
                         client.ApplicationMessageReceivedAsync += handler;
                     }
+
+                    await client
+                        .SubscribeAsync(new MqttTopicFilterBuilder().WithTopic(topicFilter).Build())
+                        .ConfigureAwait(false);
                 }
                 catch (Exception ex)
                 {

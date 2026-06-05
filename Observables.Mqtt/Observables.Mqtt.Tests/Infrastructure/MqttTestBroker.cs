@@ -1,5 +1,6 @@
 using MQTTnet;
 using MQTTnet.Client;
+using MQTTnet.Protocol;
 using MQTTnet.Server;
 
 namespace Observables.Mqtt.Tests.Infrastructure;
@@ -34,14 +35,45 @@ public sealed class MqttTestBroker : IAsyncDisposable
         return new MqttTestBroker(server, factory, port);
     }
 
+    /// <summary>Waits until the broker accepts a subscription for <paramref name="topicFilter"/> from <paramref name="clientId"/>.</summary>
+    public async Task WaitForSubscriptionAsync(
+        string clientId,
+        string topicFilter,
+        CancellationToken cancellationToken = default)
+    {
+        var tcs = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        Task Handler(InterceptingSubscriptionEventArgs e)
+        {
+            if (string.Equals(e.ClientId, clientId, StringComparison.Ordinal)
+                && string.Equals(e.TopicFilter.Topic, topicFilter, StringComparison.Ordinal))
+            {
+                tcs.TrySetResult();
+            }
+
+            return Task.CompletedTask;
+        }
+
+        server.InterceptingSubscriptionAsync += Handler;
+        try
+        {
+            await tcs.Task.WaitAsync(cancellationToken).ConfigureAwait(false);
+        }
+        finally
+        {
+            server.InterceptingSubscriptionAsync -= Handler;
+        }
+    }
+
     public async Task<MqttClientSession> ConnectAsync(CancellationToken cancellationToken = default)
     {
+        var clientId = Guid.NewGuid().ToString("N");
         var client = factory.CreateMqttClient();
         var result = await client
             .ConnectAsync(
                 new MqttClientOptionsBuilder()
                     .WithTcpServer("127.0.0.1", Port)
-                    .WithClientId(Guid.NewGuid().ToString("N"))
+                    .WithClientId(clientId)
                     .Build(),
                 cancellationToken)
             .ConfigureAwait(false);
@@ -51,7 +83,7 @@ public sealed class MqttTestBroker : IAsyncDisposable
             throw new InvalidOperationException($"MQTT connect failed: {result.ResultCode}");
         }
 
-        return new MqttClientSession(client);
+        return new MqttClientSession(client, clientId);
     }
 
     public async ValueTask DisposeAsync()
@@ -60,9 +92,11 @@ public sealed class MqttTestBroker : IAsyncDisposable
         server.Dispose();
     }
 
-    public sealed class MqttClientSession(IMqttClient client) : IAsyncDisposable
+    public sealed class MqttClientSession(IMqttClient client, string clientId) : IAsyncDisposable
     {
         public IMqttClient Client { get; } = client;
+
+        public string ClientId { get; } = clientId;
 
         public async ValueTask DisposeAsync()
         {

@@ -19,12 +19,18 @@ public sealed class MqttClientReactiveE2ETests(MqttTestBrokerFixture fixture)
         await using var session = await fixture.Broker.ConnectAsync();
         var hub = MqttService.For<IE2EHub>(session.Client);
 
+        using var cts = new CancellationTokenSource(DefaultTimeout);
+        var waitSubscription = fixture.Broker.WaitForSubscriptionAsync(
+            session.ClientId,
+            "e2e/ping",
+            cts.Token);
         var receive = hub.Ping.Timeout(DefaultTimeout).FirstAsync().ToTask();
+        await waitSubscription;
         var message = new MqttApplicationMessageBuilder()
             .WithTopic("e2e/ping")
             .WithPayload("hello"u8.ToArray())
             .Build();
-        await session.Client.PublishAsync(message);
+        await session.Client.PublishAsync(message, cts.Token);
 
         Assert.Equal("hello", await receive);
     }
@@ -32,11 +38,19 @@ public sealed class MqttClientReactiveE2ETests(MqttTestBrokerFixture fixture)
     [Fact]
     public async Task MqttPublish_PublishPing_reaches_subscriber()
     {
-        await using var session = await fixture.Broker.ConnectAsync();
-        var hub = MqttService.For<IE2EHub>(session.Client);
+        await using var subscriber = await fixture.Broker.ConnectAsync();
+        await using var publisher = await fixture.Broker.ConnectAsync();
+        var subHub = MqttService.For<IE2EHub>(subscriber.Client);
+        var pubHub = MqttService.For<IE2EHub>(publisher.Client);
 
-        var receive = hub.Ping.Timeout(DefaultTimeout).FirstAsync().ToTask();
-        await hub.PublishPing().Timeout(DefaultTimeout).FirstAsync().ToTask();
+        using var cts = new CancellationTokenSource(DefaultTimeout);
+        var waitSubscription = fixture.Broker.WaitForSubscriptionAsync(
+            subscriber.ClientId,
+            "e2e/ping",
+            cts.Token);
+        var receive = subHub.Ping.Timeout(DefaultTimeout).FirstAsync().ToTask();
+        await waitSubscription;
+        await pubHub.PublishPing().Timeout(DefaultTimeout).FirstAsync().ToTask();
 
         Assert.Equal(string.Empty, await receive);
     }

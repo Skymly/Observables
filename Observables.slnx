@@ -102,9 +102,29 @@
 
   <Folder Name="/WebSocket/">
 
+    <Project Path="Observables.WebSocket/Observables.WebSocket.SourceGenerators.Shared/Observables.WebSocket.SourceGenerators.Shared.shproj" Id="d7e4b3a2-8c5f-4e1b-9d6a-3f2e0c8b7a4d" />
+
+    <Project Path="Observables.WebSocket/Observables.WebSocket.Package/Observables.WebSocket.Package.csproj" />
+
     <Project Path="Observables.WebSocket/Observables.WebSocket/Observables.WebSocket.csproj" />
 
-    <Project Path="Observables.WebSocket/Observables.WebSocket.R3/Observables.WebSocket.R3.csproj" />
+    <Project Path="Observables.WebSocket/Observables.WebSocket.Reactive/Observables.WebSocket.Reactive.csproj" />
+
+    <Project Path="Observables.WebSocket/Observables.WebSocket.Reactive.SourceGenerators/Observables.WebSocket.Reactive.SourceGenerators.csproj" />
+
+    <Project Path="Observables.WebSocket/Observables.WebSocket.R3.SourceGenerators/Observables.WebSocket.R3.SourceGenerators.csproj" />
+
+    <Folder Name="/Tests/">
+
+      <Project Path="Observables.WebSocket/Observables.WebSocket.R3.SourceGenerators.Tests/Observables.WebSocket.R3.SourceGenerators.Tests.csproj" />
+
+      <Project Path="Observables.WebSocket/Observables.WebSocket.Reactive.SourceGenerators.Tests/Observables.WebSocket.Reactive.SourceGenerators.Tests.csproj" />
+
+      <Project Path="Observables.WebSocket/Observables.WebSocket.Tests/Observables.WebSocket.Tests.csproj" />
+
+      <Project Path="Observables.WebSocket/Observables.WebSocket.Reactive.Tests/Observables.WebSocket.Reactive.Tests.csproj" />
+
+    </Folder>
 
   </Folder>
 
@@ -145,3 +165,4 @@
   </Folder>
 
 </Solution>
+

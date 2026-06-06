@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <Import Project="..\..\Observables.SourceGenerators.props" />
+
+  <PropertyGroup>
+    <Description>Source generator for WebSocket proxies → System.Reactive IObservable.</Description>
+    <DefineConstants>$(DefineConstants);ROSLYN_4;WEBSOCKET_REACTIVE</DefineConstants>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\Observables.Shared\Observables.SourceGenerators.Shared\Observables.SourceGenerators.Shared.csproj" />
+    <PackageReference Include="System.Reactive" Version="6.0.1" PrivateAssets="all" />
+  </ItemGroup>
+
+  <Import Project="..\Observables.WebSocket.SourceGenerators.Shared\Observables.WebSocket.SourceGenerators.Shared.projitems" Label="Shared" />
+
+</Project>

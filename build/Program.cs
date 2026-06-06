@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
@@ -47,6 +47,8 @@ sealed class Build : NukeBuild
         "eng/nuget-smoke/SignalR.Reactive.Consumer/SignalR.Reactive.Consumer.csproj",
         "eng/nuget-smoke/Mqtt.R3.Consumer/Mqtt.R3.Consumer.csproj",
         "eng/nuget-smoke/Mqtt.Reactive.Consumer/Mqtt.Reactive.Consumer.csproj",
+        "eng/nuget-smoke/WebSocket.R3.Consumer/WebSocket.R3.Consumer.csproj",
+        "eng/nuget-smoke/WebSocket.Reactive.Consumer/WebSocket.Reactive.Consumer.csproj",
     ];
 
     /// <summary>
@@ -68,6 +70,10 @@ sealed class Build : NukeBuild
         "Observables.Mqtt/Observables.Mqtt.Reactive.SourceGenerators.Tests/Observables.Mqtt.Reactive.SourceGenerators.Tests.csproj",
         "Observables.Mqtt/Observables.Mqtt.Tests/Observables.Mqtt.Tests.csproj",
         "Observables.Mqtt/Observables.Mqtt.Reactive.Tests/Observables.Mqtt.Reactive.Tests.csproj",
+        "Observables.WebSocket/Observables.WebSocket.R3.SourceGenerators.Tests/Observables.WebSocket.R3.SourceGenerators.Tests.csproj",
+        "Observables.WebSocket/Observables.WebSocket.Reactive.SourceGenerators.Tests/Observables.WebSocket.Reactive.SourceGenerators.Tests.csproj",
+        "Observables.WebSocket/Observables.WebSocket.Tests/Observables.WebSocket.Tests.csproj",
+        "Observables.WebSocket/Observables.WebSocket.Reactive.Tests/Observables.WebSocket.Reactive.Tests.csproj",
     ];
 
     static readonly string[] PackProjectRelativePaths =
@@ -80,6 +86,8 @@ sealed class Build : NukeBuild
         "Observables.SignalR/Observables.SignalR.Package/Observables.SignalR.Reactive.Pack.csproj",
         "Observables.Mqtt/Observables.Mqtt.Package/Observables.Mqtt.R3.csproj",
         "Observables.Mqtt/Observables.Mqtt.Package/Observables.Mqtt.Reactive.Pack.csproj",
+        "Observables.WebSocket/Observables.WebSocket.Package/Observables.WebSocket.R3.csproj",
+        "Observables.WebSocket/Observables.WebSocket.Package/Observables.WebSocket.Reactive.Pack.csproj",
     ];
 
     static readonly string[] ExpectedPackageIds =
@@ -92,6 +100,8 @@ sealed class Build : NukeBuild
         "Observables.SignalR.Reactive",
         "Observables.Mqtt.R3",
         "Observables.Mqtt.Reactive",
+        "Observables.WebSocket.R3",
+        "Observables.WebSocket.Reactive",
     ];
 
     public static int Main() => Execute<Build>(x => x.Ci);
@@ -293,3 +303,4 @@ enum NuGetConsumerFeed
     Local,
     Published,
 }
+

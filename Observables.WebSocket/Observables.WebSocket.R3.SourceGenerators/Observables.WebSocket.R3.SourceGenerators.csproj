@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <Import Project="..\..\Observables.SourceGenerators.R3.props" />
+
+  <PropertyGroup>
+    <Description>Source generator for WebSocket proxies → R3 Observable.</Description>
+    <DefineConstants>$(DefineConstants);ROSLYN_4;WEBSOCKET_R3</DefineConstants>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\Observables.Shared\Observables.SourceGenerators.Shared\Observables.SourceGenerators.Shared.csproj" />
+    <PackageReference Include="R3" Version="1.3.0" PrivateAssets="all" />
+  </ItemGroup>
+
+  <Import Project="..\Observables.WebSocket.SourceGenerators.Shared\Observables.WebSocket.SourceGenerators.Shared.projitems" Label="Shared" />
+
+</Project>

@@ -12,4 +12,7 @@ obj/
 TestResults/
 artifacts/
 .nuke/temp/
+
+## Local scratch (see Skymly/AGENTS.md § `.Local`)
+.Local/
 *.VerifyTests/

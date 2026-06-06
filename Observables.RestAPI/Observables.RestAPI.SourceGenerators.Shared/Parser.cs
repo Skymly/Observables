@@ -347,13 +347,13 @@ namespace {RestApiInternalNamespace}
 
         // Handle Refit Methods
         var refitMethodsArray = refitMethods
-            .Select(m => ParseMethod(m, true, wellKnownTypes, diagnostics))
+            .Select(m => ParseMethod(m, true, httpMethodBaseAttributeSymbol, wellKnownTypes, diagnostics))
             .ToImmutableEquatableArray();
 
         // Only include refit methods discovered on base interfaces here.
         // Do NOT duplicate the current interface's refit methods.
         var derivedRefitMethodsArray = derivedRefitMethods
-            .Select(m => ParseMethod(m, false, wellKnownTypes, diagnostics))
+            .Select(m => ParseMethod(m, false, httpMethodBaseAttributeSymbol, wellKnownTypes, diagnostics))
             .ToImmutableEquatableArray();
 
         // Handle non-refit Methods that aren't static or properties or have a method body
@@ -496,6 +496,79 @@ namespace {RestApiInternalNamespace}
             == true;
     }
 
+    static void ValidatePathTemplate(
+        IMethodSymbol methodSymbol,
+        INamedTypeSymbol httpMethodBaseAttributeSymbol,
+        List<Diagnostic> diagnostics)
+    {
+        AttributeData? httpAttr = null;
+        foreach (var attribute in methodSymbol.GetAttributes())
+        {
+            if (attribute.AttributeClass?.InheritsFromOrEquals(httpMethodBaseAttributeSymbol) == true)
+            {
+                httpAttr = attribute;
+                break;
+            }
+        }
+
+        if (httpAttr?.ConstructorArguments is not { Length: 1 } args
+            || args[0].Value is not string path)
+        {
+            return;
+        }
+
+        var placeholders = ExtractPathPlaceholders(path);
+        var paramNames = new HashSet<string>(StringComparer.Ordinal);
+        foreach (var parameter in methodSymbol.Parameters)
+        {
+            if (!IsCancellationTokenParameter(parameter))
+            {
+                paramNames.Add(parameter.Name);
+            }
+        }
+
+        if (!placeholders.SetEquals(paramNames))
+        {
+            diagnostics.Add(
+                Diagnostic.Create(
+                    DiagnosticDescriptors.PathParameterMismatch,
+                    methodSymbol.Locations.FirstOrDefault(),
+                    methodSymbol.Name));
+        }
+    }
+
+    static HashSet<string> ExtractPathPlaceholders(string path)
+    {
+        var placeholders = new HashSet<string>(StringComparer.Ordinal);
+        for (var i = 0; i < path.Length; i++)
+        {
+            if (path[i] != '{')
+            {
+                continue;
+            }
+
+            var close = path.IndexOf('}', i + 1);
+            if (close < 0)
+            {
+                break;
+            }
+
+            var name = path.Substring(i + 1, close - i - 1);
+            if (!string.IsNullOrEmpty(name))
+            {
+                placeholders.Add(name);
+            }
+
+            i = close;
+        }
+
+        return placeholders;
+    }
+
+    static bool IsCancellationTokenParameter(IParameterSymbol parameter) =>
+        parameter.Type.Name == "CancellationToken"
+        && parameter.Type.ContainingNamespace?.ToDisplayString() == "System.Threading";
+
     private static ImmutableEquatableArray<TypeConstraint> GenerateConstraints(
         ImmutableArray<ITypeParameterSymbol> typeParameters,
         bool isOverrideOrExplicitImplementation
@@ -592,6 +665,7 @@ namespace {RestApiInternalNamespace}
     private static MethodModel ParseMethod(
         IMethodSymbol methodSymbol,
         bool isImplicitInterface,
+        INamedTypeSymbol httpMethodBaseAttributeSymbol,
         WellKnownTypes wellKnownTypes,
         List<Diagnostic> diagnostics
     )
@@ -633,6 +707,8 @@ namespace {RestApiInternalNamespace}
             wellKnownTypes,
             diagnostics
         );
+
+        ValidatePathTemplate(methodSymbol, httpMethodBaseAttributeSymbol, diagnostics);
 
         var parameters = methodSymbol.Parameters.Select(ParseParameter).ToImmutableEquatableArray();
 
@@ -689,7 +765,7 @@ namespace {RestApiInternalNamespace}
             {
                 diagnostics.Add(
                     Diagnostic.Create(
-                        DiagnosticDescriptors.UnsupportedReturnType,
+                        DiagnosticDescriptors.SystemReactiveNotReferenced,
                         methodSymbol.Locations.FirstOrDefault(),
                         returnType.ToDisplayString()
                     )

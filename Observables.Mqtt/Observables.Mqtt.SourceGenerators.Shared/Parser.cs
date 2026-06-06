@@ -3,6 +3,7 @@ using System.Text.RegularExpressions;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+using Observables.SourceGenerators.Shared.Diagnostics;
 
 namespace Observables.Mqtt.Generators;
 
@@ -76,7 +77,9 @@ internal static class Parser
                             TryAddMethod(
                                 method,
                                 ifaceSymbol,
+                                compilation,
                                 publishAttribute,
+                                subscribeAttribute,
                                 observableType,
                                 unitType,
                                 members,
@@ -86,6 +89,8 @@ internal static class Parser
                         case IPropertySymbol property:
                             TryAddProperty(
                                 property,
+                                compilation,
+                                publishAttribute,
                                 subscribeAttribute,
                                 observableType,
                                 members,
@@ -122,13 +127,25 @@ internal static class Parser
     static void TryAddMethod(
         IMethodSymbol method,
         INamedTypeSymbol ifaceSymbol,
+        CSharpCompilation compilation,
         INamedTypeSymbol? publishAttribute,
+        INamedTypeSymbol? subscribeAttribute,
         INamedTypeSymbol? observableType,
         INamedTypeSymbol? unitType,
         List<MqttMemberModel> members,
         List<Diagnostic> diagnostics,
         InterfaceDeclarationSyntax ifaceSyntax)
     {
+        if (subscribeAttribute is not null && HasAttribute(method, subscribeAttribute))
+        {
+            diagnostics.Add(
+                Diagnostic.Create(
+                    DiagnosticDescriptors.MemberShapeMismatch,
+                    method.Locations.FirstOrDefault(),
+                    method.Name));
+            return;
+        }
+
         if (publishAttribute is null || !HasAttribute(method, publishAttribute))
         {
             diagnostics.Add(
@@ -162,13 +179,17 @@ internal static class Parser
             return;
         }
 
-        if (!TryParseObservableReturn(method.ReturnType, observableType, unitType, MqttBoundaryKind.Publish, out var resultType, out var returnDisplay))
+        if (!TryParseObservableReturn(
+                compilation,
+                method.ReturnType,
+                observableType,
+                unitType,
+                MqttBoundaryKind.Publish,
+                method.Locations.FirstOrDefault(),
+                diagnostics,
+                out var resultType,
+                out var returnDisplay))
         {
-            diagnostics.Add(
-                Diagnostic.Create(
-                    DiagnosticDescriptors.UnsupportedReturnType,
-                    method.Locations.FirstOrDefault(),
-                    method.ReturnType.ToDisplayString(DisplayFormat)));
             return;
         }
 
@@ -189,12 +210,24 @@ internal static class Parser
 
     static void TryAddProperty(
         IPropertySymbol property,
+        CSharpCompilation compilation,
+        INamedTypeSymbol? publishAttribute,
         INamedTypeSymbol? subscribeAttribute,
         INamedTypeSymbol? observableType,
         List<MqttMemberModel> members,
         List<Diagnostic> diagnostics,
         InterfaceDeclarationSyntax ifaceSyntax)
     {
+        if (publishAttribute is not null && HasAttribute(property, publishAttribute))
+        {
+            diagnostics.Add(
+                Diagnostic.Create(
+                    DiagnosticDescriptors.MemberShapeMismatch,
+                    property.Locations.FirstOrDefault(),
+                    property.Name));
+            return;
+        }
+
         if (subscribeAttribute is null || !HasAttribute(property, subscribeAttribute))
         {
             if (property.GetAttributes().Length > 0)
@@ -232,13 +265,17 @@ internal static class Parser
             return;
         }
 
-        if (!TryParseObservableReturn(property.Type, observableType, unitType: null, MqttBoundaryKind.Subscribe, out var resultType, out var returnDisplay))
+        if (!TryParseObservableReturn(
+                compilation,
+                property.Type,
+                observableType,
+                unitType: null,
+                MqttBoundaryKind.Subscribe,
+                property.Locations.FirstOrDefault(),
+                diagnostics,
+                out var resultType,
+                out var returnDisplay))
         {
-            diagnostics.Add(
-                Diagnostic.Create(
-                    DiagnosticDescriptors.UnsupportedReturnType,
-                    property.Locations.FirstOrDefault(),
-                    property.Type.ToDisplayString(DisplayFormat)));
             return;
         }
 
@@ -388,40 +425,33 @@ internal static class Parser
     }
 
     static bool TryParseObservableReturn(
+        CSharpCompilation compilation,
         ITypeSymbol returnType,
         INamedTypeSymbol? observableType,
         INamedTypeSymbol? unitType,
         MqttBoundaryKind boundary,
+        Location? location,
+        List<Diagnostic> diagnostics,
         out string resultTypeDisplay,
-        out string returnTypeDisplay)
-    {
-        resultTypeDisplay = string.Empty;
-        returnTypeDisplay = returnType.ToDisplayString(DisplayFormat);
-
-        if (observableType is null || returnType is not INamedTypeSymbol named
-            || !SymbolEqualityComparer.Default.Equals(named.OriginalDefinition, observableType))
-        {
-            return false;
-        }
-
-        if (named.TypeArguments.Length != 1)
-        {
-            return false;
-        }
-
-        resultTypeDisplay = named.TypeArguments[0].ToDisplayString(DisplayFormat);
-
-        if (boundary == MqttBoundaryKind.Publish)
-        {
-            if (unitType is null
-                || !SymbolEqualityComparer.Default.Equals(named.TypeArguments[0], unitType))
-            {
-                return false;
-            }
-        }
-
-        return true;
-    }
+        out string returnTypeDisplay) =>
+        ObservableReturnTypeParser.TryParse(
+            returnType,
+            compilation,
+#if MQTT_R3
+            isR3Generator: true,
+#else
+            isR3Generator: false,
+#endif
+            reactiveAdapterMetadataName: "Observables.Mqtt.Reactive.SystemReactiveMqttAdapter",
+            observableType,
+            unitType,
+            requiresUnitPayload: boundary == MqttBoundaryKind.Publish,
+            DiagnosticDescriptors.UnsupportedReturnType,
+            DiagnosticDescriptors.SystemReactiveNotReferenced,
+            location,
+            diagnostics,
+            out resultTypeDisplay,
+            out returnTypeDisplay);
 
     static (List<string> declarations, List<string> names, bool hasCancellationToken) BuildParameters(
         IMethodSymbol method)

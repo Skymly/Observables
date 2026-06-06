@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.Build.Traversal/4.1.82">
+
+  <PropertyGroup>
+    <IsPackable>false</IsPackable>
+    <Description>Traversal root for Observables.WebSocket.R3 and Observables.WebSocket.Reactive NuGet packages.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="Observables.WebSocket.R3.csproj" />
+    <ProjectReference Include="Observables.WebSocket.Reactive.Pack.csproj" />
+  </ItemGroup>
+
+</Project>

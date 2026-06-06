@@ -4,8 +4,8 @@
 
 - **类型**：个人项目（Skymly 工作区）
 - **远端**：https://github.com/Skymly/Observables（私有）；`origin/main` 已与本地 `main` 同步；文件夹名 `Observables` = 仓库名
-- **阶段**：**Events**、**RestAPI**、**SignalR**、**Mqtt** 已实现；**NuGet 预览包** `0.1.0-preview4`（8 包，含包 README）；Nuke `PackVerify` + `eng/nuget-smoke` 消费者校验已就绪
-- **下一 Feature**：**WebSocket**（骨架）；Mqtt 设计见 [`docs/design/mqtt.md`](docs/design/mqtt.md)（用户文档 [Observables.Docs](https://github.com/Skymly/Observables.Docs) `mqtt.md`）
+- **阶段**：**Events**、**RestAPI**、**SignalR**、**Mqtt**、**WebSocket** 已实现；**NuGet 预览包** `0.1.0-preview4`（8 包，含包 README；WebSocket 4 包待下一 preview）；Nuke `PackVerify` + `eng/nuget-smoke` 消费者校验已就绪
+- **下一 Feature**：**Grpc**（骨架）；Mqtt 设计见 [`docs/design/mqtt.md`](docs/design/mqtt.md)（用户文档 [Observables.Docs](https://github.com/Skymly/Observables.Docs) `mqtt.md`）；WebSocket 设计见 [`docs/design/websocket.md`](docs/design/websocket.md)
 - **结构约定**：下文「仓库结构」与命名约定为权威
 
 ## 目标
@@ -146,7 +146,8 @@ Observables/
 | **Events** | `Observables.Events`（props） | `Events.R3.SourceGenerators` | `Events.Reactive.SourceGenerators` | R3/Reactive 生成器测试（经典 + 路由；路由需 `ObservableRoutedEvents=true`） |
 | **SignalR** | `Observables.SignalR` | `SignalR.R3.SourceGenerators` | `SignalR.Reactive.SourceGenerators` | R3 + Reactive 生成器测试 |
 | **Mqtt** | `Observables.Mqtt` | `Mqtt.R3.SourceGenerators` | `Mqtt.Reactive.SourceGenerators` | R3 + Reactive 生成器测试；`Mqtt.Tests` / `Mqtt.Reactive.Tests`（进程内 MQTTnet broker E2E） |
-| **WebSocket** / **Grpc** 等 | 骨架 | `*.R3` 骨架 | — | — |
+| **WebSocket** | `Observables.WebSocket` | `WebSocket.R3.SourceGenerators` | `WebSocket.Reactive.SourceGenerators` | Core / Reactive / R3 + Reactive 生成器测试；E2E（`WebSocket.Tests` / `WebSocket.Reactive.Tests`） |
+| **Grpc** 等 | 骨架 | `*.R3` 骨架 | — | — |
 
 **RestAPI 运行时**：`RestApiSettings`、`RestService.For<T>()`；命名空间 `Observables.RestAPI`。
 
@@ -154,7 +155,7 @@ Observables/
 
 ## 实现顺序建议
 
-1. 其余域（**WebSocket**、**Grpc**）按检查清单补齐
+1. 其余域（**Grpc** 等）按检查清单补齐
 3. **NuGet 发布**（见下文「版本、Tag 与 NuGet」；须维护者指定版本号并推送 tag / `workflow_dispatch`）
 
 ## 版本、Tag 与 NuGet（代理与维护者）

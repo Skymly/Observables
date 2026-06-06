@@ -17,6 +17,9 @@
     <IsTrimmable>true</IsTrimmable>
   </PropertyGroup>
 
+  <!-- Source-only polyfills for span/text APIs missing on netstandard2.0 (see eng/NetStandard20.props). -->
+  <Import Project="..\..\eng\NetStandard20.props" Condition="Exists('..\..\eng\NetStandard20.props')" />
+
   <ItemGroup>
     <PackageReference Include="MQTTnet" Version="4.3.7.1207" />
     <PackageReference Include="R3" Version="1.3.0" />

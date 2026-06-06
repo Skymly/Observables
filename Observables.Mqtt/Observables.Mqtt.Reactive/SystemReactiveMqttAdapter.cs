@@ -1,25 +1,16 @@
 using System.Reactive.Disposables;
 using System.Reactive.Linq;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using MQTTnet;
 using MQTTnet.Client;
 using MQTTnet.Protocol;
-#if NETSTANDARD2_0
-#else
-using System.Text.Json;
-#endif
 
 namespace Observables.Mqtt.Reactive;
 
 /// <summary>Bridges MQTT client APIs to <see cref="IObservable{T}"/>.</summary>
 public static class SystemReactiveMqttAdapter
 {
-#if NETSTANDARD2_0
-#else
-    static readonly JsonSerializerOptions JsonOptions = new() { PropertyNameCaseInsensitive = true };
-#endif
 
     public static IObservable<System.Reactive.Unit> FromPublish(
         IMqttClient client,
@@ -73,7 +64,7 @@ public static class SystemReactiveMqttAdapter
                             var payload = e.ApplicationMessage.PayloadSegment.Count == 0
                                 ? Array.Empty<byte>()
                                 : e.ApplicationMessage.PayloadSegment.ToArray();
-                            observer.OnNext(DeserializePayload<T>(payload));
+                            observer.OnNext(MqttPayloadSerializers.Deserialize<T>(payload));
                         }
                         catch (Exception ex)
                         {
@@ -98,33 +89,6 @@ public static class SystemReactiveMqttAdapter
                 }
             }
         });
-
-    static T DeserializePayload<T>(byte[] payload)
-    {
-        if (typeof(T) == typeof(byte[]))
-        {
-            return (T)(object)payload;
-        }
-
-        if (typeof(T) == typeof(string))
-        {
-            return (T)(object)Encoding.UTF8.GetString(payload);
-        }
-
-#if NETSTANDARD2_0
-        throw new NotSupportedException(
-            "Deserializing MQTT payloads to types other than byte[] or string requires net8.0 or later.");
-#else
-        var json = Encoding.UTF8.GetString(payload);
-        var value = JsonSerializer.Deserialize<T>(json, JsonOptions);
-        if (value is null)
-        {
-            throw new InvalidOperationException("MQTT payload deserialized to null.");
-        }
-
-        return value;
-#endif
-    }
 
     static bool TopicMatches(string filter, string? topic)
     {

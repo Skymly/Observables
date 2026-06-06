@@ -1,0 +1,12 @@
+<Project>
+
+  <!-- Source-only polyfills for APIs missing on netstandard2.0 (e.g. Encoding.GetString(ReadOnlySpan<byte>)). -->
+  <!-- Scoped to runtime projects that do not reference Observables.SourceGenerators.Shared (Polyfill would duplicate). -->
+  <ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">
+    <PackageReference Include="Polyfill" Version="10.8.0">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+
+</Project>

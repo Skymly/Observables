@@ -33,4 +33,42 @@ public sealed class MqttInterfaceGeneratorTests
         Assert.Contains("FromSubscribe", snapshot, StringComparison.Ordinal);
         Assert.Contains("MqttTopic.Format", snapshot, StringComparison.Ordinal);
     }
+
+    [Fact]
+    public void Mqtt_interface_OBS5004_on_subscribe_method()
+    {
+        const string userSource =
+            """
+            [Mqtt]
+            public interface ISensorTopics
+            {
+                [MqttSubscribe("sensors/temperature")]
+                Observable<string> Temperature();
+            }
+            """;
+
+        var output = GeneratorTestHarness.Run(userSource);
+        var snapshot = GeneratorTestHarness.ToSnapshot(output);
+
+        Assert.Contains("OBS5004", snapshot, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Mqtt_interface_OBS5005_on_iobservable_with_r3_generator()
+    {
+        const string userSource =
+            """
+            [Mqtt]
+            public interface ISensorTopics
+            {
+                [MqttSubscribe("sensors/temperature")]
+                IObservable<string> Temperature { get; }
+            }
+            """;
+
+        var output = GeneratorTestHarness.Run(userSource);
+        var snapshot = GeneratorTestHarness.ToSnapshot(output);
+
+        Assert.Contains("OBS5005", snapshot, StringComparison.Ordinal);
+    }
 }

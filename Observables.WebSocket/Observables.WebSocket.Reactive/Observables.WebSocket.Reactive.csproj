@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFrameworks>netstandard2.0;net8.0;net9.0</TargetFrameworks>
+    <RootNamespace>Observables.WebSocket.Reactive</RootNamespace>
+    <AssemblyName>Observables.WebSocket.Reactive</AssemblyName>
+    <Description>System.Reactive bridges for Observables.WebSocket.</Description>
+    <Nullable>enable</Nullable>
+    <LangVersion>latest</LangVersion>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Observables.WebSocket\Observables.WebSocket.csproj" />
+    <PackageReference Include="System.Reactive" Version="6.0.1" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,31 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <Import Project="..\..\eng\Observables.Package.props" />
+  <Import Project="..\..\eng\PackRoslynAnalyzer.targets" />
+  <Import Project="..\..\eng\PackReferencedProjects.targets" />
+
+  <PropertyGroup>
+    <TargetFrameworks>netstandard2.0;net8.0;net9.0</TargetFrameworks>
+    <IsPackable>true</IsPackable>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <IncludeBuildOutput>false</IncludeBuildOutput>
+    <DevelopmentDependency>false</DevelopmentDependency>
+    <SuppressDependenciesWhenPacking>false</SuppressDependenciesWhenPacking>
+    <PackageId>Observables.WebSocket.R3</PackageId>
+    <Description>Declarative WebSocket proxies for R3 Observable.</Description>
+    <PackageTags>observables;websocket;r3;source-generator</PackageTags>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <ObservablesPackGeneratorProject>..\Observables.WebSocket.R3.SourceGenerators\Observables.WebSocket.R3.SourceGenerators.csproj</ObservablesPackGeneratorProject>
+    <ObservablesPackGeneratorAssemblyName>Observables.WebSocket.R3.SourceGenerators.dll</ObservablesPackGeneratorAssemblyName>
+    <ObservablesPackGeneratorOutputDir>$(MSBuildProjectDirectory)\..\Observables.WebSocket.R3.SourceGenerators\bin\$(Configuration)\netstandard2.0\</ObservablesPackGeneratorOutputDir>
+    <ObservablesPackPackagePropsFile>$(MSBuildProjectDirectory)\build\Observables.WebSocket.R3.props</ObservablesPackPackagePropsFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ObservablesPackLibProjectReference Include="..\Observables.WebSocket\Observables.WebSocket.csproj" />
+    <PackageReference Include="R3" Version="1.3.0" />
+    <None Include="README.WebSocket.R3.pack.md" Pack="true" PackagePath="README.md" Visible="false" />
+  </ItemGroup>
+
+</Project>
+

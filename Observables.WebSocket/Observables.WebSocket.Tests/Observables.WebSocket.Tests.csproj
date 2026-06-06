@@ -1,0 +1,28 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFrameworks>net8.0;net9.0</TargetFrameworks>
+    <RootNamespace>Observables.WebSocket.Tests</RootNamespace>
+    <IsPackable>false</IsPackable>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Using Include="Xunit" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
+    <PackageReference Include="xunit.v3" Version="3.2.2" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="3.1.5">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Observables.WebSocket\Observables.WebSocket.csproj" />
+    <ProjectReference Include="..\Observables.WebSocket.R3.SourceGenerators\Observables.WebSocket.R3.SourceGenerators.csproj"
+                      OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+  </ItemGroup>
+
+</Project>
+

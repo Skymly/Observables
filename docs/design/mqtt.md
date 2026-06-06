@@ -63,7 +63,7 @@ ISensorHub hub = MqttService.For<ISensorHub>(client);
 - **入口对齐 SignalR / RestAPI**：`MqttService.For<T>(IMqttClient)` + `RegisterGeneratedFactory`（模块初始化器，无反射，AOT 友好）。
 - **订阅**为**属性**（无参）；**发布**为**方法**（参数用于 topic 模板占位符）。订阅 topic **不支持** `{param}` 占位符（OBS5006）。
 - **Topic 模板**：`{param}` 段与方法参数名绑定；`+` / `#` 通配符保留在模板字面量中。
-- **载荷**：首版以 UTF-8 字符串 / 空 payload 为主；JSON 反序列化见运行时 `MqttObservable`（带 trim/AOT 警告）。
+- **载荷**：`MqttPayloadSerializers`（默认 `DefaultMqttPayloadSerializer`：`string`/`byte[]` 原始 UTF-8，net8+ 其余类型走 STJ JSON）。可 `Register<T>` 或替换 `Current`（`IMqttPayloadSerializer` / `IMqttPayloadSerializer<T>`）；netstandard2.0 仅原始类型。
 
 ### 3.2 扩展模型（可选，次优先级）
 

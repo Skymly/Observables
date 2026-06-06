@@ -2,6 +2,7 @@ using System.Collections.Immutable;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+using Observables.SourceGenerators.Shared.Diagnostics;
 
 namespace Observables.WebSocket.Generators;
 
@@ -75,7 +76,9 @@ internal static class Parser
                             TryAddMethod(
                                 method,
                                 ifaceSymbol,
+                                compilation,
                                 sendAttribute,
+                                receiveAttribute,
                                 connectAttribute,
                                 closeAttribute,
                                 observableType,
@@ -87,7 +90,11 @@ internal static class Parser
                             TryAddProperty(
                                 property,
                                 ifaceSymbol,
+                                compilation,
+                                sendAttribute,
                                 receiveAttribute,
+                                connectAttribute,
+                                closeAttribute,
                                 observableType,
                                 members,
                                 diagnostics);
@@ -122,7 +129,9 @@ internal static class Parser
     static void TryAddMethod(
         IMethodSymbol method,
         INamedTypeSymbol ifaceSymbol,
+        CSharpCompilation compilation,
         INamedTypeSymbol? sendAttribute,
+        INamedTypeSymbol? receiveAttribute,
         INamedTypeSymbol? connectAttribute,
         INamedTypeSymbol? closeAttribute,
         INamedTypeSymbol? observableType,
@@ -130,6 +139,16 @@ internal static class Parser
         List<WebSocketMemberModel> members,
         List<Diagnostic> diagnostics)
     {
+        if (receiveAttribute is not null && HasAttribute(method, receiveAttribute))
+        {
+            diagnostics.Add(
+                Diagnostic.Create(
+                    DiagnosticDescriptors.MemberShapeMismatch,
+                    method.Locations.FirstOrDefault(),
+                    method.Name));
+            return;
+        }
+
         WebSocketBoundaryKind? boundary = null;
         string messageName = method.Name;
 
@@ -158,13 +177,17 @@ internal static class Parser
             return;
         }
 
-        if (!TryParseObservableReturn(method.ReturnType, observableType, unitType, boundary.Value, out var resultType, out var returnDisplay))
+        if (!TryParseObservableReturn(
+                compilation,
+                method.ReturnType,
+                observableType,
+                unitType,
+                boundary.Value,
+                method.Locations.FirstOrDefault(),
+                diagnostics,
+                out var resultType,
+                out var returnDisplay))
         {
-            diagnostics.Add(
-                Diagnostic.Create(
-                    DiagnosticDescriptors.UnsupportedReturnType,
-                    method.Locations.FirstOrDefault(),
-                    method.ReturnType.ToDisplayString(DisplayFormat)));
             return;
         }
 
@@ -221,11 +244,25 @@ internal static class Parser
     static void TryAddProperty(
         IPropertySymbol property,
         INamedTypeSymbol ifaceSymbol,
+        CSharpCompilation compilation,
+        INamedTypeSymbol? sendAttribute,
         INamedTypeSymbol? receiveAttribute,
+        INamedTypeSymbol? connectAttribute,
+        INamedTypeSymbol? closeAttribute,
         INamedTypeSymbol? observableType,
         List<WebSocketMemberModel> members,
         List<Diagnostic> diagnostics)
     {
+        if (HasMethodBoundaryOnProperty(property, sendAttribute, connectAttribute, closeAttribute))
+        {
+            diagnostics.Add(
+                Diagnostic.Create(
+                    DiagnosticDescriptors.MemberShapeMismatch,
+                    property.Locations.FirstOrDefault(),
+                    property.Name));
+            return;
+        }
+
         if (receiveAttribute is null || !HasAttribute(property, receiveAttribute))
         {
             if (property.GetAttributes().Length > 0)
@@ -243,13 +280,17 @@ internal static class Parser
 
         var messageName = GetMessageNameFromProperty(property) ?? property.Name;
 
-        if (!TryParseObservableReturn(property.Type, observableType, unitType: null, WebSocketBoundaryKind.Receive, out var resultType, out var returnDisplay))
+        if (!TryParseObservableReturn(
+                compilation,
+                property.Type,
+                observableType,
+                unitType: null,
+                WebSocketBoundaryKind.Receive,
+                property.Locations.FirstOrDefault(),
+                diagnostics,
+                out var resultType,
+                out var returnDisplay))
         {
-            diagnostics.Add(
-                Diagnostic.Create(
-                    DiagnosticDescriptors.UnsupportedReturnType,
-                    property.Locations.FirstOrDefault(),
-                    property.Type.ToDisplayString(DisplayFormat)));
             return;
         }
 
@@ -266,43 +307,45 @@ internal static class Parser
                 false));
     }
 
+    static bool HasMethodBoundaryOnProperty(
+        IPropertySymbol property,
+        INamedTypeSymbol? sendAttribute,
+        INamedTypeSymbol? connectAttribute,
+        INamedTypeSymbol? closeAttribute) =>
+        (sendAttribute is not null && HasAttribute(property, sendAttribute))
+        || (connectAttribute is not null && HasAttribute(property, connectAttribute))
+        || (closeAttribute is not null && HasAttribute(property, closeAttribute));
+
     static bool TryParseObservableReturn(
+        CSharpCompilation compilation,
         ITypeSymbol returnType,
         INamedTypeSymbol? observableType,
         INamedTypeSymbol? unitType,
         WebSocketBoundaryKind boundary,
+        Location? location,
+        List<Diagnostic> diagnostics,
         out string resultTypeDisplay,
-        out string returnTypeDisplay)
-    {
-        resultTypeDisplay = string.Empty;
-        returnTypeDisplay = returnType.ToDisplayString(DisplayFormat);
-
-        if (observableType is null || returnType is not INamedTypeSymbol named
-            || !SymbolEqualityComparer.Default.Equals(named.OriginalDefinition, observableType))
-        {
-            return false;
-        }
-
-        if (named.TypeArguments.Length != 1)
-        {
-            return false;
-        }
-
-        resultTypeDisplay = named.TypeArguments[0].ToDisplayString(DisplayFormat);
-
-        if (boundary == WebSocketBoundaryKind.Send
-            || boundary == WebSocketBoundaryKind.Connect
-            || boundary == WebSocketBoundaryKind.Close)
-        {
-            if (unitType is null
-                || !SymbolEqualityComparer.Default.Equals(named.TypeArguments[0], unitType))
-            {
-                return false;
-            }
-        }
-
-        return true;
-    }
+        out string returnTypeDisplay) =>
+        ObservableReturnTypeParser.TryParse(
+            returnType,
+            compilation,
+#if WEBSOCKET_R3
+            isR3Generator: true,
+#else
+            isR3Generator: false,
+#endif
+            reactiveAdapterMetadataName: "Observables.WebSocket.Reactive.SystemReactiveWebSocketAdapter",
+            observableType,
+            unitType,
+            requiresUnitPayload: boundary is WebSocketBoundaryKind.Send
+                or WebSocketBoundaryKind.Connect
+                or WebSocketBoundaryKind.Close,
+            DiagnosticDescriptors.UnsupportedReturnType,
+            DiagnosticDescriptors.SystemReactiveNotReferenced,
+            location,
+            diagnostics,
+            out resultTypeDisplay,
+            out returnTypeDisplay);
 
     static string? GetMessageName(IMethodSymbol method, string attributeClassName)
     {

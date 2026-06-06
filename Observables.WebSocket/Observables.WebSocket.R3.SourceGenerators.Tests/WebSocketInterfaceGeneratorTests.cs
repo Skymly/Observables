@@ -100,4 +100,42 @@ public sealed class WebSocketInterfaceGeneratorTests
 
         Assert.Contains("OBS6001", snapshot, StringComparison.Ordinal);
     }
+
+    [Fact]
+    public void WebSocket_interface_OBS6004_on_receive_method()
+    {
+        const string userSource =
+            """
+            [WebSocket]
+            public interface IHub
+            {
+                [WebSocketReceive("ping")]
+                Observable<string> Ping();
+            }
+            """;
+
+        var output = GeneratorTestHarness.Run(userSource);
+        var snapshot = GeneratorTestHarness.ToSnapshot(output);
+
+        Assert.Contains("OBS6004", snapshot, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void WebSocket_interface_OBS6005_on_iobservable_with_r3_generator()
+    {
+        const string userSource =
+            """
+            [WebSocket]
+            public interface IHub
+            {
+                [WebSocketReceive("ping")]
+                IObservable<string> Ping { get; }
+            }
+            """;
+
+        var output = GeneratorTestHarness.Run(userSource);
+        var snapshot = GeneratorTestHarness.ToSnapshot(output);
+
+        Assert.Contains("OBS6005", snapshot, StringComparison.Ordinal);
+    }
 }

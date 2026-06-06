@@ -32,4 +32,42 @@ public sealed class HubInterfaceGeneratorTests
         Assert.Contains("FromInvoke", snapshot, StringComparison.Ordinal);
         Assert.Contains("FromOn", snapshot, StringComparison.Ordinal);
     }
+
+    [Fact]
+    public void Hub_interface_OBS4004_on_hub_on_method()
+    {
+        const string userSource =
+            """
+            [Hub]
+            public interface IChatHub
+            {
+                [HubOn("ReceiveMessage")]
+                Observable<string> ReceiveMessage();
+            }
+            """;
+
+        var output = GeneratorTestHarness.Run(userSource);
+        var snapshot = GeneratorTestHarness.ToSnapshot(output);
+
+        Assert.Contains("OBS4004", snapshot, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Hub_interface_OBS4005_on_iobservable_with_r3_generator()
+    {
+        const string userSource =
+            """
+            [Hub]
+            public interface IChatHub
+            {
+                [HubOn("ReceiveMessage")]
+                IObservable<string> ReceiveMessage { get; }
+            }
+            """;
+
+        var output = GeneratorTestHarness.Run(userSource);
+        var snapshot = GeneratorTestHarness.ToSnapshot(output);
+
+        Assert.Contains("OBS4005", snapshot, StringComparison.Ordinal);
+    }
 }

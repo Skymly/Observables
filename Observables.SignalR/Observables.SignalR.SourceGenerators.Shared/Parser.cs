@@ -2,6 +2,7 @@ using System.Collections.Immutable;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+using Observables.SourceGenerators.Shared.Diagnostics;
 
 namespace Observables.SignalR.Generators;
 
@@ -75,9 +76,11 @@ internal static class Parser
                             TryAddMethod(
                                 method,
                                 ifaceSymbol,
+                                compilation,
                                 invokeAttribute,
                                 sendAttribute,
                                 streamAttribute,
+                                onAttribute,
                                 observableType,
                                 unitType,
                                 members,
@@ -87,6 +90,10 @@ internal static class Parser
                         case IPropertySymbol property:
                             TryAddProperty(
                                 property,
+                                compilation,
+                                invokeAttribute,
+                                sendAttribute,
+                                streamAttribute,
                                 onAttribute,
                                 observableType,
                                 members,
@@ -123,15 +130,27 @@ internal static class Parser
     static void TryAddMethod(
         IMethodSymbol method,
         INamedTypeSymbol ifaceSymbol,
+        CSharpCompilation compilation,
         INamedTypeSymbol? invokeAttribute,
         INamedTypeSymbol? sendAttribute,
         INamedTypeSymbol? streamAttribute,
+        INamedTypeSymbol? onAttribute,
         INamedTypeSymbol? observableType,
         INamedTypeSymbol? unitType,
         List<HubMemberModel> members,
         List<Diagnostic> diagnostics,
         InterfaceDeclarationSyntax ifaceSyntax)
     {
+        if (onAttribute is not null && HasAttribute(method, onAttribute))
+        {
+            diagnostics.Add(
+                Diagnostic.Create(
+                    DiagnosticDescriptors.MemberShapeMismatch,
+                    method.Locations.FirstOrDefault(),
+                    method.Name));
+            return;
+        }
+
         var boundary = GetBoundaryKind(method, invokeAttribute, sendAttribute, streamAttribute);
         if (boundary is null)
         {
@@ -169,13 +188,17 @@ internal static class Parser
             }
         }
 
-        if (!TryParseObservableReturn(method.ReturnType, observableType, unitType, boundary.Value, out var resultType, out var returnDisplay))
+        if (!TryParseObservableReturn(
+                compilation,
+                method.ReturnType,
+                observableType,
+                unitType,
+                boundary.Value,
+                method.Locations.FirstOrDefault(),
+                diagnostics,
+                out var resultType,
+                out var returnDisplay))
         {
-            diagnostics.Add(
-                Diagnostic.Create(
-                    DiagnosticDescriptors.UnsupportedReturnType,
-                    method.Locations.FirstOrDefault(),
-                    method.ReturnType.ToDisplayString(DisplayFormat)));
             return;
         }
 
@@ -195,12 +218,26 @@ internal static class Parser
 
     static void TryAddProperty(
         IPropertySymbol property,
+        CSharpCompilation compilation,
+        INamedTypeSymbol? invokeAttribute,
+        INamedTypeSymbol? sendAttribute,
+        INamedTypeSymbol? streamAttribute,
         INamedTypeSymbol? onAttribute,
         INamedTypeSymbol? observableType,
         List<HubMemberModel> members,
         List<Diagnostic> diagnostics,
         InterfaceDeclarationSyntax ifaceSyntax)
     {
+        if (HasMethodBoundaryOnProperty(property, invokeAttribute, sendAttribute, streamAttribute))
+        {
+            diagnostics.Add(
+                Diagnostic.Create(
+                    DiagnosticDescriptors.MemberShapeMismatch,
+                    property.Locations.FirstOrDefault(),
+                    property.Name));
+            return;
+        }
+
         if (onAttribute is null || !HasAttribute(property, onAttribute))
         {
             if (property.GetAttributes().Length > 0 || property.Name is not "Hub")
@@ -227,13 +264,17 @@ internal static class Parser
             return;
         }
 
-        if (!TryParseObservableReturn(property.Type, observableType, unitType: null, HubBoundaryKind.On, out var resultType, out var returnDisplay))
+        if (!TryParseObservableReturn(
+                compilation,
+                property.Type,
+                observableType,
+                unitType: null,
+                HubBoundaryKind.On,
+                property.Locations.FirstOrDefault(),
+                diagnostics,
+                out var resultType,
+                out var returnDisplay))
         {
-            diagnostics.Add(
-                Diagnostic.Create(
-                    DiagnosticDescriptors.UnsupportedReturnType,
-                    property.Locations.FirstOrDefault(),
-                    property.Type.ToDisplayString(DisplayFormat)));
             return;
         }
 
@@ -375,41 +416,43 @@ internal static class Parser
         return false;
     }
 
+    static bool HasMethodBoundaryOnProperty(
+        IPropertySymbol property,
+        INamedTypeSymbol? invokeAttribute,
+        INamedTypeSymbol? sendAttribute,
+        INamedTypeSymbol? streamAttribute) =>
+        (invokeAttribute is not null && HasAttribute(property, invokeAttribute))
+        || (sendAttribute is not null && HasAttribute(property, sendAttribute))
+        || (streamAttribute is not null && HasAttribute(property, streamAttribute));
+
     static bool TryParseObservableReturn(
+        CSharpCompilation compilation,
         ITypeSymbol returnType,
         INamedTypeSymbol? observableType,
         INamedTypeSymbol? unitType,
         HubBoundaryKind boundary,
+        Location? location,
+        List<Diagnostic> diagnostics,
         out string resultTypeDisplay,
-        out string returnTypeDisplay)
-    {
-        resultTypeDisplay = string.Empty;
-        returnTypeDisplay = returnType.ToDisplayString(DisplayFormat);
-
-        if (observableType is null || returnType is not INamedTypeSymbol named
-            || !SymbolEqualityComparer.Default.Equals(named.OriginalDefinition, observableType))
-        {
-            return false;
-        }
-
-        if (named.TypeArguments.Length != 1)
-        {
-            return false;
-        }
-
-        resultTypeDisplay = named.TypeArguments[0].ToDisplayString(DisplayFormat);
-
-        if (boundary == HubBoundaryKind.Send)
-        {
-            if (unitType is null
-                || !SymbolEqualityComparer.Default.Equals(named.TypeArguments[0], unitType))
-            {
-                return false;
-            }
-        }
-
-        return true;
-    }
+        out string returnTypeDisplay) =>
+        ObservableReturnTypeParser.TryParse(
+            returnType,
+            compilation,
+#if SIGNALR_R3
+            isR3Generator: true,
+#else
+            isR3Generator: false,
+#endif
+            reactiveAdapterMetadataName: "Observables.SignalR.Reactive.SystemReactiveSignalRAdapter",
+            observableType,
+            unitType,
+            requiresUnitPayload: boundary == HubBoundaryKind.Send,
+            DiagnosticDescriptors.UnsupportedReturnType,
+            DiagnosticDescriptors.SystemReactiveNotReferenced,
+            location,
+            diagnostics,
+            out resultTypeDisplay,
+            out returnTypeDisplay);
 
     static (List<string> declarations, List<string> names, bool hasCancellationToken) BuildParameters(
         IMethodSymbol method)

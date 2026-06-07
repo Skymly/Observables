@@ -74,6 +74,8 @@ sealed class Build : NukeBuild
         "Observables.WebSocket/Observables.WebSocket.Reactive.SourceGenerators.Tests/Observables.WebSocket.Reactive.SourceGenerators.Tests.csproj",
         "Observables.WebSocket/Observables.WebSocket.Tests/Observables.WebSocket.Tests.csproj",
         "Observables.WebSocket/Observables.WebSocket.Reactive.Tests/Observables.WebSocket.Reactive.Tests.csproj",
+        "Observables.Shared/Observables.CodeFixes.Tests/Observables.CodeFixes.Tests.csproj",
+        "Observables.Shared/Observables.Analyzers.Tests/Observables.Analyzers.Tests.csproj",
     ];
 
     static readonly string[] PackProjectRelativePaths =
@@ -214,6 +216,9 @@ sealed class Build : NukeBuild
                     Assert.True(
                         entries.Contains("analyzers/dotnet/roslyn4.12/cs/Observables.CodeFixes.dll"),
                         $"{packageId}: missing Observables.CodeFixes.dll under analyzers/dotnet/roslyn4.12/cs/");
+                    Assert.True(
+                        entries.Contains("analyzers/dotnet/roslyn4.12/cs/Observables.Analyzers.dll"),
+                        $"{packageId}: missing Observables.Analyzers.dll under analyzers/dotnet/roslyn4.12/cs/");
                 }
 
                 if (packageId.StartsWith("Observables.Events.", StringComparison.Ordinal))

@@ -1,0 +1,45 @@
+using Microsoft.CodeAnalysis;
+
+namespace Observables.Analyzers;
+
+internal static class DiagnosticDescriptors
+{
+#pragma warning disable RS2008
+    public static readonly DiagnosticDescriptor ConflictingReactivePackages =
+        new(
+            "OBS0001",
+            "Conflicting Observables reactive packages",
+            "Both R3 and System.Reactive Observables packages are referenced for {0}. Remove either the .R3 or .Reactive package for this feature.",
+            "Observables",
+            DiagnosticSeverity.Error,
+            isEnabledByDefault: true,
+            customTags: [WellKnownDiagnosticTags.CompilationEnd]);
+
+    public static readonly DiagnosticDescriptor EmptyHubInterface =
+        new(
+            "OBS4007",
+            "Empty hub proxy interface",
+            "Interface '{0}' is marked with [Hub] but declares no members. Add hub boundary members or remove [Hub].",
+            "Observables.SignalR",
+            DiagnosticSeverity.Warning,
+            isEnabledByDefault: true);
+
+    public static readonly DiagnosticDescriptor EmptyMqttInterface =
+        new(
+            "OBS5007",
+            "Empty MQTT proxy interface",
+            "Interface '{0}' is marked with [Mqtt] but declares no members. Add MQTT boundary members or remove [Mqtt].",
+            "Observables.Mqtt",
+            DiagnosticSeverity.Warning,
+            isEnabledByDefault: true);
+
+    public static readonly DiagnosticDescriptor EmptyWebSocketInterface =
+        new(
+            "OBS6007",
+            "Empty WebSocket proxy interface",
+            "Interface '{0}' is marked with [WebSocket] but declares no members. Add WebSocket boundary members or remove [WebSocket].",
+            "Observables.WebSocket",
+            DiagnosticSeverity.Warning,
+            isEnabledByDefault: true);
+#pragma warning restore RS2008
+}

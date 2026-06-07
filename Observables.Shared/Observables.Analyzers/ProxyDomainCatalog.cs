@@ -1,0 +1,152 @@
+using Microsoft.CodeAnalysis;
+
+namespace Observables.Analyzers;
+
+internal static class ProxyDomainCatalog
+{
+    internal sealed class ProxyDomain
+    {
+        internal ProxyDomain(
+            string displayName,
+            string interfaceMarkerMetadataName,
+            string reactiveAdapterMetadataName,
+            DiagnosticDescriptor emptyInterfaceDescriptor,
+            IReadOnlyList<BoundaryAttributeSuggestion> methodAttributes,
+            IReadOnlyList<BoundaryAttributeSuggestion> propertyAttributes)
+        {
+            DisplayName = displayName;
+            InterfaceMarkerMetadataName = interfaceMarkerMetadataName;
+            ReactiveAdapterMetadataName = reactiveAdapterMetadataName;
+            EmptyInterfaceDescriptor = emptyInterfaceDescriptor;
+            MethodAttributes = methodAttributes;
+            PropertyAttributes = propertyAttributes;
+        }
+
+        internal string DisplayName { get; }
+        internal string InterfaceMarkerMetadataName { get; }
+        internal string ReactiveAdapterMetadataName { get; }
+        internal DiagnosticDescriptor EmptyInterfaceDescriptor { get; }
+        internal IReadOnlyList<BoundaryAttributeSuggestion> MethodAttributes { get; }
+        internal IReadOnlyList<BoundaryAttributeSuggestion> PropertyAttributes { get; }
+    }
+
+    internal sealed class BoundaryAttributeSuggestion
+    {
+        internal BoundaryAttributeSuggestion(string displayText, string insertText)
+        {
+            DisplayText = displayText;
+            InsertText = insertText;
+        }
+
+        internal string DisplayText { get; }
+        internal string InsertText { get; }
+    }
+
+    internal static readonly ProxyDomain SignalR = new(
+        displayName: "SignalR",
+        interfaceMarkerMetadataName: "Observables.SignalR.HubAttribute",
+        reactiveAdapterMetadataName: "Observables.SignalR.Reactive.SystemReactiveSignalRAdapter",
+        emptyInterfaceDescriptor: DiagnosticDescriptors.EmptyHubInterface,
+        methodAttributes:
+        [
+            new BoundaryAttributeSuggestion("HubInvoke", "HubInvoke"),
+            new BoundaryAttributeSuggestion("HubSend", "HubSend"),
+            new BoundaryAttributeSuggestion("HubStream", "HubStream"),
+        ],
+        propertyAttributes:
+        [
+            new BoundaryAttributeSuggestion("HubOn", "HubOn"),
+        ]);
+
+    internal static readonly ProxyDomain Mqtt = new(
+        displayName: "Mqtt",
+        interfaceMarkerMetadataName: "Observables.Mqtt.MqttAttribute",
+        reactiveAdapterMetadataName: "Observables.Mqtt.Reactive.SystemReactiveMqttAdapter",
+        emptyInterfaceDescriptor: DiagnosticDescriptors.EmptyMqttInterface,
+        methodAttributes:
+        [
+            new BoundaryAttributeSuggestion("MqttPublish", "MqttPublish"),
+        ],
+        propertyAttributes:
+        [
+            new BoundaryAttributeSuggestion("MqttSubscribe", "MqttSubscribe"),
+        ]);
+
+    internal static readonly ProxyDomain WebSocket = new(
+        displayName: "WebSocket",
+        interfaceMarkerMetadataName: "Observables.WebSocket.WebSocketAttribute",
+        reactiveAdapterMetadataName: "Observables.WebSocket.Reactive.SystemReactiveWebSocketAdapter",
+        emptyInterfaceDescriptor: DiagnosticDescriptors.EmptyWebSocketInterface,
+        methodAttributes:
+        [
+            new BoundaryAttributeSuggestion("WebSocketSend", "WebSocketSend"),
+            new BoundaryAttributeSuggestion("WebSocketConnect", "WebSocketConnect"),
+            new BoundaryAttributeSuggestion("WebSocketClose", "WebSocketClose"),
+        ],
+        propertyAttributes:
+        [
+            new BoundaryAttributeSuggestion("WebSocketReceive", "WebSocketReceive"),
+        ]);
+
+    internal static readonly ProxyDomain RestApi = new(
+        displayName: "RestAPI",
+        interfaceMarkerMetadataName: string.Empty,
+        reactiveAdapterMetadataName: "Observables.RestAPI.Reactive.SystemReactiveObservableAdapter",
+        emptyInterfaceDescriptor: DiagnosticDescriptors.EmptyHubInterface,
+        methodAttributes: [],
+        propertyAttributes: []);
+
+    internal static readonly IReadOnlyList<ProxyDomain> InterfaceProxyDomains = [SignalR, Mqtt, WebSocket];
+
+    internal static readonly IReadOnlyList<ProxyDomain> ReactiveConflictDomains =
+        [SignalR, Mqtt, WebSocket, RestApi];
+
+    internal static readonly string[] RestApiHttpMethodNames =
+        ["Get", "Post", "Put", "Delete", "Patch", "Head", "Options"];
+
+    internal static bool HasAttribute(ISymbol symbol, INamedTypeSymbol attributeType)
+    {
+        foreach (var attribute in symbol.GetAttributes())
+        {
+            if (SymbolEqualityComparer.Default.Equals(attribute.AttributeClass, attributeType))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    internal static int CountPublicInstanceMembers(INamedTypeSymbol interfaceSymbol)
+    {
+        var count = 0;
+        foreach (var member in interfaceSymbol.GetMembers())
+        {
+            if (member.DeclaredAccessibility != Accessibility.Public || member.IsStatic)
+            {
+                continue;
+            }
+
+            if (member is IMethodSymbol { MethodKind: MethodKind.Ordinary } or IPropertySymbol)
+            {
+                count++;
+            }
+        }
+
+        return count;
+    }
+
+    internal static ProxyDomain? TryGetInterfaceProxyDomain(INamedTypeSymbol interfaceSymbol, Compilation compilation)
+    {
+        foreach (var domain in InterfaceProxyDomains)
+        {
+            var marker = compilation.GetTypeByMetadataName(domain.InterfaceMarkerMetadataName);
+            if (marker is not null && HasAttribute(interfaceSymbol, marker))
+            {
+                return domain;
+            }
+        }
+
+        return null;
+    }
+}

@@ -206,6 +206,16 @@ sealed class Build : NukeBuild
                     && e.EndsWith(".dll", StringComparison.OrdinalIgnoreCase));
                 Assert.True(hasAnalyzer, $"{packageId}: missing analyzer DLL under analyzers/dotnet/roslyn4.12/cs/");
 
+                if (packageId.StartsWith("Observables.RestAPI.", StringComparison.Ordinal)
+                    || packageId.StartsWith("Observables.SignalR.", StringComparison.Ordinal)
+                    || packageId.StartsWith("Observables.Mqtt.", StringComparison.Ordinal)
+                    || packageId.StartsWith("Observables.WebSocket.", StringComparison.Ordinal))
+                {
+                    Assert.True(
+                        entries.Contains("analyzers/dotnet/roslyn4.12/cs/Observables.CodeFixes.dll"),
+                        $"{packageId}: missing Observables.CodeFixes.dll under analyzers/dotnet/roslyn4.12/cs/");
+                }
+
                 if (packageId.StartsWith("Observables.Events.", StringComparison.Ordinal))
                 {
                     Assert.True(

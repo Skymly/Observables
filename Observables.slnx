@@ -24,6 +24,10 @@
 
     <Project Path="Observables.Shared/Observables.SourceGenerators.Shared/Observables.SourceGenerators.Shared.csproj" />
 
+    <Project Path="Observables.Shared/Observables.CodeFixes/Observables.CodeFixes.csproj" />
+
+    <Project Path="Observables.Shared/Observables.CodeFixes.Tests/Observables.CodeFixes.Tests.csproj" />
+
   </Folder>
 
   <Folder Name="/Events/">

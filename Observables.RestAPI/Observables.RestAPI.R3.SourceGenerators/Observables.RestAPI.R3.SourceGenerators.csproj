@@ -11,7 +11,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\Observables.Shared\Observables.SourceGenerators.Shared\Observables.SourceGenerators.Shared.csproj" />
-    <PackageReference Include="R3" Version="1.3.0" PrivateAssets="all" />
+    <PackageReference Include="R3" PrivateAssets="all" />
   </ItemGroup>
 
   <Import Project="..\Observables.RestAPI.SourceGenerators.Shared\Observables.RestAPI.SourceGenerators.Shared.projitems" Label="Shared" />

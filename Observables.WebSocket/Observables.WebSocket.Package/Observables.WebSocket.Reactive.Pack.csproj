@@ -5,7 +5,6 @@
   <Import Project="..\..\eng\PackReferencedProjects.targets" />
 
   <PropertyGroup>
-    <TargetFrameworks>netstandard2.0;net8.0;net9.0</TargetFrameworks>
     <IsPackable>true</IsPackable>
     <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
     <IncludeBuildOutput>false</IncludeBuildOutput>
@@ -24,7 +23,7 @@
   <ItemGroup>
     <ObservablesPackLibProjectReference Include="..\Observables.WebSocket\Observables.WebSocket.csproj" />
     <ObservablesPackLibProjectReference Include="..\Observables.WebSocket.Reactive\Observables.WebSocket.Reactive.csproj" />
-    <PackageReference Include="System.Reactive" Version="6.0.1" />
+    <PackageReference Include="System.Reactive" />
     <None Include="README.WebSocket.Reactive.pack.md" Pack="true" PackagePath="README.md" Visible="false" />
   </ItemGroup>
 

@@ -51,7 +51,7 @@ public sealed class HubConnectionReactiveE2ETests(SignalRTestServerFixture fixtu
 
         using var cts = new CancellationTokenSource(DefaultTimeout);
         var receive = hub.Notify.Timeout(DefaultTimeout).FirstAsync().ToTask();
-        await connection.InvokeAsync("PushNotify", "hello", cts.Token).ConfigureAwait(false);
+        await connection.InvokeAsync("PushNotify", "hello", cts.Token);
         var message = await receive;
 
         Assert.Equal("hello", message);

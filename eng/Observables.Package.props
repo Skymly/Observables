@@ -1,8 +1,8 @@
 <Project>
 
   <PropertyGroup>
-    <Version>0.1.0-preview4</Version>
-    <PackageVersion>0.1.0-preview4</PackageVersion>
+    <Version>0.1.0-preview5</Version>
+    <PackageVersion>0.1.0-preview5</PackageVersion>
     <Authors>Skymly</Authors>
     <Copyright>Copyright (c) Skymly. All rights reserved.</Copyright>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
@@ -25,7 +25,7 @@
 
   <ItemGroup>
     <None Include="$(MSBuildThisFileDirectory)../LICENSE" Pack="true" PackagePath="\" Visible="false" Condition="Exists('$(MSBuildThisFileDirectory)../LICENSE')" />
-    <PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" PrivateAssets="all" />
+    <PackageReference Include="Microsoft.SourceLink.GitHub" PrivateAssets="all" />
   </ItemGroup>
 
 </Project>

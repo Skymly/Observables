@@ -1,18 +1,14 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net8.0</TargetFramework>
     <RootNamespace>Observables.Analyzers.Tests</RootNamespace>
-    <IsPackable>false</IsPackable>
-    <Nullable>enable</Nullable>
-    <ImplicitUsings>enable</ImplicitUsings>
   </PropertyGroup>
 
   <ItemGroup>
     <Using Include="Xunit" />
-    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
-    <PackageReference Include="xunit.v3" Version="3.2.2" />
-    <PackageReference Include="xunit.runner.visualstudio" Version="3.1.5">
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="xunit.v3" />
+    <PackageReference Include="xunit.runner.visualstudio">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
@@ -25,8 +21,8 @@
     <ProjectReference Include="..\..\Observables.Mqtt\Observables.Mqtt\Observables.Mqtt.csproj" />
     <ProjectReference Include="..\..\Observables.WebSocket\Observables.WebSocket\Observables.WebSocket.csproj" />
     <ProjectReference Include="..\..\Observables.RestAPI\Observables.RestAPI\Observables.RestAPI.csproj" />
-    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.12.0" />
-    <PackageReference Include="R3" Version="1.3.0" />
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" />
+    <PackageReference Include="R3" />
   </ItemGroup>
 
 </Project>

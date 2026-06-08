@@ -4,7 +4,6 @@
   <Import Project="..\..\eng\PackRoslynAnalyzer.targets" />
 
   <PropertyGroup>
-    <TargetFramework>netstandard2.0</TargetFramework>
     <IsPackable>true</IsPackable>
     <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
     <IncludeBuildOutput>false</IncludeBuildOutput>
@@ -21,7 +20,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="System.Reactive" Version="6.0.1" />
+    <PackageReference Include="System.Reactive" />
     <None Include="README.Events.Reactive.pack.md" Pack="true" PackagePath="README.md" Visible="false" />
     <None Include="..\Observables.Events\targets\observables.events.props" Pack="true" PackagePath="buildTransitive\observables.events.props" Visible="false" />
   </ItemGroup>

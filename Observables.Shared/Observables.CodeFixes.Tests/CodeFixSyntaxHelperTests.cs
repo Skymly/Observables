@@ -16,8 +16,8 @@ public sealed class CodeFixSyntaxHelperTests
             }
             """;
 
-        var tree = CSharpSyntaxTree.ParseText(source);
-        var method = tree.GetRoot().DescendantNodes().OfType<Microsoft.CodeAnalysis.CSharp.Syntax.MethodDeclarationSyntax>().Single();
+        var tree = CSharpSyntaxTree.ParseText(source, cancellationToken: TestContext.Current.CancellationToken);
+        var method = tree.GetRoot(TestContext.Current.CancellationToken).DescendantNodes().OfType<Microsoft.CodeAnalysis.CSharp.Syntax.MethodDeclarationSyntax>().Single();
         var property = CodeFixSyntaxHelper.ConvertMethodToProperty(method);
 
         var text = property.ToFullString();
@@ -37,8 +37,8 @@ public sealed class CodeFixSyntaxHelperTests
             }
             """;
 
-        var tree = CSharpSyntaxTree.ParseText(source);
-        var method = tree.GetRoot().DescendantNodes().OfType<Microsoft.CodeAnalysis.CSharp.Syntax.MethodDeclarationSyntax>().Single();
+        var tree = CSharpSyntaxTree.ParseText(source, cancellationToken: TestContext.Current.CancellationToken);
+        var method = tree.GetRoot(TestContext.Current.CancellationToken).DescendantNodes().OfType<Microsoft.CodeAnalysis.CSharp.Syntax.MethodDeclarationSyntax>().Single();
         var path = CodeFixSyntaxHelper.SuggestRestApiPath(method);
 
         Assert.Equal("/{id}/{page}", path);

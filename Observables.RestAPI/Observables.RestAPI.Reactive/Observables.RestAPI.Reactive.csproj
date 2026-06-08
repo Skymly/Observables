@@ -1,18 +1,14 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>netstandard2.0;net8.0;net9.0</TargetFrameworks>
     <RootNamespace>Observables.RestAPI.Reactive</RootNamespace>
     <AssemblyName>Observables.RestAPI.Reactive</AssemblyName>
     <Description>System.Reactive IObservable bridge for Observables.RestAPI.</Description>
-    <Nullable>enable</Nullable>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <IsPackable>false</IsPackable>
   </PropertyGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\Observables.RestAPI.Reactive.SourceGenerators\Observables.RestAPI.Reactive.SourceGenerators.csproj" />
-    <PackageReference Include="System.Reactive" Version="6.0.1" />
+    <PackageReference Include="System.Reactive" />
   </ItemGroup>
 
 </Project>

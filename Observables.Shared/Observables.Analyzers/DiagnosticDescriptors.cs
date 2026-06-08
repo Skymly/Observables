@@ -4,7 +4,6 @@ namespace Observables.Analyzers;
 
 internal static class DiagnosticDescriptors
 {
-#pragma warning disable RS2008
     public static readonly DiagnosticDescriptor ConflictingReactivePackages =
         new(
             "OBS0001",
@@ -41,5 +40,4 @@ internal static class DiagnosticDescriptors
             "Observables.WebSocket",
             DiagnosticSeverity.Warning,
             isEnabledByDefault: true);
-#pragma warning restore RS2008
 }

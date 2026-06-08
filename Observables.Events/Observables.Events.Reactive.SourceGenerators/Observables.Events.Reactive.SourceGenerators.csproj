@@ -8,7 +8,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\Observables.Shared\Observables.SourceGenerators.Shared\Observables.SourceGenerators.Shared.csproj" />
-    <PackageReference Include="System.Reactive" Version="6.0.1" PrivateAssets="all" />
+    <PackageReference Include="System.Reactive" PrivateAssets="all" />
   </ItemGroup>
 
 </Project>

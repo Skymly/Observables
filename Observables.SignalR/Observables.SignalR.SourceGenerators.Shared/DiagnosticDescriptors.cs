@@ -4,7 +4,6 @@ namespace Observables.SignalR.Generators;
 
 internal static class DiagnosticDescriptors
 {
-#pragma warning disable RS2008
     public static readonly DiagnosticDescriptor InvalidHubMember =
         new(
             "OBS4001",
@@ -58,7 +57,6 @@ internal static class DiagnosticDescriptors
             "Observables.SignalR",
             DiagnosticSeverity.Error,
             true);
-#pragma warning restore RS2008
 }
 
 internal static class SignalRGeneratorStepName

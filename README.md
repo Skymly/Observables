@@ -2,6 +2,8 @@
 
 面向 **反应式编程（Rx）** 的 Roslyn 源生成器套件。远端仓库：[github.com/Skymly/Observables](https://github.com/Skymly/Observables)（公开）。
 
+里程碑与发版规划见 [docs/ROADMAP.md](docs/ROADMAP.md)；开发规范与工程治理见 [AGENTS.md](./AGENTS.md)。
+
 ## 运行时与包名
 
 | NuGet 包 ID | 运行时 |
@@ -22,7 +24,7 @@
 | **`Observables.<Feature>.R3.SourceGenerators`** / **`.Reactive.SourceGenerators`** | 双路源生成器 |
 | **`Observables.<Feature>.Package`** | 发布时打包，产出上述两个 NuGet 包 |
 
-### 预览版 NuGet（`0.1.0-preview4`）
+### 预览版 NuGet（`0.1.0-preview5`）
 
 | 包 ID | 说明 |
 |-------|------|
@@ -34,9 +36,11 @@
 | `Observables.SignalR.Reactive` | SignalR + Reactive 桥接 + 生成器 |
 | `Observables.Mqtt.R3` | MQTT 运行时 + R3 生成器 |
 | `Observables.Mqtt.Reactive` | MQTT + Reactive 桥接 + 生成器 |
+| `Observables.WebSocket.R3` | WebSocket 运行时 + R3 生成器 |
+| `Observables.WebSocket.Reactive` | WebSocket + Reactive 桥接 + 生成器 |
 
 ```xml
-<PackageReference Include="Observables.Events.R3" Version="0.1.0-preview4" />
+<PackageReference Include="Observables.Events.R3" Version="0.1.0-preview5" />
 <PackageReference Include="R3" Version="1.3.0" />
 ```
 
@@ -81,11 +85,16 @@ dotnet run --project build/_build.csproj -- --target Publish --configuration Rel
 
 ## 域实现状态
 
-| 顺序 | 域 | R3 | System.Reactive |
-|------|-----|-----|-----------------|
-| 1 | **Events**（经典 + 路由 .NET 事件） | `Events.R3.SourceGenerators`（已实现） | `Events.Reactive.SourceGenerators`（已实现） |
-| 2 | **RestAPI**（声明式 HTTP 客户端） | `RestAPI` + `RestAPI.R3.SourceGenerators` | `RestAPI.Reactive` + `RestAPI.Reactive.SourceGenerators` |
-| 3+ | SignalR、WebSocket、Mqtt、Grpc | 各域 `*.R3` 骨架 | 各域运行时骨架 |
+| 域 | R3 生成器 | System.Reactive 生成器 | NuGet（`preview5`） |
+|----|-----------|------------------------|---------------------|
+| **Events**（经典 + 路由 .NET 事件） | `Events.R3.SourceGenerators` | `Events.Reactive.SourceGenerators` | 已发 |
+| **RestAPI**（声明式 HTTP 客户端） | `RestAPI.R3.SourceGenerators` | `RestAPI.Reactive.SourceGenerators` | 已发 |
+| **SignalR**（Hub 代理） | `SignalR.R3.SourceGenerators` | `SignalR.Reactive.SourceGenerators` | 已发 |
+| **Mqtt**（主题代理） | `Mqtt.R3.SourceGenerators` | `Mqtt.Reactive.SourceGenerators` | 已发 |
+| **WebSocket**（客户端代理） | `WebSocket.R3.SourceGenerators` | `WebSocket.Reactive.SourceGenerators` | 已发 |
+| **Grpc** | 空 csproj 骨架 | — | 规划中（见 ROADMAP M3） |
+
+五域均含运行时（按需）+ 双路生成器 + 测试；共享层另有 `Observables.Analyzers` 与 `Observables.CodeFixes`。详细顺序见 [docs/ROADMAP.md](docs/ROADMAP.md)。
 
 路由事件生成默认关闭；在消费者项目中设置 `<ObservableRoutedEvents>true</ObservableRoutedEvents>`（见 `Observables.Events/Observables.Events/targets/observables.events.props`）。
 

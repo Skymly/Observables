@@ -13,6 +13,6 @@ TestResults/
 artifacts/
 .nuke/temp/
 
-## Local scratch (see Skymly/AGENTS.md § `.Local`)
+## Local scratch (see ../../../AGENTS.md § `.Local`)
 .Local/
 *.VerifyTests/

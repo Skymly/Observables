@@ -1,7 +1,6 @@
 <Project Sdk="Microsoft.Build.Traversal/4.1.82">
 
   <PropertyGroup>
-    <IsPackable>false</IsPackable>
     <Description>Traversal root for Observables.SignalR.R3 and Observables.SignalR.Reactive NuGet packages.</Description>
   </PropertyGroup>
 

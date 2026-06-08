@@ -1,0 +1,94 @@
+<Project>
+
+  <!--
+    MSBuild defaults by project kind. Imported from Directory.Build.props.
+    Generators still receive netstandard2.0 from Observables.SourceGenerators.props
+    (imported in csproj, evaluated after this file).
+  -->
+
+  <PropertyGroup>
+    <_ObsProjectDir>$([System.String]::Copy('$(MSBuildProjectDirectory)').Replace('\', '/'))</_ObsProjectDir>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <ObservablesSkipProjectDefaults>false</ObservablesSkipProjectDefaults>
+    <ObservablesSkipProjectDefaults Condition="'$(MSBuildProjectName)' == '_build'">true</ObservablesSkipProjectDefaults>
+    <ObservablesSkipProjectDefaults Condition="$(_ObsProjectDir.Contains('/nuget-smoke/'))">true</ObservablesSkipProjectDefaults>
+    <ObservablesSkipProjectDefaults Condition="$(MSBuildProjectName.EndsWith('.Package'))">true</ObservablesSkipProjectDefaults>
+    <ObservablesSkipProjectDefaults Condition="'$(UsingMicrosoftBuildTraversal)' == 'true'">true</ObservablesSkipProjectDefaults>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(ObservablesSkipProjectDefaults)' != 'true'">
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <_ObsIsGeneratorProject>false</_ObsIsGeneratorProject>
+    <_ObsIsGeneratorProject Condition="$(MSBuildProjectName.Contains('SourceGenerators'))">true</_ObsIsGeneratorProject>
+    <_ObsIsTestProject>false</_ObsIsTestProject>
+    <_ObsIsTestProject Condition="$(MSBuildProjectName.EndsWith('.Tests'))">true</_ObsIsTestProject>
+    <_ObsIsTestProject Condition="$(MSBuildProjectName.EndsWith('.GeneratorTests'))">true</_ObsIsTestProject>
+    <_ObsIsDomainFolder>false</_ObsIsDomainFolder>
+    <_ObsIsDomainFolder Condition="$(_ObsProjectDir.Contains('/Observables.RestAPI/'))">true</_ObsIsDomainFolder>
+    <_ObsIsDomainFolder Condition="$(_ObsProjectDir.Contains('/Observables.SignalR/'))">true</_ObsIsDomainFolder>
+    <_ObsIsDomainFolder Condition="$(_ObsProjectDir.Contains('/Observables.Mqtt/'))">true</_ObsIsDomainFolder>
+    <_ObsIsDomainFolder Condition="$(_ObsProjectDir.Contains('/Observables.WebSocket/'))">true</_ObsIsDomainFolder>
+    <_ObsIsEventsPackProject>false</_ObsIsEventsPackProject>
+    <_ObsIsEventsPackProject Condition="$(_ObsProjectDir.Contains('/Observables.Events.Package')) and '$(_ObsIsGeneratorProject)' != 'true'">true</_ObsIsEventsPackProject>
+    <_ObsIsSharedProject>false</_ObsIsSharedProject>
+    <_ObsIsSharedProject Condition="$(_ObsProjectDir.Contains('/Observables.Shared/'))">true</_ObsIsSharedProject>
+    <_ObsIsEventsPropsProject>false</_ObsIsEventsPropsProject>
+    <_ObsIsEventsPropsProject Condition="'$(MSBuildProjectName)' == 'Observables.Events'">true</_ObsIsEventsPropsProject>
+    <_ObsIsHttpClientFactoryProject>false</_ObsIsHttpClientFactoryProject>
+    <_ObsIsHttpClientFactoryProject Condition="'$(MSBuildProjectName)' == 'Observables.RestAPI.HttpClientFactory'">true</_ObsIsHttpClientFactoryProject>
+    <_ObsIsSingleTfmTestProject>false</_ObsIsSingleTfmTestProject>
+    <_ObsIsSingleTfmTestProject Condition="'$(_ObsIsTestProject)' == 'true' and '$(_ObsIsGeneratorProject)' == 'true'">true</_ObsIsSingleTfmTestProject>
+    <_ObsIsSingleTfmTestProject Condition="'$(_ObsIsTestProject)' == 'true' and '$(MSBuildProjectName)' == 'Observables.RestAPI.GeneratorTests'">true</_ObsIsSingleTfmTestProject>
+    <_ObsIsSingleTfmTestProject Condition="'$(_ObsIsTestProject)' == 'true' and '$(MSBuildProjectName)' == 'Observables.CodeFixes.Tests'">true</_ObsIsSingleTfmTestProject>
+    <_ObsIsSingleTfmTestProject Condition="'$(_ObsIsTestProject)' == 'true' and '$(MSBuildProjectName)' == 'Observables.Analyzers.Tests'">true</_ObsIsSingleTfmTestProject>
+    <_ObsIsMultiTfmTestProject>false</_ObsIsMultiTfmTestProject>
+    <_ObsIsMultiTfmTestProject Condition="'$(_ObsIsTestProject)' == 'true' and '$(_ObsIsSingleTfmTestProject)' != 'true'">true</_ObsIsMultiTfmTestProject>
+    <_ObsIsDomainRuntimeProject>false</_ObsIsDomainRuntimeProject>
+    <_ObsIsDomainRuntimeProject Condition="'$(_ObsIsDomainFolder)' == 'true' and '$(_ObsIsGeneratorProject)' != 'true' and '$(_ObsIsTestProject)' != 'true' and '$(_ObsIsHttpClientFactoryProject)' != 'true'">true</_ObsIsDomainRuntimeProject>
+    <_ObsIsNetStandard20Project>false</_ObsIsNetStandard20Project>
+    <_ObsIsNetStandard20Project Condition="'$(_ObsIsSharedProject)' == 'true' and '$(_ObsIsTestProject)' != 'true'">true</_ObsIsNetStandard20Project>
+    <_ObsIsNetStandard20Project Condition="'$(_ObsIsEventsPropsProject)' == 'true'">true</_ObsIsNetStandard20Project>
+    <_ObsIsNetStandard20Project Condition="'$(_ObsIsEventsPackProject)' == 'true'">true</_ObsIsNetStandard20Project>
+  </PropertyGroup>
+
+  <!-- Domain runtime + pack (RestAPI / SignalR / Mqtt / WebSocket) -->
+  <PropertyGroup Condition="'$(ObservablesSkipProjectDefaults)' != 'true' and '$(_ObsIsDomainRuntimeProject)' == 'true'">
+    <TargetFrameworks>netstandard2.0;net8.0;net9.0</TargetFrameworks>
+    <IsPackable Condition="'$(IsPackable)' == ''">false</IsPackable>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(ObservablesSkipProjectDefaults)' != 'true' and '$(_ObsIsDomainRuntimeProject)' == 'true' and ($(TargetFramework.StartsWith('net8.0')) or $(TargetFramework.StartsWith('net9.0')))">
+    <IsAotCompatible>true</IsAotCompatible>
+    <PublishAotSupported>true</PublishAotSupported>
+    <IsTrimmable>true</IsTrimmable>
+    <!-- M2: reflection/JSON trim noise until M5 JsonSerializerContext + full Requires* propagation -->
+    <NoWarn>$(NoWarn);IL2026;IL3050;IL2060;IL2070;IL2072;IL2075;IL2057;IL2111</NoWarn>
+  </PropertyGroup>
+
+  <!-- HttpClientFactory extension -->
+  <PropertyGroup Condition="'$(ObservablesSkipProjectDefaults)' != 'true' and '$(_ObsIsHttpClientFactoryProject)' == 'true'">
+    <TargetFrameworks>net8.0;net9.0</TargetFrameworks>
+    <IsPackable Condition="'$(IsPackable)' == ''">false</IsPackable>
+  </PropertyGroup>
+
+  <!-- Core, shared generator infra, Events props, Events pack -->
+  <PropertyGroup Condition="'$(ObservablesSkipProjectDefaults)' != 'true' and '$(_ObsIsNetStandard20Project)' == 'true'">
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <IsPackable Condition="'$(IsPackable)' == ''">false</IsPackable>
+  </PropertyGroup>
+
+  <!-- Generator / snapshot tests -->
+  <PropertyGroup Condition="'$(ObservablesSkipProjectDefaults)' != 'true' and '$(_ObsIsSingleTfmTestProject)' == 'true'">
+    <TargetFramework>net8.0</TargetFramework>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <!-- Runtime E2E tests -->
+  <PropertyGroup Condition="'$(ObservablesSkipProjectDefaults)' != 'true' and '$(_ObsIsMultiTfmTestProject)' == 'true'">
+    <TargetFrameworks>net8.0;net9.0</TargetFrameworks>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+</Project>

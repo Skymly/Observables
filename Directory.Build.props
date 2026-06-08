@@ -1,6 +1,7 @@
 <Project>
 
   <PropertyGroup>
+    <RepoRoot>$(MSBuildThisFileDirectory)</RepoRoot>
     <LangVersion>latest</LangVersion>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
@@ -8,5 +9,7 @@
     <Copyright>Copyright (c) Skymly. All rights reserved.</Copyright>
     <Deterministic>true</Deterministic>
   </PropertyGroup>
+
+  <Import Project="eng\Observables.ProjectDefaults.props" />
 
 </Project>

@@ -1,0 +1,11 @@
+<Project>
+
+  <!-- The consumer smoke harness simulates real external consumers using explicit and
+       dynamic ($(ObservablesConsumerPackageVersion)) package versions. Opt this subtree
+       out of central package management so it keeps inline PackageReference versions and
+       does not inherit the repo-root Directory.Packages.props. -->
+  <PropertyGroup>
+    <ManagePackageVersionsCentrally>false</ManagePackageVersionsCentrally>
+  </PropertyGroup>
+
+</Project>

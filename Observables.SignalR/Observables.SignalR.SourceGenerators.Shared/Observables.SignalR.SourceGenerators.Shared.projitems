@@ -9,6 +9,8 @@
     <Import_RootNamespace>Observables.SignalR.Generators</Import_RootNamespace>
   </PropertyGroup>
   <ItemGroup>
+    <AdditionalFiles Include="$(MSBuildThisFileDirectory)AnalyzerReleases.Shipped.md" />
+    <AdditionalFiles Include="$(MSBuildThisFileDirectory)AnalyzerReleases.Unshipped.md" />
     <Compile Include="$(MSBuildThisFileDirectory)DiagnosticDescriptors.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Emitter.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)ImmutableEquatableArray.cs" />

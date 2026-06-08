@@ -213,10 +213,10 @@ namespace Observables.RestAPI
                         throw new JsonException($"Cannot convert an empty value to {targetType}.");
                     }
 
-                    if (namesToValues.TryGetValue(value, out var namedValue))
+                    if (namesToValues.TryGetValue(value!, out var namedValue))
                         return namedValue;
 
-                    if (namesToValuesIgnoreCase.TryGetValue(value, out var namedValueIgnoreCase))
+                    if (namesToValuesIgnoreCase.TryGetValue(value!, out var namedValueIgnoreCase))
                         return namedValueIgnoreCase;
 
                     throw new JsonException($"Unable to convert '{value}' to {targetType}.");

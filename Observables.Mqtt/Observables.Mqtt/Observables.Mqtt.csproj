@@ -1,28 +1,18 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>netstandard2.0;net8.0;net9.0</TargetFrameworks>
     <RootNamespace>Observables.Mqtt</RootNamespace>
     <AssemblyName>Observables.Mqtt</AssemblyName>
     <Description>MQTT client runtime and R3 stream bridges.</Description>
-    <Nullable>enable</Nullable>
-    <LangVersion>latest</LangVersion>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <IsPackable>false</IsPackable>
   </PropertyGroup>
 
-  <PropertyGroup Condition="$(TargetFramework.StartsWith('net8.0')) or $(TargetFramework.StartsWith('net9.0'))">
-    <IsAotCompatible>true</IsAotCompatible>
-    <PublishAotSupported>true</PublishAotSupported>
-    <IsTrimmable>true</IsTrimmable>
-  </PropertyGroup>
 
   <!-- Source-only polyfills for span/text APIs missing on netstandard2.0 (see eng/NetStandard20.props). -->
   <Import Project="..\..\eng\NetStandard20.props" Condition="Exists('..\..\eng\NetStandard20.props')" />
 
   <ItemGroup>
-    <PackageReference Include="MQTTnet" Version="4.3.7.1207" />
-    <PackageReference Include="R3" Version="1.3.0" />
+    <PackageReference Include="MQTTnet" />
+    <PackageReference Include="R3" />
   </ItemGroup>
 
 </Project>

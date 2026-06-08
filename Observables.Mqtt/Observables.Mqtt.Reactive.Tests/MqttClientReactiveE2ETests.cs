@@ -16,7 +16,7 @@ public sealed class MqttClientReactiveE2ETests(MqttTestBrokerFixture fixture)
     [Fact]
     public async Task MqttSubscribe_Ping_receives_broker_message()
     {
-        await using var session = await fixture.Broker.ConnectAsync();
+        await using var session = await fixture.Broker.ConnectAsync(TestContext.Current.CancellationToken);
         var hub = MqttService.For<IE2EHub>(session.Client);
 
         using var cts = new CancellationTokenSource(DefaultTimeout);
@@ -38,8 +38,8 @@ public sealed class MqttClientReactiveE2ETests(MqttTestBrokerFixture fixture)
     [Fact]
     public async Task MqttPublish_PublishPing_reaches_subscriber()
     {
-        await using var subscriber = await fixture.Broker.ConnectAsync();
-        await using var publisher = await fixture.Broker.ConnectAsync();
+        await using var subscriber = await fixture.Broker.ConnectAsync(TestContext.Current.CancellationToken);
+        await using var publisher = await fixture.Broker.ConnectAsync(TestContext.Current.CancellationToken);
         var subHub = MqttService.For<IE2EHub>(subscriber.Client);
         var pubHub = MqttService.For<IE2EHub>(publisher.Client);
 

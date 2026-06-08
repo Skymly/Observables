@@ -22,6 +22,9 @@ namespace Observables.RestAPI
     class RequestBuilderImplementation<TApi> : RequestBuilderImplementation, IRequestBuilder<TApi>
 #endif
     {
+#if NET5_0_OR_GREATER
+        [RequiresUnreferencedCode("RequestBuilder uses reflection on the provided Refit interface and DTO types. Ensure necessary members are preserved when trimming.")]
+#endif
         public RequestBuilderImplementation(RestApiSettings? RestApiSettings = null)
             : base(typeof(TApi), RestApiSettings)
         {
@@ -181,6 +184,9 @@ namespace Observables.RestAPI
             throw new Exception("No suitable Method found...");
         }
 
+#if NET5_0_OR_GREATER
+        [RequiresDynamicCode("Closing generic REST methods uses MakeGenericMethod at runtime.")]
+#endif
         RestMethodInfoInternal CloseGenericMethodIfNeeded(
             RestMethodInfoInternal restMethodInfo,
             Type[]? genericArgumentTypes
@@ -315,6 +321,9 @@ namespace Observables.RestAPI
             );
         }
 
+#if NET5_0_OR_GREATER
+        [RequiresDynamicCode("Building sync REST delegates uses MakeGenericMethod at runtime.")]
+#endif
         Func<HttpClient, object[], object?> BuildGeneratedSyncFuncForMethod(
             RestMethodInfoInternal restMethod
         )
@@ -339,14 +348,21 @@ namespace Observables.RestAPI
             var syncFuncMi = typeof(RequestBuilderImplementation).GetMethod(
                 nameof(BuildGeneratedSyncFuncForMethodGeneric),
                 BindingFlags.NonPublic | BindingFlags.Instance
-            );
-            return (Func<HttpClient, object[], object?>)
-                syncFuncMi
-                    .MakeGenericMethod(
-                        restMethod.ReturnResultType,
-                        restMethod.DeserializedResultType
-                    )
-                    .Invoke(this, [restMethod]);
+            ) ?? throw new InvalidOperationException(
+                $"Could not find method {nameof(BuildGeneratedSyncFuncForMethodGeneric)}.");
+            var syncFuncResult = syncFuncMi
+                .MakeGenericMethod(
+                    restMethod.ReturnResultType,
+                    restMethod.DeserializedResultType
+                )
+                .Invoke(this, [restMethod]);
+            if (syncFuncResult is not Func<HttpClient, object[], object?> syncFunc)
+            {
+                throw new InvalidOperationException(
+                    $"Could not build sync delegate for {restMethod.MethodInfo.Name}.");
+            }
+
+            return syncFunc;
         }
 
         Func<HttpClient, object[], object?> BuildGeneratedSyncFuncForMethodGeneric<T, TBody>(
@@ -1003,24 +1019,23 @@ namespace Observables.RestAPI
             return false;
         }
 
-        Func<object[], HttpRequestMessage?> BuildRequestFactoryForMethod(
+        Func<object[], HttpRequestMessage> BuildRequestFactoryForMethod(
             RestMethodInfoInternal restMethod,
             string basePath,
             bool paramsContainsCancellationToken
         )
         {
             return paramList =>
-                RunSynchronous(() =>
+                Task.Run(() =>
                     BuildRequestMessageForMethodAsync(
                         restMethod,
                         basePath,
                         paramsContainsCancellationToken,
                         paramList
-                    )
-                );
+                    )).GetAwaiter().GetResult();
         }
 
-        async Task<HttpRequestMessage?> BuildRequestMessageForMethodAsync(
+        async Task<HttpRequestMessage> BuildRequestMessageForMethodAsync(
             RestMethodInfoInternal restMethod,
             string basePath,
             bool paramsContainsCancellationToken,

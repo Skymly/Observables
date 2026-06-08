@@ -5,7 +5,6 @@
   <Import Project="..\..\eng\PackReferencedProjects.targets" />
 
   <PropertyGroup>
-    <TargetFrameworks>netstandard2.0;net8.0;net9.0</TargetFrameworks>
     <IsPackable>true</IsPackable>
     <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
     <IncludeBuildOutput>false</IncludeBuildOutput>
@@ -23,7 +22,7 @@
 
   <ItemGroup>
     <ObservablesPackLibProjectReference Include="..\Observables.WebSocket\Observables.WebSocket.csproj" />
-    <PackageReference Include="R3" Version="1.3.0" />
+    <PackageReference Include="R3" />
     <None Include="README.WebSocket.R3.pack.md" Pack="true" PackagePath="README.md" Visible="false" />
   </ItemGroup>
 

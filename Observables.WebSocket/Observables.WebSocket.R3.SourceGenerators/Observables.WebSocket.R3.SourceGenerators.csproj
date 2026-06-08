@@ -9,7 +9,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="R3" Version="1.3.0" PrivateAssets="all" />
+    <PackageReference Include="R3" PrivateAssets="all" />
   </ItemGroup>
 
   <Import Project="..\Observables.WebSocket.SourceGenerators.Shared\Observables.WebSocket.SourceGenerators.Shared.projitems" Label="Shared" />

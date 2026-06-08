@@ -144,7 +144,8 @@ namespace Observables.RestAPI
             RestApiSettings settings,
             ApiExceptionBase? error = null)
             : this(
-            (response ?? throw new ArgumentNullException(nameof(response))).RequestMessage,
+            (response ?? throw new ArgumentNullException(nameof(response))).RequestMessage
+                ?? throw new InvalidOperationException("Response has no associated request message."),
             response,
             content,
             settings,
@@ -202,8 +203,14 @@ namespace Observables.RestAPI
 #endif
             out ApiRequestException error)
         {
-            error = Error as ApiRequestException;
-            return error != null;
+            if (Error is ApiRequestException requestError)
+            {
+                error = requestError;
+                return true;
+            }
+
+            error = null!;
+            return false;
         }
 
         /// <inheritdoc/>
@@ -218,8 +225,14 @@ namespace Observables.RestAPI
 #endif
             out ApiException error)
         {
-            error = Error as ApiException;
-            return error != null;
+            if (Error is ApiException responseError)
+            {
+                error = responseError;
+                return true;
+            }
+
+            error = null!;
+            return false;
         }
 
         void Dispose(bool disposing)
@@ -234,6 +247,12 @@ namespace Observables.RestAPI
 
         private async Task ThrowsApiExceptionAsync()
         {
+            if (response is null)
+            {
+                throw (Exception?)Error
+                    ?? new InvalidOperationException("The API response has no HTTP response message.");
+            }
+
             var exception =
                     Error
                     ?? await ApiException

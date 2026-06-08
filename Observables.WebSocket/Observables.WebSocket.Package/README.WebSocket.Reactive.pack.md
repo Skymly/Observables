@@ -1,6 +1,13 @@
 # Observables.WebSocket.Reactive
 
-Declarative WebSocket proxies for System.Reactive IObservable.
+Declarative WebSocket proxies for System.Reactive `IObservable<T>` (Roslyn-generated proxies).
+
+## Install
+
+```xml
+<PackageReference Include="Observables.WebSocket.Reactive" Version="0.1.0-preview5" />
+<PackageReference Include="System.Reactive" Version="6.0.1" />
+```
 
 ## Usage
 

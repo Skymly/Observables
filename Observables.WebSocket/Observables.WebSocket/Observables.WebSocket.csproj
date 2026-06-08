@@ -1,24 +1,14 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>netstandard2.0;net8.0;net9.0</TargetFrameworks>
     <RootNamespace>Observables.WebSocket</RootNamespace>
     <AssemblyName>Observables.WebSocket</AssemblyName>
     <Description>WebSocket client runtime and R3 stream bridges.</Description>
-    <Nullable>enable</Nullable>
-    <LangVersion>latest</LangVersion>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <IsPackable>false</IsPackable>
   </PropertyGroup>
 
-  <PropertyGroup Condition="$(TargetFramework.StartsWith('net8.0')) or $(TargetFramework.StartsWith('net9.0'))">
-    <IsAotCompatible>true</IsAotCompatible>
-    <PublishAotSupported>true</PublishAotSupported>
-    <IsTrimmable>true</IsTrimmable>
-  </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="R3" Version="1.3.0" />
+    <PackageReference Include="R3" />
   </ItemGroup>
 
 </Project>

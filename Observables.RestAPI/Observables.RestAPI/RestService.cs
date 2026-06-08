@@ -64,6 +64,7 @@ namespace Observables.RestAPI
         /// <param name="settings"><see cref="RestApiSettings"/> to use to configure the HttpClient.</param>
         /// <returns>An instance that implements <typeparamref name="T"/>.</returns>
 #if NET8_0_OR_GREATER
+        [RequiresUnreferencedCode("RestService uses reflection to create REST client implementations. Preserve interface and DTO members when trimming.")]
         public static T For<
             [DynamicallyAccessedMembers(
                 DynamicallyAccessedMemberTypes.PublicMethods |
@@ -140,6 +141,7 @@ namespace Observables.RestAPI
         /// <param name="builder"><see cref="IRequestBuilder"/> to use to build requests.</param>
         /// <returns>An instance that implements <paramref name="refitInterfaceType"/>.</returns>
 #if NET8_0_OR_GREATER
+        [RequiresUnreferencedCode("RestService uses reflection to create REST client implementations. Preserve interface and DTO members when trimming.")]
         public static object For(
             [DynamicallyAccessedMembers(
                 DynamicallyAccessedMemberTypes.PublicMethods |
@@ -161,7 +163,15 @@ namespace Observables.RestAPI
                 return factory(client, builder);
             }
 
+#if NET8_0_OR_GREATER
+            var generatedType = TypeMapping.GetOrAdd(
+                refitInterfaceType,
+                static ([DynamicallyAccessedMembers(
+                    DynamicallyAccessedMemberTypes.PublicMethods |
+                    DynamicallyAccessedMemberTypes.NonPublicMethods)] Type type) => GetGeneratedType(type));
+#else
             var generatedType = TypeMapping.GetOrAdd(refitInterfaceType, GetGeneratedType);
+#endif
 
             return Activator.CreateInstance(generatedType, client, builder)!;
         }
@@ -174,6 +184,7 @@ namespace Observables.RestAPI
         /// <param name="settings"><see cref="RestApiSettings"/> to use to configure the HttpClient.</param>
         /// <returns>An instance that implements <paramref name="refitInterfaceType"/>.</returns>
 #if NET8_0_OR_GREATER
+        [RequiresUnreferencedCode("RestService uses reflection to create REST client implementations. Preserve interface and DTO members when trimming.")]
         public static object For(
             [DynamicallyAccessedMembers(
                 DynamicallyAccessedMemberTypes.PublicMethods |
@@ -313,7 +324,7 @@ namespace Observables.RestAPI
         {
             var typeName = UniqueName.ForType(refitInterfaceType);
 
-            var generatedType = Type.GetType(typeName, throwOnError: false);
+            var generatedType = GetGeneratedImplementationType(typeName);
 
             if (generatedType == null)
             {
@@ -329,5 +340,15 @@ namespace Observables.RestAPI
 
             return generatedType;
         }
+
+#if NET8_0_OR_GREATER
+        [return: DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)]
+        [UnconditionalSuppressMessage(
+            "Trimming",
+            "IL2057:UnrecognizedTypeName",
+            Justification = "Type name is produced by the Observables.RestAPI source generator for the interface.")]
+#endif
+        static Type? GetGeneratedImplementationType(string typeName) =>
+            Type.GetType(typeName, throwOnError: false);
     }
 }

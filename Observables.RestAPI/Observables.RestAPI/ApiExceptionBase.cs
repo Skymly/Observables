@@ -40,14 +40,14 @@ public abstract class ApiExceptionBase : Exception
     protected ApiExceptionBase(
         HttpRequestMessage message,
         HttpMethod httpMethod,
-        RestApiSettings RestApiSettings,
+        RestApiSettings restApiSettings,
         Exception innerException
     )
         : this(
             innerException?.Message ?? throw new ArgumentNullException(nameof(innerException)),
             message,
             httpMethod,
-            RestApiSettings,
+            restApiSettings,
             innerException
         )
     { }
@@ -64,13 +64,13 @@ public abstract class ApiExceptionBase : Exception
         string exceptionMessage,
         HttpRequestMessage message,
         HttpMethod httpMethod,
-        RestApiSettings RestApiSettings,
+        RestApiSettings restApiSettings,
         Exception? innerException = null
     )
         : base(exceptionMessage, innerException)
     {
         RequestMessage = message;
         HttpMethod = httpMethod;
-        RestApiSettings = RestApiSettings;
+        RestApiSettings = restApiSettings;
     }
 }

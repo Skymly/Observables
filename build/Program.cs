@@ -36,75 +36,15 @@ sealed class Build : NukeBuild
     AbsolutePath PackageOutputDirectory => Root / "artifacts" / "package";
     AbsolutePath NuGetSmokeDirectory => Root / "eng" / "nuget-smoke";
     AbsolutePath NuGetSmokeLocalConfig => NuGetSmokeDirectory / "nuget.config.local";
+    AbsolutePath BuildManifestFile => Root / "eng" / "Observables.BuildManifest.json";
+    AbsolutePath PackagePropsFile => Root / "eng" / "Observables.Package.props";
 
-    static readonly string[] NuGetConsumerProjectRelativePaths =
-    [
-        "eng/nuget-smoke/Events.R3.Consumer/Events.R3.Consumer.csproj",
-        "eng/nuget-smoke/Events.Reactive.Consumer/Events.Reactive.Consumer.csproj",
-        "eng/nuget-smoke/RestAPI.R3.Consumer/RestAPI.R3.Consumer.csproj",
-        "eng/nuget-smoke/RestAPI.Reactive.Consumer/RestAPI.Reactive.Consumer.csproj",
-        "eng/nuget-smoke/SignalR.R3.Consumer/SignalR.R3.Consumer.csproj",
-        "eng/nuget-smoke/SignalR.Reactive.Consumer/SignalR.Reactive.Consumer.csproj",
-        "eng/nuget-smoke/Mqtt.R3.Consumer/Mqtt.R3.Consumer.csproj",
-        "eng/nuget-smoke/Mqtt.Reactive.Consumer/Mqtt.Reactive.Consumer.csproj",
-        "eng/nuget-smoke/WebSocket.R3.Consumer/WebSocket.R3.Consumer.csproj",
-        "eng/nuget-smoke/WebSocket.Reactive.Consumer/WebSocket.Reactive.Consumer.csproj",
-    ];
+    BuildManifest Manifest => BuildManifest.Load(BuildManifestFile);
 
-    /// <summary>
-    /// All test projects (slnx does not discover every test project via <c>dotnet test</c>).
-    /// </summary>
-    static readonly string[] TestProjectRelativePaths =
-    [
-        "Observables.Events/Observables.Events.R3.SourceGenerators.Tests/Observables.Events.R3.SourceGenerators.Tests.csproj",
-        "Observables.Events/Observables.Events.Reactive.SourceGenerators.Tests/Observables.Events.Reactive.SourceGenerators.Tests.csproj",
-        "Observables.RestAPI/Observables.RestAPI.Tests/Observables.RestAPI.Tests.csproj",
-        "Observables.RestAPI/Observables.RestAPI.Reactive.Tests/Observables.RestAPI.Reactive.Tests.csproj",
-        "Observables.RestAPI/Observables.RestAPI.GeneratorTests/Observables.RestAPI.GeneratorTests.csproj",
-        "Observables.RestAPI/Observables.RestAPI.HttpClientFactory.Tests/Observables.RestAPI.HttpClientFactory.Tests.csproj",
-        "Observables.SignalR/Observables.SignalR.R3.SourceGenerators.Tests/Observables.SignalR.R3.SourceGenerators.Tests.csproj",
-        "Observables.SignalR/Observables.SignalR.Reactive.SourceGenerators.Tests/Observables.SignalR.Reactive.SourceGenerators.Tests.csproj",
-        "Observables.SignalR/Observables.SignalR.Tests/Observables.SignalR.Tests.csproj",
-        "Observables.SignalR/Observables.SignalR.Reactive.Tests/Observables.SignalR.Reactive.Tests.csproj",
-        "Observables.Mqtt/Observables.Mqtt.R3.SourceGenerators.Tests/Observables.Mqtt.R3.SourceGenerators.Tests.csproj",
-        "Observables.Mqtt/Observables.Mqtt.Reactive.SourceGenerators.Tests/Observables.Mqtt.Reactive.SourceGenerators.Tests.csproj",
-        "Observables.Mqtt/Observables.Mqtt.Tests/Observables.Mqtt.Tests.csproj",
-        "Observables.Mqtt/Observables.Mqtt.Reactive.Tests/Observables.Mqtt.Reactive.Tests.csproj",
-        "Observables.WebSocket/Observables.WebSocket.R3.SourceGenerators.Tests/Observables.WebSocket.R3.SourceGenerators.Tests.csproj",
-        "Observables.WebSocket/Observables.WebSocket.Reactive.SourceGenerators.Tests/Observables.WebSocket.Reactive.SourceGenerators.Tests.csproj",
-        "Observables.WebSocket/Observables.WebSocket.Tests/Observables.WebSocket.Tests.csproj",
-        "Observables.WebSocket/Observables.WebSocket.Reactive.Tests/Observables.WebSocket.Reactive.Tests.csproj",
-        "Observables.Shared/Observables.CodeFixes.Tests/Observables.CodeFixes.Tests.csproj",
-        "Observables.Shared/Observables.Analyzers.Tests/Observables.Analyzers.Tests.csproj",
-    ];
-
-    static readonly string[] PackProjectRelativePaths =
-    [
-        "Observables.Events/Observables.Events.Package/Observables.Events.R3.csproj",
-        "Observables.Events/Observables.Events.Package/Observables.Events.Reactive.csproj",
-        "Observables.RestAPI/Observables.RestAPI.Package/Observables.RestAPI.R3.csproj",
-        "Observables.RestAPI/Observables.RestAPI.Package/Observables.RestAPI.Reactive.Pack.csproj",
-        "Observables.SignalR/Observables.SignalR.Package/Observables.SignalR.R3.csproj",
-        "Observables.SignalR/Observables.SignalR.Package/Observables.SignalR.Reactive.Pack.csproj",
-        "Observables.Mqtt/Observables.Mqtt.Package/Observables.Mqtt.R3.csproj",
-        "Observables.Mqtt/Observables.Mqtt.Package/Observables.Mqtt.Reactive.Pack.csproj",
-        "Observables.WebSocket/Observables.WebSocket.Package/Observables.WebSocket.R3.csproj",
-        "Observables.WebSocket/Observables.WebSocket.Package/Observables.WebSocket.Reactive.Pack.csproj",
-    ];
-
-    static readonly string[] ExpectedPackageIds =
-    [
-        "Observables.Events.R3",
-        "Observables.Events.Reactive",
-        "Observables.RestAPI.R3",
-        "Observables.RestAPI.Reactive",
-        "Observables.SignalR.R3",
-        "Observables.SignalR.Reactive",
-        "Observables.Mqtt.R3",
-        "Observables.Mqtt.Reactive",
-        "Observables.WebSocket.R3",
-        "Observables.WebSocket.Reactive",
-    ];
+    string EffectivePackageVersion =>
+        string.IsNullOrWhiteSpace(Version)
+            ? PackageVersionReader.ReadFromProps(PackagePropsFile)
+            : Version;
 
     public static int Main() => Execute<Build>(x => x.Ci);
 
@@ -140,7 +80,7 @@ sealed class Build : NukeBuild
         .DependsOn(Compile)
         .Executes(() =>
         {
-            foreach (string relativePath in TestProjectRelativePaths)
+            foreach (string relativePath in Manifest.TestProjects)
             {
                 AbsolutePath projectFile = Root / relativePath;
                 if (!projectFile.FileExists())
@@ -162,9 +102,9 @@ sealed class Build : NukeBuild
         {
             PackageOutputDirectory.CreateOrCleanDirectory();
 
-            foreach (string relativePath in PackProjectRelativePaths)
+            foreach (BuildManifest.PackageEntry package in Manifest.Packages)
             {
-                AbsolutePath projectFile = Root / relativePath;
+                AbsolutePath projectFile = Root / package.PackProject;
                 if (!projectFile.FileExists())
                 {
                     throw new InvalidOperationException($"Pack project not found: {projectFile}");
@@ -192,11 +132,12 @@ sealed class Build : NukeBuild
         .DependsOn(Pack)
         .Executes(() =>
         {
-            string versionSuffix = string.IsNullOrWhiteSpace(Version) ? "0.1.0-preview4" : Version;
+            string packageVersion = EffectivePackageVersion;
 
-            foreach (string packageId in ExpectedPackageIds)
+            foreach (BuildManifest.PackageEntry package in Manifest.Packages)
             {
-                AbsolutePath nupkg = PackageOutputDirectory / $"{packageId}.{versionSuffix}.nupkg";
+                string packageId = package.PackageId;
+                AbsolutePath nupkg = PackageOutputDirectory / $"{packageId}.{packageVersion}.nupkg";
                 Assert.FileExists(nupkg, $"Expected package: {nupkg}");
 
                 using ZipArchive archive = ZipFile.OpenRead(nupkg);
@@ -230,7 +171,8 @@ sealed class Build : NukeBuild
 
                 if (packageId.StartsWith("Observables.RestAPI.", StringComparison.Ordinal)
                     || packageId.StartsWith("Observables.SignalR.", StringComparison.Ordinal)
-                    || packageId.StartsWith("Observables.Mqtt.", StringComparison.Ordinal))
+                    || packageId.StartsWith("Observables.Mqtt.", StringComparison.Ordinal)
+                    || packageId.StartsWith("Observables.WebSocket.", StringComparison.Ordinal))
                 {
                     bool hasLib = entries.Any(e => e.StartsWith("lib/", StringComparison.OrdinalIgnoreCase)
                         && e.EndsWith(".dll", StringComparison.OrdinalIgnoreCase));
@@ -247,7 +189,7 @@ sealed class Build : NukeBuild
         .DependsOn(ConsumerFeed == NuGetConsumerFeed.Local ? Pack : null)
         .Executes(() =>
         {
-            string packageVersion = string.IsNullOrWhiteSpace(Version) ? "0.1.0-preview4" : Version;
+            string packageVersion = EffectivePackageVersion;
             string? previousNuGetConfig = Environment.GetEnvironmentVariable("NUGET_CONFIG");
 
             if (ConsumerFeed == NuGetConsumerFeed.Local)
@@ -257,7 +199,7 @@ sealed class Build : NukeBuild
 
             try
             {
-                foreach (string relativePath in NuGetConsumerProjectRelativePaths)
+                foreach (string relativePath in Manifest.SmokeConsumers)
                 {
                     AbsolutePath projectFile = Root / relativePath;
                     Assert.FileExists(projectFile, $"Consumer project not found: {projectFile}");
@@ -318,4 +260,3 @@ enum NuGetConsumerFeed
     Local,
     Published,
 }
-

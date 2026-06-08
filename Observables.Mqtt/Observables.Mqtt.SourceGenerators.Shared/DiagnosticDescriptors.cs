@@ -4,7 +4,6 @@ namespace Observables.Mqtt.Generators;
 
 internal static class DiagnosticDescriptors
 {
-#pragma warning disable RS2008
     public static readonly DiagnosticDescriptor InvalidMqttMember =
         new(
             "OBS5001",
@@ -58,7 +57,6 @@ internal static class DiagnosticDescriptors
             "Observables.Mqtt",
             DiagnosticSeverity.Error,
             true);
-#pragma warning restore RS2008
 }
 
 internal static class MqttGeneratorStepName

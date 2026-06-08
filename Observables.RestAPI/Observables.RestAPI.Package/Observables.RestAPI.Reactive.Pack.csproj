@@ -5,7 +5,6 @@
   <Import Project="..\..\eng\PackReferencedProjects.targets" />
 
   <PropertyGroup>
-    <TargetFrameworks>netstandard2.0;net8.0;net9.0</TargetFrameworks>
     <IsPackable>true</IsPackable>
     <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
     <IncludeBuildOutput>false</IncludeBuildOutput>
@@ -24,7 +23,7 @@
   <ItemGroup>
     <ObservablesPackLibProjectReference Include="..\Observables.RestAPI\Observables.RestAPI.csproj" />
     <ObservablesPackLibProjectReference Include="..\Observables.RestAPI.Reactive\Observables.RestAPI.Reactive.csproj" />
-    <PackageReference Include="System.Reactive" Version="6.0.1" />
+    <PackageReference Include="System.Reactive" />
     <None Include="README.RestAPI.Reactive.pack.md" Pack="true" PackagePath="README.md" Visible="false" />
   </ItemGroup>
 

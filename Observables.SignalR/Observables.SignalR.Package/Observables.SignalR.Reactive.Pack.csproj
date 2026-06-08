@@ -5,7 +5,6 @@
   <Import Project="..\..\eng\PackReferencedProjects.targets" />
 
   <PropertyGroup>
-    <TargetFrameworks>netstandard2.0;net8.0;net9.0</TargetFrameworks>
     <IsPackable>true</IsPackable>
     <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
     <IncludeBuildOutput>false</IncludeBuildOutput>
@@ -24,8 +23,8 @@
   <ItemGroup>
     <ObservablesPackLibProjectReference Include="..\Observables.SignalR\Observables.SignalR.csproj" />
     <ObservablesPackLibProjectReference Include="..\Observables.SignalR.Reactive\Observables.SignalR.Reactive.csproj" />
-    <PackageReference Include="System.Reactive" Version="6.0.1" />
-    <PackageReference Include="Microsoft.AspNetCore.SignalR.Client" Version="8.0.8" />
+    <PackageReference Include="System.Reactive" />
+    <PackageReference Include="Microsoft.AspNetCore.SignalR.Client" />
     <None Include="README.SignalR.Reactive.pack.md" Pack="true" PackagePath="README.md" Visible="false" />
   </ItemGroup>
 

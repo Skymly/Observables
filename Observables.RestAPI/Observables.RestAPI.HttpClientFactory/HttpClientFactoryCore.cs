@@ -21,15 +21,9 @@ internal static class HttpClientFactoryCore
 
         var builder = services.AddHttpClient(typeof(T).FullName ?? typeof(T).Name, configureClient ?? (_ => { }));
 
-        builder.ConfigureHttpMessageHandlerBuilder(builderConfig =>
-        {
-            var handler = CreateInnerHandlerIfProvided(
-                builderConfig.Services.GetRequiredService<SettingsFor<T>>().Settings);
-            if (handler is not null)
-            {
-                builderConfig.PrimaryHandler = handler;
-            }
-        });
+        builder.ConfigurePrimaryHttpMessageHandler(sp =>
+            CreateInnerHandlerIfProvided(sp.GetRequiredService<SettingsFor<T>>().Settings)
+                ?? new HttpClientHandler());
 
         return builder.AddTypedClient((client, serviceProvider) =>
             RestService.For<T>(client, serviceProvider.GetRequiredService<IRequestBuilder<T>>()));

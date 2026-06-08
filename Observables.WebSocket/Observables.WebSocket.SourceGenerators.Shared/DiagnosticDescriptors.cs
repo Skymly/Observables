@@ -4,7 +4,6 @@ namespace Observables.WebSocket.Generators;
 
 internal static class DiagnosticDescriptors
 {
-#pragma warning disable RS2008
     public static readonly DiagnosticDescriptor InvalidWebSocketMember =
         new(
             "OBS6001",
@@ -58,7 +57,6 @@ internal static class DiagnosticDescriptors
             "Observables.WebSocket",
             DiagnosticSeverity.Error,
             true);
-#pragma warning restore RS2008
 }
 
 internal static class WebSocketGeneratorStepName

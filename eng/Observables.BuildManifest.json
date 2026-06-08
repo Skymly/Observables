@@ -1,0 +1,78 @@
+{
+  "packages": [
+    {
+      "packProject": "Observables.Events/Observables.Events.Package/Observables.Events.R3.csproj",
+      "packageId": "Observables.Events.R3"
+    },
+    {
+      "packProject": "Observables.Events/Observables.Events.Package/Observables.Events.Reactive.csproj",
+      "packageId": "Observables.Events.Reactive"
+    },
+    {
+      "packProject": "Observables.RestAPI/Observables.RestAPI.Package/Observables.RestAPI.R3.csproj",
+      "packageId": "Observables.RestAPI.R3"
+    },
+    {
+      "packProject": "Observables.RestAPI/Observables.RestAPI.Package/Observables.RestAPI.Reactive.Pack.csproj",
+      "packageId": "Observables.RestAPI.Reactive"
+    },
+    {
+      "packProject": "Observables.SignalR/Observables.SignalR.Package/Observables.SignalR.R3.csproj",
+      "packageId": "Observables.SignalR.R3"
+    },
+    {
+      "packProject": "Observables.SignalR/Observables.SignalR.Package/Observables.SignalR.Reactive.Pack.csproj",
+      "packageId": "Observables.SignalR.Reactive"
+    },
+    {
+      "packProject": "Observables.Mqtt/Observables.Mqtt.Package/Observables.Mqtt.R3.csproj",
+      "packageId": "Observables.Mqtt.R3"
+    },
+    {
+      "packProject": "Observables.Mqtt/Observables.Mqtt.Package/Observables.Mqtt.Reactive.Pack.csproj",
+      "packageId": "Observables.Mqtt.Reactive"
+    },
+    {
+      "packProject": "Observables.WebSocket/Observables.WebSocket.Package/Observables.WebSocket.R3.csproj",
+      "packageId": "Observables.WebSocket.R3"
+    },
+    {
+      "packProject": "Observables.WebSocket/Observables.WebSocket.Package/Observables.WebSocket.Reactive.Pack.csproj",
+      "packageId": "Observables.WebSocket.Reactive"
+    }
+  ],
+  "testProjects": [
+    "Observables.Events/Observables.Events.R3.SourceGenerators.Tests/Observables.Events.R3.SourceGenerators.Tests.csproj",
+    "Observables.Events/Observables.Events.Reactive.SourceGenerators.Tests/Observables.Events.Reactive.SourceGenerators.Tests.csproj",
+    "Observables.RestAPI/Observables.RestAPI.Tests/Observables.RestAPI.Tests.csproj",
+    "Observables.RestAPI/Observables.RestAPI.Reactive.Tests/Observables.RestAPI.Reactive.Tests.csproj",
+    "Observables.RestAPI/Observables.RestAPI.GeneratorTests/Observables.RestAPI.GeneratorTests.csproj",
+    "Observables.RestAPI/Observables.RestAPI.HttpClientFactory.Tests/Observables.RestAPI.HttpClientFactory.Tests.csproj",
+    "Observables.SignalR/Observables.SignalR.R3.SourceGenerators.Tests/Observables.SignalR.R3.SourceGenerators.Tests.csproj",
+    "Observables.SignalR/Observables.SignalR.Reactive.SourceGenerators.Tests/Observables.SignalR.Reactive.SourceGenerators.Tests.csproj",
+    "Observables.SignalR/Observables.SignalR.Tests/Observables.SignalR.Tests.csproj",
+    "Observables.SignalR/Observables.SignalR.Reactive.Tests/Observables.SignalR.Reactive.Tests.csproj",
+    "Observables.Mqtt/Observables.Mqtt.R3.SourceGenerators.Tests/Observables.Mqtt.R3.SourceGenerators.Tests.csproj",
+    "Observables.Mqtt/Observables.Mqtt.Reactive.SourceGenerators.Tests/Observables.Mqtt.Reactive.SourceGenerators.Tests.csproj",
+    "Observables.Mqtt/Observables.Mqtt.Tests/Observables.Mqtt.Tests.csproj",
+    "Observables.Mqtt/Observables.Mqtt.Reactive.Tests/Observables.Mqtt.Reactive.Tests.csproj",
+    "Observables.WebSocket/Observables.WebSocket.R3.SourceGenerators.Tests/Observables.WebSocket.R3.SourceGenerators.Tests.csproj",
+    "Observables.WebSocket/Observables.WebSocket.Reactive.SourceGenerators.Tests/Observables.WebSocket.Reactive.SourceGenerators.Tests.csproj",
+    "Observables.WebSocket/Observables.WebSocket.Tests/Observables.WebSocket.Tests.csproj",
+    "Observables.WebSocket/Observables.WebSocket.Reactive.Tests/Observables.WebSocket.Reactive.Tests.csproj",
+    "Observables.Shared/Observables.CodeFixes.Tests/Observables.CodeFixes.Tests.csproj",
+    "Observables.Shared/Observables.Analyzers.Tests/Observables.Analyzers.Tests.csproj"
+  ],
+  "smokeConsumers": [
+    "eng/nuget-smoke/Events.R3.Consumer/Events.R3.Consumer.csproj",
+    "eng/nuget-smoke/Events.Reactive.Consumer/Events.Reactive.Consumer.csproj",
+    "eng/nuget-smoke/RestAPI.R3.Consumer/RestAPI.R3.Consumer.csproj",
+    "eng/nuget-smoke/RestAPI.Reactive.Consumer/RestAPI.Reactive.Consumer.csproj",
+    "eng/nuget-smoke/SignalR.R3.Consumer/SignalR.R3.Consumer.csproj",
+    "eng/nuget-smoke/SignalR.Reactive.Consumer/SignalR.Reactive.Consumer.csproj",
+    "eng/nuget-smoke/Mqtt.R3.Consumer/Mqtt.R3.Consumer.csproj",
+    "eng/nuget-smoke/Mqtt.Reactive.Consumer/Mqtt.Reactive.Consumer.csproj",
+    "eng/nuget-smoke/WebSocket.R3.Consumer/WebSocket.R3.Consumer.csproj",
+    "eng/nuget-smoke/WebSocket.Reactive.Consumer/WebSocket.Reactive.Consumer.csproj"
+  ]
+}

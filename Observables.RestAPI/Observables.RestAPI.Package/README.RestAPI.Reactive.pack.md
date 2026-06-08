@@ -5,7 +5,7 @@ Declarative HTTP client interfaces for `System.Reactive` `IObservable<T>`.
 ## Install
 
 ```xml
-<PackageReference Include="Observables.RestAPI.Reactive" Version="0.1.0-preview4" />
+<PackageReference Include="Observables.RestAPI.Reactive" Version="0.1.0-preview5" />
 <PackageReference Include="System.Reactive" Version="6.0.1" />
 ```
 

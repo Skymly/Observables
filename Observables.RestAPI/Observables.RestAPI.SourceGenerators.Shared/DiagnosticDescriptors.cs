@@ -4,7 +4,6 @@ namespace Observables.RestAPI.Generators;
 
 internal static class DiagnosticDescriptors
 {
-#pragma warning disable RS2008 // Enable analyzer release tracking
     public static readonly DiagnosticDescriptor InvalidRestApiMember =
         new(
             "OBS3001",
@@ -54,7 +53,6 @@ internal static class DiagnosticDescriptors
             DiagnosticSeverity.Error,
             true
         );
-#pragma warning restore RS2008 // Enable analyzer release tracking
 }
 
 internal static class RestApiGeneratorStepName

@@ -16,8 +16,8 @@ public sealed class RestApiPathSuggestionsTests
             }
             """;
 
-        var tree = CSharpSyntaxTree.ParseText(source);
-        var method = tree.GetRoot().DescendantNodes().OfType<MethodDeclarationSyntax>().Single();
+        var tree = CSharpSyntaxTree.ParseText(source, cancellationToken: TestContext.Current.CancellationToken);
+        var method = tree.GetRoot(TestContext.Current.CancellationToken).DescendantNodes().OfType<MethodDeclarationSyntax>().Single();
         var path = RestApiPathSuggestions.SuggestPath(method);
 
         Assert.Equal("/{id}/{name}", path);
@@ -34,8 +34,8 @@ public sealed class RestApiPathSuggestionsTests
             }
             """;
 
-        var tree = CSharpSyntaxTree.ParseText(source);
-        var method = tree.GetRoot().DescendantNodes().OfType<MethodDeclarationSyntax>().Single();
+        var tree = CSharpSyntaxTree.ParseText(source, cancellationToken: TestContext.Current.CancellationToken);
+        var method = tree.GetRoot(TestContext.Current.CancellationToken).DescendantNodes().OfType<MethodDeclarationSyntax>().Single();
         var path = RestApiPathSuggestions.SuggestPath(method);
 
         Assert.Equal("/getusers", path);

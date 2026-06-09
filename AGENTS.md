@@ -4,9 +4,9 @@
 
 - **类型**：个人项目（Skymly 工作区）
 - **远端**：https://github.com/Skymly/Observables（私有）；文件夹名 `Observables` = 仓库名；同步状态以 `git status` 为准
-- **阶段**：**Events**、**RestAPI**、**SignalR**、**Mqtt**、**WebSocket** 已实现（运行时 + 双路生成器 + 测试）；共享层另含 `Observables.CodeFixes` 与 `Observables.Analyzers`；**NuGet 预览包** `0.1.0-preview5`（**8 包**：Events/RestAPI/SignalR/Mqtt 各 `.R3`+`.Reactive`）；**WebSocket 2 包**代码就绪、已纳入 `PackVerify`/`eng/nuget-smoke`，待下一 preview 发版；Nuke `PackVerify` + 消费者校验已就绪
+- **阶段**：**Events**、**RestAPI**、**SignalR**、**Mqtt**、**WebSocket** 已实现（运行时 + 双路生成器 + 测试）；共享层另含 `Observables.CodeFixes` 与 `Observables.Analyzers`；**NuGet 预览包** `0.1.0-preview5`（**10 包**：五域各 `.R3`+`.Reactive`，已发 nuget.org）；Nuke `PackVerify` + `eng/nuget-smoke` 消费者校验已就绪
 - **下一 Feature**：**Grpc**（仅空 csproj 骨架）；Mqtt 设计见 [`docs/design/mqtt.md`](docs/design/mqtt.md)（用户文档 [Observables.Docs](https://github.com/Skymly/Observables.Docs) `mqtt.md`）；WebSocket 设计见 [`docs/design/websocket.md`](docs/design/websocket.md)
-- **路线图**：里程碑与发版顺序见 [`docs/ROADMAP.md`](docs/ROADMAP.md)（M1 WebSocket 发版 → M2 工程加固 → M3 Grpc → M4 文档补齐 → M5 API 冻结 + 1.0）
+- **路线图**：里程碑与发版顺序见 [`docs/ROADMAP.md`](docs/ROADMAP.md)（M1 ✅ / M2 ✅ → M3 Grpc → M4 文档补齐 → M5 API 冻结 + 1.0）
 - **结构约定**：下文「仓库结构」与命名约定为权威；**工程治理**（包管理、警告、诊断、版本来源）见下文同名章节
 
 ## 目标
@@ -164,8 +164,8 @@ Observables/
 
 里程碑级排序以 [`docs/ROADMAP.md`](docs/ROADMAP.md) 为准；本节为速记：
 
-1. **M1**：WebSocket 发版（代码已就绪）+ 文档/示例同步
-2. **M2**：工程加固（中央包管理、TFM 收口、警告策略、诊断登记、`build/Program.cs` 去硬编码）
+1. ~~**M1**：WebSocket 发版 + 文档/示例同步~~ ✅（`0.1.0-preview5`）
+2. ~~**M2**：工程加固（中央包管理、TFM 收口、警告策略、诊断登记、`build/Program.cs` 去硬编码）~~ ✅
 3. **M3**：Grpc 域按检查清单补齐（含骨架重命名、`OBS7xxx`）
 4. **M5**：API 冻结后由维护者指定版本号并推送 tag / `workflow_dispatch` 发布（见「版本、Tag 与 NuGet」）
 

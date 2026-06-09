@@ -10,10 +10,10 @@
 |------|------|
 | 已实现域 | **Events**、**RestAPI**、**SignalR**、**Mqtt**、**WebSocket**（运行时 + 双路生成器 + 测试） |
 | 共享层 | `Observables.Core`、`Observables.SourceGenerators.Shared`、`Observables.CodeFixes`、`Observables.Analyzers` |
-| 已发 NuGet | **8 包**（Events / RestAPI / SignalR / Mqtt 各 `.R3` + `.Reactive`） |
-| 代码就绪未发版 | **WebSocket 2 包**（已纳入 `PackVerify` 与 `eng/nuget-smoke`） |
+| 已发 NuGet | **10 包**（Events / RestAPI / SignalR / Mqtt / WebSocket 各 `.R3` + `.Reactive`，`0.1.0-preview5` on nuget.org） |
 | 骨架 | **Grpc**（仅空 csproj，无业务源码 / 测试 / 设计文档） |
-| 构建 | Nuke `Ci` / `CiPack` / `Pack` / `PackVerify` / `Publish` 就绪；本地 `Ci` + `PackVerify` 通过 |
+| 构建 | 主仓 Nuke `Ci` / `CiPack` / `Publish` 绿；`PackVerify` + `eng/nuget-smoke` 通过 |
+| 示例仓 CI | `Observables.Samples` Nuke `Ci`（NuGet 模式，含 WebSocket 注册检查） |
 
 ### 已知工程债（详见 AGENTS.md「工程治理」）
 
@@ -25,7 +25,8 @@
 | 4 | Nuke 清单 / 版本双真相源 | ✅ M2 已落地（`Observables.BuildManifest.json` + `PackageVersionReader`） |
 | 5 | 诊断 release 跟踪（`AnalyzerReleases.*.md`、移除 RS2008） | ✅ M2 已落地；描述符文件结构仍分散 |
 | 6 | Grpc 骨架命名（`Observables.Grpc.R3`）违反约定 | ⏳ M3 |
-| 7 | 文档滞后：README / `websocket.md` / Samples | ✅ M1 WebSocket 已补齐；Grpc 仍待 M4 |
+| 7 | 文档滞后：README / `websocket.md` / Samples | ✅ M1 已补齐；Grpc 仍待 M4 |
+| 8 | Samples `RestAPI.Reactive` 显式 `R3` 触发 OBS0001 | ✅ `R3` 改为 runtime-only（`ExcludeAssets=compile`） |
 
 ## 诊断 ID 段分配（权威）
 
@@ -53,17 +54,17 @@ graph LR
 
 里程碑按依赖排序；M1 与 M2 可并行启动，但 M5 的 API 冻结依赖前四者完成。
 
-### M1 — `preview5`：WebSocket 发版
+### M1 — `preview5`：WebSocket 发版 ✅
 
-WebSocket 代码、smoke 消费者、`PackVerify` 均已就绪，目标是把它转为可消费的 NuGet 并补齐配套文档。
+已于 `v0.1.0-preview5` tag 发布至 nuget.org 与 GitHub Packages。
 
-- 发布 `Observables.WebSocket.R3` 与 `Observables.WebSocket.Reactive`（共 **10 包**）。
-- 同步主仓 [`README.md`](../README.md) 域状态表与预览包清单。
-- 新增 Docs `websocket.md`（中英），来源参考 [`docs/design/websocket.md`](design/websocket.md)。
-- 新增 Samples `Observables.Samples.WebSocket`。
-- 出口校验：`Ci` + `CiPack` 绿、WebSocket smoke 消费者通过。
+- ~~发布 `Observables.WebSocket.R3` 与 `Observables.WebSocket.Reactive`（共 **10 包**）。~~ ✅
+- ~~同步主仓 [`README.md`](../README.md) 域状态表与预览包清单。~~ ✅
+- ~~新增 Docs `websocket.md`（中英），来源参考 [`docs/design/websocket.md`](design/websocket.md)。~~ ✅
+- ~~新增 Samples `Observables.Samples.WebSocket`。~~ ✅
+- ~~出口校验：`Ci` + `CiPack` 绿、WebSocket smoke 消费者通过。~~ ✅
 
-### M2 — 工程加固
+### M2 — 工程加固 ✅
 
 把上文「已知工程债 1–5」收敛到 AGENTS.md 定义的标准态。每条作为独立 PR：
 

@@ -1,0 +1,18 @@
+syntax = "proto3";
+
+option csharp_namespace = "Observables.Grpc.Tests.Protos";
+
+package echo;
+
+service Echo {
+  rpc UnaryEcho (EchoRequest) returns (EchoReply);
+  rpc ServerStreamEcho (EchoRequest) returns (stream EchoReply);
+}
+
+message EchoRequest {
+  string text = 1;
+}
+
+message EchoReply {
+  string text = 1;
+}

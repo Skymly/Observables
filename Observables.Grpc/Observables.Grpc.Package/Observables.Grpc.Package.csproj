@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.Build.Traversal/4.1.82">
+
+  <PropertyGroup>
+    <Description>Traversal root for Observables.Grpc.R3 and Observables.Grpc.Reactive NuGet packages.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="Observables.Grpc.R3.csproj" />
+    <ProjectReference Include="Observables.Grpc.Reactive.Pack.csproj" />
+  </ItemGroup>
+
+</Project>

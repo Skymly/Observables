@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <RootNamespace>Observables.Grpc.Reactive.SourceGenerators.Tests</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Using Include="Xunit" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" />
+    <PackageReference Include="System.Reactive" />
+    <PackageReference Include="xunit.v3" />
+    <PackageReference Include="xunit.runner.visualstudio">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Observables.Grpc\Observables.Grpc.csproj" />
+    <ProjectReference Include="..\Observables.Grpc.Reactive\Observables.Grpc.Reactive.csproj" />
+    <ProjectReference Include="..\Observables.Grpc.Reactive.SourceGenerators\Observables.Grpc.Reactive.SourceGenerators.csproj" />
+  </ItemGroup>
+
+</Project>
+

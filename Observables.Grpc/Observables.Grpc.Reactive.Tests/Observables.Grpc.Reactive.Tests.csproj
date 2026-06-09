@@ -1,0 +1,80 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+
+
+  <PropertyGroup>
+
+    <RootNamespace>Observables.Grpc.Reactive.Tests</RootNamespace>
+
+  </PropertyGroup>
+
+
+
+  <ItemGroup>
+
+    <Using Include="Xunit" />
+
+    <PackageReference Include="Grpc.AspNetCore" />
+    <PackageReference Include="Grpc.Net.Client" />
+
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+
+    <PackageReference Include="System.Reactive" />
+
+    <PackageReference Include="xunit.v3" />
+
+    <PackageReference Include="xunit.runner.visualstudio">
+
+      <PrivateAssets>all</PrivateAssets>
+
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+
+    </PackageReference>
+
+  </ItemGroup>
+
+
+
+  <ItemGroup>
+
+    <Protobuf Include="..\Observables.Grpc.Tests\Protos\echo.proto" GrpcServices="Server" Link="Protos\echo.proto" />
+
+  </ItemGroup>
+
+
+
+  <ItemGroup>
+
+    <ProjectReference Include="..\Observables.Grpc\Observables.Grpc.csproj" />
+
+    <ProjectReference Include="..\Observables.Grpc.Reactive\Observables.Grpc.Reactive.csproj" />
+
+    <ProjectReference Include="..\Observables.Grpc.Reactive.SourceGenerators\Observables.Grpc.Reactive.SourceGenerators.csproj"
+
+                      OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+
+  </ItemGroup>
+
+
+
+  <ItemGroup>
+
+    <Compile Include="..\Observables.Grpc.Tests\Infrastructure\EchoServiceImpl.cs"
+
+             Link="Infrastructure\EchoServiceImpl.cs" />
+
+    <Compile Include="..\Observables.Grpc.Tests\Infrastructure\GrpcTestHost.cs"
+
+             Link="Infrastructure\GrpcTestHost.cs" />
+
+    <Compile Include="..\Observables.Grpc.Tests\Infrastructure\GrpcTestHostFixture.cs"
+
+             Link="Infrastructure\GrpcTestHostFixture.cs" />
+
+  </ItemGroup>
+
+
+
+</Project>
+
+

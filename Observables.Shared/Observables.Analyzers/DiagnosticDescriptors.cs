@@ -40,4 +40,13 @@ internal static class DiagnosticDescriptors
             "Observables.WebSocket",
             DiagnosticSeverity.Warning,
             isEnabledByDefault: true);
+
+    public static readonly DiagnosticDescriptor EmptyGrpcInterface =
+        new(
+            "OBS7007",
+            "Empty gRPC proxy interface",
+            "Interface '{0}' is marked with [Grpc] but declares no members. Add gRPC boundary members or remove [Grpc].",
+            "Observables.Grpc",
+            DiagnosticSeverity.Error,
+            isEnabledByDefault: true);
 }

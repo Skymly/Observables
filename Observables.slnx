@@ -166,9 +166,29 @@
 
   <Folder Name="/Grpc/">
 
+    <Project Path="Observables.Grpc/Observables.Grpc.SourceGenerators.Shared/Observables.Grpc.SourceGenerators.Shared.shproj" Id="e8f4c3b2-9d6a-4f1e-8c7b-2a3f0d9e6b5c" />
+
+    <Project Path="Observables.Grpc/Observables.Grpc.Package/Observables.Grpc.Package.csproj" />
+
     <Project Path="Observables.Grpc/Observables.Grpc/Observables.Grpc.csproj" />
 
-    <Project Path="Observables.Grpc/Observables.Grpc.R3/Observables.Grpc.R3.csproj" />
+    <Project Path="Observables.Grpc/Observables.Grpc.Reactive/Observables.Grpc.Reactive.csproj" />
+
+    <Project Path="Observables.Grpc/Observables.Grpc.Reactive.SourceGenerators/Observables.Grpc.Reactive.SourceGenerators.csproj" />
+
+    <Project Path="Observables.Grpc/Observables.Grpc.R3.SourceGenerators/Observables.Grpc.R3.SourceGenerators.csproj" />
+
+    <Folder Name="/Tests/">
+
+      <Project Path="Observables.Grpc/Observables.Grpc.R3.SourceGenerators.Tests/Observables.Grpc.R3.SourceGenerators.Tests.csproj" />
+
+      <Project Path="Observables.Grpc/Observables.Grpc.Reactive.SourceGenerators.Tests/Observables.Grpc.Reactive.SourceGenerators.Tests.csproj" />
+
+      <Project Path="Observables.Grpc/Observables.Grpc.Tests/Observables.Grpc.Tests.csproj" />
+
+      <Project Path="Observables.Grpc/Observables.Grpc.Reactive.Tests/Observables.Grpc.Reactive.Tests.csproj" />
+
+    </Folder>
 
   </Folder>
 

@@ -39,6 +39,14 @@
     {
       "packProject": "Observables.WebSocket/Observables.WebSocket.Package/Observables.WebSocket.Reactive.Pack.csproj",
       "packageId": "Observables.WebSocket.Reactive"
+    },
+    {
+      "packProject": "Observables.Grpc/Observables.Grpc.Package/Observables.Grpc.R3.csproj",
+      "packageId": "Observables.Grpc.R3"
+    },
+    {
+      "packProject": "Observables.Grpc/Observables.Grpc.Package/Observables.Grpc.Reactive.Pack.csproj",
+      "packageId": "Observables.Grpc.Reactive"
     }
   ],
   "testProjects": [
@@ -60,6 +68,10 @@
     "Observables.WebSocket/Observables.WebSocket.Reactive.SourceGenerators.Tests/Observables.WebSocket.Reactive.SourceGenerators.Tests.csproj",
     "Observables.WebSocket/Observables.WebSocket.Tests/Observables.WebSocket.Tests.csproj",
     "Observables.WebSocket/Observables.WebSocket.Reactive.Tests/Observables.WebSocket.Reactive.Tests.csproj",
+    "Observables.Grpc/Observables.Grpc.R3.SourceGenerators.Tests/Observables.Grpc.R3.SourceGenerators.Tests.csproj",
+    "Observables.Grpc/Observables.Grpc.Reactive.SourceGenerators.Tests/Observables.Grpc.Reactive.SourceGenerators.Tests.csproj",
+    "Observables.Grpc/Observables.Grpc.Tests/Observables.Grpc.Tests.csproj",
+    "Observables.Grpc/Observables.Grpc.Reactive.Tests/Observables.Grpc.Reactive.Tests.csproj",
     "Observables.Shared/Observables.CodeFixes.Tests/Observables.CodeFixes.Tests.csproj",
     "Observables.Shared/Observables.Analyzers.Tests/Observables.Analyzers.Tests.csproj"
   ],
@@ -73,6 +85,8 @@
     "eng/nuget-smoke/Mqtt.R3.Consumer/Mqtt.R3.Consumer.csproj",
     "eng/nuget-smoke/Mqtt.Reactive.Consumer/Mqtt.Reactive.Consumer.csproj",
     "eng/nuget-smoke/WebSocket.R3.Consumer/WebSocket.R3.Consumer.csproj",
-    "eng/nuget-smoke/WebSocket.Reactive.Consumer/WebSocket.Reactive.Consumer.csproj"
+    "eng/nuget-smoke/WebSocket.Reactive.Consumer/WebSocket.Reactive.Consumer.csproj",
+    "eng/nuget-smoke/Grpc.R3.Consumer/Grpc.R3.Consumer.csproj",
+    "eng/nuget-smoke/Grpc.Reactive.Consumer/Grpc.Reactive.Consumer.csproj"
   ]
 }

@@ -1,13 +1,16 @@
-<Project Sdk="Microsoft.NET.Sdk">
-
-  <Import Project="..\..\Observables.SourceGenerators.props" />
-
-  <PropertyGroup>
-    <Description>Source generators for gRPC streaming and unary call patterns → reactive streams.</Description>
-  </PropertyGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="..\..\Observables.Shared\Observables.SourceGenerators.Shared\Observables.SourceGenerators.Shared.csproj" />
-  </ItemGroup>
-
-</Project>
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <RootNamespace>Observables.Grpc</RootNamespace>
+    <AssemblyName>Observables.Grpc</AssemblyName>
+    <Description>gRPC client runtime and R3 stream bridges.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Grpc.Core.Api" />
+    <PackageReference Include="Google.Protobuf" />
+    <PackageReference Include="R3" />
+  </ItemGroup>
+
+</Project>
+

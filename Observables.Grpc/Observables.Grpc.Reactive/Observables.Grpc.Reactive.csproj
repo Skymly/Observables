@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <RootNamespace>Observables.Grpc.Reactive</RootNamespace>
+    <AssemblyName>Observables.Grpc.Reactive</AssemblyName>
+    <Description>System.Reactive adapters for Observables.Grpc.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Observables.Grpc\Observables.Grpc.csproj" />
+    <PackageReference Include="System.Reactive" />
+  </ItemGroup>
+
+</Project>
+

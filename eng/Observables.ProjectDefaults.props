@@ -30,6 +30,7 @@
     <_ObsIsDomainFolder Condition="$(_ObsProjectDir.Contains('/Observables.SignalR/'))">true</_ObsIsDomainFolder>
     <_ObsIsDomainFolder Condition="$(_ObsProjectDir.Contains('/Observables.Mqtt/'))">true</_ObsIsDomainFolder>
     <_ObsIsDomainFolder Condition="$(_ObsProjectDir.Contains('/Observables.WebSocket/'))">true</_ObsIsDomainFolder>
+    <_ObsIsDomainFolder Condition="$(_ObsProjectDir.Contains('/Observables.Grpc/'))">true</_ObsIsDomainFolder>
     <_ObsIsEventsPackProject>false</_ObsIsEventsPackProject>
     <_ObsIsEventsPackProject Condition="$(_ObsProjectDir.Contains('/Observables.Events.Package')) and '$(_ObsIsGeneratorProject)' != 'true'">true</_ObsIsEventsPackProject>
     <_ObsIsSharedProject>false</_ObsIsSharedProject>

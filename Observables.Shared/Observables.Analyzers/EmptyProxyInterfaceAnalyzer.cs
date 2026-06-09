@@ -11,7 +11,8 @@ public sealed class EmptyProxyInterfaceAnalyzer : DiagnosticAnalyzer
         ImmutableArray.Create(
             DiagnosticDescriptors.EmptyHubInterface,
             DiagnosticDescriptors.EmptyMqttInterface,
-            DiagnosticDescriptors.EmptyWebSocketInterface);
+            DiagnosticDescriptors.EmptyWebSocketInterface,
+            DiagnosticDescriptors.EmptyGrpcInterface);
 
     public override void Initialize(AnalysisContext context)
     {

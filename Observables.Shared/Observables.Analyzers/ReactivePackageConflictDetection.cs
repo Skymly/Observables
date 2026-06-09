@@ -27,6 +27,7 @@ internal static class ReactivePackageConflictDetection
             { DisplayName: "SignalR" } => HasAssemblyReference(compilation, "Observables.SignalR.Reactive"),
             { DisplayName: "Mqtt" } => HasAssemblyReference(compilation, "Observables.Mqtt.Reactive"),
             { DisplayName: "WebSocket" } => HasAssemblyReference(compilation, "Observables.WebSocket.Reactive"),
+            { DisplayName: "Grpc" } => HasAssemblyReference(compilation, "Observables.Grpc.Reactive"),
             { DisplayName: "RestAPI" } => HasAssemblyReference(compilation, "Observables.RestAPI.Reactive"),
             _ => false,
         };

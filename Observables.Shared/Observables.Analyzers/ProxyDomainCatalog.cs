@@ -88,6 +88,20 @@ internal static class ProxyDomainCatalog
             new BoundaryAttributeSuggestion("WebSocketReceive", "WebSocketReceive"),
         ]);
 
+    internal static readonly ProxyDomain Grpc = new(
+        displayName: "Grpc",
+        interfaceMarkerMetadataName: "Observables.Grpc.GrpcAttribute",
+        reactiveAdapterMetadataName: "Observables.Grpc.Reactive.SystemReactiveGrpcAdapter",
+        emptyInterfaceDescriptor: DiagnosticDescriptors.EmptyGrpcInterface,
+        methodAttributes:
+        [
+            new BoundaryAttributeSuggestion("GrpcUnary", "GrpcUnary"),
+            new BoundaryAttributeSuggestion("GrpcServerStream", "GrpcServerStream"),
+            new BoundaryAttributeSuggestion("GrpcClientStream", "GrpcClientStream"),
+            new BoundaryAttributeSuggestion("GrpcDuplex", "GrpcDuplex"),
+        ],
+        propertyAttributes: []);
+
     internal static readonly ProxyDomain RestApi = new(
         displayName: "RestAPI",
         interfaceMarkerMetadataName: string.Empty,
@@ -96,10 +110,10 @@ internal static class ProxyDomainCatalog
         methodAttributes: [],
         propertyAttributes: []);
 
-    internal static readonly IReadOnlyList<ProxyDomain> InterfaceProxyDomains = [SignalR, Mqtt, WebSocket];
+    internal static readonly IReadOnlyList<ProxyDomain> InterfaceProxyDomains = [SignalR, Mqtt, WebSocket, Grpc];
 
     internal static readonly IReadOnlyList<ProxyDomain> ReactiveConflictDomains =
-        [SignalR, Mqtt, WebSocket, RestApi];
+        [SignalR, Mqtt, WebSocket, Grpc, RestApi];
 
     internal static readonly string[] RestApiHttpMethodNames =
         ["Get", "Post", "Put", "Delete", "Patch", "Head", "Options"];

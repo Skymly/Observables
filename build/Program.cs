@@ -104,6 +104,9 @@ sealed class Build : NukeBuild
                     .SetProjectFile(projectFile)
                     .SetConfiguration(Configuration)
                     .EnableNoRestore()
+                    .SetProperty("BuildTfmsInParallel", "false")
+                    .SetProperty("TestTfmsInParallel", "false")
+                    .SetProperty("UseAppHost", "false")
                     .SetResultsDirectory(TestResultsDirectory)
                     .SetLoggers("trx;LogFileName=" + projectFile.NameWithoutExtension + ".trx"));
             }

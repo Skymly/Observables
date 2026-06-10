@@ -92,6 +92,8 @@
     <TargetFrameworks>net8.0;net9.0</TargetFrameworks>
     <IsPackable>false</IsPackable>
     <UseAppHost>false</UseAppHost>
+    <BuildTfmsInParallel>false</BuildTfmsInParallel>
+    <TestTfmsInParallel>false</TestTfmsInParallel>
   </PropertyGroup>
 
 </Project>

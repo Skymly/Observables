@@ -90,6 +90,8 @@
   <PropertyGroup Condition="'$(ObservablesSkipProjectDefaults)' != 'true' and '$(_ObsIsMultiTfmTestProject)' == 'true'">
     <TargetFrameworks>net8.0;net9.0</TargetFrameworks>
     <IsPackable>false</IsPackable>
+    <!-- Avoid SDK apphost copy races when dotnet test builds net8/net9 in parallel (MSB3030 on CI). -->
+    <UseAppHost>false</UseAppHost>
   </PropertyGroup>
 
 </Project>

@@ -64,6 +64,18 @@ sealed class Build : NukeBuild
         .Executes(() =>
         {
             DotNetRestore(s => s.SetProjectFile(SolutionFile));
+
+            // slnx /Tests/ nested folders are not in the solution restore graph.
+            foreach (string relativePath in Manifest.TestProjects)
+            {
+                AbsolutePath projectFile = Root / relativePath;
+                if (!projectFile.FileExists())
+                {
+                    continue;
+                }
+
+                DotNetRestore(s => s.SetProjectFile(projectFile));
+            }
         });
 
     Target Compile => _ => _

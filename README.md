@@ -26,7 +26,7 @@
 
 ### 预览版 NuGet（`0.1.0-preview6`）
 
-**12 包**（六域各 `.R3` + `.Reactive`）。推 `v0.1.0-preview6` tag 后由 CI 发布至 nuget.org 与 GitHub Packages。
+**12 包**（六域各 `.R3` + `.Reactive`）。**`0.1.0-preview6`** 已发布至 [nuget.org](https://www.nuget.org/profiles/Skymly) 与 GitHub Packages（tag `v0.1.0-preview6`）。
 
 | 包 ID | 说明 |
 |-------|------|

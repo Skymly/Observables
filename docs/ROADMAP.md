@@ -4,13 +4,13 @@
 
 > 版本号、tag、发版均须维护者明确批准；本文件中的版本号（如 `preview5`）为规划占位，不构成自动发版授权。
 
-## 现状基线（待发 `0.1.0-preview6`）
+## 现状基线（`0.1.0-preview6` 已发 nuget.org）
 
 | 维度 | 现状 |
 |------|------|
 | 已实现域 | **Events**、**RestAPI**、**SignalR**、**Mqtt**、**WebSocket**、**Grpc**（运行时 + 双路生成器 + 测试） |
 | 共享层 | `Observables.Core`、`Observables.SourceGenerators.Shared`、`Observables.CodeFixes`、`Observables.Analyzers` |
-| nuget.org 已发 | **`0.1.0-preview5`** — **10 包**（五域）；**`0.1.0-preview6`** — **12 包**（+ Grpc，待 tag） |
+| nuget.org 已发 | **`0.1.0-preview5`** — **10 包**（五域）；**`0.1.0-preview6`** — **12 包**（+ Grpc，`v0.1.0-preview6` tag） |
 | 构建 | 主仓 Nuke `Ci` / `CiPack` / `Publish`；`PackVerify` + `eng/nuget-smoke`（12 消费者） |
 | 示例仓 CI | `Observables.Samples` Nuke `Ci`（NuGet `preview6`，含 Grpc 注册检查） |
 
@@ -24,7 +24,7 @@
 | 4 | Nuke 清单 / 版本双真相源 | ✅ M2 已落地（`Observables.BuildManifest.json` + `PackageVersionReader`） |
 | 5 | 诊断 release 跟踪（`AnalyzerReleases.*.md`、移除 RS2008） | ✅ M2 已落地；描述符文件结构仍分散 |
 | 6 | Grpc 骨架命名（`Observables.Grpc.R3`）违反约定 | ✅ M3 已重命名为 `*.R3.SourceGenerators` |
-| 7 | 文档滞后：README / Docs / Samples | ✅ M1 WebSocket 已补齐；Grpc 用户文档与 Samples 待 **M4** |
+| 7 | 文档滞后：README / Docs / Samples | ✅ M4 已补齐（含 Grpc 用户文档与 Samples） |
 | 8 | Samples `RestAPI.Reactive` 显式 `R3` 触发 OBS0001 | ✅ `R3` 改为 runtime-only（`ExcludeAssets=compile`） |
 
 ## 诊断 ID 段分配（权威）
@@ -83,14 +83,14 @@ graph LR
 - ~~建 `Observables.Grpc.Package`，产出 `Observables.Grpc.R3` / `Observables.Grpc.Reactive` 两包。~~ ✅
 - ~~补生成器测试 + E2E + smoke 消费者，纳入 `PackVerify`（manifest **12 包**）。~~ ✅
 
-Grpc 两包纳入 **`0.1.0-preview6`** 发版（维护者推 `v0.1.0-preview6` tag）。
+Grpc 两包已于 **`0.1.0-preview6`**（`v0.1.0-preview6` tag）发布至 nuget.org 与 GitHub Packages。
 
-### M4 — 文档与示例补齐（preview6 发版前部分完成）
+### M4 — 文档与示例补齐 ✅
 
-- ~~统一诊断登记文档（OBS0001 / 2xxx–7xxx）到 Docs `diagnostics.md`~~ ✅（preview6 准备）
+- ~~统一诊断登记文档（OBS0001 / 2xxx–7xxx）到 Docs `diagnostics.md`~~ ✅
 - ~~Docs（中英）`grpc.md`；Samples `Observables.Samples.Grpc`~~ ✅
 - ~~校验 README、Docs、Samples 三处域状态与 `0.1.0-preview6` 一致~~ ✅
-- 发版后复核 nuget.org 包页链接与站点 `npm run docs:build`
+- ~~发版后复核 nuget.org 包页链接与站点 `npm run docs:build`~~ ✅（M4 收尾 PR）
 
 ### M5 — API 冻结与 1.0
 

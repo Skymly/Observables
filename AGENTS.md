@@ -4,9 +4,9 @@
 
 - **类型**：个人项目（Skymly 工作区）
 - **远端**：https://github.com/Skymly/Observables（私有）；文件夹名 `Observables` = 仓库名；同步状态以 `git status` 为准
-- **阶段**：**Events**、**RestAPI**、**SignalR**、**Mqtt**、**WebSocket** 已实现（运行时 + 双路生成器 + 测试）；共享层另含 `Observables.CodeFixes` 与 `Observables.Analyzers`；**NuGet 预览包** `0.1.0-preview5`（**10 包**：五域各 `.R3`+`.Reactive`，已发 nuget.org）；Nuke `PackVerify` + `eng/nuget-smoke` 消费者校验已就绪
-- **下一 Feature**：**Grpc**（仅空 csproj 骨架）；Mqtt 设计见 [`docs/design/mqtt.md`](docs/design/mqtt.md)（用户文档 [Observables.Docs](https://github.com/Skymly/Observables.Docs) `mqtt.md`）；WebSocket 设计见 [`docs/design/websocket.md`](docs/design/websocket.md)
-- **路线图**：里程碑与发版顺序见 [`docs/ROADMAP.md`](docs/ROADMAP.md)（M1 ✅ / M2 ✅ → M3 Grpc → M4 文档补齐 → M5 API 冻结 + 1.0）
+- **阶段**：**Events**、**RestAPI**、**SignalR**、**Mqtt**、**WebSocket**、**Grpc** 已实现（运行时 + 双路生成器 + 测试）；共享层另含 `Observables.CodeFixes` 与 `Observables.Analyzers`；**待发版** `0.1.0-preview6`（**12 包**，含 Grpc）；主仓 / Docs / Samples 已对齐 preview6；Nuke `PackVerify` + `eng/nuget-smoke` 覆盖 12 包
+- **下一里程碑**：推 tag 发布 preview6 → **M5** API 冻结 + 1.0；Grpc 设计见 [`docs/design/grpc.md`](docs/design/grpc.md)
+- **路线图**：里程碑与发版顺序见 [`docs/ROADMAP.md`](docs/ROADMAP.md)（M1 ✅ / M2 ✅ / M3 ✅ / M4 部分 ✅ → M5 API 冻结 + 1.0）
 - **结构约定**：下文「仓库结构」与命名约定为权威；**工程治理**（包管理、警告、诊断、版本来源）见下文同名章节
 
 ## 目标
@@ -45,7 +45,7 @@
 |------|------|
 | **`Observables.Core`** | 全库通用**运行时**（≥2 个 Feature 复用的 Attribute、枚举、接口等）。不引用 Roslyn。 |
 | **`Observables.SourceGenerators.Shared`** | 全库通用**生成器**基础设施（`GeneratedSourceHeader`、符号扩展、跨域可复用诊断如 Events `OBS2xxx`）。不引用 R3 / System.Reactive。 |
-| **`Observables.Analyzers`** | 独立分析器（非生成器）：全库诊断 `OBS0001`（R3/Reactive 包冲突）、各域空代理接口 `OBS4007`/`OBS5007`/`OBS6007` 等。随 `.Package` 以 analyzer 形式分发。 |
+| **`Observables.Analyzers`** | 独立分析器（非生成器）：全库诊断 `OBS0001`（R3/Reactive 包冲突）、各域空代理接口 `OBS4007`/`OBS5007`/`OBS6007`/`OBS7007` 等。随 `.Package` 以 analyzer 形式分发。 |
 | **`Observables.CodeFixes`** | 对应分析器/生成器诊断的 `CodeFixProvider` 与补全提供器。随 `.Package` 以 analyzer 形式分发。 |
 
 ### 反应式后端规则
@@ -125,7 +125,7 @@ Observables/
 │   ├── Observables.RestAPI.Reactive/
 │   ├── Observables.RestAPI.SourceGenerators.Shared/
 │   └── …
-├── Observables.SignalR/ … Observables.Grpc/          # 其余域（多为骨架）
+├── Observables.SignalR/ … Observables.Grpc/          # 其余域（含 Grpc，M3 已落地）
 └── Observables.slnx
 ```
 
@@ -152,11 +152,11 @@ Observables/
 | **SignalR** | `Observables.SignalR` | `SignalR.R3.SourceGenerators` | `SignalR.Reactive.SourceGenerators` | R3 + Reactive 生成器测试 |
 | **Mqtt** | `Observables.Mqtt` | `Mqtt.R3.SourceGenerators` | `Mqtt.Reactive.SourceGenerators` | R3 + Reactive 生成器测试；`Mqtt.Tests` / `Mqtt.Reactive.Tests`（进程内 MQTTnet broker E2E） |
 | **WebSocket** | `Observables.WebSocket` | `WebSocket.R3.SourceGenerators` | `WebSocket.Reactive.SourceGenerators` | Core / Reactive / R3 + Reactive 生成器测试；E2E（`WebSocket.Tests` / `WebSocket.Reactive.Tests`） |
-| **Grpc** | 空 csproj 骨架 | `Observables.Grpc.R3`（**命名违规**，应为 `Observables.Grpc.R3.SourceGenerators`） | — | — |
+| **Grpc** | `Observables.Grpc` | `Grpc.R3.SourceGenerators` | `Grpc.Reactive.SourceGenerators` | R3 + Reactive 生成器测试；E2E（`Grpc.Tests` / `Grpc.Reactive.Tests`，进程内 `TestServer`） |
 
 **RestAPI 运行时**：`RestApiSettings`、`RestService.For<T>()`；命名空间 `Observables.RestAPI`。
 
-> Grpc 骨架 `Observables.Grpc.R3` 当前命名与「`.R3` = NuGet 包 ID、生成器须带 `.SourceGenerators`」约定冲突，落地时按 M3 重命名（见 ROADMAP 与「命名一致性」）。
+**Grpc 运行时**：`GrpcService.For<T>()`、`[Grpc]` / `[GrpcUnary]` 等；命名空间 `Observables.Grpc`。
 
 ---
 
@@ -166,8 +166,9 @@ Observables/
 
 1. ~~**M1**：WebSocket 发版 + 文档/示例同步~~ ✅（`0.1.0-preview5`）
 2. ~~**M2**：工程加固（中央包管理、TFM 收口、警告策略、诊断登记、`build/Program.cs` 去硬编码）~~ ✅
-3. **M3**：Grpc 域按检查清单补齐（含骨架重命名、`OBS7xxx`）
-4. **M5**：API 冻结后由维护者指定版本号并推送 tag / `workflow_dispatch` 发布（见「版本、Tag 与 NuGet」）
+3. ~~**M3**：Grpc 域按检查清单补齐（含骨架重命名、`OBS7xxx`）~~ ✅
+4. **M4**：Observables.Docs / Samples 与主仓同步（Grpc 用户文档与示例）
+5. **M5**：API 冻结后由维护者指定版本号并推送 tag / `workflow_dispatch` 发布（见「版本、Tag 与 NuGet」）
 
 ---
 
@@ -213,7 +214,7 @@ Observables/
     | `OBS4xxx` | SignalR |
     | `OBS5xxx` | Mqtt |
     | `OBS6xxx` | WebSocket |
-    | `OBS7xxx` | Grpc（预留） |
+    | `OBS7xxx` | Grpc |
 
   - 新增诊断落入对应段，**不复用、不跨段**。
   - 新增诊断写入对应项目的 `AnalyzerReleases.Unshipped.md`；发版时移入 `Shipped.md`（**已启用**，勿再 `#pragma warning disable RS2008`）。
@@ -231,11 +232,10 @@ Observables/
 
 ### 6. 命名一致性
 
-- 现状：Grpc 骨架为 `Observables.Grpc.R3`（直接 import `Observables.SourceGenerators.R3.props`），把生成器项目命名成了 NuGet 包 ID 形态。
-- 标准（重申「命名约定」并据此纠正）：
+- 已落地（M3）：Grpc 生成器为 `Observables.Grpc.R3.SourceGenerators` / `Observables.Grpc.Reactive.SourceGenerators`；NuGet 包 ID 为 `Observables.Grpc.R3` / `Observables.Grpc.Reactive`（由 `.Package` 产出）。
+- 标准（重申「命名约定」）：
   - `Observables.<Feature>.R3` / `.Reactive` = **NuGet 包 ID**（由 `.Package` 产出）。
   - 生成器项目**必须**带 `.SourceGenerators` 后缀。
-  - 因此 Grpc 应重命名为 `Observables.Grpc.R3.SourceGenerators` 等（M3）。
   - **文件夹名 = 项目名 = 程序集名**，整仓一致。
 
 ### 7. 测试约定
@@ -306,7 +306,7 @@ dotnet run --project build/_build.csproj -- --target Ci --configuration Release
 |-----------|------|
 | **Ci** | `Clean` → `Restore` → `Compile` → **UnitTest** |
 | **Pack** | 打包全部 pack 子项目 → `artifacts/package/`（依赖 **UnitTest**；当前 10 个，含 WebSocket） |
-| **PackVerify** | 断言 nupkg 含 analyzer、Events `observables.events.props`、RestAPI/SignalR/Mqtt/WebSocket `lib/`（`ExpectedPackageIds` 当前 10 包） |
+| **PackVerify** | 断言 nupkg 含 analyzer、Events `observables.events.props`、RestAPI/SignalR/Mqtt/WebSocket/Grpc `lib/`（manifest 当前 **12 包**） |
 | **CiPack** | CI 用：`Pack` + `PackVerify` |
 | **Publish** | 推送到 nuget.org（`NUGET_API_KEY`）与 GitHub Packages（`GITHUB_TOKEN`，`packages:write`） |
 

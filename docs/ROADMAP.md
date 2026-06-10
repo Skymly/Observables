@@ -4,16 +4,15 @@
 
 > 版本号、tag、发版均须维护者明确批准；本文件中的版本号（如 `preview5`）为规划占位，不构成自动发版授权。
 
-## 现状基线（截至 `0.1.0-preview5`）
+## 现状基线（待发 `0.1.0-preview6`）
 
 | 维度 | 现状 |
 |------|------|
-| 已实现域 | **Events**、**RestAPI**、**SignalR**、**Mqtt**、**WebSocket**（运行时 + 双路生成器 + 测试） |
+| 已实现域 | **Events**、**RestAPI**、**SignalR**、**Mqtt**、**WebSocket**、**Grpc**（运行时 + 双路生成器 + 测试） |
 | 共享层 | `Observables.Core`、`Observables.SourceGenerators.Shared`、`Observables.CodeFixes`、`Observables.Analyzers` |
-| 已发 NuGet | **10 包**（Events / RestAPI / SignalR / Mqtt / WebSocket 各 `.R3` + `.Reactive`，`0.1.0-preview5` on nuget.org） |
-| 骨架 | **Grpc**（仅空 csproj，无业务源码 / 测试 / 设计文档） |
-| 构建 | 主仓 Nuke `Ci` / `CiPack` / `Publish` 绿；`PackVerify` + `eng/nuget-smoke` 通过 |
-| 示例仓 CI | `Observables.Samples` Nuke `Ci`（NuGet 模式，含 WebSocket 注册检查） |
+| nuget.org 已发 | **`0.1.0-preview5`** — **10 包**（五域）；**`0.1.0-preview6`** — **12 包**（+ Grpc，待 tag） |
+| 构建 | 主仓 Nuke `Ci` / `CiPack` / `Publish`；`PackVerify` + `eng/nuget-smoke`（12 消费者） |
+| 示例仓 CI | `Observables.Samples` Nuke `Ci`（NuGet `preview6`，含 Grpc 注册检查） |
 
 ### 已知工程债（详见 AGENTS.md「工程治理」）
 
@@ -24,8 +23,8 @@
 | 3 | `TreatWarningsAsErrors`；CS860x、IL trim、xUnit 告警 | ✅ M2 已落地（IL 族 net8/9 暂 `NoWarn`，M5 收敛） |
 | 4 | Nuke 清单 / 版本双真相源 | ✅ M2 已落地（`Observables.BuildManifest.json` + `PackageVersionReader`） |
 | 5 | 诊断 release 跟踪（`AnalyzerReleases.*.md`、移除 RS2008） | ✅ M2 已落地；描述符文件结构仍分散 |
-| 6 | Grpc 骨架命名（`Observables.Grpc.R3`）违反约定 | ⏳ M3 |
-| 7 | 文档滞后：README / `websocket.md` / Samples | ✅ M1 已补齐；Grpc 仍待 M4 |
+| 6 | Grpc 骨架命名（`Observables.Grpc.R3`）违反约定 | ✅ M3 已重命名为 `*.R3.SourceGenerators` |
+| 7 | 文档滞后：README / Docs / Samples | ✅ M1 WebSocket 已补齐；Grpc 用户文档与 Samples 待 **M4** |
 | 8 | Samples `RestAPI.Reactive` 显式 `R3` 触发 OBS0001 | ✅ `R3` 改为 runtime-only（`ExcludeAssets=compile`） |
 
 ## 诊断 ID 段分配（权威）
@@ -38,7 +37,7 @@
 | `OBS4001`–`OBS4999` | SignalR | 使用中（4001–4007） |
 | `OBS5001`–`OBS5999` | Mqtt | 使用中（5001–5007） |
 | `OBS6001`–`OBS6999` | WebSocket | 使用中（6001–6007） |
-| `OBS7001`–`OBS7999` | Grpc | **预留** |
+| `OBS7001`–`OBS7999` | Grpc | 使用中（7001–7007） |
 
 新增诊断须落入对应段并在 `AnalyzerReleases.Unshipped.md` 登记（见 AGENTS.md）。
 
@@ -74,21 +73,24 @@ graph LR
 - ~~`AnalyzerReleases.Shipped.md` / `Unshipped.md`，移除 RS2008 pragma~~ ✅
 - ~~`TreatWarningsAsErrors` + CS86xx / xUnit1051 清零~~ ✅；IL trim 族 net8/9 最小 `NoWarn`（M5 改 source-gen 后移除）。
 
-### M3 — Grpc 域
+### M3 — Grpc 域 ✅
 
-按 AGENTS.md「新增 Feature 检查清单」从骨架建成完整域：
+按 AGENTS.md「新增 Feature 检查清单」从骨架建成完整域（PR #77，已合并 `main`）：
 
-- 新增设计文档 `docs/design/grpc.md`（unary / server-streaming / 双向流到反应式流的映射）。
-- 重命名骨架：`Observables.Grpc.R3` → `Observables.Grpc.R3.SourceGenerators`，补 `Observables.Grpc.Reactive.SourceGenerators`、`Observables.Grpc.SourceGenerators.Shared`。
-- 启用 `OBS7xxx` 诊断段。
-- 建 `Observables.Grpc.Package`，产出 `Observables.Grpc.R3` / `Observables.Grpc.Reactive` 两包。
-- 补生成器测试 + E2E + smoke 消费者，纳入 `PackVerify` 的 `ExpectedPackageIds`。
+- ~~新增设计文档 `docs/design/grpc.md`（unary / server-streaming / 双向流到反应式流的映射）。~~ ✅
+- ~~重命名骨架：`Observables.Grpc.R3` → `Observables.Grpc.R3.SourceGenerators`，补 `Observables.Grpc.Reactive.SourceGenerators`、`Observables.Grpc.SourceGenerators.Shared`。~~ ✅
+- ~~启用 `OBS7xxx` 诊断段（7001–7007）。~~ ✅
+- ~~建 `Observables.Grpc.Package`，产出 `Observables.Grpc.R3` / `Observables.Grpc.Reactive` 两包。~~ ✅
+- ~~补生成器测试 + E2E + smoke 消费者，纳入 `PackVerify`（manifest **12 包**）。~~ ✅
 
-### M4 — 文档与示例补齐
+Grpc 两包纳入 **`0.1.0-preview6`** 发版（维护者推 `v0.1.0-preview6` tag）。
 
-- 统一诊断登记文档（OBS0001 / 2xxx–7xxx）到 Docs `diagnostics.md`，与代码登记表一致。
-- Docs（中英）覆盖全部已发域；Samples 覆盖 WebSocket、Grpc。
-- 校验 README、Docs、Samples 三处域状态一致（见 AGENTS.md「文档同步纪律」）。
+### M4 — 文档与示例补齐（preview6 发版前部分完成）
+
+- ~~统一诊断登记文档（OBS0001 / 2xxx–7xxx）到 Docs `diagnostics.md`~~ ✅（preview6 准备）
+- ~~Docs（中英）`grpc.md`；Samples `Observables.Samples.Grpc`~~ ✅
+- ~~校验 README、Docs、Samples 三处域状态与 `0.1.0-preview6` 一致~~ ✅
+- 发版后复核 nuget.org 包页链接与站点 `npm run docs:build`
 
 ### M5 — API 冻结与 1.0
 
@@ -112,7 +114,6 @@ graph LR
 
 | 版本 | 关联里程碑 |
 |------|------------|
-| `0.1.0-preview5` | M1 |
-| `0.1.0-preview6+` | M2 / M3 增量 |
-| `0.2.0-preview*` | M3 Grpc 落地后 |
+| `0.1.0-preview5` | M1（10 包，nuget.org） |
+| `0.1.0-preview6` | M3 Grpc 发版（**12 包**，nuget.org） |
 | `1.0.0` | M5 |

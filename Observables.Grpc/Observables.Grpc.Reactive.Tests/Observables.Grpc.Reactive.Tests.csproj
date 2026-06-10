@@ -16,6 +16,7 @@
 
     <PackageReference Include="Grpc.AspNetCore" />
     <PackageReference Include="Grpc.Net.Client" />
+    <PackageReference Include="Microsoft.AspNetCore.TestHost" />
 
     <PackageReference Include="Microsoft.NET.Test.Sdk" />
 
@@ -62,6 +63,10 @@
     <Compile Include="..\Observables.Grpc.Tests\Infrastructure\EchoServiceImpl.cs"
 
              Link="Infrastructure\EchoServiceImpl.cs" />
+
+    <Compile Include="..\Observables.Grpc.Tests\Infrastructure\GrpcTestChannel.cs"
+
+             Link="Infrastructure\GrpcTestChannel.cs" />
 
     <Compile Include="..\Observables.Grpc.Tests\Infrastructure\GrpcTestHost.cs"
 

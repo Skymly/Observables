@@ -91,6 +91,7 @@ sealed class Build : NukeBuild
                 DotNetTest(s => s
                     .SetProjectFile(projectFile)
                     .SetConfiguration(Configuration)
+                    .EnableNoBuild()
                     .SetResultsDirectory(TestResultsDirectory)
                     .SetLoggers("trx;LogFileName=" + projectFile.NameWithoutExtension + ".trx"));
             }

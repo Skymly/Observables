@@ -1,4 +1,3 @@
-using Grpc.Net.Client;
 using Observables.Grpc;
 using Observables.Grpc.Tests.Contracts;
 using Observables.Grpc.Tests.Infrastructure;
@@ -15,7 +14,7 @@ public sealed class GrpcClientR3E2ETests(GrpcTestHostFixture fixture)
     [Fact]
     public async Task UnaryEcho_returns_response()
     {
-        using var channel = GrpcChannel.ForAddress(fixture.Host.Address);
+        using var channel = GrpcTestChannel.Create(fixture.Host);
         var client = GrpcService.For<IE2EHub>(channel.CreateCallInvoker());
 
         using var cts = new CancellationTokenSource(DefaultTimeout);
@@ -29,7 +28,7 @@ public sealed class GrpcClientR3E2ETests(GrpcTestHostFixture fixture)
     [Fact]
     public async Task ServerStreamEcho_emits_multiple_items()
     {
-        using var channel = GrpcChannel.ForAddress(fixture.Host.Address);
+        using var channel = GrpcTestChannel.Create(fixture.Host);
         var client = GrpcService.For<IE2EHub>(channel.CreateCallInvoker());
 
         using var cts = new CancellationTokenSource(DefaultTimeout);

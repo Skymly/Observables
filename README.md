@@ -24,7 +24,9 @@
 | **`Observables.<Feature>.R3.SourceGenerators`** / **`.Reactive.SourceGenerators`** | 双路源生成器 |
 | **`Observables.<Feature>.Package`** | 发布时打包，产出上述两个 NuGet 包 |
 
-### 预览版 NuGet（`0.1.0-preview5`）
+### 预览版 NuGet（`0.1.0-preview6`）
+
+**12 包**（六域各 `.R3` + `.Reactive`）。推 `v0.1.0-preview6` tag 后由 CI 发布至 nuget.org 与 GitHub Packages。
 
 | 包 ID | 说明 |
 |-------|------|
@@ -38,9 +40,11 @@
 | `Observables.Mqtt.Reactive` | MQTT + Reactive 桥接 + 生成器 |
 | `Observables.WebSocket.R3` | WebSocket 运行时 + R3 生成器 |
 | `Observables.WebSocket.Reactive` | WebSocket + Reactive 桥接 + 生成器 |
+| `Observables.Grpc.R3` | gRPC 运行时 + R3 生成器 |
+| `Observables.Grpc.Reactive` | gRPC + Reactive 桥接 + 生成器 |
 
 ```xml
-<PackageReference Include="Observables.Events.R3" Version="0.1.0-preview5" />
+<PackageReference Include="Observables.Events.R3" Version="0.1.0-preview6" />
 <PackageReference Include="R3" Version="1.3.0" />
 ```
 
@@ -69,15 +73,15 @@ dotnet run --project build/_build.csproj -- --target PackVerify --configuration 
 
 ```powershell
 # 1. 确认 eng/Observables.Package.props 中 PackageVersion 与 tag 一致
-git tag -a v0.1.0-preview1 -m "0.1.0-preview1"
-git push origin v0.1.0-preview1
+git tag -a v0.1.0-preview6 -m "0.1.0-preview6"
+git push origin v0.1.0-preview6
 # 2. GitHub Actions「Publish NuGet」workflow 使用 secrets 执行 Publish
 ```
 
 本地手动推送（可选）：
 
 ```powershell
-$env:VERSION = '0.1.0-preview1'
+$env:VERSION = '0.1.0-preview6'
 $env:NUGET_API_KEY = '...'
 $env:GITHUB_TOKEN = '...'
 dotnet run --project build/_build.csproj -- --target Publish --configuration Release
@@ -85,16 +89,16 @@ dotnet run --project build/_build.csproj -- --target Publish --configuration Rel
 
 ## 域实现状态
 
-| 域 | R3 生成器 | System.Reactive 生成器 | NuGet（`preview5`） |
+| 域 | R3 生成器 | System.Reactive 生成器 | NuGet（`preview6`） |
 |----|-----------|------------------------|---------------------|
-| **Events**（经典 + 路由 .NET 事件） | `Events.R3.SourceGenerators` | `Events.Reactive.SourceGenerators` | 已发 |
-| **RestAPI**（声明式 HTTP 客户端） | `RestAPI.R3.SourceGenerators` | `RestAPI.Reactive.SourceGenerators` | 已发 |
-| **SignalR**（Hub 代理） | `SignalR.R3.SourceGenerators` | `SignalR.Reactive.SourceGenerators` | 已发 |
-| **Mqtt**（主题代理） | `Mqtt.R3.SourceGenerators` | `Mqtt.Reactive.SourceGenerators` | 已发 |
-| **WebSocket**（客户端代理） | `WebSocket.R3.SourceGenerators` | `WebSocket.Reactive.SourceGenerators` | 已发 |
-| **Grpc** | 空 csproj 骨架 | — | 规划中（见 ROADMAP M3） |
+| **Events**（经典 + 路由 .NET 事件） | `Events.R3.SourceGenerators` | `Events.Reactive.SourceGenerators` | 已纳入发版 |
+| **RestAPI**（声明式 HTTP 客户端） | `RestAPI.R3.SourceGenerators` | `RestAPI.Reactive.SourceGenerators` | 已纳入发版 |
+| **SignalR**（Hub 代理） | `SignalR.R3.SourceGenerators` | `SignalR.Reactive.SourceGenerators` | 已纳入发版 |
+| **Mqtt**（主题代理） | `Mqtt.R3.SourceGenerators` | `Mqtt.Reactive.SourceGenerators` | 已纳入发版 |
+| **WebSocket**（客户端代理） | `WebSocket.R3.SourceGenerators` | `WebSocket.Reactive.SourceGenerators` | 已纳入发版 |
+| **Grpc**（CallInvoker 代理） | `Grpc.R3.SourceGenerators` | `Grpc.Reactive.SourceGenerators` | 已纳入发版（M3） |
 
-五域均含运行时（按需）+ 双路生成器 + 测试；共享层另有 `Observables.Analyzers` 与 `Observables.CodeFixes`。详细顺序见 [docs/ROADMAP.md](docs/ROADMAP.md)。
+六域均含运行时（按需）+ 双路生成器 + 测试；共享层另有 `Observables.Analyzers` 与 `Observables.CodeFixes`。设计稿见 `docs/design/`；发版顺序见 [docs/ROADMAP.md](docs/ROADMAP.md)。
 
 路由事件生成默认关闭；在消费者项目中设置 `<ObservableRoutedEvents>true</ObservableRoutedEvents>`（见 `Observables.Events/Observables.Events/targets/observables.events.props`）。
 

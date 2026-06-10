@@ -86,21 +86,6 @@ sealed class Build : NukeBuild
                 .SetProjectFile(SolutionFile)
                 .SetConfiguration(Configuration)
                 .EnableNoRestore());
-
-            // Manifest test projects under slnx /Tests/ nested folders are not in the solution build graph.
-            foreach (string relativePath in Manifest.TestProjects)
-            {
-                AbsolutePath projectFile = Root / relativePath;
-                if (!projectFile.FileExists())
-                {
-                    continue;
-                }
-
-                DotNetBuild(s => s
-                    .SetProjectFile(projectFile)
-                    .SetConfiguration(Configuration)
-                    .EnableNoRestore());
-            }
         });
 
     Target UnitTest => _ => _
@@ -118,7 +103,7 @@ sealed class Build : NukeBuild
                 DotNetTest(s => s
                     .SetProjectFile(projectFile)
                     .SetConfiguration(Configuration)
-                    .EnableNoBuild()
+                    .EnableNoRestore()
                     .SetResultsDirectory(TestResultsDirectory)
                     .SetLoggers("trx;LogFileName=" + projectFile.NameWithoutExtension + ".trx"));
             }

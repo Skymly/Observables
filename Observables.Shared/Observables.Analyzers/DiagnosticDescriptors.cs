@@ -49,4 +49,13 @@ internal static class DiagnosticDescriptors
             "Observables.Grpc",
             DiagnosticSeverity.Error,
             isEnabledByDefault: true);
+
+    public static readonly DiagnosticDescriptor EmptySseInterface =
+        new(
+            "OBS8007",
+            "Empty SSE proxy interface",
+            "Interface '{0}' is marked with [Sse] but declares no members. Add SSE boundary members or remove [Sse].",
+            "Observables.Sse",
+            DiagnosticSeverity.Warning,
+            isEnabledByDefault: true);
 }

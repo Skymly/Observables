@@ -24,9 +24,9 @@
 | **`Observables.<Feature>.R3.SourceGenerators`** / **`.Reactive.SourceGenerators`** | 双路源生成器 |
 | **`Observables.<Feature>.Package`** | 发布时打包，产出上述两个 NuGet 包 |
 
-### 预览版 NuGet（`0.1.0-preview6`）
+### 预览版 NuGet（`0.1.0-preview7`）
 
-**12 包**（六域各 `.R3` + `.Reactive`）。**`0.1.0-preview6`** 已发布至 [nuget.org](https://www.nuget.org/profiles/Skymly) 与 GitHub Packages（tag `v0.1.0-preview6`）。
+**14 包**（七域各 `.R3` + `.Reactive`）。**`0.1.0-preview7`** 已发布至 [nuget.org](https://www.nuget.org/profiles/Skymly) 与 GitHub Packages（tag `v0.1.0-preview7`）。
 
 | 包 ID | 说明 |
 |-------|------|
@@ -42,9 +42,11 @@
 | `Observables.WebSocket.Reactive` | WebSocket + Reactive 桥接 + 生成器 |
 | `Observables.Grpc.R3` | gRPC 运行时 + R3 生成器 |
 | `Observables.Grpc.Reactive` | gRPC + Reactive 桥接 + 生成器 |
+| `Observables.Sse.R3` | SSE 运行时 + R3 生成器 |
+| `Observables.Sse.Reactive` | SSE + Reactive 桥接 + 生成器 |
 
 ```xml
-<PackageReference Include="Observables.Events.R3" Version="0.1.0-preview6" />
+<PackageReference Include="Observables.Events.R3" Version="0.1.0-preview7" />
 <PackageReference Include="R3" Version="1.3.0" />
 ```
 
@@ -73,15 +75,15 @@ dotnet run --project build/_build.csproj -- --target PackVerify --configuration 
 
 ```powershell
 # 1. 确认 eng/Observables.Package.props 中 PackageVersion 与 tag 一致
-git tag -a v0.1.0-preview6 -m "0.1.0-preview6"
-git push origin v0.1.0-preview6
+git tag -a v0.1.0-preview7 -m "0.1.0-preview7"
+git push origin v0.1.0-preview7
 # 2. GitHub Actions「Publish NuGet」workflow 使用 secrets 执行 Publish
 ```
 
 本地手动推送（可选）：
 
 ```powershell
-$env:VERSION = '0.1.0-preview6'
+$env:VERSION = '0.1.0-preview7'
 $env:NUGET_API_KEY = '...'
 $env:GITHUB_TOKEN = '...'
 dotnet run --project build/_build.csproj -- --target Publish --configuration Release
@@ -89,16 +91,17 @@ dotnet run --project build/_build.csproj -- --target Publish --configuration Rel
 
 ## 域实现状态
 
-| 域 | R3 生成器 | System.Reactive 生成器 | NuGet（`preview6`） |
+| 域 | R3 生成器 | System.Reactive 生成器 | NuGet（`preview7`） |
 |----|-----------|------------------------|---------------------|
 | **Events**（经典 + 路由 .NET 事件） | `Events.R3.SourceGenerators` | `Events.Reactive.SourceGenerators` | 已纳入发版 |
 | **RestAPI**（声明式 HTTP 客户端） | `RestAPI.R3.SourceGenerators` | `RestAPI.Reactive.SourceGenerators` | 已纳入发版 |
 | **SignalR**（Hub 代理） | `SignalR.R3.SourceGenerators` | `SignalR.Reactive.SourceGenerators` | 已纳入发版 |
 | **Mqtt**（主题代理） | `Mqtt.R3.SourceGenerators` | `Mqtt.Reactive.SourceGenerators` | 已纳入发版 |
 | **WebSocket**（客户端代理） | `WebSocket.R3.SourceGenerators` | `WebSocket.Reactive.SourceGenerators` | 已纳入发版 |
-| **Grpc**（CallInvoker 代理） | `Grpc.R3.SourceGenerators` | `Grpc.Reactive.SourceGenerators` | 已纳入发版（M3） |
+| **Grpc**（CallInvoker 代理） | `Grpc.R3.SourceGenerators` | `Grpc.Reactive.SourceGenerators` | 已纳入发版 |
+| **Sse**（`text/event-stream` 代理） | `Sse.R3.SourceGenerators` | `Sse.Reactive.SourceGenerators` | 已纳入发版（M5） |
 
-六域均含运行时（按需）+ 双路生成器 + 测试；共享层另有 `Observables.Analyzers` 与 `Observables.CodeFixes`。设计稿见 `docs/design/`；发版顺序见 [docs/ROADMAP.md](docs/ROADMAP.md)。
+七域均含运行时（按需）+ 双路生成器 + 测试；共享层另有 `Observables.Analyzers` 与 `Observables.CodeFixes`。设计稿见 `docs/design/`；发版顺序见 [docs/ROADMAP.md](docs/ROADMAP.md)。
 
 路由事件生成默认关闭；在消费者项目中设置 `<ObservableRoutedEvents>true</ObservableRoutedEvents>`（见 `Observables.Events/Observables.Events/targets/observables.events.props`）。
 
@@ -110,6 +113,27 @@ dotnet run --project build/_build.csproj -- --target Publish --configuration Rel
 <ProjectReference Include="Observables.RestAPI" />
 <ProjectReference Include="Observables.RestAPI.R3.SourceGenerators" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
 ```
+
+## Sse（Server-Sent Events）
+
+声明式 `text/event-stream` 客户端：在 `[Sse]` 接口上用 `[SseEvent("名称")]` 标注属性，生成器产出按事件名过滤、自动反序列化的 `Observable<T>` / `IObservable<T>` 代理。`[SseEvent]` 不带参数时映射默认 `message` 事件。
+
+```csharp
+[Sse]
+public interface IPriceFeed
+{
+    [SseEvent("price")]
+    Observable<PriceTick> Prices { get; }   // System.Reactive 用 IObservable<T>
+
+    [SseEvent]
+    Observable<string> Heartbeats { get; }  // 默认 message 事件
+}
+
+var feed = SseService.For<IPriceFeed>(new SseConnection(httpClient, endpoint));
+using var d = feed.Prices.Subscribe(tick => Console.WriteLine(tick));
+```
+
+每次 `Subscribe` 发起一次 SSE 连接；`string` 直接透传，其它类型按 `System.Text.Json` 反序列化。设计稿见 [docs/design/sse.md](docs/design/sse.md)。
 
 ## 构建
 

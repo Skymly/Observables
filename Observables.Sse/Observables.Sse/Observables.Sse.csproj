@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <RootNamespace>Observables.Sse</RootNamespace>
+    <AssemblyName>Observables.Sse</AssemblyName>
+    <Description>Server-Sent Events (SSE) client runtime and R3 stream bridges.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="R3" />
+  </ItemGroup>
+
+</Project>

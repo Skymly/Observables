@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <RootNamespace>Observables.Sse.Reactive</RootNamespace>
+    <AssemblyName>Observables.Sse.Reactive</AssemblyName>
+    <Description>System.Reactive bridges for Observables.Sse.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Observables.Sse\Observables.Sse.csproj" />
+    <PackageReference Include="System.Reactive" />
+  </ItemGroup>
+
+</Project>

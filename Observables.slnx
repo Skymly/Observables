@@ -192,5 +192,33 @@
 
   </Folder>
 
+  <Folder Name="/Sse/">
+
+    <Project Path="Observables.Sse/Observables.Sse.SourceGenerators.Shared/Observables.Sse.SourceGenerators.Shared.shproj" Id="f1a2b3c4-5d6e-4f70-8a91-2b3c4d5e6f70" />
+
+    <Project Path="Observables.Sse/Observables.Sse.Package/Observables.Sse.Package.csproj" />
+
+    <Project Path="Observables.Sse/Observables.Sse/Observables.Sse.csproj" />
+
+    <Project Path="Observables.Sse/Observables.Sse.Reactive/Observables.Sse.Reactive.csproj" />
+
+    <Project Path="Observables.Sse/Observables.Sse.Reactive.SourceGenerators/Observables.Sse.Reactive.SourceGenerators.csproj" />
+
+    <Project Path="Observables.Sse/Observables.Sse.R3.SourceGenerators/Observables.Sse.R3.SourceGenerators.csproj" />
+
+    <Folder Name="/Tests/">
+
+      <Project Path="Observables.Sse/Observables.Sse.R3.SourceGenerators.Tests/Observables.Sse.R3.SourceGenerators.Tests.csproj" />
+
+      <Project Path="Observables.Sse/Observables.Sse.Reactive.SourceGenerators.Tests/Observables.Sse.Reactive.SourceGenerators.Tests.csproj" />
+
+      <Project Path="Observables.Sse/Observables.Sse.Tests/Observables.Sse.Tests.csproj" />
+
+      <Project Path="Observables.Sse/Observables.Sse.Reactive.Tests/Observables.Sse.Reactive.Tests.csproj" />
+
+    </Folder>
+
+  </Folder>
+
 </Solution>
 

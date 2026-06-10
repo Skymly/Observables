@@ -74,6 +74,21 @@ sealed class Build : NukeBuild
                 .SetProjectFile(SolutionFile)
                 .SetConfiguration(Configuration)
                 .EnableNoRestore());
+
+            // Manifest test projects under slnx /Tests/ nested folders are not in the solution build graph.
+            foreach (string relativePath in Manifest.TestProjects)
+            {
+                AbsolutePath projectFile = Root / relativePath;
+                if (!projectFile.FileExists())
+                {
+                    continue;
+                }
+
+                DotNetBuild(s => s
+                    .SetProjectFile(projectFile)
+                    .SetConfiguration(Configuration)
+                    .EnableNoRestore());
+            }
         });
 
     Target UnitTest => _ => _
@@ -154,7 +169,8 @@ sealed class Build : NukeBuild
                     || packageId.StartsWith("Observables.SignalR.", StringComparison.Ordinal)
                     || packageId.StartsWith("Observables.Mqtt.", StringComparison.Ordinal)
                     || packageId.StartsWith("Observables.WebSocket.", StringComparison.Ordinal)
-                    || packageId.StartsWith("Observables.Grpc.", StringComparison.Ordinal))
+                    || packageId.StartsWith("Observables.Grpc.", StringComparison.Ordinal)
+                    || packageId.StartsWith("Observables.Sse.", StringComparison.Ordinal))
                 {
                     Assert.True(
                         entries.Contains("analyzers/dotnet/roslyn4.12/cs/Observables.CodeFixes.dll"),
@@ -175,7 +191,8 @@ sealed class Build : NukeBuild
                     || packageId.StartsWith("Observables.SignalR.", StringComparison.Ordinal)
                     || packageId.StartsWith("Observables.Mqtt.", StringComparison.Ordinal)
                     || packageId.StartsWith("Observables.WebSocket.", StringComparison.Ordinal)
-                    || packageId.StartsWith("Observables.Grpc.", StringComparison.Ordinal))
+                    || packageId.StartsWith("Observables.Grpc.", StringComparison.Ordinal)
+                    || packageId.StartsWith("Observables.Sse.", StringComparison.Ordinal))
                 {
                     bool hasLib = entries.Any(e => e.StartsWith("lib/", StringComparison.OrdinalIgnoreCase)
                         && e.EndsWith(".dll", StringComparison.OrdinalIgnoreCase));

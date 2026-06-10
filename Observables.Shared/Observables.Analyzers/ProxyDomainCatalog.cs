@@ -102,6 +102,17 @@ internal static class ProxyDomainCatalog
         ],
         propertyAttributes: []);
 
+    internal static readonly ProxyDomain Sse = new(
+        displayName: "Sse",
+        interfaceMarkerMetadataName: "Observables.Sse.SseAttribute",
+        reactiveAdapterMetadataName: "Observables.Sse.Reactive.SystemReactiveSseAdapter",
+        emptyInterfaceDescriptor: DiagnosticDescriptors.EmptySseInterface,
+        methodAttributes: [],
+        propertyAttributes:
+        [
+            new BoundaryAttributeSuggestion("SseEvent", "SseEvent"),
+        ]);
+
     internal static readonly ProxyDomain RestApi = new(
         displayName: "RestAPI",
         interfaceMarkerMetadataName: string.Empty,
@@ -110,10 +121,10 @@ internal static class ProxyDomainCatalog
         methodAttributes: [],
         propertyAttributes: []);
 
-    internal static readonly IReadOnlyList<ProxyDomain> InterfaceProxyDomains = [SignalR, Mqtt, WebSocket, Grpc];
+    internal static readonly IReadOnlyList<ProxyDomain> InterfaceProxyDomains = [SignalR, Mqtt, WebSocket, Grpc, Sse];
 
     internal static readonly IReadOnlyList<ProxyDomain> ReactiveConflictDomains =
-        [SignalR, Mqtt, WebSocket, Grpc, RestApi];
+        [SignalR, Mqtt, WebSocket, Grpc, Sse, RestApi];
 
     internal static readonly string[] RestApiHttpMethodNames =
         ["Get", "Post", "Put", "Delete", "Patch", "Head", "Options"];

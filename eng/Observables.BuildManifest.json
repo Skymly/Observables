@@ -47,6 +47,14 @@
     {
       "packProject": "Observables.Grpc/Observables.Grpc.Package/Observables.Grpc.Reactive.Pack.csproj",
       "packageId": "Observables.Grpc.Reactive"
+    },
+    {
+      "packProject": "Observables.Sse/Observables.Sse.Package/Observables.Sse.R3.csproj",
+      "packageId": "Observables.Sse.R3"
+    },
+    {
+      "packProject": "Observables.Sse/Observables.Sse.Package/Observables.Sse.Reactive.Pack.csproj",
+      "packageId": "Observables.Sse.Reactive"
     }
   ],
   "testProjects": [
@@ -72,6 +80,10 @@
     "Observables.Grpc/Observables.Grpc.Reactive.SourceGenerators.Tests/Observables.Grpc.Reactive.SourceGenerators.Tests.csproj",
     "Observables.Grpc/Observables.Grpc.Tests/Observables.Grpc.Tests.csproj",
     "Observables.Grpc/Observables.Grpc.Reactive.Tests/Observables.Grpc.Reactive.Tests.csproj",
+    "Observables.Sse/Observables.Sse.R3.SourceGenerators.Tests/Observables.Sse.R3.SourceGenerators.Tests.csproj",
+    "Observables.Sse/Observables.Sse.Reactive.SourceGenerators.Tests/Observables.Sse.Reactive.SourceGenerators.Tests.csproj",
+    "Observables.Sse/Observables.Sse.Tests/Observables.Sse.Tests.csproj",
+    "Observables.Sse/Observables.Sse.Reactive.Tests/Observables.Sse.Reactive.Tests.csproj",
     "Observables.Shared/Observables.CodeFixes.Tests/Observables.CodeFixes.Tests.csproj",
     "Observables.Shared/Observables.Analyzers.Tests/Observables.Analyzers.Tests.csproj"
   ],
@@ -87,6 +99,8 @@
     "eng/nuget-smoke/WebSocket.R3.Consumer/WebSocket.R3.Consumer.csproj",
     "eng/nuget-smoke/WebSocket.Reactive.Consumer/WebSocket.Reactive.Consumer.csproj",
     "eng/nuget-smoke/Grpc.R3.Consumer/Grpc.R3.Consumer.csproj",
-    "eng/nuget-smoke/Grpc.Reactive.Consumer/Grpc.Reactive.Consumer.csproj"
+    "eng/nuget-smoke/Grpc.Reactive.Consumer/Grpc.Reactive.Consumer.csproj",
+    "eng/nuget-smoke/Sse.R3.Consumer/Sse.R3.Consumer.csproj",
+    "eng/nuget-smoke/Sse.Reactive.Consumer/Sse.Reactive.Consumer.csproj"
   ]
 }

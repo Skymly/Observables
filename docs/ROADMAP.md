@@ -4,15 +4,15 @@
 
 > 版本号、tag、发版均须维护者明确批准；本文件中的版本号（如 `preview5`）为规划占位，不构成自动发版授权。
 
-## 现状基线（`0.1.0-preview6` 已发 nuget.org）
+## 现状基线（`0.1.0-preview7` 已发 nuget.org）
 
 | 维度 | 现状 |
 |------|------|
-| 已实现域 | **Events**、**RestAPI**、**SignalR**、**Mqtt**、**WebSocket**、**Grpc**（运行时 + 双路生成器 + 测试） |
+| 已实现域 | **Events**、**RestAPI**、**SignalR**、**Mqtt**、**WebSocket**、**Grpc**、**Sse**（运行时 + 双路生成器 + 测试） |
 | 共享层 | `Observables.Core`、`Observables.SourceGenerators.Shared`、`Observables.CodeFixes`、`Observables.Analyzers` |
-| nuget.org 已发 | **`0.1.0-preview5`** — **10 包**（五域）；**`0.1.0-preview6`** — **12 包**（+ Grpc，`v0.1.0-preview6` tag） |
-| 构建 | 主仓 Nuke `Ci` / `CiPack` / `Publish`；`PackVerify` + `eng/nuget-smoke`（12 消费者） |
-| 示例仓 CI | `Observables.Samples` Nuke `Ci`（NuGet `preview6`，含 Grpc 注册检查） |
+| nuget.org 已发 | **`0.1.0-preview6`** — **12 包**（+ Grpc）；**`0.1.0-preview7`** — **14 包**（+ Sse，`v0.1.0-preview7` tag） |
+| 构建 | 主仓 Nuke `Ci` / `CiPack` / `Publish`；`PackVerify` + `eng/nuget-smoke`（14 消费者） |
+| 示例仓 CI | `Observables.Samples` Nuke `Ci`（NuGet `preview7`，含 Sse 注册检查） |
 
 ### 已知工程债（详见 AGENTS.md「工程治理」）
 
@@ -38,6 +38,8 @@
 | `OBS5001`–`OBS5999` | Mqtt | 使用中（5001–5007） |
 | `OBS6001`–`OBS6999` | WebSocket | 使用中（6001–6007） |
 | `OBS7001`–`OBS7999` | Grpc | 使用中（7001–7007） |
+| `OBS8001`–`OBS8999` | SSE | 预留（M5） |
+| `OBS9001`–`OBS9999` | NATS | 预留（M6） |
 
 新增诊断须落入对应段并在 `AnalyzerReleases.Unshipped.md` 登记（见 AGENTS.md）。
 
@@ -48,10 +50,12 @@ graph LR
     M1[M1 preview5<br/>WebSocket 发版] --> M2[M2 工程加固]
     M2 --> M3[M3 Grpc 域]
     M3 --> M4[M4 文档/示例补齐]
-    M4 --> M5[M5 API 冻结 + 1.0]
+    M4 --> M5[M5 SSE 域 · preview7]
+    M5 --> M6[M6 NATS 域 · preview8]
+    M6 --> M7[M7 API 冻结 + 1.0]
 ```
 
-里程碑按依赖排序；M1 与 M2 可并行启动，但 M5 的 API 冻结依赖前四者完成。
+里程碑按依赖排序；M1 与 M2 可并行启动。**策略：先扩域、后冻结 1.0** —— 在 `0.1.x` 预览期内先把 SSE（M5）与 NATS（M6）补齐为完整域，待目标域全部就位后再一次性冻结公共 API 并发 1.0（M7）。M7 的 API 冻结依赖 M1–M6 全部完成。
 
 ### M1 — `preview5`：WebSocket 发版 ✅
 
@@ -92,7 +96,39 @@ Grpc 两包已于 **`0.1.0-preview6`**（`v0.1.0-preview6` tag）发布至 nuget
 - ~~校验 README、Docs、Samples 三处域状态与 `0.1.0-preview6` 一致~~ ✅
 - ~~发版后复核 nuget.org 包页链接与站点 `npm run docs:build`~~ ✅（M4 收尾 PR）
 
-### M5 — API 冻结与 1.0
+### M5 — SSE 域（`preview7`）
+
+**目标**：补全「HTTP 单向流」边界（RestAPI 为 req/resp、WebSocket 为双工，SSE 居中）。形态为纯消费流，是 `IObservable` 的典型场景；接口面与 SignalR 的 `[HubOn]` 同构，工程骨架以 **WebSocket 域**为模板。
+
+按 AGENTS.md「新增 Feature 检查清单」从零建成完整域：
+
+- 新增设计文档 `docs/design/sse.md`（`text/event-stream` 解析、重连 / `Last-Event-ID`、事件名路由到反应式流的映射）。
+- 建 `Observables.Sse`（运行时，复用 `HttpClient`；解析参考 RestAPI）、`Observables.Sse.SourceGenerators.Shared`、`Observables.Sse.R3.SourceGenerators`、`Observables.Sse.Reactive.SourceGenerators`。
+- 公共面草案：`[Sse]` 接口 + `[SseEvent("name")]` 属性 → `Observable<T>` / `IObservable<T>`；入口 `SseService.For<T>(...)`。
+- 启用 `OBS8xxx` 诊断段（生成器 8001–8006 + 空代理接口 analyzer `OBS8007`，与各域 `*007` 一致）；在 `ProxyDomainCatalog` 登记 Sse 域。
+- 建 `Observables.Sse.Package`，产出 `Observables.Sse.R3` / `Observables.Sse.Reactive` 两包；登记 `eng/Observables.BuildManifest.json`（→ **14 包**）。
+- 补生成器测试 + E2E（内嵌 HTTP server 推送事件流）+ smoke 消费者，纳入 `PackVerify`。
+- 同步三处文档：README 域状态、Docs（中英）`sse.md` + `diagnostics.md`、Samples `Observables.Samples.Sse`（+ `.Reactive`，RegistrationDemo）。
+
+### M6 — NATS 域（`preview8`）
+
+**目标**：引入「企业消息」代表。subject 订阅天然是流，request-reply 同时覆盖 stream 与 req/resp 两种语义；结构与 Mqtt 高度同构，客户端轻量、易做进程内 E2E。
+
+按 AGENTS.md「新增 Feature 检查清单」：
+
+- 新增设计文档 `docs/design/nats.md`（core subscribe / request-reply / 可选 JetStream 持久化消费到反应式流的映射）。
+- 建 `Observables.Nats`（运行时，依赖 `NATS.Net`）、`Observables.Nats.SourceGenerators.Shared`、`Observables.Nats.R3.SourceGenerators`、`Observables.Nats.Reactive.SourceGenerators`。
+- 公共面草案：`[Nats]` 接口 + `[NatsSubscribe("subject")]` / `[NatsRequest]` / `[NatsPublish]` → `Observable<T>` / `IObservable<T>`；入口 `NatsService.For<T>(...)`。
+- 启用 `OBS9xxx` 诊断段（含空代理接口 `OBS9007`）；在 `ProxyDomainCatalog` 登记 Nats 域。
+- 建 `Observables.Nats.Package`，产出 `Observables.Nats.R3` / `Observables.Nats.Reactive` 两包；登记 manifest（→ **16 包**）。
+- 补生成器测试 + E2E（进程内 NATS server 往返）+ smoke 消费者，纳入 `PackVerify`。
+- 同步三处文档：README、Docs（中英）`nats.md` + `diagnostics.md`、Samples `Observables.Samples.Nats`（+ `.Reactive`）。
+
+> M5/M6 为预览期内的新增域，每个域遵循「发版门槛清单」与「新增 Feature 检查清单」；版本号与 tag 仍须维护者明确批准。
+
+### M7 — API 冻结与 1.0
+
+> 依赖 M1–M6 全部完成（八域齐备后再冻结）。
 
 - 引入 `Microsoft.CodeAnalysis.PublicApiAnalyzers`，为运行时与公共 Attribute 锁定公共 API（`PublicAPI.Shipped.txt` / `Unshipped.txt`）。
 - nullable / AOT / trim 告警清零（承接 M2）。
@@ -116,4 +152,6 @@ Grpc 两包已于 **`0.1.0-preview6`**（`v0.1.0-preview6` tag）发布至 nuget
 |------|------------|
 | `0.1.0-preview5` | M1（10 包，nuget.org） |
 | `0.1.0-preview6` | M3 Grpc 发版（**12 包**，nuget.org） |
-| `1.0.0` | M5 |
+| `0.1.0-preview7` | M5 SSE 域（**14 包**） |
+| `0.1.0-preview8` | M6 NATS 域（**16 包**） |
+| `1.0.0` | M7（八域 API 冻结） |

@@ -1,3 +1,5 @@
+using System.Net;
+using System.Net.Sockets;
 using MQTTnet;
 using MQTTnet.Client;
 using MQTTnet.Protocol;
@@ -23,7 +25,7 @@ public sealed class MqttTestBroker : IAsyncDisposable
     public static async Task<MqttTestBroker> StartAsync(CancellationToken cancellationToken = default)
     {
         var factory = new MqttFactory();
-        var port = Random.Shared.Next(50_000, 60_000);
+        var port = ReserveFreeTcpPort();
         var options = factory
             .CreateServerOptionsBuilder()
             .WithDefaultEndpoint()
@@ -33,6 +35,20 @@ public sealed class MqttTestBroker : IAsyncDisposable
 
         await server.StartAsync().ConfigureAwait(false);
         return new MqttTestBroker(server, factory, port);
+    }
+
+    static int ReserveFreeTcpPort()
+    {
+        var listener = new TcpListener(IPAddress.Loopback, 0);
+        listener.Start();
+        try
+        {
+            return ((IPEndPoint)listener.LocalEndpoint).Port;
+        }
+        finally
+        {
+            listener.Stop();
+        }
     }
 
     /// <summary>Waits until the broker accepts a subscription for <paramref name="topicFilter"/> from <paramref name="clientId"/>.</summary>

@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <Import Project="..\..\Observables.SourceGenerators.props" />
+  <Import Project="..\..\Observables.SourceGenerators.InterfaceProxy.props" />
+
+  <PropertyGroup>
+    <Description>Source generator for SSE proxies → System.Reactive IObservable.</Description>
+    <DefineConstants>$(DefineConstants);ROSLYN_4;SSE_REACTIVE</DefineConstants>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="System.Reactive" PrivateAssets="all" />
+  </ItemGroup>
+
+  <Import Project="..\Observables.Sse.SourceGenerators.Shared\Observables.Sse.SourceGenerators.Shared.projitems" Label="Shared" />
+
+</Project>

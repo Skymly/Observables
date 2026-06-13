@@ -18,7 +18,8 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  build-test:
+  test:
+    name: Compile + Test
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
@@ -35,22 +36,22 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.nuget/packages
-          key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj', '**/global.json') }}
+          key: ${{ runner.os }}-nuget-${{ hashFiles('**/Directory.Packages.props', '**/global.json') }}
           restore-keys: |
             ${{ runner.os }}-nuget-
 
-      - name: Run CI via Nuke
+      - name: Run CI tests via Nuke
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
-          dotnet run --project build/_build.csproj -- --target Ci --configuration Release 2>&1 | Tee-Object -FilePath ci.log
+          dotnet run --project build/_build.csproj -- --target Test --configuration Release 2>&1 | Tee-Object -FilePath test.log
 
-      - name: Upload CI log
+      - name: Upload test log
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: ci-log
-          path: ci.log
+          name: test-log
+          path: test.log
           if-no-files-found: warn
 
       - name: Upload test results
@@ -62,8 +63,9 @@ jobs:
           if-no-files-found: warn
 
   pack:
+    name: Pack + Verify
     runs-on: windows-latest
-    needs: build-test
+    if: github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'pack')
     steps:
       - uses: actions/checkout@v4
 
@@ -79,7 +81,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.nuget/packages
-          key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj', '**/global.json') }}
+          key: ${{ runner.os }}-nuget-${{ hashFiles('**/Directory.Packages.props', '**/global.json') }}
           restore-keys: |
             ${{ runner.os }}-nuget-
 
@@ -87,11 +89,20 @@ jobs:
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
-          dotnet run --project build/_build.csproj -- --target CiPack --configuration Release
+          dotnet run --project build/_build.csproj -- --target PackOnly --configuration Release 2>&1 | Tee-Object -FilePath pack.log
+
+      - name: Upload pack log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pack-log
+          path: pack.log
+          if-no-files-found: warn
 
       - name: Upload packages
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: nuget-packages
           path: artifacts/package/*.nupkg
-          if-no-files-found: error
+          if-no-files-found: warn

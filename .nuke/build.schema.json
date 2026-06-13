@@ -39,9 +39,11 @@
         "NuGetConsumerSmoke",
         "NuGetConsumerSmokePublished",
         "Pack",
+        "PackOnly",
         "PackVerify",
         "Publish",
         "Restore",
+        "Test",
         "UnitTest"
       ]
     },

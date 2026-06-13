@@ -134,6 +134,20 @@
           "type": "string",
           "description": "NuGet API key (required for nuget.org Publish)"
         },
+        "PackDomains": {
+          "type": "array",
+          "description": "Comma-separated domain filter for Pack (e.g. 'restapi,signalr'). Empty = all domains.",
+          "items": {
+            "type": "string"
+          }
+        },
+        "TestDomains": {
+          "type": "array",
+          "description": "Comma-separated domain filter for UnitTest (e.g. 'mqtt,websocket'). Empty = all domains.",
+          "items": {
+            "type": "string"
+          }
+        },
         "Version": {
           "type": "string",
           "description": "Package version override"

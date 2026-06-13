@@ -305,16 +305,16 @@ dotnet run --project build/_build.csproj -- --target Ci --configuration Release
 | Nuke 目标 | 说明 |
 |-----------|------|
 | **Ci** | `Clean` → `Restore` → `Compile` → **UnitTest** |
-| **Test** | 同 `Ci`（`Compile` + `UnitTest`）；ci.yml PR 默认入口 |
-| **Pack** | 打包全部 pack 子项目 → `artifacts/package/`（**不**依赖 UnitTest；测试由调用方按需挂入） |
-| **PackOnly** | `Pack` + `PackVerify`（**不**跑 UnitTest）；ci.yml `pack` job 入口 |
-| **PackVerify** | 断言 nupkg 含 analyzer、Events `observables.events.props`、RestAPI/SignalR/Mqtt/WebSocket/Grpc `lib/`（manifest 当前 **12 包**） |
+| **Test** | 同 `Ci`（`Compile` + `UnitTest`）；可附加 `--test-domains <逗号分隔>` 过滤测试项目（例如 `--test-domains mqtt,shared`） |
+| **Pack** | 打包 pack 子项目 → `artifacts/package/`（**不**依赖 UnitTest）；可附加 `--pack-domains <逗号分隔>` 过滤包（按 `PackageId` 前缀 `Observables.<d>.` 匹配） |
+| **PackOnly** | `Pack` + `PackVerify`（**不**跑 UnitTest） |
+| **PackVerify** | 断言 nupkg 含 analyzer、Events `observables.events.props`、RestAPI/SignalR/Mqtt/WebSocket/Sse/Grpc `lib/`（manifest 当前 **14 包**） |
 | **CiPack** | CI 完整流水线：`Test` + `PackOnly` + `NuGetConsumerSmoke`（本地包）；保留供本地或 release.yml 全链路调试 |
 | **Publish** | 推送到 nuget.org（`NUGET_API_KEY`）与 GitHub Packages（`GITHUB_TOKEN`，`packages:write`）；`DependsOn(Test, PackVerify)` 确保发版前测试已通过 |
 
 | Workflow | 触发 | 作用 |
 |----------|------|------|
-| [`ci.yml`](.github/workflows/ci.yml) | PR / push `main` | **Test** job（默认）+ **Pack** job（push main 或 PR 带 `pack` label）；两 job **并行**，互不依赖 |
+| [`ci.yml`](.github/workflows/ci.yml) | PR / push `main` | **changes** job（`dorny/paths-filter`）→ 6 个 `test-domain` 矩阵（**Shared 改动 → 全域跑**）+ `test-shared`（仅 Shared 改动时跑）+ 6 个 `pack-domain` 矩阵（push main / PR 带 `pack` label，且域命中）；各 job **完全并行**，未命中的域整列跳过 |
 | [`release.yml`](.github/workflows/release.yml) | push tag `v*` / `workflow_dispatch` | **Publish**（须 Secrets + 维护者 actor；内部 `Test` → `PackVerify` → push） |
 
 ## 工作约定

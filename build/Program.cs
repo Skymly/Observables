@@ -112,6 +112,7 @@ sealed class Build : NukeBuild
         });
 
     Target Pack => _ => _
+        .DependsOn(Restore)
         .Executes(() =>
         {
             PackageOutputDirectory.CreateOrCleanDirectory();

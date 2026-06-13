@@ -176,7 +176,8 @@ jobs:
     name: Pack ${{ matrix.domain }}
     needs: changes
     if: |
-      (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'pack'))
+      (github.event_name == 'push'
+       || (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'pack')))
       && needs.changes.outputs.${{ matrix.domain }} == 'true'
     runs-on: windows-latest
     strategy:

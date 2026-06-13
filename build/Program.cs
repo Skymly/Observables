@@ -112,7 +112,6 @@ sealed class Build : NukeBuild
         });
 
     Target Pack => _ => _
-        .DependsOn(UnitTest)
         .Executes(() =>
         {
             PackageOutputDirectory.CreateOrCleanDirectory();
@@ -206,6 +205,7 @@ sealed class Build : NukeBuild
 
     Target NuGetConsumerSmoke => _ => _
         .DependsOn(ConsumerFeed == NuGetConsumerFeed.Local ? Pack : null)
+        .DependsOn(ConsumerFeed == NuGetConsumerFeed.Local ? Test : null)
         .Executes(() =>
         {
             string packageVersion = EffectivePackageVersion;
@@ -236,7 +236,7 @@ sealed class Build : NukeBuild
         });
 
     Target Publish => _ => _
-        .DependsOn(PackVerify)
+        .DependsOn(Test, PackVerify)
         .Requires(() => !string.IsNullOrWhiteSpace(NuGetApiKey) || !string.IsNullOrWhiteSpace(GitHubToken))
         .Executes(() =>
         {
@@ -264,8 +264,14 @@ sealed class Build : NukeBuild
     Target Ci => _ => _
         .DependsOn(UnitTest);
 
+    Target Test => _ => _
+        .DependsOn(UnitTest);
+
+    Target PackOnly => _ => _
+        .DependsOn(Pack, PackVerify);
+
     Target CiPack => _ => _
-        .DependsOn(PackVerify)
+        .DependsOn(Test, PackOnly)
         .DependsOn(NuGetConsumerSmoke)
         .OnlyWhenStatic(() => ConsumerFeed == NuGetConsumerFeed.Local);
 

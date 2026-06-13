@@ -305,15 +305,17 @@ dotnet run --project build/_build.csproj -- --target Ci --configuration Release
 | Nuke 目标 | 说明 |
 |-----------|------|
 | **Ci** | `Clean` → `Restore` → `Compile` → **UnitTest** |
-| **Pack** | 打包全部 pack 子项目 → `artifacts/package/`（依赖 **UnitTest**；当前 10 个，含 WebSocket） |
+| **Test** | 同 `Ci`（`Compile` + `UnitTest`）；ci.yml PR 默认入口 |
+| **Pack** | 打包全部 pack 子项目 → `artifacts/package/`（**不**依赖 UnitTest；测试由调用方按需挂入） |
+| **PackOnly** | `Pack` + `PackVerify`（**不**跑 UnitTest）；ci.yml `pack` job 入口 |
 | **PackVerify** | 断言 nupkg 含 analyzer、Events `observables.events.props`、RestAPI/SignalR/Mqtt/WebSocket/Grpc `lib/`（manifest 当前 **12 包**） |
-| **CiPack** | CI 用：`Pack` + `PackVerify` |
-| **Publish** | 推送到 nuget.org（`NUGET_API_KEY`）与 GitHub Packages（`GITHUB_TOKEN`，`packages:write`） |
+| **CiPack** | CI 完整流水线：`Test` + `PackOnly` + `NuGetConsumerSmoke`（本地包）；保留供本地或 release.yml 全链路调试 |
+| **Publish** | 推送到 nuget.org（`NUGET_API_KEY`）与 GitHub Packages（`GITHUB_TOKEN`，`packages:write`）；`DependsOn(Test, PackVerify)` 确保发版前测试已通过 |
 
 | Workflow | 触发 | 作用 |
 |----------|------|------|
-| [`ci.yml`](.github/workflows/ci.yml) | PR / push `main` | **Ci** + **CiPack**（测与打包 artifact，**不** Publish） |
-| [`release.yml`](.github/workflows/release.yml) | push tag `v*` / `workflow_dispatch` | **Publish**（须 Secrets + 维护者 actor） |
+| [`ci.yml`](.github/workflows/ci.yml) | PR / push `main` | **Test** job（默认）+ **Pack** job（push main 或 PR 带 `pack` label）；两 job **并行**，互不依赖 |
+| [`release.yml`](.github/workflows/release.yml) | push tag `v*` / `workflow_dispatch` | **Publish**（须 Secrets + 维护者 actor；内部 `Test` → `PackVerify` → push） |
 
 ## 工作约定
 

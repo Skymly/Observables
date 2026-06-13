@@ -122,14 +122,23 @@ jobs:
   test-domain:
     name: Test ${{ matrix.domain }}
     needs: changes
-    if: (needs.changes.outputs.${{ matrix.domain }} == 'true' || needs.changes.outputs.shared == 'true') && needs.changes.outputs.${{ matrix.domain }} != 'false'
     runs-on: windows-latest
     strategy:
       fail-fast: false
       matrix:
         domain: [events, restapi, signalr, mqtt, websocket, grpc]
     steps:
-      - uses: actions/checkout@v4
+      - name: Skip if domain not changed and not shared
+        if: |
+          (needs.changes.outputs.${{ matrix.domain }} == 'true'
+           || needs.changes.outputs.shared == 'true')
+          && needs.changes.outputs.${{ matrix.domain }} != 'false'
+        id: gate
+        run: echo "Proceeding with ${{ matrix.domain }}"
+
+      - name: Proceed only if gate passed
+        if: steps.gate.outcome == 'success'
+        uses: actions/checkout@v4
 
       - name: Setup .NET SDKs
         uses: actions/setup-dotnet@v4
@@ -172,14 +181,22 @@ jobs:
   pack-domain:
     name: Pack ${{ matrix.domain }}
     needs: changes
-    if: github.event_name != 'pull_request' && needs.changes.outputs.${{ matrix.domain }} == 'true'
     runs-on: windows-latest
     strategy:
       fail-fast: false
       matrix:
         domain: [events, restapi, signalr, mqtt, websocket, grpc]
     steps:
-      - uses: actions/checkout@v4
+      - name: Skip if domain not changed, push event skipped, or PR missing pack label
+        if: |
+          needs.changes.outputs.${{ matrix.domain }} == 'true'
+          && (github.event_name == 'push' || github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'pack')))
+        id: gate
+        run: echo "Proceeding with pack ${{ matrix.domain }}"
+
+      - name: Proceed only if gate passed
+        if: steps.gate.outcome == 'success'
+        uses: actions/checkout@v4
 
       - name: Setup .NET SDKs
         uses: actions/setup-dotnet@v4

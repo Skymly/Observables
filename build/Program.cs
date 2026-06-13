@@ -30,6 +30,12 @@ sealed class Build : NukeBuild
     [Parameter("GitHub token with packages:write (required for GitHub Packages Publish)")]
     readonly string? GitHubToken = Environment.GetEnvironmentVariable("GITHUB_TOKEN");
 
+    [Parameter("Comma-separated domain filter for Pack (e.g. 'restapi,signalr'). Empty = all domains.")]
+    readonly string[] PackDomains = Array.Empty<string>();
+
+    [Parameter("Comma-separated domain filter for UnitTest (e.g. 'mqtt,websocket'). Empty = all domains.")]
+    readonly string[] TestDomains = Array.Empty<string>();
+
     AbsolutePath Root => RootDirectory;
     AbsolutePath SolutionFile => Root / "Observables.slnx";
     AbsolutePath TestResultsDirectory => Root / "TestResults";
@@ -45,6 +51,13 @@ sealed class Build : NukeBuild
         string.IsNullOrWhiteSpace(Version)
             ? PackageVersionReader.ReadFromProps(PackagePropsFile)
             : Version;
+
+    bool DomainFilterActive => PackDomains.Length > 0;
+
+    IEnumerable<BuildManifest.PackageEntry> FilteredPackages =>
+        DomainFilterActive
+            ? Manifest.Packages.Where(p => PackDomains.Any(d => p.PackageId.StartsWith($"Observables.{d}.", StringComparison.OrdinalIgnoreCase)))
+            : Manifest.Packages;
 
     public static int Main() => Execute<Build>(x => x.Ci);
 
@@ -92,7 +105,13 @@ sealed class Build : NukeBuild
         .DependsOn(Compile)
         .Executes(() =>
         {
-            foreach (string relativePath in Manifest.TestProjects)
+            IEnumerable<string> projects = TestDomains.Length == 0
+                ? Manifest.TestProjects
+                : Manifest.TestProjects.Where(p =>
+                    TestDomains.Any(d => p.StartsWith($"Observables.{d}/", StringComparison.OrdinalIgnoreCase))
+                    || TestDomains.Contains("shared", StringComparer.OrdinalIgnoreCase) && p.StartsWith("Observables.Shared/", StringComparison.OrdinalIgnoreCase));
+
+            foreach (string relativePath in projects)
             {
                 AbsolutePath projectFile = Root / relativePath;
                 if (!projectFile.FileExists())
@@ -117,7 +136,7 @@ sealed class Build : NukeBuild
         {
             PackageOutputDirectory.CreateOrCleanDirectory();
 
-            foreach (BuildManifest.PackageEntry package in Manifest.Packages)
+            foreach (BuildManifest.PackageEntry package in FilteredPackages)
             {
                 AbsolutePath projectFile = Root / package.PackProject;
                 if (!projectFile.FileExists())
@@ -149,7 +168,7 @@ sealed class Build : NukeBuild
         {
             string packageVersion = EffectivePackageVersion;
 
-            foreach (BuildManifest.PackageEntry package in Manifest.Packages)
+            foreach (BuildManifest.PackageEntry package in FilteredPackages)
             {
                 string packageId = package.PackageId;
                 AbsolutePath nupkg = PackageOutputDirectory / $"{packageId}.{packageVersion}.nupkg";

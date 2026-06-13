@@ -18,8 +18,65 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  test:
-    name: Compile + Test
+  changes:
+    name: Detect changed domains
+    runs-on: windows-latest
+    outputs:
+      events: ${{ steps.filter.outputs.events }}
+      restapi: ${{ steps.filter.outputs.restapi }}
+      signalr: ${{ steps.filter.outputs.signalr }}
+      mqtt: ${{ steps.filter.outputs.mqtt }}
+      websocket: ${{ steps.filter.outputs.websocket }}
+      grpc: ${{ steps.filter.outputs.grpc }}
+      shared: ${{ steps.filter.outputs.shared }}
+      any: ${{ steps.filter.outputs.any }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Detect changed files per domain
+        id: filter
+        uses: dorny/paths-filter@v3
+        with:
+          predicate-quantifier: some
+          filters: |
+            events:
+              - 'Observables.Events/**'
+              - 'Observables.slnx'
+            restapi:
+              - 'Observables.RestAPI/**'
+              - 'Observables.slnx'
+            signalr:
+              - 'Observables.SignalR/**'
+              - 'Observables.slnx'
+            mqtt:
+              - 'Observables.Mqtt/**'
+              - 'Observables.slnx'
+            websocket:
+              - 'Observables.WebSocket/**'
+              - 'Observables.slnx'
+            grpc:
+              - 'Observables.Grpc/**'
+              - 'Observables.slnx'
+            shared:
+              - 'Observables.Shared/**'
+              - 'Directory.Build.props'
+              - 'Directory.Packages.props'
+              - 'eng/**'
+              - 'build/**'
+              - '.nuke/**'
+              - 'AGENTS.md'
+              - 'README.md'
+              - 'Observables.slnx'
+              - 'global.json'
+            any:
+              - '**'
+
+  test-shared:
+    name: Test Shared (analyzers + codefixes)
+    needs: changes
+    if: needs.changes.outputs.shared == 'true'
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
@@ -40,34 +97,48 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-nuget-
 
-      - name: Run CI tests via Nuke
+      - name: Run Shared tests via Nuke
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
-          dotnet run --project build/_build.csproj -- --target Test --configuration Release 2>&1 | Tee-Object -FilePath test.log
+          dotnet run --project build/_build.csproj -- --target Test --configuration Release --test-domains shared 2>&1 | Tee-Object -FilePath test-shared.log
 
       - name: Upload test log
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: test-log
-          path: test.log
+          name: test-log-shared
+          path: test-shared.log
           if-no-files-found: warn
 
       - name: Upload test results
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: test-results
+          name: test-results-shared
           path: TestResults/
           if-no-files-found: warn
 
-  pack:
-    name: Pack + Verify
+  test-domain:
+    name: Test ${{ matrix.domain }}
+    needs: changes
     runs-on: windows-latest
-    if: github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'pack')
+    strategy:
+      fail-fast: false
+      matrix:
+        domain: [events, restapi, signalr, mqtt, websocket, grpc]
     steps:
-      - uses: actions/checkout@v4
+      - name: Skip if domain not changed and not shared
+        if: |
+          (needs.changes.outputs.${{ matrix.domain }} == 'true'
+           || needs.changes.outputs.shared == 'true')
+          && needs.changes.outputs.${{ matrix.domain }} != 'false'
+        id: gate
+        run: echo "Proceeding with ${{ matrix.domain }}"
+
+      - name: Proceed only if gate passed
+        if: steps.gate.outcome == 'success'
+        uses: actions/checkout@v4
 
       - name: Setup .NET SDKs
         uses: actions/setup-dotnet@v4
@@ -85,24 +156,82 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-nuget-
 
-      - name: Pack and verify via Nuke
+      - name: Run ${{ matrix.domain }} tests via Nuke
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
-          dotnet run --project build/_build.csproj -- --target PackOnly --configuration Release 2>&1 | Tee-Object -FilePath pack.log
+          dotnet run --project build/_build.csproj -- --target Test --configuration Release --test-domains ${{ matrix.domain }} 2>&1 | Tee-Object -FilePath test-${{ matrix.domain }}.log
+
+      - name: Upload test log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-log-${{ matrix.domain }}
+          path: test-${{ matrix.domain }}.log
+          if-no-files-found: warn
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-${{ matrix.domain }}
+          path: TestResults/
+          if-no-files-found: warn
+
+  pack-domain:
+    name: Pack ${{ matrix.domain }}
+    needs: changes
+    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        domain: [events, restapi, signalr, mqtt, websocket, grpc]
+    steps:
+      - name: Skip if domain not changed, push event skipped, or PR missing pack label
+        if: |
+          needs.changes.outputs.${{ matrix.domain }} == 'true'
+          && (github.event_name == 'push' || github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'pack')))
+        id: gate
+        run: echo "Proceeding with pack ${{ matrix.domain }}"
+
+      - name: Proceed only if gate passed
+        if: steps.gate.outcome == 'success'
+        uses: actions/checkout@v4
+
+      - name: Setup .NET SDKs
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: |
+            8.0.x
+            9.0.x
+            10.0.300
+
+      - name: Cache NuGet packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('**/Directory.Packages.props', '**/global.json') }}
+          restore-keys: |
+            ${{ runner.os }}-nuget-
+
+      - name: Pack and verify ${{ matrix.domain }} via Nuke
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          dotnet run --project build/_build.csproj -- --target PackOnly --configuration Release --pack-domains ${{ matrix.domain }} 2>&1 | Tee-Object -FilePath pack-${{ matrix.domain }}.log
 
       - name: Upload pack log
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: pack-log
-          path: pack.log
+          name: pack-log-${{ matrix.domain }}
+          path: pack-${{ matrix.domain }}.log
           if-no-files-found: warn
 
       - name: Upload packages
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: nuget-packages
+          name: nuget-packages-${{ matrix.domain }}
           path: artifacts/package/*.nupkg
           if-no-files-found: warn

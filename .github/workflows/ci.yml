@@ -122,10 +122,7 @@ jobs:
   test-domain:
     name: Test ${{ matrix.domain }}
     needs: changes
-    if: |
-      (needs.changes.outputs.${{ matrix.domain }} == 'true'
-       || needs.changes.outputs.shared == 'true')
-      && needs.changes.outputs.${{ matrix.domain }} != 'false'
+    if: (needs.changes.outputs.${{ matrix.domain }} == 'true' || needs.changes.outputs.shared == 'true') && needs.changes.outputs.${{ matrix.domain }} != 'false'
     runs-on: windows-latest
     strategy:
       fail-fast: false
@@ -175,10 +172,7 @@ jobs:
   pack-domain:
     name: Pack ${{ matrix.domain }}
     needs: changes
-    if: |
-      (github.event_name == 'push'
-       || (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'pack')))
-      && needs.changes.outputs.${{ matrix.domain }} == 'true'
+    if: github.event_name != 'pull_request' && needs.changes.outputs.${{ matrix.domain }} == 'true'
     runs-on: windows-latest
     strategy:
       fail-fast: false

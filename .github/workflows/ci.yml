@@ -28,6 +28,7 @@ jobs:
       mqtt: ${{ steps.filter.outputs.mqtt }}
       websocket: ${{ steps.filter.outputs.websocket }}
       grpc: ${{ steps.filter.outputs.grpc }}
+      sse: ${{ steps.filter.outputs.sse }}
       shared: ${{ steps.filter.outputs.shared }}
       any: ${{ steps.filter.outputs.any }}
     steps:
@@ -58,6 +59,9 @@ jobs:
               - 'Observables.slnx'
             grpc:
               - 'Observables.Grpc/**'
+              - 'Observables.slnx'
+            sse:
+              - 'Observables.Sse/**'
               - 'Observables.slnx'
             shared:
               - 'Observables.Shared/**'
@@ -126,7 +130,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        domain: [events, restapi, signalr, mqtt, websocket, grpc]
+        domain: [events, restapi, signalr, mqtt, websocket, grpc, sse]
     steps:
       - name: Skip if domain not changed and not shared
         if: |
@@ -185,7 +189,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        domain: [events, restapi, signalr, mqtt, websocket, grpc]
+        domain: [events, restapi, signalr, mqtt, websocket, grpc, sse]
     steps:
       - name: Skip if domain not changed, push event skipped, or PR missing pack label
         if: |

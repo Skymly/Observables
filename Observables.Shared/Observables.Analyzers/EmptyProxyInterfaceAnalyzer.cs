@@ -13,7 +13,8 @@ public sealed class EmptyProxyInterfaceAnalyzer : DiagnosticAnalyzer
             DiagnosticDescriptors.EmptyMqttInterface,
             DiagnosticDescriptors.EmptyWebSocketInterface,
             DiagnosticDescriptors.EmptyGrpcInterface,
-            DiagnosticDescriptors.EmptySseInterface);
+            DiagnosticDescriptors.EmptySseInterface,
+            DiagnosticDescriptors.EmptyNatsInterface);
 
     public override void Initialize(AnalysisContext context)
     {

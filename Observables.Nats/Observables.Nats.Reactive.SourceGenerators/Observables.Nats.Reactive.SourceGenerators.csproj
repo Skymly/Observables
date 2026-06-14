@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <Import Project="..\..\Observables.SourceGenerators.props" />
+  <Import Project="..\..\Observables.SourceGenerators.InterfaceProxy.props" />
+
+  <PropertyGroup>
+    <Description>Source generator for NATS subject proxies → System.Reactive IObservable.</Description>
+    <DefineConstants>$(DefineConstants);ROSLYN_4;NATS_REACTIVE</DefineConstants>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="System.Reactive" PrivateAssets="all" />
+  </ItemGroup>
+
+  <Import Project="..\Observables.Nats.SourceGenerators.Shared\Observables.Nats.SourceGenerators.Shared.projitems" Label="Shared" />
+
+</Project>

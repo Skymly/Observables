@@ -58,4 +58,13 @@ internal static class DiagnosticDescriptors
             "Observables.Sse",
             DiagnosticSeverity.Warning,
             isEnabledByDefault: true);
+
+    public static readonly DiagnosticDescriptor EmptyNatsInterface =
+        new(
+            "OBS9007",
+            "Empty NATS proxy interface",
+            "Interface '{0}' is marked with [Nats] but declares no members. Add NATS boundary members or remove [Nats].",
+            "Observables.Nats",
+            DiagnosticSeverity.Warning,
+            isEnabledByDefault: true);
 }

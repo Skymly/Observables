@@ -4,9 +4,9 @@
 
 - **类型**：个人项目（Skymly 工作区）
 - **远端**：https://github.com/Skymly/Observables（私有）；文件夹名 `Observables` = 仓库名；同步状态以 `git status` 为准
-- **阶段**：**Events**、**RestAPI**、**SignalR**、**Mqtt**、**WebSocket**、**Grpc**、**Sse** 已实现（运行时 + 双路生成器 + 测试）；共享层另含 `Observables.CodeFixes` 与 `Observables.Analyzers`；**nuget.org 已发** `0.1.0-preview7`（**14 包**，含 Sse）；Nuke `PackVerify` + `eng/nuget-smoke` 覆盖 14 包
-- **下一里程碑**：**M5** API 冻结 + 1.0；Grpc 设计见 [`docs/design/grpc.md`](docs/design/grpc.md)
-- **路线图**：里程碑与发版顺序见 [`docs/ROADMAP.md`](docs/ROADMAP.md)（M1 ✅ / M2 ✅ / M3 ✅ / M4 ✅ → M5 API 冻结 + 1.0）
+- **阶段**：**Events**、**RestAPI**、**SignalR**、**Mqtt**、**WebSocket**、**Grpc**、**Sse**、**Nats** 已实现（运行时 + 双路生成器 + 测试）；共享层另含 `Observables.CodeFixes` 与 `Observables.Analyzers`；**nuget.org 已发** `0.1.0-preview8`（**16 包**）；Nuke `PackVerify` + `eng/nuget-smoke` 覆盖 16 包
+- **下一里程碑**：**M7** API 冻结 + 1.0；Nats 设计见 [`docs/design/nats.md`](docs/design/nats.md)
+- **路线图**：里程碑与发版顺序见 [`docs/ROADMAP.md`](docs/ROADMAP.md)（M1 ✅ … M6 ✅ → M7 API 冻结 + 1.0）
 - **结构约定**：下文「仓库结构」与命名约定为权威；**工程治理**（包管理、警告、诊断、版本来源）见下文同名章节
 
 ## 目标
@@ -308,7 +308,7 @@ dotnet run --project build/_build.csproj -- --target Ci --configuration Release
 | **Test** | 同 `Ci`（`Compile` + `UnitTest`）；可附加 `--test-domains <逗号分隔>` 过滤测试项目（例如 `--test-domains mqtt,shared`） |
 | **Pack** | 打包 pack 子项目 → `artifacts/package/`（**不**依赖 UnitTest）；可附加 `--pack-domains <逗号分隔>` 过滤包（按 `PackageId` 前缀 `Observables.<d>.` 匹配） |
 | **PackOnly** | `Pack` + `PackVerify`（**不**跑 UnitTest） |
-| **PackVerify** | 断言 nupkg 含 analyzer、Events `observables.events.props`、RestAPI/SignalR/Mqtt/WebSocket/Sse/Grpc `lib/`（manifest 当前 **14 包**） |
+| **PackVerify** | 断言 nupkg 含 analyzer、Events `observables.events.props`、RestAPI/SignalR/Mqtt/WebSocket/Sse/Grpc/Nats `lib/`（manifest 当前 **16 包**） |
 | **CiPack** | CI 完整流水线：`Test` + `PackOnly` + `NuGetConsumerSmoke`（本地包）；保留供本地或 release.yml 全链路调试 |
 | **Publish** | 推送到 nuget.org（`NUGET_API_KEY`）与 GitHub Packages（`GITHUB_TOKEN`，`packages:write`）；`DependsOn(Test, PackVerify)` 确保发版前测试已通过 |
 

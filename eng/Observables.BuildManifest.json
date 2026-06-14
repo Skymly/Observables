@@ -55,6 +55,14 @@
     {
       "packProject": "Observables.Sse/Observables.Sse.Package/Observables.Sse.Reactive.Pack.csproj",
       "packageId": "Observables.Sse.Reactive"
+    },
+    {
+      "packProject": "Observables.Nats/Observables.Nats.Package/Observables.Nats.R3.csproj",
+      "packageId": "Observables.Nats.R3"
+    },
+    {
+      "packProject": "Observables.Nats/Observables.Nats.Package/Observables.Nats.Reactive.Pack.csproj",
+      "packageId": "Observables.Nats.Reactive"
     }
   ],
   "testProjects": [
@@ -84,6 +92,10 @@
     "Observables.Sse/Observables.Sse.Reactive.SourceGenerators.Tests/Observables.Sse.Reactive.SourceGenerators.Tests.csproj",
     "Observables.Sse/Observables.Sse.Tests/Observables.Sse.Tests.csproj",
     "Observables.Sse/Observables.Sse.Reactive.Tests/Observables.Sse.Reactive.Tests.csproj",
+    "Observables.Nats/Observables.Nats.R3.SourceGenerators.Tests/Observables.Nats.R3.SourceGenerators.Tests.csproj",
+    "Observables.Nats/Observables.Nats.Reactive.SourceGenerators.Tests/Observables.Nats.Reactive.SourceGenerators.Tests.csproj",
+    "Observables.Nats/Observables.Nats.Tests/Observables.Nats.Tests.csproj",
+    "Observables.Nats/Observables.Nats.Reactive.Tests/Observables.Nats.Reactive.Tests.csproj",
     "Observables.Shared/Observables.CodeFixes.Tests/Observables.CodeFixes.Tests.csproj",
     "Observables.Shared/Observables.Analyzers.Tests/Observables.Analyzers.Tests.csproj"
   ],
@@ -101,6 +113,8 @@
     "eng/nuget-smoke/Grpc.R3.Consumer/Grpc.R3.Consumer.csproj",
     "eng/nuget-smoke/Grpc.Reactive.Consumer/Grpc.Reactive.Consumer.csproj",
     "eng/nuget-smoke/Sse.R3.Consumer/Sse.R3.Consumer.csproj",
-    "eng/nuget-smoke/Sse.Reactive.Consumer/Sse.Reactive.Consumer.csproj"
+    "eng/nuget-smoke/Sse.Reactive.Consumer/Sse.Reactive.Consumer.csproj",
+    "eng/nuget-smoke/Nats.R3.Consumer/Nats.R3.Consumer.csproj",
+    "eng/nuget-smoke/Nats.Reactive.Consumer/Nats.Reactive.Consumer.csproj"
   ]
 }

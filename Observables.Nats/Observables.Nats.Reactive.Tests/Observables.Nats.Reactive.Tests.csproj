@@ -1,0 +1,31 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <RootNamespace>Observables.Nats.Reactive.Tests</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Using Include="Xunit" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="NATS.Client.Core" />
+    <PackageReference Include="NATS.Client.Serializers.Json" />
+    <PackageReference Include="System.Reactive" />
+    <PackageReference Include="xunit.v3" />
+    <PackageReference Include="xunit.runner.visualstudio">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Observables.Nats.Reactive\Observables.Nats.Reactive.csproj" />
+    <ProjectReference Include="..\Observables.Nats.Reactive.SourceGenerators\Observables.Nats.Reactive.SourceGenerators.csproj"
+                      OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Include="..\Observables.Nats.Tests\Infrastructure\NatsTestServer.cs" Link="Infrastructure\NatsTestServer.cs" />
+    <Compile Include="..\Observables.Nats.Tests\Infrastructure\NatsTestServerFixture.cs" Link="Infrastructure\NatsTestServerFixture.cs" />
+  </ItemGroup>
+
+</Project>

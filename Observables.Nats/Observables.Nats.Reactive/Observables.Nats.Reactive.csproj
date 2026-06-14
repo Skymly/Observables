@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <RootNamespace>Observables.Nats.Reactive</RootNamespace>
+    <AssemblyName>Observables.Nats.Reactive</AssemblyName>
+    <Description>System.Reactive bridges for Observables.Nats.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Observables.Nats\Observables.Nats.csproj" />
+    <PackageReference Include="System.Reactive" />
+  </ItemGroup>
+
+</Project>

@@ -220,5 +220,33 @@
 
   </Folder>
 
+  <Folder Name="/Nats/">
+
+    <Project Path="Observables.Nats/Observables.Nats.SourceGenerators.Shared/Observables.Nats.SourceGenerators.Shared.shproj" Id="a9e2b3c4-5d6e-4f70-8a91-3c4d5e6f7091" />
+
+    <Project Path="Observables.Nats/Observables.Nats.Package/Observables.Nats.Package.csproj" />
+
+    <Project Path="Observables.Nats/Observables.Nats/Observables.Nats.csproj" />
+
+    <Project Path="Observables.Nats/Observables.Nats.Reactive/Observables.Nats.Reactive.csproj" />
+
+    <Project Path="Observables.Nats/Observables.Nats.Reactive.SourceGenerators/Observables.Nats.Reactive.SourceGenerators.csproj" />
+
+    <Project Path="Observables.Nats/Observables.Nats.R3.SourceGenerators/Observables.Nats.R3.SourceGenerators.csproj" />
+
+    <Folder Name="/Tests/">
+
+      <Project Path="Observables.Nats/Observables.Nats.R3.SourceGenerators.Tests/Observables.Nats.R3.SourceGenerators.Tests.csproj" />
+
+      <Project Path="Observables.Nats/Observables.Nats.Reactive.SourceGenerators.Tests/Observables.Nats.Reactive.SourceGenerators.Tests.csproj" />
+
+      <Project Path="Observables.Nats/Observables.Nats.Tests/Observables.Nats.Tests.csproj" />
+
+      <Project Path="Observables.Nats/Observables.Nats.Reactive.Tests/Observables.Nats.Reactive.Tests.csproj" />
+
+    </Folder>
+
+  </Folder>
+
 </Solution>
 

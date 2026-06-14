@@ -1,0 +1,31 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <Import Project="..\..\eng\Observables.Package.props" />
+  <Import Project="..\..\eng\PackRoslynAnalyzer.targets" />
+  <Import Project="..\..\eng\PackReferencedProjects.targets" />
+
+  <PropertyGroup>
+    <IsPackable>true</IsPackable>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <IncludeBuildOutput>false</IncludeBuildOutput>
+    <DevelopmentDependency>false</DevelopmentDependency>
+    <SuppressDependenciesWhenPacking>false</SuppressDependenciesWhenPacking>
+    <PackageId>Observables.Nats.Reactive</PackageId>
+    <Description>Declarative NATS subject proxies for System.Reactive IObservable.</Description>
+    <PackageTags>observables;nats;system.reactive;source-generator</PackageTags>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <ObservablesPackGeneratorProject>..\Observables.Nats.Reactive.SourceGenerators\Observables.Nats.Reactive.SourceGenerators.csproj</ObservablesPackGeneratorProject>
+    <ObservablesPackGeneratorAssemblyName>Observables.Nats.Reactive.SourceGenerators.dll</ObservablesPackGeneratorAssemblyName>
+    <ObservablesPackGeneratorOutputDir>$(MSBuildProjectDirectory)\..\Observables.Nats.Reactive.SourceGenerators\bin\$(Configuration)\netstandard2.0\</ObservablesPackGeneratorOutputDir>
+    <ObservablesPackPackagePropsFile>$(MSBuildProjectDirectory)\build\Observables.Nats.Reactive.props</ObservablesPackPackagePropsFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ObservablesPackLibProjectReference Include="..\Observables.Nats\Observables.Nats.csproj" />
+    <ObservablesPackLibProjectReference Include="..\Observables.Nats.Reactive\Observables.Nats.Reactive.csproj" />
+    <PackageReference Include="System.Reactive" />
+    <PackageReference Include="NATS.Client.Core" />
+    <None Include="README.Nats.Reactive.pack.md" Pack="true" PackagePath="README.md" Visible="false" />
+  </ItemGroup>
+
+</Project>

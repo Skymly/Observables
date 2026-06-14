@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <RootNamespace>Observables.Nats</RootNamespace>
+    <AssemblyName>Observables.Nats</AssemblyName>
+    <Description>NATS client runtime and R3 stream bridges.</Description>
+  </PropertyGroup>
+
+  <Import Project="..\..\eng\NetStandard20.props" Condition="Exists('..\..\eng\NetStandard20.props')" />
+
+  <ItemGroup>
+    <PackageReference Include="NATS.Client.Core" />
+    <PackageReference Include="NATS.Client.Serializers.Json" />
+    <PackageReference Include="R3" />
+  </ItemGroup>
+
+</Project>

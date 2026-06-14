@@ -95,6 +95,27 @@ public sealed class EmptyProxyInterfaceAnalyzerTests
         Assert.Contains(diagnostics, d => d.Id == "OBS6007");
     }
 
+    [Fact]
+    public void OBS9007_on_empty_nats_interface()
+    {
+        const string source =
+            """
+            using Observables.Nats;
+
+            [Nats]
+            public interface ISubjects
+            {
+            }
+            """;
+
+        var diagnostics = AnalyzerTestHarness.RunAnalyzers(
+            BuildSource(source, "Observables.Nats"),
+            additionalReferences: [AnalyzerTestHarness.CreateReference<global::Observables.Nats.NatsAttribute>()],
+            new EmptyProxyInterfaceAnalyzer());
+
+        Assert.Contains(diagnostics, d => d.Id == "OBS9007");
+    }
+
     static string BuildSource(string body, params string[] usings)
     {
         var usingLines = string.Join('\n', usings.Select(u => $"using {u};"));

@@ -13,6 +13,8 @@
   <!-- Domain runtimes -->
   <ItemGroup>
     <PackageVersion Include="MQTTnet" Version="4.3.7.1207" />
+    <PackageVersion Include="NATS.Client.Core" Version="2.8.1" />
+    <PackageVersion Include="NATS.Client.Serializers.Json" Version="2.8.1" />
     <PackageVersion Include="Microsoft.AspNetCore.SignalR.Client" Version="8.0.8" />
     <PackageVersion Include="Microsoft.Extensions.Http" Version="8.0.1" />
     <PackageVersion Include="Microsoft.Extensions.DependencyInjection" Version="8.0.1" />

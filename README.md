@@ -24,9 +24,9 @@
 | **`Observables.<Feature>.R3.SourceGenerators`** / **`.Reactive.SourceGenerators`** | 双路源生成器 |
 | **`Observables.<Feature>.Package`** | 发布时打包，产出上述两个 NuGet 包 |
 
-### 预览版 NuGet（`0.1.0-preview7`）
+### 预览版 NuGet（`0.1.0-preview8`）
 
-**14 包**（七域各 `.R3` + `.Reactive`）。**`0.1.0-preview7`** 已发布至 [nuget.org](https://www.nuget.org/profiles/Skymly) 与 GitHub Packages（tag `v0.1.0-preview7`）。
+**16 包**（八域各 `.R3` + `.Reactive`）。**`0.1.0-preview8`** 发布至 [nuget.org](https://www.nuget.org/profiles/Skymly) 与 GitHub Packages（tag `v0.1.0-preview8`，含 Nats 域）。
 
 | 包 ID | 说明 |
 |-------|------|
@@ -44,9 +44,11 @@
 | `Observables.Grpc.Reactive` | gRPC + Reactive 桥接 + 生成器 |
 | `Observables.Sse.R3` | SSE 运行时 + R3 生成器 |
 | `Observables.Sse.Reactive` | SSE + Reactive 桥接 + 生成器 |
+| `Observables.Nats.R3` | NATS 运行时 + R3 生成器 |
+| `Observables.Nats.Reactive` | NATS + Reactive 桥接 + 生成器 |
 
 ```xml
-<PackageReference Include="Observables.Events.R3" Version="0.1.0-preview7" />
+<PackageReference Include="Observables.Events.R3" Version="0.1.0-preview8" />
 <PackageReference Include="R3" Version="1.3.0" />
 ```
 
@@ -75,15 +77,15 @@ dotnet run --project build/_build.csproj -- --target PackVerify --configuration 
 
 ```powershell
 # 1. 确认 eng/Observables.Package.props 中 PackageVersion 与 tag 一致
-git tag -a v0.1.0-preview7 -m "0.1.0-preview7"
-git push origin v0.1.0-preview7
+git tag -a v0.1.0-preview8 -m "0.1.0-preview8"
+git push origin v0.1.0-preview8
 # 2. GitHub Actions「Publish NuGet」workflow 使用 secrets 执行 Publish
 ```
 
 本地手动推送（可选）：
 
 ```powershell
-$env:VERSION = '0.1.0-preview7'
+$env:VERSION = '0.1.0-preview8'
 $env:NUGET_API_KEY = '...'
 $env:GITHUB_TOKEN = '...'
 dotnet run --project build/_build.csproj -- --target Publish --configuration Release
@@ -91,7 +93,7 @@ dotnet run --project build/_build.csproj -- --target Publish --configuration Rel
 
 ## 域实现状态
 
-| 域 | R3 生成器 | System.Reactive 生成器 | NuGet（`preview7`） |
+| 域 | R3 生成器 | System.Reactive 生成器 | NuGet（`preview8`） |
 |----|-----------|------------------------|---------------------|
 | **Events**（经典 + 路由 .NET 事件） | `Events.R3.SourceGenerators` | `Events.Reactive.SourceGenerators` | 已纳入发版 |
 | **RestAPI**（声明式 HTTP 客户端） | `RestAPI.R3.SourceGenerators` | `RestAPI.Reactive.SourceGenerators` | 已纳入发版 |
@@ -100,8 +102,9 @@ dotnet run --project build/_build.csproj -- --target Publish --configuration Rel
 | **WebSocket**（客户端代理） | `WebSocket.R3.SourceGenerators` | `WebSocket.Reactive.SourceGenerators` | 已纳入发版 |
 | **Grpc**（CallInvoker 代理） | `Grpc.R3.SourceGenerators` | `Grpc.Reactive.SourceGenerators` | 已纳入发版 |
 | **Sse**（`text/event-stream` 代理） | `Sse.R3.SourceGenerators` | `Sse.Reactive.SourceGenerators` | 已纳入发版（M5） |
+| **Nats**（Core NATS subject 代理） | `Nats.R3.SourceGenerators` | `Nats.Reactive.SourceGenerators` | 已纳入发版（M6） |
 
-七域均含运行时（按需）+ 双路生成器 + 测试；共享层另有 `Observables.Analyzers` 与 `Observables.CodeFixes`。设计稿见 `docs/design/`；发版顺序见 [docs/ROADMAP.md](docs/ROADMAP.md)。
+八域均含运行时 + 双路生成器 + 测试；共享层另有 `Observables.Analyzers` 与 `Observables.CodeFixes`。设计稿见 `docs/design/`；发版顺序见 [docs/ROADMAP.md](docs/ROADMAP.md)。
 
 路由事件生成默认关闭；在消费者项目中设置 `<ObservableRoutedEvents>true</ObservableRoutedEvents>`（见 `Observables.Events/Observables.Events/targets/observables.events.props`）。
 
@@ -134,6 +137,30 @@ using var d = feed.Prices.Subscribe(tick => Console.WriteLine(tick));
 ```
 
 每次 `Subscribe` 发起一次 SSE 连接；`string` 直接透传，其它类型按 `System.Text.Json` 反序列化。设计稿见 [docs/design/sse.md](docs/design/sse.md)。
+
+## Nats（Core NATS）
+
+声明式 Core NATS subject 客户端：在 `[Nats]` 接口上用 `[NatsSubscribe]` / `[NatsPublish]` / `[NatsRequest]` 标注成员，生成器产出订阅热流、发布冷流与请求-响应单值流。
+
+```csharp
+[Nats]
+public interface IOrderHub
+{
+    [NatsSubscribe("orders.>")]
+    Observable<OrderEvent> OrderEvents { get; }
+
+    [NatsPublish("orders.{id}.cancel")]
+    Observable<Unit> Cancel(string id);
+
+    [NatsRequest("orders.validate")]
+    Observable<ValidationResult> Validate(OrderRequest request);
+}
+
+await using var nats = new NatsConnection(new NatsOpts { Url = "nats://127.0.0.1:4222" });
+var hub = NatsService.For<IOrderHub>(nats);
+```
+
+依赖 [NATS.Client.Core](https://www.nuget.org/packages/NATS.Client.Core)。v1 不含 JetStream。设计稿见 [docs/design/nats.md](docs/design/nats.md)。
 
 ## 构建
 

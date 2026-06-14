@@ -136,14 +136,14 @@
         },
         "PackDomains": {
           "type": "array",
-          "description": "Comma-separated domain filter for Pack (e.g. 'restapi,signalr'). Empty = all domains.",
+          "description": "Comma-separated domain filter for Pack (e.g. 'restapi,signalr'). Empty = all domains",
           "items": {
             "type": "string"
           }
         },
         "TestDomains": {
           "type": "array",
-          "description": "Comma-separated domain filter for UnitTest (e.g. 'mqtt,websocket'). Empty = all domains.",
+          "description": "Comma-separated domain filter for UnitTest (e.g. 'mqtt,websocket'). Empty = all domains",
           "items": {
             "type": "string"
           }

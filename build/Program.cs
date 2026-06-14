@@ -188,7 +188,8 @@ sealed class Build : NukeBuild
                     || packageId.StartsWith("Observables.Mqtt.", StringComparison.Ordinal)
                     || packageId.StartsWith("Observables.WebSocket.", StringComparison.Ordinal)
                     || packageId.StartsWith("Observables.Grpc.", StringComparison.Ordinal)
-                    || packageId.StartsWith("Observables.Sse.", StringComparison.Ordinal))
+                    || packageId.StartsWith("Observables.Sse.", StringComparison.Ordinal)
+                    || packageId.StartsWith("Observables.Nats.", StringComparison.Ordinal))
                 {
                     Assert.True(
                         entries.Contains("analyzers/dotnet/roslyn4.12/cs/Observables.CodeFixes.dll"),
@@ -210,7 +211,8 @@ sealed class Build : NukeBuild
                     || packageId.StartsWith("Observables.Mqtt.", StringComparison.Ordinal)
                     || packageId.StartsWith("Observables.WebSocket.", StringComparison.Ordinal)
                     || packageId.StartsWith("Observables.Grpc.", StringComparison.Ordinal)
-                    || packageId.StartsWith("Observables.Sse.", StringComparison.Ordinal))
+                    || packageId.StartsWith("Observables.Sse.", StringComparison.Ordinal)
+                    || packageId.StartsWith("Observables.Nats.", StringComparison.Ordinal))
                 {
                     bool hasLib = entries.Any(e => e.StartsWith("lib/", StringComparison.OrdinalIgnoreCase)
                         && e.EndsWith(".dll", StringComparison.OrdinalIgnoreCase));

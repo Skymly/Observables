@@ -1,0 +1,126 @@
+# .gitattributes — aggressive LF normalization template
+#
+# Goal: ALL tracked text in the repo is LF. CRLF happens only on
+# Windows during checkout (driven by the IDE's .editorconfig), but
+# never enters the index. This file is meant to be dropped verbatim
+# at the root of each repo (meta, plus the Skymly/* product repos).
+#
+# Pair this with `core.autocrlf=input` (or `false`) at the user level
+# to stop Git from rewriting EOL on checkout.
+#
+# Exceptions:
+#   - .sln / .slnx: Visual Studio historically emits CRLF; some .NET
+#     projects pin this via .editorconfig. We force LF here so the
+#     repo is consistent. The user's local checkout will look fine in
+#     VS Code; legacy VS may rewrite on save (driven by .editorconfig).
+#   - .cmd / .bat: Windows batch scripts run better with CRLF when
+#     invoked from cmd.exe. Keep CRLF.
+#   - Anything we know to be binary: marked explicitly to avoid
+#     false-positive text detection.
+#
+# If you find a pattern that needs to be different per repo, drop
+# that repo's override into a project-root .gitattributes (this
+# file's patterns) and adjust the local normalize script.
+
+# --- Default: treat as text, normalize to LF in the index --------
+*               text=auto eol=lf
+
+# --- Documentation / data files ---------------------------------
+*.md            text eol=lf
+*.txt           text eol=lf
+*.rst           text eol=lf
+*.adoc          text eol=lf
+
+# --- Source code ------------------------------------------------
+*.cs            text eol=lf
+*.csproj        text eol=lf
+*.props         text eol=lf
+*.targets       text eol=lf
+*.xaml          text eol=lf
+*.axaml         text eol=lf
+*.razor         text eol=lf
+*.fs            text eol=lf
+*.fsproj        text eol=lf
+*.fsx           text eol=lf
+*.vb            text eol=lf
+*.cpp           text eol=lf
+*.h             text eol=lf
+*.hpp           text eol=lf
+*.c             text eol=lf
+*.java          text eol=lf
+*.kt            text eol=lf
+*.swift         text eol=lf
+*.go            text eol=lf
+*.rs            text eol=lf
+
+# --- .NET solution files: forced LF -----------------------------
+# Visual Studio historically writes these with CRLF. Forcing LF
+# here keeps the repo consistent; VS may rewrite on local save
+# if .editorconfig says so, but that only affects uncommitted
+# working-tree files.
+*.sln           text eol=lf
+*.slnx          text eol=lf
+*.slnf          text eol=lf
+*.csproj.user   text eol=lf
+*.suo           binary
+
+# --- Scripting --------------------------------------------------
+*.ps1           text eol=lf
+*.psm1          text eol=lf
+*.psd1          text eol=lf
+*.sh            text eol=lf
+*.bash          text eol=lf
+*.zsh           text eol=lf
+*.py            text eol=lf
+*.ipynb         text eol=lf
+
+# Windows-native scripts: keep CRLF (cmd.exe + classic bat quirks)
+*.cmd           text eol=crlf
+*.bat           text eol=crlf
+
+# --- Config / data formats --------------------------------------
+*.json          text eol=lf
+*.jsonc         text eol=lf
+*.yaml          text eol=lf
+*.yml           text eol=lf
+*.toml          text eol=lf
+*.ini           text eol=lf
+*.cfg           text eol=lf
+*.conf          text eol=lf
+*.config        text eol=lf
+*.editorconfig  text eol=lf
+*.gitignore     text eol=lf
+*.gitattributes text eol=lf
+
+# --- Build / lock files ----------------------------------------
+*.props         text eol=lf
+package-lock.json text eol=lf
+yarn.lock       text eol=lf
+pnpm-lock.yaml  text eol=lf
+
+# --- Binary: explicit opt-out -----------------------------------
+*.png           binary
+*.jpg           binary
+*.jpeg          binary
+*.gif           binary
+*.ico           binary
+*.svg           binary
+*.pdf           binary
+*.zip           binary
+*.tar           binary
+*.gz            binary
+*.7z            binary
+*.exe           binary
+*.dll           binary
+*.pdb           binary
+*.so            binary
+*.dylib         binary
+*.bin           binary
+*.woff          binary
+*.woff2         binary
+*.ttf           binary
+*.otf           binary
+*.mp3           binary
+*.mp4           binary
+*.mov           binary
+*.webm          binary

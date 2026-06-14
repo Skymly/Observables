@@ -1,16 +1,16 @@
-<Project Sdk="Microsoft.NET.Sdk">
-
-  <PropertyGroup>
-    <RootNamespace>Observables.Grpc</RootNamespace>
-    <AssemblyName>Observables.Grpc</AssemblyName>
-    <Description>gRPC client runtime and R3 stream bridges.</Description>
-  </PropertyGroup>
-
-  <ItemGroup>
-    <PackageReference Include="Grpc.Core.Api" />
-    <PackageReference Include="Google.Protobuf" />
-    <PackageReference Include="R3" />
-  </ItemGroup>
-
-</Project>
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <RootNamespace>Observables.Grpc</RootNamespace>
+    <AssemblyName>Observables.Grpc</AssemblyName>
+    <Description>gRPC client runtime and R3 stream bridges.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Grpc.Core.Api" />
+    <PackageReference Include="Google.Protobuf" />
+    <PackageReference Include="R3" />
+  </ItemGroup>
+
+</Project>
 

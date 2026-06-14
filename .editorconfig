@@ -1,0 +1,57 @@
+# Code Root — shared EditorConfig template for meta + Skymly product repos.
+# Install per repo: docs/scripts/install-editorconfig.ps1
+# Pair with .gitattributes (LF in Git index) and core.autocrlf=input.
+
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+[*.{cs,csx}]
+indent_style = space
+indent_size = 4
+
+dotnet_sort_system_directives_first = true
+dotnet_separate_import_directive_groups = false
+
+csharp_new_line_before_open_brace = all
+csharp_prefer_braces = true:suggestion
+csharp_style_namespace_declarations = file_scoped:warning
+
+[*.{vb,vbproj}]
+indent_style = space
+indent_size = 4
+
+[*.{fs,fsx,fsproj}]
+indent_style = space
+indent_size = 4
+
+[*.{csproj,props,targets,slnx,projitems,shproj}]
+indent_style = space
+indent_size = 2
+
+[*.{json,yml,yaml}]
+indent_style = space
+indent_size = 2
+
+[*.{md,markdown}]
+indent_style = space
+indent_size = 2
+
+[*.{xml,xaml,axaml,razor,cshtml}]
+indent_style = space
+indent_size = 2
+
+[*.{ps1,psm1,psd1,sh,bat,cmd}]
+indent_style = space
+indent_size = 2
+
+# Windows batch/cmd keep CRLF on disk when executed from cmd.exe
+[*.{bat,cmd}]
+end_of_line = crlf
+
+[*.sln]
+end_of_line = crlf

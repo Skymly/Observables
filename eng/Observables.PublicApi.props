@@ -1,0 +1,28 @@
+<Project>
+
+  <!--
+    Public API tracking for NuGet lib/ runtime projects (_ObsIsDomainRuntimeProject).
+    See docs/design/public-api.md.
+  -->
+
+  <PropertyGroup>
+    <ObservablesEnforcePublicApi Condition="'$(ObservablesEnforcePublicApi)' == ''">true</ObservablesEnforcePublicApi>
+    <!-- RS0026: preview-era optional-parameter overloads; revisit when tightening API in a major release. -->
+    <NoWarn Condition="'$(ObservablesEnforcePublicApi)' == 'true'">$(NoWarn);RS0026</NoWarn>
+  </PropertyGroup>
+
+  <!-- Multi-target runtimes: PublicApiAnalyzers 3.3.x expects a full surface per TFM (no merge with root). -->
+  <ItemGroup Condition="'$(ObservablesEnforcePublicApi)' == 'true' and '$(TargetFrameworks)' != ''">
+    <PackageReference Include="Microsoft.CodeAnalysis.PublicApiAnalyzers" PrivateAssets="all" />
+    <AdditionalFiles Include="$(MSBuildProjectDirectory)\PublicAPI\$(TargetFramework)\PublicAPI.Shipped.txt" />
+    <AdditionalFiles Include="$(MSBuildProjectDirectory)\PublicAPI\$(TargetFramework)\PublicAPI.Unshipped.txt" />
+  </ItemGroup>
+
+  <!-- Single-target fallback (should not occur for domain runtimes). -->
+  <ItemGroup Condition="'$(ObservablesEnforcePublicApi)' == 'true' and '$(TargetFrameworks)' == ''">
+    <PackageReference Include="Microsoft.CodeAnalysis.PublicApiAnalyzers" PrivateAssets="all" />
+    <AdditionalFiles Include="$(MSBuildProjectDirectory)\PublicAPI.Shipped.txt" />
+    <AdditionalFiles Include="$(MSBuildProjectDirectory)\PublicAPI.Unshipped.txt" />
+  </ItemGroup>
+
+</Project>

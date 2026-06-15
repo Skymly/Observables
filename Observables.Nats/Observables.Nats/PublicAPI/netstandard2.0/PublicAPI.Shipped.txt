@@ -1,0 +1,57 @@
+#nullable enable
+Observables.Nats.DefaultNatsPayloadSerializer
+Observables.Nats.DefaultNatsPayloadSerializer.Deserialize(System.Type! payloadType, System.ReadOnlySpan<byte> payload) -> object!
+Observables.Nats.DefaultNatsPayloadSerializer.Serialize(System.Type! payloadType, object? value) -> byte[]!
+Observables.Nats.INatsPayloadSerializer
+Observables.Nats.INatsPayloadSerializer.Deserialize(System.Type! payloadType, System.ReadOnlySpan<byte> payload) -> object!
+Observables.Nats.INatsPayloadSerializer.Serialize(System.Type! payloadType, object? value) -> byte[]!
+Observables.Nats.INatsPayloadSerializer<T>
+Observables.Nats.INatsPayloadSerializer<T>.Deserialize(System.ReadOnlySpan<byte> payload) -> T
+Observables.Nats.INatsPayloadSerializer<T>.Serialize(T value) -> byte[]!
+Observables.Nats.NatsAttribute
+Observables.Nats.NatsAttribute.NatsAttribute() -> void
+Observables.Nats.NatsObservable
+Observables.Nats.NatsPayloadSerializerExtensions
+Observables.Nats.NatsPayloadSerializers
+Observables.Nats.NatsPublishAttribute
+Observables.Nats.NatsPublishAttribute.NatsPublishAttribute(string? subjectTemplate = null) -> void
+Observables.Nats.NatsPublishAttribute.SubjectTemplate.get -> string?
+Observables.Nats.NatsRequestAttribute
+Observables.Nats.NatsRequestAttribute.NatsRequestAttribute(string? subjectTemplate = null) -> void
+Observables.Nats.NatsRequestAttribute.SubjectTemplate.get -> string?
+Observables.Nats.NatsService
+Observables.Nats.NatsSubject
+Observables.Nats.NatsSubscribeAttribute
+Observables.Nats.NatsSubscribeAttribute.NatsSubscribeAttribute(string? subjectFilter = null) -> void
+Observables.Nats.NatsSubscribeAttribute.SubjectFilter.get -> string?
+Observables.Nats.PrimitiveNatsPayloadSerializer
+Observables.Nats.PrimitiveNatsPayloadSerializer.Deserialize(System.Type! payloadType, System.ReadOnlySpan<byte> payload) -> object!
+Observables.Nats.PrimitiveNatsPayloadSerializer.Serialize(System.Type! payloadType, object? value) -> byte[]!
+static Observables.Nats.DefaultNatsPayloadSerializer.Instance.get -> Observables.Nats.DefaultNatsPayloadSerializer!
+static Observables.Nats.NatsObservable.FromPublish(NATS.Client.Core.INatsConnection! connection, string! subject, System.ReadOnlyMemory<byte> payload, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> R3.Observable<R3.Unit>!
+static Observables.Nats.NatsObservable.FromPublish(NATS.Client.Core.INatsConnection! connection, string! subject, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> R3.Observable<R3.Unit>!
+static Observables.Nats.NatsObservable.FromPublish<T>(NATS.Client.Core.INatsConnection! connection, string! subject, T payload, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> R3.Observable<R3.Unit>!
+static Observables.Nats.NatsObservable.FromRequest<TRequest, TResponse>(NATS.Client.Core.INatsConnection! connection, string! subject, TRequest request, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> R3.Observable<TResponse>!
+static Observables.Nats.NatsObservable.FromSubscribe<T>(NATS.Client.Core.INatsConnection! connection, string! subject) -> R3.Observable<T>!
+static Observables.Nats.NatsPayloadSerializerExtensions.Deserialize(this Observables.Nats.INatsPayloadSerializer! serializer, System.Type! payloadType, byte[]! payload) -> object!
+static Observables.Nats.NatsPayloadSerializerExtensions.Deserialize<T>(this Observables.Nats.INatsPayloadSerializer! serializer, byte[]! payload) -> T
+static Observables.Nats.NatsPayloadSerializerExtensions.Deserialize<T>(this Observables.Nats.INatsPayloadSerializer! serializer, System.ReadOnlySpan<byte> payload) -> T
+static Observables.Nats.NatsPayloadSerializerExtensions.Deserialize<T>(this Observables.Nats.INatsPayloadSerializer<T>! serializer, byte[]! payload) -> T
+static Observables.Nats.NatsPayloadSerializerExtensions.Serialize<T>(this Observables.Nats.INatsPayloadSerializer! serializer, T value) -> byte[]!
+static Observables.Nats.NatsPayloadSerializers.Current.get -> Observables.Nats.INatsPayloadSerializer!
+static Observables.Nats.NatsPayloadSerializers.Current.set -> void
+static Observables.Nats.NatsPayloadSerializers.Deserialize(System.Type! payloadType, byte[]! payload) -> object!
+static Observables.Nats.NatsPayloadSerializers.Deserialize(System.Type! payloadType, System.ReadOnlySpan<byte> payload) -> object!
+static Observables.Nats.NatsPayloadSerializers.Deserialize<T>(byte[]! payload) -> T
+static Observables.Nats.NatsPayloadSerializers.Deserialize<T>(System.ReadOnlySpan<byte> payload) -> T
+static Observables.Nats.NatsPayloadSerializers.Register<T>(Observables.Nats.INatsPayloadSerializer! serializer) -> void
+static Observables.Nats.NatsPayloadSerializers.Register<T>(Observables.Nats.INatsPayloadSerializer<T>! serializer) -> void
+static Observables.Nats.NatsPayloadSerializers.Register<T>(System.Func<byte[]!, T>! deserialize, System.Func<T, byte[]!>! serialize) -> void
+static Observables.Nats.NatsPayloadSerializers.Serialize(System.Type! payloadType, object? value) -> byte[]!
+static Observables.Nats.NatsPayloadSerializers.Serialize<T>(T value) -> byte[]!
+static Observables.Nats.NatsPayloadSerializers.Unregister<T>() -> bool
+static Observables.Nats.NatsService.For(System.Type! natsInterfaceType, NATS.Client.Core.INatsConnection! connection) -> object!
+static Observables.Nats.NatsService.For<T>(NATS.Client.Core.INatsConnection! connection) -> T
+static Observables.Nats.NatsService.RegisterGeneratedFactory(System.Type! natsInterfaceType, System.Func<NATS.Client.Core.INatsConnection!, object!>! factory) -> void
+static Observables.Nats.NatsSubject.Format(string! template, params (string! Name, string? Value)[]! parameters) -> string!
+static Observables.Nats.PrimitiveNatsPayloadSerializer.Instance.get -> Observables.Nats.PrimitiveNatsPayloadSerializer!

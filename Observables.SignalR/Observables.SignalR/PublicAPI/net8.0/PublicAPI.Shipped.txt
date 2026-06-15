@@ -1,0 +1,31 @@
+#nullable enable
+Observables.SignalR.HubAttribute
+Observables.SignalR.HubAttribute.HubAttribute() -> void
+Observables.SignalR.HubConnectionArgs
+Observables.SignalR.HubInvokeAttribute
+Observables.SignalR.HubInvokeAttribute.HubInvokeAttribute(string? methodName = null) -> void
+Observables.SignalR.HubInvokeAttribute.MethodName.get -> string?
+Observables.SignalR.HubOnAttribute
+Observables.SignalR.HubOnAttribute.HubOnAttribute(string? methodName = null) -> void
+Observables.SignalR.HubOnAttribute.MethodName.get -> string?
+Observables.SignalR.HubSendAttribute
+Observables.SignalR.HubSendAttribute.HubSendAttribute(string? methodName = null) -> void
+Observables.SignalR.HubSendAttribute.MethodName.get -> string?
+Observables.SignalR.HubService
+Observables.SignalR.HubStreamAttribute
+Observables.SignalR.HubStreamAttribute.HubStreamAttribute(string? methodName = null) -> void
+Observables.SignalR.HubStreamAttribute.MethodName.get -> string?
+Observables.SignalR.SignalRObservable
+static Observables.SignalR.HubConnectionArgs.InvokeAsync<T>(Microsoft.AspNetCore.SignalR.Client.HubConnection! connection, string! methodName, object?[]! args, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<T>!
+static Observables.SignalR.HubConnectionArgs.SendAsync(Microsoft.AspNetCore.SignalR.Client.HubConnection! connection, string! methodName, object?[]! args, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task!
+static Observables.SignalR.HubConnectionArgs.StreamAsync<T>(Microsoft.AspNetCore.SignalR.Client.HubConnection! connection, string! methodName, object?[]! args, System.Threading.CancellationToken cancellationToken) -> System.Collections.Generic.IAsyncEnumerable<T>!
+static Observables.SignalR.HubService.For(System.Type! hubInterfaceType, Microsoft.AspNetCore.SignalR.Client.HubConnection! connection) -> object!
+static Observables.SignalR.HubService.For<T>(Microsoft.AspNetCore.SignalR.Client.HubConnection! connection) -> T
+static Observables.SignalR.HubService.RegisterGeneratedFactory(System.Type! hubInterfaceType, System.Func<Microsoft.AspNetCore.SignalR.Client.HubConnection!, object!>! factory) -> void
+static Observables.SignalR.SignalRObservable.FromInvoke<T>(Microsoft.AspNetCore.SignalR.Client.HubConnection! connection, string! methodName, object?[]! args, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> R3.Observable<T>!
+static Observables.SignalR.SignalRObservable.FromInvoke<T>(Microsoft.AspNetCore.SignalR.Client.HubConnection! connection, string! methodName, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> R3.Observable<T>!
+static Observables.SignalR.SignalRObservable.FromOn<T>(Microsoft.AspNetCore.SignalR.Client.HubConnection! connection, string! methodName) -> R3.Observable<T>!
+static Observables.SignalR.SignalRObservable.FromSend(Microsoft.AspNetCore.SignalR.Client.HubConnection! connection, string! methodName, object?[]! args, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> R3.Observable<R3.Unit>!
+static Observables.SignalR.SignalRObservable.FromSend(Microsoft.AspNetCore.SignalR.Client.HubConnection! connection, string! methodName, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> R3.Observable<R3.Unit>!
+static Observables.SignalR.SignalRObservable.FromStream<T>(Microsoft.AspNetCore.SignalR.Client.HubConnection! connection, string! methodName, object?[]! args, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> R3.Observable<T>!
+static Observables.SignalR.SignalRObservable.FromStream<T>(Microsoft.AspNetCore.SignalR.Client.HubConnection! connection, string! methodName, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> R3.Observable<T>!

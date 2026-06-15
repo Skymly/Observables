@@ -1,0 +1,7 @@
+#nullable enable
+Observables.WebSocket.Reactive.SystemReactiveWebSocketAdapter
+static Observables.WebSocket.Reactive.SystemReactiveWebSocketAdapter.FromClose(System.Net.WebSockets.ClientWebSocket! socket, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.IObservable<System.Reactive.Unit>!
+static Observables.WebSocket.Reactive.SystemReactiveWebSocketAdapter.FromConnect(System.Net.WebSockets.ClientWebSocket! socket, System.Uri! uri, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.IObservable<System.Reactive.Unit>!
+static Observables.WebSocket.Reactive.SystemReactiveWebSocketAdapter.FromReceive<T>(System.Net.WebSockets.ClientWebSocket! socket) -> System.IObservable<T>!
+static Observables.WebSocket.Reactive.SystemReactiveWebSocketAdapter.FromSend(System.Net.WebSockets.ClientWebSocket! socket, byte[]! payload, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.IObservable<System.Reactive.Unit>!
+static Observables.WebSocket.Reactive.SystemReactiveWebSocketAdapter.FromSendText(System.Net.WebSockets.ClientWebSocket! socket, string! text, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.IObservable<System.Reactive.Unit>!

@@ -1,0 +1,23 @@
+#nullable enable
+Observables.WebSocket.WebSocketAttribute
+Observables.WebSocket.WebSocketAttribute.WebSocketAttribute() -> void
+Observables.WebSocket.WebSocketCloseAttribute
+Observables.WebSocket.WebSocketCloseAttribute.WebSocketCloseAttribute() -> void
+Observables.WebSocket.WebSocketConnectAttribute
+Observables.WebSocket.WebSocketConnectAttribute.WebSocketConnectAttribute() -> void
+Observables.WebSocket.WebSocketObservable
+Observables.WebSocket.WebSocketReceiveAttribute
+Observables.WebSocket.WebSocketReceiveAttribute.MessageName.get -> string?
+Observables.WebSocket.WebSocketReceiveAttribute.WebSocketReceiveAttribute(string? messageName = null) -> void
+Observables.WebSocket.WebSocketSendAttribute
+Observables.WebSocket.WebSocketSendAttribute.MessageName.get -> string?
+Observables.WebSocket.WebSocketSendAttribute.WebSocketSendAttribute(string? messageName = null) -> void
+Observables.WebSocket.WebSocketService
+static Observables.WebSocket.WebSocketObservable.FromClose(System.Net.WebSockets.ClientWebSocket! socket, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> R3.Observable<R3.Unit>!
+static Observables.WebSocket.WebSocketObservable.FromConnect(System.Net.WebSockets.ClientWebSocket! socket, System.Uri! uri, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> R3.Observable<R3.Unit>!
+static Observables.WebSocket.WebSocketObservable.FromReceive<T>(System.Net.WebSockets.ClientWebSocket! socket) -> R3.Observable<T>!
+static Observables.WebSocket.WebSocketObservable.FromSend(System.Net.WebSockets.ClientWebSocket! socket, byte[]! payload, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> R3.Observable<R3.Unit>!
+static Observables.WebSocket.WebSocketObservable.FromSendText(System.Net.WebSockets.ClientWebSocket! socket, string! text, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> R3.Observable<R3.Unit>!
+static Observables.WebSocket.WebSocketService.For(System.Type! wsInterfaceType, System.Net.WebSockets.ClientWebSocket! socket) -> object!
+static Observables.WebSocket.WebSocketService.For<T>(System.Net.WebSockets.ClientWebSocket! socket) -> T
+static Observables.WebSocket.WebSocketService.RegisterGeneratedFactory(System.Type! wsInterfaceType, System.Func<System.Net.WebSockets.ClientWebSocket!, object!>! factory) -> void

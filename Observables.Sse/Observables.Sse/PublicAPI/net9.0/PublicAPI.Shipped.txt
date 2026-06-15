@@ -1,0 +1,25 @@
+#nullable enable
+Observables.Sse.SseAttribute
+Observables.Sse.SseAttribute.SseAttribute() -> void
+Observables.Sse.SseConnection
+Observables.Sse.SseConnection.Endpoint.get -> System.Uri!
+Observables.Sse.SseConnection.HttpClient.get -> System.Net.Http.HttpClient!
+Observables.Sse.SseConnection.SseConnection(System.Net.Http.HttpClient! httpClient, System.Uri! endpoint) -> void
+Observables.Sse.SseEvent
+Observables.Sse.SseEvent.Data.get -> string!
+Observables.Sse.SseEvent.EventName.get -> string!
+Observables.Sse.SseEvent.Id.get -> string?
+Observables.Sse.SseEvent.SseEvent() -> void
+Observables.Sse.SseEvent.SseEvent(string! eventName, string! data, string? id) -> void
+Observables.Sse.SseEventAttribute
+Observables.Sse.SseEventAttribute.EventName.get -> string?
+Observables.Sse.SseEventAttribute.SseEventAttribute(string? eventName = null) -> void
+Observables.Sse.SseObservable
+Observables.Sse.SseProtocol
+Observables.Sse.SseService
+static Observables.Sse.SseObservable.FromEvent<T>(Observables.Sse.SseConnection! connection, string! eventName) -> R3.Observable<T>!
+static Observables.Sse.SseProtocol.Deserialize<T>(string! data) -> T
+static Observables.Sse.SseProtocol.ReadEventAsync(System.IO.StreamReader! reader) -> System.Threading.Tasks.Task<Observables.Sse.SseEvent?>!
+static Observables.Sse.SseService.For(System.Type! sseInterfaceType, Observables.Sse.SseConnection! connection) -> object!
+static Observables.Sse.SseService.For<T>(Observables.Sse.SseConnection! connection) -> T
+static Observables.Sse.SseService.RegisterGeneratedFactory(System.Type! sseInterfaceType, System.Func<Observables.Sse.SseConnection!, object!>! factory) -> void

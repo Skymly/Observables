@@ -1,0 +1,3 @@
+#nullable enable
+Observables.RestAPI.Reactive.SystemReactiveObservableAdapter
+static Observables.RestAPI.Reactive.SystemReactiveObservableAdapter.FromAsync<T>(System.Func<System.Threading.CancellationToken, System.Threading.Tasks.ValueTask<T>>! asyncFactory) -> System.IObservable<T>!

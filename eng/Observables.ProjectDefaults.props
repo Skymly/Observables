@@ -41,6 +41,8 @@
     <_ObsIsEventsPropsProject Condition="'$(MSBuildProjectName)' == 'Observables.Events'">true</_ObsIsEventsPropsProject>
     <_ObsIsHttpClientFactoryProject>false</_ObsIsHttpClientFactoryProject>
     <_ObsIsHttpClientFactoryProject Condition="'$(MSBuildProjectName)' == 'Observables.RestAPI.HttpClientFactory'">true</_ObsIsHttpClientFactoryProject>
+    <_ObsIsPackProject>false</_ObsIsPackProject>
+    <_ObsIsPackProject Condition="$(_ObsProjectDir.Contains('.Package/')) or $(_ObsProjectDir.EndsWith('.Package'))">true</_ObsIsPackProject>
     <_ObsIsSingleTfmTestProject>false</_ObsIsSingleTfmTestProject>
     <_ObsIsSingleTfmTestProject Condition="'$(_ObsIsTestProject)' == 'true' and '$(_ObsIsGeneratorProject)' == 'true'">true</_ObsIsSingleTfmTestProject>
     <_ObsIsSingleTfmTestProject Condition="'$(_ObsIsTestProject)' == 'true' and '$(MSBuildProjectName)' == 'Observables.RestAPI.GeneratorTests'">true</_ObsIsSingleTfmTestProject>
@@ -95,5 +97,8 @@
     <BuildTfmsInParallel>false</BuildTfmsInParallel>
     <TestTfmsInParallel>false</TestTfmsInParallel>
   </PropertyGroup>
+
+  <Import Project="$(RepoRoot)eng\Observables.PublicApi.props"
+          Condition="'$(_ObsIsDomainRuntimeProject)' == 'true' and '$(_ObsIsPackProject)' != 'true' and '$(ObservablesSkipProjectDefaults)' != 'true'" />
 
 </Project>

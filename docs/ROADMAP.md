@@ -128,7 +128,7 @@ Grpc 两包已于 **`0.1.0-preview6`**（`v0.1.0-preview6` tag）发布至 nuget
 
 > 依赖 M1–M6 全部完成（八域齐备后再冻结）。
 
-- 引入 `Microsoft.CodeAnalysis.PublicApiAnalyzers`，为运行时与公共 Attribute 锁定公共 API（`PublicAPI.Shipped.txt` / `Unshipped.txt`）。
+- 引入 `Microsoft.CodeAnalysis.PublicApiAnalyzers`，为运行时与公共 Attribute 锁定公共 API（`PublicAPI.Shipped.txt` / `Unshipped.txt`）。✅ 见 [`docs/design/public-api.md`](design/public-api.md)。
 - nullable / AOT / trim 告警清零（承接 M2）。
 - 复核包元数据（README、tags、license、SourceLink）。
 - 维护者推 `v1.0.0` tag → NuGet → GitHub Release（稳定版含 Release，预览版不含）。

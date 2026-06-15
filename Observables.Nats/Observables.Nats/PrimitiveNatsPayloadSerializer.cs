@@ -1,8 +1,13 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Text;
 
 namespace Observables.Nats;
 
 /// <summary>Built-in serializer for raw <see cref="byte"/>[] and UTF-8 <see cref="string"/> payloads.</summary>
+#if NET8_0_OR_GREATER
+[RequiresUnreferencedCode(NatsTrimAnnotations.JsonPayload)]
+[RequiresDynamicCode(NatsTrimAnnotations.JsonPayload)]
+#endif
 public sealed class PrimitiveNatsPayloadSerializer : INatsPayloadSerializer
 {
     public static PrimitiveNatsPayloadSerializer Instance { get; } = new();
@@ -11,7 +16,11 @@ public sealed class PrimitiveNatsPayloadSerializer : INatsPayloadSerializer
     {
     }
 
-    public object Deserialize(Type payloadType, ReadOnlySpan<byte> payload)
+    public object Deserialize(
+        [DynamicallyAccessedMembers(
+            DynamicallyAccessedMemberTypes.PublicConstructors | DynamicallyAccessedMemberTypes.PublicProperties
+        )] Type payloadType,
+        ReadOnlySpan<byte> payload)
     {
         if (payloadType == typeof(byte[]))
         {
@@ -26,7 +35,11 @@ public sealed class PrimitiveNatsPayloadSerializer : INatsPayloadSerializer
         throw CreateUnsupportedException(payloadType, deserialize: true);
     }
 
-    public byte[] Serialize(Type payloadType, object? value)
+    public byte[] Serialize(
+        [DynamicallyAccessedMembers(
+            DynamicallyAccessedMemberTypes.PublicConstructors | DynamicallyAccessedMemberTypes.PublicProperties
+        )] Type payloadType,
+        object? value)
     {
         if (payloadType == typeof(byte[]))
         {
@@ -45,7 +58,7 @@ public sealed class PrimitiveNatsPayloadSerializer : INatsPayloadSerializer
     {
         var direction = deserialize ? "Deserialize" : "Serialize";
         return new NotSupportedException(
-            $"{direction} for MQTT payload type '{payloadType.FullName}' is not supported by the built-in serializer. "
+            $"{direction} for NATS payload type '{payloadType.FullName}' is not supported by the built-in serializer. "
             + "Register INatsPayloadSerializer<T> via NatsPayloadSerializers.Register<T>, "
             + "or assign a custom INatsPayloadSerializer to NatsPayloadSerializers.Current "
             + "(for example one that wraps System.Text.Json, Newtonsoft.Json, or Protobuf).");

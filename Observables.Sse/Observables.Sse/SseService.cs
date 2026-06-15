@@ -13,7 +13,15 @@ public static class SseService
 
     /// <summary>Registers a source-generated SSE proxy factory.</summary>
     [EditorBrowsable(EditorBrowsableState.Never)]
+#if NET8_0_OR_GREATER
+    public static void RegisterGeneratedFactory(
+        [DynamicallyAccessedMembers(
+            DynamicallyAccessedMemberTypes.PublicMethods | DynamicallyAccessedMemberTypes.PublicProperties
+        )] Type sseInterfaceType,
+        Func<SseConnection, object> factory)
+#else
     public static void RegisterGeneratedFactory(Type sseInterfaceType, Func<SseConnection, object> factory)
+#endif
     {
         if (sseInterfaceType is null)
         {

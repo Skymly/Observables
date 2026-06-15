@@ -4,6 +4,9 @@ using System.Reactive.Disposables;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+#if NET8_0_OR_GREATER
+using System.Diagnostics.CodeAnalysis;
+#endif
 
 namespace Observables.Sse.Reactive;
 
@@ -14,6 +17,10 @@ public static class SystemReactiveSseAdapter
     /// Opens a connection per subscription and emits payloads of the named event,
     /// deserialized to <typeparamref name="T"/> (string passthrough; JSON on net8.0+).
     /// </summary>
+#if NET8_0_OR_GREATER
+    [RequiresUnreferencedCode("JSON payload deserialization uses System.Text.Json reflection. Preserve payload type members when trimming.")]
+    [RequiresDynamicCode("JSON payload deserialization uses System.Text.Json reflection.")]
+#endif
     public static IObservable<T> FromEvent<T>(SseConnection connection, string eventName) =>
         System.Reactive.Linq.Observable.Create<T>(observer =>
         {

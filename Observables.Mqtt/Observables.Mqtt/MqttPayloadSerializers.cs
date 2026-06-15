@@ -1,6 +1,12 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace Observables.Mqtt;
 
 /// <summary>Global MQTT payload serializer used by <see cref="MqttObservable"/> and generated proxies.</summary>
+#if NET8_0_OR_GREATER
+[RequiresUnreferencedCode(MqttTrimAnnotations.JsonPayload)]
+[RequiresDynamicCode(MqttTrimAnnotations.JsonPayload)]
+#endif
 public static class MqttPayloadSerializers
 {
     static IMqttPayloadSerializer s_current = DefaultMqttPayloadSerializer.Instance;
@@ -18,7 +24,13 @@ public static class MqttPayloadSerializers
         s_typed[typeof(T)] = serializer ?? throw new ArgumentNullException(nameof(serializer));
 
     /// <summary>Registers <typeparamref name="T"/> using a non-generic <see cref="IMqttPayloadSerializer"/>.</summary>
-    public static void Register<T>(IMqttPayloadSerializer serializer) =>
+    public static void Register<
+#if NET8_0_OR_GREATER
+        [DynamicallyAccessedMembers(
+            DynamicallyAccessedMemberTypes.PublicConstructors | DynamicallyAccessedMemberTypes.PublicProperties
+        )]
+#endif
+        T>(IMqttPayloadSerializer serializer) =>
         Register(new NonGenericMqttPayloadSerializerAdapter<T>(
             serializer ?? throw new ArgumentNullException(nameof(serializer))));
 
@@ -30,13 +42,33 @@ public static class MqttPayloadSerializers
     public static bool Unregister<T>() => s_typed.TryRemove(typeof(T), out _);
 
     /// <summary>Deserializes a payload using <see cref="Current"/>.</summary>
-    public static object Deserialize(Type payloadType, ReadOnlySpan<byte> payload) =>
+#if NET8_0_OR_GREATER
+    [RequiresUnreferencedCode("JSON payload serialization uses System.Text.Json reflection. Preserve payload type members when trimming.")]
+    [RequiresDynamicCode("JSON payload serialization uses System.Text.Json reflection.")]
+#endif
+    public static object Deserialize(
+        [DynamicallyAccessedMembers(
+            DynamicallyAccessedMemberTypes.PublicConstructors | DynamicallyAccessedMemberTypes.PublicProperties
+        )] Type payloadType,
+        ReadOnlySpan<byte> payload) =>
         Current.Deserialize(payloadType, payload);
 
     /// <summary>Deserializes a payload buffer using <see cref="Current"/>.</summary>
-    public static object Deserialize(Type payloadType, byte[] payload) =>
+#if NET8_0_OR_GREATER
+    [RequiresUnreferencedCode(MqttTrimAnnotations.JsonPayload)]
+    [RequiresDynamicCode(MqttTrimAnnotations.JsonPayload)]
+#endif
+    public static object Deserialize(
+        [DynamicallyAccessedMembers(
+            DynamicallyAccessedMemberTypes.PublicConstructors | DynamicallyAccessedMemberTypes.PublicProperties
+        )] Type payloadType,
+        byte[] payload) =>
         Current.Deserialize(payloadType, payload);
 
+#if NET8_0_OR_GREATER
+    [RequiresUnreferencedCode("JSON payload serialization uses System.Text.Json reflection. Preserve payload type members when trimming.")]
+    [RequiresDynamicCode("JSON payload serialization uses System.Text.Json reflection.")]
+#endif
     public static T Deserialize<T>(ReadOnlySpan<byte> payload)
     {
         if (TryGetTypedSerializer<T>(out var typed))
@@ -48,13 +80,29 @@ public static class MqttPayloadSerializers
     }
 
     /// <summary>Deserializes a payload buffer to <typeparamref name="T"/>.</summary>
+#if NET8_0_OR_GREATER
+    [RequiresUnreferencedCode(MqttTrimAnnotations.JsonPayload)]
+    [RequiresDynamicCode(MqttTrimAnnotations.JsonPayload)]
+#endif
     public static T Deserialize<T>(byte[] payload) =>
         Deserialize<T>((ReadOnlySpan<byte>)payload);
 
     /// <summary>Serializes <paramref name="value"/> using <see cref="Current"/>.</summary>
-    public static byte[] Serialize(Type payloadType, object? value) =>
+#if NET8_0_OR_GREATER
+    [RequiresUnreferencedCode("JSON payload serialization uses System.Text.Json reflection. Preserve payload type members when trimming.")]
+    [RequiresDynamicCode("JSON payload serialization uses System.Text.Json reflection.")]
+#endif
+    public static byte[] Serialize(
+        [DynamicallyAccessedMembers(
+            DynamicallyAccessedMemberTypes.PublicConstructors | DynamicallyAccessedMemberTypes.PublicProperties
+        )] Type payloadType,
+        object? value) =>
         Current.Serialize(payloadType, value);
 
+#if NET8_0_OR_GREATER
+    [RequiresUnreferencedCode("JSON payload serialization uses System.Text.Json reflection. Preserve payload type members when trimming.")]
+    [RequiresDynamicCode("JSON payload serialization uses System.Text.Json reflection.")]
+#endif
     public static byte[] Serialize<T>(T value)
     {
         if (TryGetTypedSerializer<T>(out var typed))

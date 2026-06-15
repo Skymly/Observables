@@ -10,6 +10,10 @@ namespace Observables.RestAPI
     /// <summary>
     /// RestService.
     /// </summary>
+#if NET8_0_OR_GREATER
+    [RequiresUnreferencedCode(RestTrimAnnotations.Reflection)]
+    [RequiresDynamicCode(RestTrimAnnotations.Dynamic)]
+#endif
     public static class RestService
     {
         static readonly ConcurrentDictionary<Type, Type> TypeMapping = new();
@@ -21,10 +25,20 @@ namespace Observables.RestAPI
         /// <param name="refitInterfaceType">The Refit interface type.</param>
         /// <param name="factory">The generated implementation factory.</param>
         [EditorBrowsable(EditorBrowsableState.Never)]
+#if NET8_0_OR_GREATER
+        public static void RegisterGeneratedFactory(
+            [DynamicallyAccessedMembers(
+                DynamicallyAccessedMemberTypes.PublicMethods |
+                DynamicallyAccessedMemberTypes.NonPublicMethods
+            )] Type refitInterfaceType,
+            Func<HttpClient, IRequestBuilder, object> factory
+        )
+#else
         public static void RegisterGeneratedFactory(
             Type refitInterfaceType,
             Func<HttpClient, IRequestBuilder, object> factory
         )
+#endif
         {
             if (refitInterfaceType is null)
             {
@@ -47,6 +61,7 @@ namespace Observables.RestAPI
         /// <param name="builder"><see cref="IRequestBuilder"/> to use to build requests.</param>
         /// <returns>An instance that implements <typeparamref name="T"/>.</returns>
 #if NET8_0_OR_GREATER
+        [RequiresUnreferencedCode(RestTrimAnnotations.Reflection)]
         public static T For<
             [DynamicallyAccessedMembers(
                 DynamicallyAccessedMemberTypes.PublicMethods |
@@ -65,6 +80,7 @@ namespace Observables.RestAPI
         /// <returns>An instance that implements <typeparamref name="T"/>.</returns>
 #if NET8_0_OR_GREATER
         [RequiresUnreferencedCode("RestService uses reflection to create REST client implementations. Preserve interface and DTO members when trimming.")]
+        [RequiresDynamicCode(RestTrimAnnotations.Dynamic)]
         public static T For<
             [DynamicallyAccessedMembers(
                 DynamicallyAccessedMemberTypes.PublicMethods |
@@ -86,6 +102,7 @@ namespace Observables.RestAPI
         /// <param name="client">The <see cref="HttpClient"/> the implementation will use to send requests.</param>
         /// <returns>An instance that implements <typeparamref name="T"/>.</returns>
 #if NET8_0_OR_GREATER
+        [RequiresUnreferencedCode(RestTrimAnnotations.Reflection)]
         public static T For<
             [DynamicallyAccessedMembers(
                 DynamicallyAccessedMemberTypes.PublicMethods |
@@ -103,6 +120,7 @@ namespace Observables.RestAPI
         /// <param name="settings"><see cref="RestApiSettings"/> to use to configure the HttpClient.</param>
         /// <returns>An instance that implements <typeparamref name="T"/>.</returns>
 #if NET8_0_OR_GREATER
+        [RequiresUnreferencedCode(RestTrimAnnotations.Reflection)]
         public static T For<
             [DynamicallyAccessedMembers(
                 DynamicallyAccessedMemberTypes.PublicMethods |
@@ -124,6 +142,7 @@ namespace Observables.RestAPI
         /// <param name="hostUrl">Base address the implementation will use.</param>
         /// <returns>An instance that implements <typeparamref name="T"/>.</returns>
 #if NET8_0_OR_GREATER
+        [RequiresUnreferencedCode(RestTrimAnnotations.Reflection)]
         public static T For<
             [DynamicallyAccessedMembers(
                 DynamicallyAccessedMemberTypes.PublicMethods |
@@ -185,6 +204,7 @@ namespace Observables.RestAPI
         /// <returns>An instance that implements <paramref name="refitInterfaceType"/>.</returns>
 #if NET8_0_OR_GREATER
         [RequiresUnreferencedCode("RestService uses reflection to create REST client implementations. Preserve interface and DTO members when trimming.")]
+        [RequiresDynamicCode(RestTrimAnnotations.Dynamic)]
         public static object For(
             [DynamicallyAccessedMembers(
                 DynamicallyAccessedMemberTypes.PublicMethods |
@@ -213,6 +233,7 @@ namespace Observables.RestAPI
         /// <param name="client">The <see cref="HttpClient"/> the implementation will use to send requests.</param>
         /// <returns>An instance that implements <paramref name="refitInterfaceType"/>.</returns>
 #if NET8_0_OR_GREATER
+        [RequiresUnreferencedCode(RestTrimAnnotations.Reflection)]
         public static object For(
             [DynamicallyAccessedMembers(
                 DynamicallyAccessedMemberTypes.PublicMethods |
@@ -233,6 +254,7 @@ namespace Observables.RestAPI
         /// <param name="settings"><see cref="RestApiSettings"/> to use to configure the HttpClient.</param>
         /// <returns>An instance that implements <paramref name="refitInterfaceType"/>.</returns>
 #if NET8_0_OR_GREATER
+        [RequiresUnreferencedCode(RestTrimAnnotations.Reflection)]
         public static object For(
             [DynamicallyAccessedMembers(
                 DynamicallyAccessedMemberTypes.PublicMethods |
@@ -257,6 +279,7 @@ namespace Observables.RestAPI
         /// <param name="hostUrl">Base address the implementation will use.</param>
         /// <returns>An instance that implements <paramref name="refitInterfaceType"/>.</returns>
 #if NET8_0_OR_GREATER
+        [RequiresUnreferencedCode(RestTrimAnnotations.Reflection)]
         public static object For(
             [DynamicallyAccessedMembers(
                 DynamicallyAccessedMemberTypes.PublicMethods |

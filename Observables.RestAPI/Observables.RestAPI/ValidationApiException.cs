@@ -1,4 +1,7 @@
 using System.Text.Json;
+#if NET8_0_OR_GREATER
+using System.Diagnostics.CodeAnalysis;
+#endif
 
 namespace Observables.RestAPI
 {
@@ -26,13 +29,18 @@ namespace Observables.RestAPI
                 apiException.ReasonPhrase,
                 apiException.Headers,
                 apiException.RestApiSettings
-            ) { }
+            )
+        { }
 
         /// <summary>
         /// Creates a new instance of a ValidationException from an existing ApiException.
         /// </summary>
         /// <param name="exception">An instance of an ApiException to use to build a ValidationException.</param>
         /// <returns>ValidationApiException</returns>
+#if NET8_0_OR_GREATER
+        [RequiresUnreferencedCode(RestTrimAnnotations.Reflection)]
+        [RequiresDynamicCode(RestTrimAnnotations.Dynamic)]
+#endif
         public static ValidationApiException Create(ApiException exception)
         {
             if (exception is null)

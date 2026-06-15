@@ -14,7 +14,15 @@ public static class GrpcService
 
     /// <summary>Registers a source-generated gRPC proxy factory.</summary>
     [EditorBrowsable(EditorBrowsableState.Never)]
+#if NET8_0_OR_GREATER
+    public static void RegisterGeneratedFactory(
+        [DynamicallyAccessedMembers(
+            DynamicallyAccessedMemberTypes.PublicMethods | DynamicallyAccessedMemberTypes.PublicProperties
+        )] Type grpcInterfaceType,
+        Func<CallInvoker, object> factory)
+#else
     public static void RegisterGeneratedFactory(Type grpcInterfaceType, Func<CallInvoker, object> factory)
+#endif
     {
         if (grpcInterfaceType is null)
         {

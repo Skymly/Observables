@@ -1,8 +1,13 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Text;
 
 namespace Observables.Mqtt;
 
 /// <summary>Built-in serializer for raw <see cref="byte"/>[] and UTF-8 <see cref="string"/> payloads.</summary>
+#if NET8_0_OR_GREATER
+[RequiresUnreferencedCode(MqttTrimAnnotations.JsonPayload)]
+[RequiresDynamicCode(MqttTrimAnnotations.JsonPayload)]
+#endif
 public sealed class PrimitiveMqttPayloadSerializer : IMqttPayloadSerializer
 {
     public static PrimitiveMqttPayloadSerializer Instance { get; } = new();
@@ -11,7 +16,11 @@ public sealed class PrimitiveMqttPayloadSerializer : IMqttPayloadSerializer
     {
     }
 
-    public object Deserialize(Type payloadType, ReadOnlySpan<byte> payload)
+    public object Deserialize(
+        [DynamicallyAccessedMembers(
+            DynamicallyAccessedMemberTypes.PublicConstructors | DynamicallyAccessedMemberTypes.PublicProperties
+        )] Type payloadType,
+        ReadOnlySpan<byte> payload)
     {
         if (payloadType == typeof(byte[]))
         {
@@ -26,7 +35,11 @@ public sealed class PrimitiveMqttPayloadSerializer : IMqttPayloadSerializer
         throw CreateUnsupportedException(payloadType, deserialize: true);
     }
 
-    public byte[] Serialize(Type payloadType, object? value)
+    public byte[] Serialize(
+        [DynamicallyAccessedMembers(
+            DynamicallyAccessedMemberTypes.PublicConstructors | DynamicallyAccessedMemberTypes.PublicProperties
+        )] Type payloadType,
+        object? value)
     {
         if (payloadType == typeof(byte[]))
         {

@@ -1,5 +1,8 @@
 using System.Collections;
 using System.Reflection;
+#if NET8_0_OR_GREATER
+using System.Diagnostics.CodeAnalysis;
+#endif
 
 namespace Observables.RestAPI
 {
@@ -9,6 +12,9 @@ namespace Observables.RestAPI
     /// <remarks>Performs field renaming and value formatting as specified in <see cref="QueryAttribute"/>s and
     /// <see cref="RestApiSettings.FormUrlEncodedParameterFormatter"/>. A given key may appear multiple times with the
     /// same or different values.</remarks>
+#if NET8_0_OR_GREATER
+    [RequiresUnreferencedCode(RestTrimAnnotations.Reflection)]
+#endif
     class FormValueMultimap : IEnumerable<KeyValuePair<string?, string?>>
     {
         static readonly Dictionary<Type, PropertyInfo[]> PropertyCache = [];

@@ -1,6 +1,8 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace Observables.Nats;
 
-/// <summary>Converts MQTT application message payloads to and from CLR values.</summary>
+/// <summary>Converts NATS message payloads to and from CLR values.</summary>
 /// <remarks>
 /// The default implementation supports <see cref="byte"/>[] and <see cref="string"/> only.
 /// Register a custom INatsPayloadSerializer via <see cref="NatsPayloadSerializers.Current"/>,
@@ -10,8 +12,24 @@ namespace Observables.Nats;
 public interface INatsPayloadSerializer
 {
     /// <summary>Deserializes a payload to <paramref name="payloadType"/>.</summary>
-    object Deserialize(Type payloadType, ReadOnlySpan<byte> payload);
+#if NET8_0_OR_GREATER
+    [RequiresUnreferencedCode("JSON payload serialization uses System.Text.Json reflection. Preserve payload type members when trimming.")]
+    [RequiresDynamicCode("JSON payload serialization uses System.Text.Json reflection.")]
+#endif
+    object Deserialize(
+        [DynamicallyAccessedMembers(
+            DynamicallyAccessedMemberTypes.PublicConstructors | DynamicallyAccessedMemberTypes.PublicProperties
+        )] Type payloadType,
+        ReadOnlySpan<byte> payload);
 
     /// <summary>Serializes <paramref name="value"/> to a wire payload.</summary>
-    byte[] Serialize(Type payloadType, object? value);
+#if NET8_0_OR_GREATER
+    [RequiresUnreferencedCode("JSON payload serialization uses System.Text.Json reflection. Preserve payload type members when trimming.")]
+    [RequiresDynamicCode("JSON payload serialization uses System.Text.Json reflection.")]
+#endif
+    byte[] Serialize(
+        [DynamicallyAccessedMembers(
+            DynamicallyAccessedMemberTypes.PublicConstructors | DynamicallyAccessedMemberTypes.PublicProperties
+        )] Type payloadType,
+        object? value);
 }

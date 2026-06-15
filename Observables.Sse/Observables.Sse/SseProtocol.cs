@@ -2,6 +2,7 @@ using System.IO;
 using System.Text;
 #if NETSTANDARD2_0
 #else
+using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
 #endif
 
@@ -110,6 +111,10 @@ public static class SseProtocol
     }
 
     /// <summary>Deserializes an SSE <c>data</c> payload into <typeparamref name="T"/>.</summary>
+#if NET8_0_OR_GREATER
+    [RequiresUnreferencedCode("JSON payload deserialization uses System.Text.Json reflection. Preserve payload type members when trimming.")]
+    [RequiresDynamicCode("JSON payload deserialization uses System.Text.Json reflection.")]
+#endif
     public static T Deserialize<T>(string data)
     {
         if (typeof(T) == typeof(string))

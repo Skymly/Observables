@@ -14,7 +14,15 @@ public static class HubService
 
     /// <summary>Registers a source-generated hub proxy factory.</summary>
     [EditorBrowsable(EditorBrowsableState.Never)]
+#if NET8_0_OR_GREATER
+    public static void RegisterGeneratedFactory(
+        [DynamicallyAccessedMembers(
+            DynamicallyAccessedMemberTypes.PublicMethods | DynamicallyAccessedMemberTypes.PublicProperties
+        )] Type hubInterfaceType,
+        Func<HubConnection, object> factory)
+#else
     public static void RegisterGeneratedFactory(Type hubInterfaceType, Func<HubConnection, object> factory)
+#endif
     {
         if (hubInterfaceType is null)
         {

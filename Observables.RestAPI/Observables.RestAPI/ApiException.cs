@@ -41,9 +41,9 @@ namespace Observables.RestAPI
         /// <summary>
         /// Does the response have content?
         /// </summary>
-        #if NET6_0_OR_GREATER
+#if NET6_0_OR_GREATER
         [MemberNotNullWhen(true, nameof(Content))]
-        #endif
+#endif
         public bool HasContent => !string.IsNullOrWhiteSpace(Content);
 
         /// <summary>
@@ -77,7 +77,8 @@ namespace Observables.RestAPI
                 headers,
                 RestApiSettings,
                 innerException
-            ) { }
+            )
+        { }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ApiException"/> class.
@@ -131,6 +132,10 @@ namespace Observables.RestAPI
         /// <param name="RestApiSettings">Refit settings used to sent the request.</param>
         /// <param name="innerException">Add an inner exception to the <see cref="ApiException"/>.</param>
         /// <returns>A newly created <see cref="ApiException"/>.</returns>
+#if NET8_0_OR_GREATER
+        [RequiresUnreferencedCode(RestTrimAnnotations.Reflection)]
+        [RequiresDynamicCode(RestTrimAnnotations.Dynamic)]
+#endif
 #pragma warning disable VSTHRD200 // Use "Async" suffix for async methods
         public static Task<ApiException> Create(
             HttpRequestMessage message,
@@ -167,6 +172,10 @@ namespace Observables.RestAPI
         /// <param name="RestApiSettings">Refit settings used to send the request.</param>
         /// <param name="innerException">Add an inner exception to the <see cref="ApiException"/>.</param>
         /// <returns>A newly created <see cref="ApiException"/>.</returns>
+#if NET8_0_OR_GREATER
+        [RequiresUnreferencedCode(RestTrimAnnotations.Reflection)]
+        [RequiresDynamicCode(RestTrimAnnotations.Dynamic)]
+#endif
 #pragma warning disable VSTHRD200 // Use "Async" suffix for async methods
         public static async Task<ApiException> Create(
             string exceptionMessage,

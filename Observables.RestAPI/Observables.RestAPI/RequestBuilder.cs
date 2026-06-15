@@ -53,6 +53,10 @@ namespace Observables.RestAPI
     /// type and create implementations for HTTP API calls. When using trimming or linking, ensure that referenced
     /// interfaces and data transfer objects are preserved, as reflection is required for correct operation. All members
     /// of this class are thread-safe and can be used concurrently across multiple threads.</remarks>
+#if NET8_0_OR_GREATER
+    [RequiresUnreferencedCode(RestTrimAnnotations.Reflection)]
+    [RequiresDynamicCode(RestTrimAnnotations.Dynamic)]
+#endif
     public static class RequestBuilder
     {
         static readonly RequestBuilderFactory PlatformRequestBuilderFactory = new();

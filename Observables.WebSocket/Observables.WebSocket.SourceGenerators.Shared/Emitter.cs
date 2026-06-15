@@ -1,4 +1,4 @@
-﻿using System.Text;
+using System.Text;
 using Microsoft.CodeAnalysis.Text;
 
 namespace Observables.WebSocket.Generators;
@@ -20,6 +20,11 @@ internal static class Emitter
             return;
         }
 
+        var dependencyAttributes = string.Join(
+            "\n",
+            model.Interfaces.AsArray().Select(static m =>
+                $"                    [global::System.Diagnostics.CodeAnalysis.DynamicDependency(global::System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.All, typeof({m.GeneratedNamespace}.{m.ClassName}))]"));
+
         var registrations = string.Join(
             "\n",
             model.Interfaces.AsArray().Select(static m =>
@@ -36,6 +41,7 @@ internal static class Emitter
                 internal static class WebSocketProxyRegistration
                 {
             #if NET5_0_OR_GREATER
+            {{dependencyAttributes}}
                     [System.Runtime.CompilerServices.ModuleInitializer]
                     internal static void Initialize()
                     {
@@ -109,85 +115,85 @@ internal static class Emitter
                 break;
 
             case WebSocketBoundaryKind.Connect:
-            {
-                var cancellation = member.HasCancellationToken ? ", cancellationToken" : ", default";
-                var uriParam = member.ParameterNames.Count > 0 ? member.ParameterNames.AsArray()[0] : "uri";
-                var parameterList = member.ParameterDeclarations.Count == 0
-                    ? string.Empty
-                    : string.Join(", ", member.ParameterDeclarations.AsArray());
-                writer.WriteLine(
-                    $$"""
+                {
+                    var cancellation = member.HasCancellationToken ? ", cancellationToken" : ", default";
+                    var uriParam = member.ParameterNames.Count > 0 ? member.ParameterNames.AsArray()[0] : "uri";
+                    var parameterList = member.ParameterDeclarations.Count == 0
+                        ? string.Empty
+                        : string.Join(", ", member.ParameterDeclarations.AsArray());
+                    writer.WriteLine(
+                        $$"""
                         public {{member.ReturnTypeDisplay}} {{member.MemberName}}({{parameterList}}) =>
                             {{BridgeType}}.FromConnect(_socket, {{uriParam}}{{cancellation}});
 
                     """);
-                break;
-            }
+                    break;
+                }
 
             case WebSocketBoundaryKind.Close:
-            {
-                var cancellation = member.HasCancellationToken ? ", cancellationToken" : ", default";
-                var parameterList = member.ParameterDeclarations.Count == 0
-                    ? string.Empty
-                    : string.Join(", ", member.ParameterDeclarations.AsArray());
-                writer.WriteLine(
-                    $$"""
+                {
+                    var cancellation = member.HasCancellationToken ? ", cancellationToken" : ", default";
+                    var parameterList = member.ParameterDeclarations.Count == 0
+                        ? string.Empty
+                        : string.Join(", ", member.ParameterDeclarations.AsArray());
+                    writer.WriteLine(
+                        $$"""
                         public {{member.ReturnTypeDisplay}} {{member.MemberName}}({{parameterList}}) =>
                             {{BridgeType}}.FromClose(_socket{{cancellation}});
 
                     """);
-                break;
-            }
+                    break;
+                }
 
             default: // Send
-            {
-                var cancellation = member.HasCancellationToken ? ", cancellationToken" : ", default";
-                var parameterList = member.ParameterDeclarations.Count == 0
-                    ? string.Empty
-                    : string.Join(", ", member.ParameterDeclarations.AsArray());
-
-                if (member.ParameterNames.Count == 0)
                 {
-                    // No payload — send empty binary frame
-                    writer.WriteLine(
-                        $$"""
+                    var cancellation = member.HasCancellationToken ? ", cancellationToken" : ", default";
+                    var parameterList = member.ParameterDeclarations.Count == 0
+                        ? string.Empty
+                        : string.Join(", ", member.ParameterDeclarations.AsArray());
+
+                    if (member.ParameterNames.Count == 0)
+                    {
+                        // No payload — send empty binary frame
+                        writer.WriteLine(
+                            $$"""
                             public {{member.ReturnTypeDisplay}} {{member.MemberName}}({{parameterList}}) =>
                                 {{BridgeType}}.FromSend(_socket, global::System.Array.Empty<byte>(){{cancellation}});
 
                         """);
-                }
-                else if (member.ParameterNames.Count == 1)
-                {
-                    var paramName = member.ParameterNames.AsArray()[0];
-                    var paramDecl = member.ParameterDeclarations.Count > 0
-                        ? member.ParameterDeclarations.AsArray()[0]
-                        : string.Empty;
-
-                    if (paramDecl.Contains("string") || paramDecl.Contains("String"))
+                    }
+                    else if (member.ParameterNames.Count == 1)
                     {
-                        // string → Text frame
-                        writer.WriteLine(
-                            $$"""
+                        var paramName = member.ParameterNames.AsArray()[0];
+                        var paramDecl = member.ParameterDeclarations.Count > 0
+                            ? member.ParameterDeclarations.AsArray()[0]
+                            : string.Empty;
+
+                        if (paramDecl.Contains("string") || paramDecl.Contains("String"))
+                        {
+                            // string → Text frame
+                            writer.WriteLine(
+                                $$"""
                                 public {{member.ReturnTypeDisplay}} {{member.MemberName}}({{parameterList}}) =>
                                     {{BridgeType}}.FromSendText(_socket, {{paramName}}{{cancellation}});
 
                             """);
-                    }
-                    else if (paramDecl.Contains("byte[]") || paramDecl.Contains("Byte[]"))
-                    {
-                        // byte[] → Binary frame
-                        writer.WriteLine(
-                            $$"""
+                        }
+                        else if (paramDecl.Contains("byte[]") || paramDecl.Contains("Byte[]"))
+                        {
+                            // byte[] → Binary frame
+                            writer.WriteLine(
+                                $$"""
                                 public {{member.ReturnTypeDisplay}} {{member.MemberName}}({{parameterList}}) =>
                                     {{BridgeType}}.FromSend(_socket, {{paramName}}{{cancellation}});
 
                             """);
-                    }
-                    else
-                    {
-                        // Custom type → JSON-serialized Text frame (net8+ only)
-                        writer.WriteLine(
-                            $$"""
+                        }
+                        else
+                        {
+                            // Custom type → JSON-serialized Text frame (net8+ only)
+                            writer.WriteLine(
+                                $$"""
                                 public {{member.ReturnTypeDisplay}} {{member.MemberName}}({{parameterList}})
                                 {
                             #if NET8_0_OR_GREATER
@@ -199,14 +205,14 @@ internal static class Emitter
                                 }
 
                             """);
+                        }
                     }
-                }
-                else
-                {
-                    // Multiple params → JSON anonymous object → Text frame (net8+ only)
-                    var paramNames = string.Join(", ", member.ParameterNames.AsArray());
-                    writer.WriteLine(
-                        $$"""
+                    else
+                    {
+                        // Multiple params → JSON anonymous object → Text frame (net8+ only)
+                        var paramNames = string.Join(", ", member.ParameterNames.AsArray());
+                        writer.WriteLine(
+                            $$"""
                             public {{member.ReturnTypeDisplay}} {{member.MemberName}}({{parameterList}})
                             {
                         #if NET8_0_OR_GREATER
@@ -218,10 +224,10 @@ internal static class Emitter
                             }
 
                         """);
-                }
+                    }
 
-                break;
-            }
+                    break;
+                }
         }
     }
 }

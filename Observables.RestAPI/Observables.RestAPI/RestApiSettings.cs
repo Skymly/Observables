@@ -9,12 +9,19 @@ using System.Reflection;
 using System.Runtime.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
+#if NET8_0_OR_GREATER
+using System.Diagnostics.CodeAnalysis;
+#endif
 
 namespace Observables.RestAPI
 {
     /// <summary>
     /// Defines various parameters on how Refit should work.
     /// </summary>
+#if NET8_0_OR_GREATER
+    [RequiresUnreferencedCode(RestTrimAnnotations.Reflection)]
+    [RequiresDynamicCode(RestTrimAnnotations.Dynamic)]
+#endif
     public class RestApiSettings
     {
         /// <summary>
@@ -79,7 +86,8 @@ namespace Observables.RestAPI
             HttpRequestMessage,
             CancellationToken,
             Task<string>
-        >? AuthorizationHeaderValueGetter { get; set; }
+        >? AuthorizationHeaderValueGetter
+        { get; set; }
 
         /// <summary>
         /// Supply a custom inner HttpMessageHandler. Does not work if you supply an HttpClient instance.
@@ -246,6 +254,9 @@ namespace Observables.RestAPI
     /// <summary>
     /// Default Url parameter formater.
     /// </summary>
+#if NET8_0_OR_GREATER
+    [RequiresUnreferencedCode(RestTrimAnnotations.Reflection)]
+#endif
     public class DefaultUrlParameterFormatter : IUrlParameterFormatter
     {
         static readonly ConcurrentDictionary<
@@ -352,6 +363,9 @@ namespace Observables.RestAPI
     /// <summary>
     /// Default form Url-encoded parameter formatter.
     /// </summary>
+#if NET8_0_OR_GREATER
+    [RequiresUnreferencedCode(RestTrimAnnotations.Reflection)]
+#endif
     public class DefaultFormUrlEncodedParameterFormatter : IFormUrlEncodedParameterFormatter
     {
         static readonly ConcurrentDictionary<
@@ -402,6 +416,10 @@ namespace Observables.RestAPI
     /// <summary>
     /// Default Api exception factory.
     /// </summary>
+#if NET8_0_OR_GREATER
+    [RequiresUnreferencedCode(RestTrimAnnotations.Reflection)]
+    [RequiresDynamicCode(RestTrimAnnotations.Dynamic)]
+#endif
     public class DefaultApiExceptionFactory(RestApiSettings RestApiSettings)
     {
         static readonly Task<Exception?> NullTask = Task.FromResult<Exception?>(null);

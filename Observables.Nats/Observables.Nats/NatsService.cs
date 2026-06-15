@@ -14,7 +14,15 @@ public static class NatsService
 
     /// <summary>Registers a source-generated subject proxy factory.</summary>
     [EditorBrowsable(EditorBrowsableState.Never)]
+#if NET8_0_OR_GREATER
+    public static void RegisterGeneratedFactory(
+        [DynamicallyAccessedMembers(
+            DynamicallyAccessedMemberTypes.PublicMethods | DynamicallyAccessedMemberTypes.PublicProperties
+        )] Type natsInterfaceType,
+        Func<INatsConnection, object> factory)
+#else
     public static void RegisterGeneratedFactory(Type natsInterfaceType, Func<INatsConnection, object> factory)
+#endif
     {
         if (natsInterfaceType is null)
         {

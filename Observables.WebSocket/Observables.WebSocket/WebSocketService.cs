@@ -14,7 +14,15 @@ public static class WebSocketService
 
     /// <summary>Registers a source-generated WebSocket proxy factory.</summary>
     [EditorBrowsable(EditorBrowsableState.Never)]
+#if NET8_0_OR_GREATER
+    public static void RegisterGeneratedFactory(
+        [DynamicallyAccessedMembers(
+            DynamicallyAccessedMemberTypes.PublicMethods | DynamicallyAccessedMemberTypes.PublicProperties
+        )] Type wsInterfaceType,
+        Func<ClientWebSocket, object> factory)
+#else
     public static void RegisterGeneratedFactory(Type wsInterfaceType, Func<ClientWebSocket, object> factory)
+#endif
     {
         if (wsInterfaceType is null)
         {

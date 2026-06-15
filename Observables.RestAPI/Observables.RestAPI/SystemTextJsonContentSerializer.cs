@@ -3,6 +3,9 @@ using System.Net.Http.Json;
 using System.Reflection;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+#if NET5_0_OR_GREATER
+using System.Diagnostics.CodeAnalysis;
+#endif
 #if NET8_0_OR_GREATER
 using System.Text.Json.Serialization.Metadata;
 #endif
@@ -16,6 +19,10 @@ namespace Observables.RestAPI
     /// Creates a new <see cref="SystemTextJsonContentSerializer"/> instance with the specified parameters
     /// </remarks>
     /// <param name="jsonSerializerOptions">The serialization options to use for the current instance</param>
+#if NET8_0_OR_GREATER
+    [RequiresUnreferencedCode(RestTrimAnnotations.Reflection)]
+    [RequiresDynamicCode(RestTrimAnnotations.Dynamic)]
+#endif
     public sealed class SystemTextJsonContentSerializer(JsonSerializerOptions jsonSerializerOptions) : IHttpContentSerializer
     {
         /// <summary>
@@ -155,16 +162,38 @@ namespace Observables.RestAPI
                 JsonSerializer.Serialize(writer, objectToWrite, options.GetTypeInfo(objectToWrite.GetType()));
                 return;
             }
-#endif
+
+            WriteFallback(writer, objectToWrite, options);
+#else
             JsonSerializer.Serialize(writer, objectToWrite, objectToWrite.GetType(), options);
+#endif
         }
+
+#if NET8_0_OR_GREATER
+        [UnconditionalSuppressMessage("AotAnalysis", "IL2026:RequiresUnreferencedCode", Justification = "Fallback path when no JsonTypeInfo resolver is configured.")]
+        [UnconditionalSuppressMessage("AotAnalysis", "IL3050:RequiresDynamicCode", Justification = "Fallback path when no JsonTypeInfo resolver is configured.")]
+        static void WriteFallback(Utf8JsonWriter writer, object objectToWrite, JsonSerializerOptions options) =>
+            JsonSerializer.Serialize(writer, objectToWrite, objectToWrite.GetType(), options);
+#endif
     }
 
     sealed class CamelCaseStringEnumConverter : JsonConverterFactory
     {
+#if NET5_0_OR_GREATER
+        [UnconditionalSuppressMessage(
+            "Trimming",
+            "IL2067",
+            Justification = "Enum converter factory resolves enum types from JsonSerializer callback types at runtime.")]
+#endif
         public override bool CanConvert(Type typeToConvert) =>
             (Nullable.GetUnderlyingType(typeToConvert) ?? typeToConvert).IsEnum;
 
+#if NET5_0_OR_GREATER
+        [UnconditionalSuppressMessage(
+            "Trimming",
+            "IL2067",
+            Justification = "Enum converter factory resolves enum types from JsonSerializer callback types at runtime.")]
+#endif
         public override JsonConverter CreateConverter(Type typeToConvert, JsonSerializerOptions options)
         {
             var enumType = Nullable.GetUnderlyingType(typeToConvert) ?? typeToConvert;
@@ -173,7 +202,13 @@ namespace Observables.RestAPI
             return new NonGenericEnumConverter(typeToConvert, enumType, isNullable);
         }
 
-        sealed class NonGenericEnumConverter(Type targetType, Type enumType, bool isNullable)
+        sealed class NonGenericEnumConverter(
+            Type targetType,
+#if NET5_0_OR_GREATER
+            [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicFields)]
+#endif
+            Type enumType,
+            bool isNullable)
             : JsonConverter<object?>
         {
             readonly Dictionary<string, object> namesToValues = GetNamesToValues(
@@ -253,6 +288,9 @@ namespace Observables.RestAPI
             }
 
             static Dictionary<string, object> GetNamesToValues(
+#if NET5_0_OR_GREATER
+                [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicFields)]
+#endif
                 Type enumType,
                 StringComparer comparer
             )
@@ -271,7 +309,11 @@ namespace Observables.RestAPI
                 return map;
             }
 
-            static Dictionary<object, string> GetValuesToNames(Type enumType)
+            static Dictionary<object, string> GetValuesToNames(
+#if NET5_0_OR_GREATER
+                [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicFields)]
+#endif
+                Type enumType)
             {
                 var map = new Dictionary<object, string>();
 

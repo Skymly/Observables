@@ -3,6 +3,7 @@ using System.Text;
 using R3;
 #if NETSTANDARD2_0
 #else
+using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
 #endif
 
@@ -74,6 +75,10 @@ public static class WebSocketObservable
             return Unit.Default;
         });
 
+#if NET8_0_OR_GREATER
+    [RequiresUnreferencedCode("JSON payload deserialization uses System.Text.Json reflection. Preserve payload type members when trimming.")]
+    [RequiresDynamicCode("JSON payload deserialization uses System.Text.Json reflection.")]
+#endif
     public static Observable<T> FromReceive<T>(ClientWebSocket socket) =>
         Observable.Create<T>(async (observer, ct) =>
         {
@@ -117,6 +122,10 @@ public static class WebSocketObservable
             }
         });
 
+#if NET8_0_OR_GREATER
+    [RequiresUnreferencedCode("JSON payload deserialization uses System.Text.Json reflection. Preserve payload type members when trimming.")]
+    [RequiresDynamicCode("JSON payload deserialization uses System.Text.Json reflection.")]
+#endif
     internal static T DeserializePayload<T>(byte[] payload, WebSocketMessageType messageType)
     {
         if (typeof(T) == typeof(byte[]))

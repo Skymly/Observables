@@ -7,12 +7,15 @@ namespace Observables.RestAPI
     interface IRequestBuilderFactory
     {
 #if NET8_0_OR_GREATER
+        [RequiresUnreferencedCode(RestTrimAnnotations.Reflection)]
+        [RequiresDynamicCode(RestTrimAnnotations.Dynamic)]
         IRequestBuilder<T> Create<
             [DynamicallyAccessedMembers(
                 DynamicallyAccessedMemberTypes.PublicMethods |
                 DynamicallyAccessedMemberTypes.NonPublicMethods
             )] T>(RestApiSettings? settings);
         [RequiresUnreferencedCode("Refit uses reflection to analyze interface methods. Ensure referenced interfaces and DTOs are preserved when trimming.")]
+        [RequiresDynamicCode(RestTrimAnnotations.Dynamic)]
         IRequestBuilder Create(
             [DynamicallyAccessedMembers(
                 DynamicallyAccessedMemberTypes.PublicMethods |
@@ -29,6 +32,8 @@ namespace Observables.RestAPI
     class RequestBuilderFactory : IRequestBuilderFactory
     {
 #if NET8_0_OR_GREATER
+        [RequiresUnreferencedCode(RestTrimAnnotations.Reflection)]
+        [RequiresDynamicCode(RestTrimAnnotations.Dynamic)]
         public IRequestBuilder<T> Create<
             [DynamicallyAccessedMembers(
                 DynamicallyAccessedMemberTypes.PublicMethods |
@@ -45,6 +50,7 @@ namespace Observables.RestAPI
 
 #if NET8_0_OR_GREATER
         [RequiresUnreferencedCode("Refit uses reflection to analyze interface methods. Ensure referenced interfaces and DTOs are preserved when trimming.")]
+        [RequiresDynamicCode(RestTrimAnnotations.Dynamic)]
         public IRequestBuilder Create(
             [DynamicallyAccessedMembers(
                 DynamicallyAccessedMemberTypes.PublicMethods |

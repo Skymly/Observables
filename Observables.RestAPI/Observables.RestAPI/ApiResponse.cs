@@ -5,6 +5,10 @@ using System.Net.Http.Headers;
 
 namespace Observables.RestAPI
 {
+#if NET8_0_OR_GREATER
+    [RequiresUnreferencedCode(RestTrimAnnotations.Reflection)]
+    [RequiresDynamicCode(RestTrimAnnotations.Dynamic)]
+#endif
     static class ApiResponse
     {
         internal static T Create<T, TBody>(
@@ -32,6 +36,10 @@ namespace Observables.RestAPI
     /// <param name="settings">Refit settings used to send the request.</param>
     /// <param name="error">The exception, if the request failed.</param>
     /// <exception cref="ArgumentNullException"></exception>
+#if NET8_0_OR_GREATER
+    [RequiresUnreferencedCode(RestTrimAnnotations.Reflection)]
+    [RequiresDynamicCode(RestTrimAnnotations.Dynamic)]
+#endif
     public sealed class ApiResponse<T>(
         HttpRequestMessage request,
         HttpResponseMessage? response,
@@ -149,7 +157,8 @@ namespace Observables.RestAPI
             response,
             content,
             settings,
-            error) { }
+            error)
+        { }
 
         /// <summary>
         /// Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.

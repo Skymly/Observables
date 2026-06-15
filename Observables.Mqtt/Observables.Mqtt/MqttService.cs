@@ -14,7 +14,15 @@ public static class MqttService
 
     /// <summary>Registers a source-generated topic proxy factory.</summary>
     [EditorBrowsable(EditorBrowsableState.Never)]
+#if NET8_0_OR_GREATER
+    public static void RegisterGeneratedFactory(
+        [DynamicallyAccessedMembers(
+            DynamicallyAccessedMemberTypes.PublicMethods | DynamicallyAccessedMemberTypes.PublicProperties
+        )] Type mqttInterfaceType,
+        Func<IMqttClient, object> factory)
+#else
     public static void RegisterGeneratedFactory(Type mqttInterfaceType, Func<IMqttClient, object> factory)
+#endif
     {
         if (mqttInterfaceType is null)
         {

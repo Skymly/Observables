@@ -13,6 +13,8 @@ using System.Diagnostics.CodeAnalysis;
 namespace Observables.RestAPI
 {
 #if NET5_0_OR_GREATER
+    [RequiresUnreferencedCode(RestTrimAnnotations.Reflection)]
+    [RequiresDynamicCode(RestTrimAnnotations.Dynamic)]
     class RequestBuilderImplementation<
         [
             DynamicallyAccessedMembers(
@@ -24,6 +26,7 @@ namespace Observables.RestAPI
     {
 #if NET5_0_OR_GREATER
         [RequiresUnreferencedCode("RequestBuilder uses reflection on the provided Refit interface and DTO types. Ensure necessary members are preserved when trimming.")]
+        [RequiresDynamicCode(RestTrimAnnotations.Dynamic)]
 #endif
         public RequestBuilderImplementation(RestApiSettings? RestApiSettings = null)
             : base(typeof(TApi), RestApiSettings)
@@ -31,11 +34,15 @@ namespace Observables.RestAPI
         }
     }
 
+#if NET5_0_OR_GREATER
+    [RequiresUnreferencedCode(RestTrimAnnotations.Reflection)]
+    [RequiresDynamicCode(RestTrimAnnotations.Dynamic)]
+#endif
     partial class RequestBuilderImplementation : IRequestBuilder
     {
         private const int StackallocThreshold = 512;
-        static readonly QueryAttribute DefaultQueryAttribute = new ();
-        static readonly Uri BaseUri = new ("http://api");
+        static readonly QueryAttribute DefaultQueryAttribute = new();
+        static readonly Uri BaseUri = new("http://api");
         readonly Dictionary<string, List<RestMethodInfoInternal>> interfaceHttpMethods;
         readonly ConcurrentDictionary<
             CloseGenericMethodKey,
@@ -186,6 +193,10 @@ namespace Observables.RestAPI
 
 #if NET5_0_OR_GREATER
         [RequiresDynamicCode("Closing generic REST methods uses MakeGenericMethod at runtime.")]
+        [UnconditionalSuppressMessage(
+            "AotAnalysis",
+            "IL2060:MakeGenericMethod",
+            Justification = "Generic REST method closing is confined to RequestBuilderImplementation, which is annotated with RequiresDynamicCode.")]
 #endif
         RestMethodInfoInternal CloseGenericMethodIfNeeded(
             RestMethodInfoInternal restMethodInfo,
@@ -1171,7 +1182,7 @@ namespace Observables.RestAPI
 
                 if (queryParamsToAdd is not null && queryParamsToAdd.Count != 0)
                 {
-                    uri.Query = CreateQueryString(queryParamsToAdd);;
+                    uri.Query = CreateQueryString(queryParamsToAdd); ;
                 }
                 else
                 {
@@ -1269,7 +1280,7 @@ namespace Observables.RestAPI
                 var firstSection = true;
                 foreach (var section in split)
                 {
-                    if(!firstSection)
+                    if (!firstSection)
                         vsb.Append('/');
 
                     vsb.Append(
@@ -1619,7 +1630,7 @@ namespace Observables.RestAPI
 
                     // Missing a "default" clause was preventing the collection from serializing at all, as it was hitting "continue" thus causing an off-by-one error
                     var formattedValues = paramValues
-                        .Cast<object> ()
+                        .Cast<object>()
                         .Select(
                             v =>
                                 settings.UrlParameterFormatter.Format(
@@ -1664,9 +1675,9 @@ namespace Observables.RestAPI
             var firstQuery = true;
             foreach (var queryParam in queryParamsToAdd)
             {
-                if(queryParam is not { Key: not null, Value: not null })
+                if (queryParam is not { Key: not null, Value: not null })
                     continue;
-                if(!firstQuery)
+                if (!firstQuery)
                 {
                     // for all items after the first we add a & symbol
                     vsb.Append('&');

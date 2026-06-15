@@ -20,7 +20,7 @@
 |---|-----|------|
 | 1 | 中央包管理（`Directory.Packages.props`） | ✅ M2 已落地 |
 | 2 | TFM / 公共属性收口（`eng/Observables.ProjectDefaults.props`） | ✅ M2 已落地 |
-| 3 | `TreatWarningsAsErrors`；CS860x、IL trim、xUnit 告警 | ✅ M2 已落地（IL 族 net8/9 暂 `NoWarn`，M5 收敛） |
+| 3 | `TreatWarningsAsErrors`；CS860x、IL trim、xUnit 告警 | ✅ M2/M7 已落地（域运行时 net8/9 通过 Requires* 传播与生成代理保留收敛 IL 告警） |
 | 4 | Nuke 清单 / 版本双真相源 | ✅ M2 已落地（`Observables.BuildManifest.json` + `PackageVersionReader`） |
 | 5 | 诊断 release 跟踪（`AnalyzerReleases.*.md`、移除 RS2008） | ✅ M2 已落地；描述符文件结构仍分散 |
 | 6 | Grpc 骨架命名（`Observables.Grpc.R3`）违反约定 | ✅ M3 已重命名为 `*.R3.SourceGenerators` |
@@ -75,7 +75,7 @@ graph LR
 - ~~`eng/Observables.ProjectDefaults.props` 收口 TFM / 公共属性~~ ✅
 - ~~`eng/Observables.BuildManifest.json` + `PackageVersionReader`~~ ✅
 - ~~`AnalyzerReleases.Shipped.md` / `Unshipped.md`，移除 RS2008 pragma~~ ✅
-- ~~`TreatWarningsAsErrors` + CS86xx / xUnit1051 清零~~ ✅；IL trim 族 net8/9 最小 `NoWarn`（M5 改 source-gen 后移除）。
+- ~~`TreatWarningsAsErrors` + CS86xx / xUnit1051 清零~~ ✅；域运行时 net8/9 IL trim 告警通过 Requires* 传播与 `DynamicDependency` 生成代理保留收敛（M7）。
 
 ### M3 — Grpc 域 ✅
 
@@ -129,7 +129,7 @@ Grpc 两包已于 **`0.1.0-preview6`**（`v0.1.0-preview6` tag）发布至 nuget
 > 依赖 M1–M6 全部完成（八域齐备后再冻结）。
 
 - 引入 `Microsoft.CodeAnalysis.PublicApiAnalyzers`，为运行时与公共 Attribute 锁定公共 API（`PublicAPI.Shipped.txt` / `Unshipped.txt`）。✅ 见 [`docs/design/public-api.md`](design/public-api.md)。
-- nullable / AOT / trim 告警清零（承接 M2）。
+- nullable / AOT / trim 告警清零（M7 已通过 Requires* 传播与生成代理保留收敛域运行时 IL 告警；`JsonSerializerContext` source-gen 为后续增强）。
 - 复核包元数据（README、tags、license、SourceLink）。
 - 维护者推 `v1.0.0` tag → NuGet → GitHub Release（稳定版含 Release，预览版不含）。
 

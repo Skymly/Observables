@@ -5,6 +5,9 @@ using System.Threading.Tasks;
 using MQTTnet;
 using MQTTnet.Client;
 using MQTTnet.Protocol;
+#if NET8_0_OR_GREATER
+using System.Diagnostics.CodeAnalysis;
+#endif
 
 namespace Observables.Mqtt.Reactive;
 
@@ -28,6 +31,10 @@ public static class SystemReactiveMqttAdapter
             return System.Reactive.Unit.Default;
         });
 
+#if NET8_0_OR_GREATER
+    [RequiresUnreferencedCode("JSON payload serialization uses System.Text.Json reflection. Preserve payload type members when trimming.")]
+    [RequiresDynamicCode("JSON payload serialization uses System.Text.Json reflection.")]
+#endif
     public static IObservable<T> FromSubscribe<T>(IMqttClient client, string topicFilter) =>
         Observable.Create<T>(observer =>
         {

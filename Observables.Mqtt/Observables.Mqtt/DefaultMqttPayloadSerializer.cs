@@ -1,9 +1,15 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace Observables.Mqtt;
 
 /// <summary>
 /// Default serializer: raw <see cref="byte"/>[] / UTF-8 <see cref="string"/> via
 /// <see cref="PrimitiveMqttPayloadSerializer"/>; JSON for other types on net8.0+.
 /// </summary>
+#if NET8_0_OR_GREATER
+[RequiresUnreferencedCode(MqttTrimAnnotations.JsonPayload)]
+[RequiresDynamicCode(MqttTrimAnnotations.JsonPayload)]
+#endif
 public sealed class DefaultMqttPayloadSerializer : IMqttPayloadSerializer
 {
     public static DefaultMqttPayloadSerializer Instance { get; } = new();
@@ -12,7 +18,11 @@ public sealed class DefaultMqttPayloadSerializer : IMqttPayloadSerializer
     {
     }
 
-    public object Deserialize(Type payloadType, ReadOnlySpan<byte> payload)
+    public object Deserialize(
+        [DynamicallyAccessedMembers(
+            DynamicallyAccessedMemberTypes.PublicConstructors | DynamicallyAccessedMemberTypes.PublicProperties
+        )] Type payloadType,
+        ReadOnlySpan<byte> payload)
     {
         if (payloadType == typeof(byte[]) || payloadType == typeof(string))
         {
@@ -27,7 +37,11 @@ public sealed class DefaultMqttPayloadSerializer : IMqttPayloadSerializer
 #endif
     }
 
-    public byte[] Serialize(Type payloadType, object? value)
+    public byte[] Serialize(
+        [DynamicallyAccessedMembers(
+            DynamicallyAccessedMemberTypes.PublicConstructors | DynamicallyAccessedMemberTypes.PublicProperties
+        )] Type payloadType,
+        object? value)
     {
         if (payloadType == typeof(byte[]) || payloadType == typeof(string))
         {

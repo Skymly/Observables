@@ -1,4 +1,4 @@
-Diagnostics:
+﻿Diagnostics:
   <none>
 
 Generated Sources:
@@ -39,6 +39,7 @@ namespace Observables.SignalR.Reactive.Generated
     internal static class HubProxyRegistration
     {
 #if NET5_0_OR_GREATER
+                    [global::System.Diagnostics.CodeAnalysis.DynamicDependency(global::System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.All, typeof(Observables.SignalR.Reactive.Generated.ChatHubGeneratedProxy))]
         [System.Runtime.CompilerServices.ModuleInitializer]
         internal static void Initialize()
         {

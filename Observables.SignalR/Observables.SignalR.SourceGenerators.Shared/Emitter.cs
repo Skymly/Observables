@@ -20,6 +20,11 @@ internal static class Emitter
             return;
         }
 
+        var dependencyAttributes = string.Join(
+            "\n",
+            model.Interfaces.AsArray().Select(static m =>
+                $"                    [global::System.Diagnostics.CodeAnalysis.DynamicDependency(global::System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.All, typeof({m.GeneratedNamespace}.{m.ClassName}))]"));
+
         var registrations = string.Join(
             "\n",
             model.Interfaces.AsArray().Select(static m =>
@@ -36,6 +41,7 @@ internal static class Emitter
                 internal static class HubProxyRegistration
                 {
             #if NET5_0_OR_GREATER
+            {{dependencyAttributes}}
                     [System.Runtime.CompilerServices.ModuleInitializer]
                     internal static void Initialize()
                     {

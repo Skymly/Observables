@@ -1,10 +1,15 @@
 #if !NETSTANDARD2_0
+using System.Diagnostics.CodeAnalysis;
 using System.Text;
 using System.Text.Json;
 
 namespace Observables.Mqtt;
 
 /// <summary>UTF-8 JSON serializer for complex MQTT payloads (net8.0+).</summary>
+#if NET8_0_OR_GREATER
+[RequiresUnreferencedCode(MqttTrimAnnotations.JsonPayload)]
+[RequiresDynamicCode(MqttTrimAnnotations.JsonPayload)]
+#endif
 public sealed class JsonMqttPayloadSerializer : IMqttPayloadSerializer
 {
     public static JsonMqttPayloadSerializer Instance { get; } = new();
@@ -18,7 +23,11 @@ public sealed class JsonMqttPayloadSerializer : IMqttPayloadSerializer
     {
     }
 
-    public object Deserialize(Type payloadType, ReadOnlySpan<byte> payload)
+    public object Deserialize(
+        [DynamicallyAccessedMembers(
+            DynamicallyAccessedMemberTypes.PublicConstructors | DynamicallyAccessedMemberTypes.PublicProperties
+        )] Type payloadType,
+        ReadOnlySpan<byte> payload)
     {
         var json = Encoding.UTF8.GetString(payload);
         var value = JsonSerializer.Deserialize(json, payloadType, DefaultOptions);
@@ -30,7 +39,11 @@ public sealed class JsonMqttPayloadSerializer : IMqttPayloadSerializer
         return value;
     }
 
-    public byte[] Serialize(Type payloadType, object? value)
+    public byte[] Serialize(
+        [DynamicallyAccessedMembers(
+            DynamicallyAccessedMemberTypes.PublicConstructors | DynamicallyAccessedMemberTypes.PublicProperties
+        )] Type payloadType,
+        object? value)
     {
         if (value is null)
         {

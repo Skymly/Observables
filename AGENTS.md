@@ -194,8 +194,7 @@ Observables/
 ### 2. 警告策略
 
 - 已落地：`eng/Observables.ProjectDefaults.props` 对非 skip 项目启用 `TreatWarningsAsErrors=true`（`nuget-smoke`、`.Package`、`_build` 等 skip 项除外）。
-- 已清零（M2）：RestAPI nullable（CS86xx）；xUnit1051（`TestContext.Current.CancellationToken`）；Events RS1032 消息格式。
-- net8/net9 域运行时：`ProjectDefaults` 对 IL trim 族（`IL2026`/`IL3050` 等）设最小 `NoWarn`（反射 REST + JSON 序列化；M5 改 `JsonSerializerContext` + `Requires*` 传播后移除）。
+- 已清零（M2/M7）：RestAPI nullable（CS86xx）；xUnit1051；Events RS1032 消息格式；域运行时 net8/9 IL trim 告警（Requires* 传播 + 生成代理 `DynamicDependency`）。
 - 标准：新增 CS / 分析器告警须在 PR 内修复；禁止无注释的全仓 `NoWarn`。
 - **Public API（M7）**：域运行时 + Reactive 桥接（14 项目）启用 `Microsoft.CodeAnalysis.PublicApiAnalyzers`；`PublicAPI.Shipped.txt` / `Unshipped.txt` 与 per-TFM 补充文件见 [`docs/design/public-api.md`](docs/design/public-api.md)。Events（纯生成器）、`.Package`、测试不在范围。发版前将 `Unshipped` 迁入 `Shipped`；破坏性变更须 major bump。
 

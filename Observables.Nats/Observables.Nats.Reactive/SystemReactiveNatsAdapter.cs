@@ -1,6 +1,9 @@
 using System.Reactive.Linq;
 using System.Threading;
 using NATS.Client.Core;
+#if NET8_0_OR_GREATER
+using System.Diagnostics.CodeAnalysis;
+#endif
 
 namespace Observables.Nats.Reactive;
 
@@ -19,6 +22,10 @@ public static class SystemReactiveNatsAdapter
             return System.Reactive.Unit.Default;
         });
 
+#if NET8_0_OR_GREATER
+    [RequiresUnreferencedCode("NATS payload serialization may use reflection. Preserve payload type members when trimming.")]
+    [RequiresDynamicCode("NATS payload serialization may use reflection.")]
+#endif
     public static IObservable<System.Reactive.Unit> FromPublish<T>(
         INatsConnection connection,
         string subject,
@@ -31,6 +38,10 @@ public static class SystemReactiveNatsAdapter
             return System.Reactive.Unit.Default;
         });
 
+#if NET8_0_OR_GREATER
+    [RequiresUnreferencedCode("NATS payload serialization may use reflection. Preserve payload type members when trimming.")]
+    [RequiresDynamicCode("NATS payload serialization may use reflection.")]
+#endif
     public static IObservable<T> FromSubscribe<T>(INatsConnection connection, string subject) =>
         Observable.Create<T>(observer =>
         {
@@ -58,6 +69,10 @@ public static class SystemReactiveNatsAdapter
             }
         });
 
+#if NET8_0_OR_GREATER
+    [RequiresUnreferencedCode("NATS payload serialization may use reflection. Preserve payload type members when trimming.")]
+    [RequiresDynamicCode("NATS payload serialization may use reflection.")]
+#endif
     public static IObservable<TResponse> FromRequest<TRequest, TResponse>(
         INatsConnection connection,
         string subject,

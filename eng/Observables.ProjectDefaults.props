@@ -68,8 +68,6 @@
     <IsAotCompatible>true</IsAotCompatible>
     <PublishAotSupported>true</PublishAotSupported>
     <IsTrimmable>true</IsTrimmable>
-    <!-- M2: reflection/JSON trim noise until M5 JsonSerializerContext + full Requires* propagation -->
-    <NoWarn>$(NoWarn);IL2026;IL3050;IL2060;IL2070;IL2072;IL2075;IL2057;IL2111</NoWarn>
   </PropertyGroup>
 
   <!-- HttpClientFactory extension -->

@@ -34,7 +34,7 @@ Closes #
 - [ ] `dotnet build Observables.slnx`
 - [ ] `dotnet test` (list projects or filters):
   ```
-  
+
   ```
 
 ## Breaking changes

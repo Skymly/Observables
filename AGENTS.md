@@ -167,8 +167,8 @@ Observables/
 1. ~~**M1**：WebSocket 发版 + 文档/示例同步~~ ✅（`0.1.0-preview5`）
 2. ~~**M2**：工程加固（中央包管理、TFM 收口、警告策略、诊断登记、`build/Program.cs` 去硬编码）~~ ✅
 3. ~~**M3**：Grpc 域按检查清单补齐（含骨架重命名、`OBS7xxx`）~~ ✅
-4. **M4**：Observables.Docs / Samples 与主仓同步（Grpc 用户文档与示例）
-5. **M5**：API 冻结后由维护者指定版本号并推送 tag / `workflow_dispatch` 发布（见「版本、Tag 与 NuGet」）
+4. ~~**M4**：Observables.Docs / Samples 与主仓同步~~ ✅
+5. **M7**：Public API 基线（`PublicAPI.Shipped.txt`）+ 维护者推 `1.0.0` tag（见 [`docs/design/public-api.md`](docs/design/public-api.md) 与「版本、Tag 与 NuGet」）
 
 ---
 
@@ -197,6 +197,7 @@ Observables/
 - 已清零（M2）：RestAPI nullable（CS86xx）；xUnit1051（`TestContext.Current.CancellationToken`）；Events RS1032 消息格式。
 - net8/net9 域运行时：`ProjectDefaults` 对 IL trim 族（`IL2026`/`IL3050` 等）设最小 `NoWarn`（反射 REST + JSON 序列化；M5 改 `JsonSerializerContext` + `Requires*` 传播后移除）。
 - 标准：新增 CS / 分析器告警须在 PR 内修复；禁止无注释的全仓 `NoWarn`。
+- **Public API（M7）**：域运行时 + Reactive 桥接（14 项目）启用 `Microsoft.CodeAnalysis.PublicApiAnalyzers`；`PublicAPI.Shipped.txt` / `Unshipped.txt` 与 per-TFM 补充文件见 [`docs/design/public-api.md`](docs/design/public-api.md)。Events（纯生成器）、`.Package`、测试不在范围。发版前将 `Unshipped` 迁入 `Shipped`；破坏性变更须 major bump。
 
 ### 3. 诊断治理
 
@@ -261,7 +262,7 @@ Observables/
 
 ### 代理（规划与执行）
 
-遵循工作区根 [`AGENTS.md`](../../../AGENTS.md) 的 Tag / 版本号约定，本仓库补充：
+本仓库 Tag / 版本号约定如下：
 
 | 场景 | 代理行为 |
 |------|----------|
@@ -319,11 +320,11 @@ dotnet run --project build/_build.csproj -- --target Ci --configuration Release
 
 ## 工作约定
 
-- 仅修改本仓库（工作区路径 `Skymly/Observables/Observables/`），除非用户明确要求跨仓库改动。
+- 仅修改本仓库，除非用户明确要求跨仓库改动。
 - 用户沟通默认 **简体中文**；公开 API 与诊断消息可用英文。
 - 新增 Feature 时遵循上文检查清单；**文件夹名 = 项目名 = 程序集名**（含 `.SourceGenerators` 等后缀）。
 - 重命名项目或公共 API 前须与用户确认。
-- **Git / Issue / PR / Commit**：遵循工作区根 [`AGENTS.md`](../../../AGENTS.md)。
+- **Git / Issue / PR / Commit**：Issue / PR / Commit **一律英语**；禁止在 Commit / PR 中提及 AI / Agent 工具；未经用户明确要求不得 `commit` / `push` / 发版。
 
 ### 本仓库跨模块 PR 的模块边界
 

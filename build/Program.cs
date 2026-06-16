@@ -1,8 +1,9 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
+using System.Threading.Tasks;
 
 using Nuke.Common;
 using Nuke.Common.Execution;
@@ -36,6 +37,9 @@ sealed class Build : NukeBuild
     [Parameter("Comma-separated domain filter for UnitTest (e.g. 'mqtt,websocket'). Empty = all domains.")]
     readonly string[] TestDomains = Array.Empty<string>();
 
+    [Parameter("Max parallel test projects (0 = auto, 1 = sequential)")]
+    readonly int TestParallelism = 0;
+
     AbsolutePath Root => RootDirectory;
     AbsolutePath SolutionFile => Root / "Observables.slnx";
     AbsolutePath TestResultsDirectory => Root / "TestResults";
@@ -59,6 +63,14 @@ sealed class Build : NukeBuild
             ? Manifest.Packages.Where(p => PackDomains.Any(d => p.PackageId.StartsWith($"Observables.{d}.", StringComparison.OrdinalIgnoreCase)))
             : Manifest.Packages;
 
+    int EffectiveTestParallelism =>
+        TestParallelism switch
+        {
+            1 => 1,
+            <= 0 => Math.Clamp(Environment.ProcessorCount, 2, 8),
+            _ => TestParallelism,
+        };
+
     public static int Main() => Execute<Build>(x => x.Ci);
 
     Target Clean => _ => _
@@ -79,16 +91,19 @@ sealed class Build : NukeBuild
             DotNetRestore(s => s.SetProjectFile(SolutionFile));
 
             // slnx /Tests/ nested folders are not in the solution restore graph.
-            foreach (string relativePath in Manifest.TestProjects)
-            {
-                AbsolutePath projectFile = Root / relativePath;
-                if (!projectFile.FileExists())
+            Parallel.ForEach(
+                Manifest.TestProjects,
+                new ParallelOptions { MaxDegreeOfParallelism = EffectiveTestParallelism },
+                relativePath =>
                 {
-                    continue;
-                }
+                    AbsolutePath projectFile = Root / relativePath;
+                    if (!projectFile.FileExists())
+                    {
+                        return;
+                    }
 
-                DotNetRestore(s => s.SetProjectFile(projectFile));
-            }
+                    DotNetRestore(s => s.SetProjectFile(projectFile));
+                });
         });
 
     Target Compile => _ => _
@@ -111,23 +126,23 @@ sealed class Build : NukeBuild
                     TestDomains.Any(d => p.StartsWith($"Observables.{d}/", StringComparison.OrdinalIgnoreCase))
                     || TestDomains.Contains("shared", StringComparer.OrdinalIgnoreCase) && p.StartsWith("Observables.Shared/", StringComparison.OrdinalIgnoreCase));
 
-            foreach (string relativePath in projects)
-            {
-                AbsolutePath projectFile = Root / relativePath;
-                if (!projectFile.FileExists())
-                {
-                    continue;
-                }
+            var testProjects = projects
+                .Select(relativePath => Root / relativePath)
+                .Where(projectFile => projectFile.FileExists())
+                .ToArray();
 
-                DotNetTest(s => s
-                    .SetProjectFile(projectFile)
-                    .SetConfiguration(Configuration)
-                    .EnableNoRestore()
-                    .SetProperty("BuildTfmsInParallel", "false")
-                    .SetProperty("TestTfmsInParallel", "false")
-                    .SetResultsDirectory(TestResultsDirectory)
-                    .SetLoggers("trx;LogFileName=" + projectFile.NameWithoutExtension + ".trx"));
-            }
+            Parallel.ForEach(
+                testProjects,
+                new ParallelOptions { MaxDegreeOfParallelism = EffectiveTestParallelism },
+                projectFile =>
+                {
+                    DotNetTest(s => s
+                        .SetProjectFile(projectFile)
+                        .SetConfiguration(Configuration)
+                        .EnableNoRestore()
+                        .SetResultsDirectory(TestResultsDirectory)
+                        .SetLoggers("trx;LogFileName=" + projectFile.NameWithoutExtension + ".trx"));
+                });
         });
 
     Target Pack => _ => _

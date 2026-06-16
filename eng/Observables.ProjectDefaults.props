@@ -92,8 +92,6 @@
   <PropertyGroup Condition="'$(ObservablesSkipProjectDefaults)' != 'true' and '$(_ObsIsMultiTfmTestProject)' == 'true'">
     <TargetFrameworks>net8.0;net9.0</TargetFrameworks>
     <IsPackable>false</IsPackable>
-    <BuildTfmsInParallel>false</BuildTfmsInParallel>
-    <TestTfmsInParallel>false</TestTfmsInParallel>
   </PropertyGroup>
 
   <Import Project="$(RepoRoot)eng\Observables.PublicApi.props"

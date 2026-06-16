@@ -148,6 +148,11 @@
             "type": "string"
           }
         },
+        "TestParallelism": {
+          "type": "integer",
+          "description": "Max parallel test projects (0 = auto, 1 = sequential)",
+          "format": "int32"
+        },
         "Version": {
           "type": "string",
           "description": "Package version override"

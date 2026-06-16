@@ -15,7 +15,7 @@ Enforcement is wired in [`eng/Observables.PublicApi.props`](../eng/Observables.P
 
 Each project keeps:
 
-- `PublicAPI.Shipped.txt` — APIs shipped in the current release (M7 baseline = preview8 surface).
+- `PublicAPI.Shipped.txt` — APIs shipped in the current release (M7 baseline = `0.1.0` surface).
 - `PublicAPI.Unshipped.txt` — APIs added since the last release (empty after a freeze).
 
 Both files start with `#nullable enable` so nullable annotations appear in the baseline.

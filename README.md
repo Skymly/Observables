@@ -24,9 +24,9 @@
 | **`Observables.<Feature>.R3.SourceGenerators`** / **`.Reactive.SourceGenerators`** | 双路源生成器 |
 | **`Observables.<Feature>.Package`** | 发布时打包，产出上述两个 NuGet 包 |
 
-### 预览版 NuGet（`0.1.0-preview8`）
+### NuGet（`0.1.0` 稳定版）
 
-**16 包**（八域各 `.R3` + `.Reactive`）。**`0.1.0-preview8`** 发布至 [nuget.org](https://www.nuget.org/profiles/Skymly) 与 GitHub Packages（tag `v0.1.0-preview8`，含 Nats 域）。
+**16 包**（八域各 `.R3` + `.Reactive`）。**`0.1.0`** 发布至 [nuget.org](https://www.nuget.org/profiles/Skymly) 与 GitHub Packages（tag `v0.1.0`，含 Nats 域）。
 
 | 包 ID | 说明 |
 |-------|------|
@@ -48,7 +48,7 @@
 | `Observables.Nats.Reactive` | NATS + Reactive 桥接 + 生成器 |
 
 ```xml
-<PackageReference Include="Observables.Events.R3" Version="0.1.0-preview8" />
+<PackageReference Include="Observables.Events.R3" Version="0.1.0" />
 <PackageReference Include="R3" Version="1.3.0" />
 ```
 
@@ -77,15 +77,15 @@ dotnet run --project build/_build.csproj -- --target PackVerify --configuration 
 
 ```powershell
 # 1. 确认 eng/Observables.Package.props 中 PackageVersion 与 tag 一致
-git tag -a v0.1.0-preview8 -m "0.1.0-preview8"
-git push origin v0.1.0-preview8
+git tag -a v0.1.0 -m "0.1.0"
+git push origin v0.1.0
 # 2. GitHub Actions「Publish NuGet」workflow 使用 secrets 执行 Publish
 ```
 
 本地手动推送（可选）：
 
 ```powershell
-$env:VERSION = '0.1.0-preview8'
+$env:VERSION = '0.1.0'
 $env:NUGET_API_KEY = '...'
 $env:GITHUB_TOKEN = '...'
 dotnet run --project build/_build.csproj -- --target Publish --configuration Release
@@ -93,7 +93,7 @@ dotnet run --project build/_build.csproj -- --target Publish --configuration Rel
 
 ## 域实现状态
 
-| 域 | R3 生成器 | System.Reactive 生成器 | NuGet（`preview8`） |
+| 域 | R3 生成器 | System.Reactive 生成器 | NuGet（`0.1.0`） |
 |----|-----------|------------------------|---------------------|
 | **Events**（经典 + 路由 .NET 事件） | `Events.R3.SourceGenerators` | `Events.Reactive.SourceGenerators` | 已纳入发版 |
 | **RestAPI**（声明式 HTTP 客户端） | `RestAPI.R3.SourceGenerators` | `RestAPI.Reactive.SourceGenerators` | 已纳入发版 |

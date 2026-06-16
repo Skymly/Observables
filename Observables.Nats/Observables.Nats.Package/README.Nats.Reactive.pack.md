@@ -5,7 +5,7 @@ Declarative Core NATS subject interfaces for [System.Reactive](https://github.co
 ## Install
 
 ```xml
-<PackageReference Include="Observables.Nats.Reactive" Version="0.1.0-preview8" />
+<PackageReference Include="Observables.Nats.Reactive" Version="0.1.0" />
 <PackageReference Include="NATS.Client.Core" Version="2.8.1" />
 <PackageReference Include="System.Reactive" Version="6.0.1" />
 ```

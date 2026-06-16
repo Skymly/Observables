@@ -5,7 +5,7 @@ Declarative Server-Sent Events (SSE) proxies for System.Reactive `IObservable<T>
 ## Install
 
 ```xml
-<PackageReference Include="Observables.Sse.Reactive" Version="0.1.0-preview7" />
+<PackageReference Include="Observables.Sse.Reactive" Version="0.1.0" />
 <PackageReference Include="System.Reactive" Version="6.0.1" />
 ```
 

@@ -1,6 +1,6 @@
 # 设计：NATS 域
 
-> 状态：M6 已发 **`0.1.0-preview8`**。面向用户文档见 Observables.Docs `nats.md`。
+> 状态：M6 已发 **`0.1.0`**。面向用户文档见 Observables.Docs `nats.md`。
 
 ## 1. 动机与定位
 

@@ -5,7 +5,7 @@ Declarative gRPC proxies for R3 `Observable<T>` (Roslyn-generated proxies).
 ## Install
 
 ```xml
-<PackageReference Include="Observables.Grpc.R3" Version="0.1.0-preview5" />
+<PackageReference Include="Observables.Grpc.R3" Version="0.1.0" />
 <PackageReference Include="R3" Version="1.3.0" />
 <PackageReference Include="Grpc.Net.Client" Version="2.67.0" />
 ```

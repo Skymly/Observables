@@ -1,18 +1,18 @@
 # Observables 路线图
 
-本文件描述 Observables 从当前预览版走向 **1.0 稳定版** 的里程碑规划。它是规划层文档：每个里程碑的工程标准（中央包管理、警告策略、诊断治理等）以 [`AGENTS.md`](../AGENTS.md) 为权威，本文件只排序与拆解。
+本文件描述 Observables 从预览版走向 **`0.1.0` 稳定版** 的里程碑规划。它是规划层文档：每个里程碑的工程标准（中央包管理、警告策略、诊断治理等）以 [`AGENTS.md`](../AGENTS.md) 为权威，本文件只排序与拆解。
 
 > 版本号、tag、发版均须维护者明确批准；本文件中的版本号（如 `preview5`）为规划占位，不构成自动发版授权。
 
-## 现状基线（`0.1.0-preview8` 已发 nuget.org）
+## 现状基线（`0.1.0` 已发 nuget.org）
 
 | 维度 | 现状 |
 |------|------|
 | 已实现域 | **Events**、**RestAPI**、**SignalR**、**Mqtt**、**WebSocket**、**Grpc**、**Sse**、**Nats**（运行时 + 双路生成器 + 测试） |
 | 共享层 | `Observables.Core`、`Observables.SourceGenerators.Shared`、`Observables.CodeFixes`、`Observables.Analyzers` |
-| nuget.org 已发 | **`0.1.0-preview6`** — **12 包**；**`0.1.0-preview7`** — **14 包**（+ Sse）；**`0.1.0-preview8`** — **16 包**（+ Nats，`v0.1.0-preview8` tag） |
+| nuget.org 已发 | **`0.1.0-preview6`** — **12 包**；**`0.1.0-preview7`** — **14 包**（+ Sse）；**`0.1.0-preview8`** — **16 包**（+ Nats）；**`0.1.0`** — **16 包**（稳定版，`v0.1.0` tag + GitHub Release） |
 | 构建 | 主仓 Nuke `Ci` / `CiPack` / `Publish`；`PackVerify` + `eng/nuget-smoke`（**16** 消费者） |
-| 示例仓 CI | `Observables.Samples` Nuke `Ci`（NuGet `preview8`） |
+| 示例仓 CI | `Observables.Samples` Nuke `Ci`（NuGet `0.1.0`） |
 
 ### 已知工程债（详见 AGENTS.md「工程治理」）
 
@@ -52,7 +52,7 @@ graph LR
     M3 --> M4[M4 文档/示例补齐]
     M4 --> M5[M5 SSE 域 · preview7]
     M5 --> M6[M6 NATS 域 · preview8]
-    M6 --> M7[M7 API 冻结 + 1.0]
+    M6 --> M7[M7 API 冻结 · 0.1.0]
 ```
 
 里程碑按依赖排序；M1 与 M2 可并行启动。**策略：先扩域、后冻结 1.0** —— 在 `0.1.x` 预览期内先把 SSE（M5）与 NATS（M6）补齐为完整域，待目标域全部就位后再一次性冻结公共 API 并发 1.0（M7）。M7 的 API 冻结依赖 M1–M6 全部完成。
@@ -87,13 +87,13 @@ graph LR
 - ~~建 `Observables.Grpc.Package`，产出 `Observables.Grpc.R3` / `Observables.Grpc.Reactive` 两包。~~ ✅
 - ~~补生成器测试 + E2E + smoke 消费者，纳入 `PackVerify`（manifest **12 包**）。~~ ✅
 
-Grpc 两包已于 **`0.1.0-preview6`**（`v0.1.0-preview6` tag）发布至 nuget.org 与 GitHub Packages。
+Grpc 两包已于 **`0.1.0`**（`v0.1.0-preview6` tag）发布至 nuget.org 与 GitHub Packages。
 
 ### M4 — 文档与示例补齐 ✅
 
 - ~~统一诊断登记文档（OBS0001 / 2xxx–7xxx）到 Docs `diagnostics.md`~~ ✅
 - ~~Docs（中英）`grpc.md`；Samples `Observables.Samples.Grpc`~~ ✅
-- ~~校验 README、Docs、Samples 三处域状态与 `0.1.0-preview6` 一致~~ ✅
+- ~~校验 README、Docs、Samples 三处域状态与 `0.1.0` 一致~~ ✅
 - ~~发版后复核 nuget.org 包页链接与站点 `npm run docs:build`~~ ✅（M4 收尾 PR）
 
 ### M5 — SSE 域（`preview7`） ✅
@@ -124,14 +124,14 @@ Grpc 两包已于 **`0.1.0-preview6`**（`v0.1.0-preview6` tag）发布至 nuget
 
 > M5/M6 为预览期内的新增域，每个域遵循「发版门槛清单」与「新增 Feature 检查清单」；版本号与 tag 仍须维护者明确批准。
 
-### M7 — API 冻结与 1.0
+### M7 — API 冻结与 `0.1.0` ✅
 
 > 依赖 M1–M6 全部完成（八域齐备后再冻结）。
 
 - 引入 `Microsoft.CodeAnalysis.PublicApiAnalyzers`，为运行时与公共 Attribute 锁定公共 API（`PublicAPI.Shipped.txt` / `Unshipped.txt`）。✅ 见 [`docs/design/public-api.md`](design/public-api.md)。
-- nullable / AOT / trim 告警清零（M7 已通过 Requires* 传播与生成代理保留收敛域运行时 IL 告警；`JsonSerializerContext` source-gen 为后续增强）。
-- 复核包元数据（README、tags、license、SourceLink）。
-- 维护者推 `v1.0.0` tag → NuGet → GitHub Release（稳定版含 Release，预览版不含）。
+- nullable / AOT / trim 告警清零（M7 已通过 Requires* 传播与生成代理保留收敛域运行时 IL 告警；`JsonSerializerContext` source-gen 为后续增强）。✅
+- 复核包元数据（README、tags、license、SourceLink）。✅
+- 维护者推 `v0.1.0` tag → NuGet → GitHub Release（稳定版含 Release，预览版不含）。
 
 ## 发版门槛清单（每次 preview / 稳定版）
 
@@ -149,7 +149,7 @@ Grpc 两包已于 **`0.1.0-preview6`**（`v0.1.0-preview6` tag）发布至 nuget
 | 版本 | 关联里程碑 |
 |------|------------|
 | `0.1.0-preview5` | M1（10 包，nuget.org） |
-| `0.1.0-preview6` | M3 Grpc 发版（**12 包**，nuget.org） |
+| `0.1.0` | M3 Grpc 发版（**12 包**，nuget.org） |
 | `0.1.0-preview7` | M5 SSE 域（**14 包**） |
 | `0.1.0-preview8` | M6 NATS 域（**16 包**） |
-| `1.0.0` | M7（八域 API 冻结） |
+| `0.1.0` | M7（八域 API 冻结，**16 包**稳定版） |

@@ -131,19 +131,37 @@ sealed class Build : NukeBuild
                 .Where(projectFile => projectFile.FileExists())
                 .ToArray();
 
+            var parallelSafeProjects = testProjects
+                .Where(projectFile => !IsE2ETestProject(projectFile))
+                .ToArray();
+            var e2eProjects = testProjects
+                .Where(IsE2ETestProject)
+                .ToArray();
+
             Parallel.ForEach(
-                testProjects,
+                parallelSafeProjects,
                 new ParallelOptions { MaxDegreeOfParallelism = EffectiveTestParallelism },
-                projectFile =>
-                {
-                    DotNetTest(s => s
-                        .SetProjectFile(projectFile)
-                        .SetConfiguration(Configuration)
-                        .EnableNoRestore()
-                        .SetResultsDirectory(TestResultsDirectory)
-                        .SetLoggers("trx;LogFileName=" + projectFile.NameWithoutExtension + ".trx"));
-                });
+                RunTestProject);
+
+            foreach (var projectFile in e2eProjects)
+            {
+                RunTestProject(projectFile);
+            }
         });
+
+    static bool IsE2ETestProject(AbsolutePath projectFile) =>
+        projectFile.Name.EndsWith(".Tests.csproj", StringComparison.OrdinalIgnoreCase)
+        && !projectFile.Name.Contains("SourceGenerators", StringComparison.OrdinalIgnoreCase);
+
+    void RunTestProject(AbsolutePath projectFile)
+    {
+        DotNetTest(s => s
+            .SetProjectFile(projectFile)
+            .SetConfiguration(Configuration)
+            .EnableNoRestore()
+            .SetResultsDirectory(TestResultsDirectory)
+            .SetLoggers("trx;LogFileName=" + projectFile.NameWithoutExtension + ".trx"));
+    }
 
     Target Pack => _ => _
         .DependsOn(Restore)

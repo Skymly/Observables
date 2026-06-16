@@ -10,5 +10,5 @@ public sealed class NatsTestServerFixture : IAsyncLifetime, IAsyncDisposable
     public async ValueTask DisposeAsync() => await Server.DisposeAsync().ConfigureAwait(false);
 }
 
-[CollectionDefinition(nameof(NatsTestServerCollection))]
+[CollectionDefinition(nameof(NatsTestServerCollection), DisableParallelization = true)]
 public sealed class NatsTestServerCollection : ICollectionFixture<NatsTestServerFixture>;

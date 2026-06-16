@@ -9,6 +9,7 @@ namespace Observables.Nats.Tests.Infrastructure;
 public sealed class NatsTestServer : IAsyncDisposable
 {
     const string NatsServerVersion = "v2.10.28";
+    static readonly SemaphoreSlim ServerBinaryGate = new(1, 1);
     readonly Process process;
     readonly string url;
 
@@ -55,6 +56,19 @@ public sealed class NatsTestServer : IAsyncDisposable
     }
 
     static async Task<string> EnsureNatsServerPathAsync(CancellationToken cancellationToken)
+    {
+        await ServerBinaryGate.WaitAsync(cancellationToken).ConfigureAwait(false);
+        try
+        {
+            return await EnsureNatsServerPathCoreAsync(cancellationToken).ConfigureAwait(false);
+        }
+        finally
+        {
+            ServerBinaryGate.Release();
+        }
+    }
+
+    static async Task<string> EnsureNatsServerPathCoreAsync(CancellationToken cancellationToken)
     {
         var root = Path.Combine(Path.GetTempPath(), "observables-nats-test", NatsServerVersion);
         var exeName = OperatingSystem.IsWindows() ? "nats-server.exe" : "nats-server";

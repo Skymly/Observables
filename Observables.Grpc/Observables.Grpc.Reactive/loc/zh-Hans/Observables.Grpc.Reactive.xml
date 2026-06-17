@@ -1,0 +1,11 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>Observables.Grpc.Reactive</name>
+    </assembly>
+    <members>
+        <member name="T:Observables.Grpc.Reactive.SystemReactiveGrpcAdapter">
+            <summary>将 <see cref="T:Grpc.Core.CallInvoker"/> API 桥接到 <see cref="T:System.IObservable`1"/>。</summary>
+        </member>
+    </members>
+</doc>

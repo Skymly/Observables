@@ -25,7 +25,15 @@
     <ObservablesPackLibProjectReference Include="..\Observables.Grpc.Reactive\Observables.Grpc.Reactive.csproj" />
     <PackageReference Include="System.Reactive" />
     <None Include="README.Grpc.Reactive.pack.md" Pack="true" PackagePath="README.md" Visible="false" />
+    <None Include="..\Observables.Grpc\loc\zh-Hans\Observables.Grpc.xml"
+          Pack="true"
+          PackagePath="lib\netstandard2.0\zh-Hans\;lib\net8.0\zh-Hans\;lib\net9.0\zh-Hans\"
+          Visible="false" />
+    <None Include="..\Observables.Grpc.Reactive\loc\zh-Hans\Observables.Grpc.Reactive.xml"
+          Pack="true"
+          PackagePath="lib\netstandard2.0\zh-Hans\;lib\net8.0\zh-Hans\;lib\net9.0\zh-Hans\"
+          Visible="false" />
   </ItemGroup>
 
 </Project>
-
+

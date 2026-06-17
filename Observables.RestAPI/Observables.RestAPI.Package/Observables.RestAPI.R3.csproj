@@ -24,6 +24,10 @@
     <ObservablesPackLibProjectReference Include="..\Observables.RestAPI\Observables.RestAPI.csproj" />
     <PackageReference Include="R3" />
     <None Include="README.RestAPI.R3.pack.md" Pack="true" PackagePath="README.md" Visible="false" />
+    <None Include="..\Observables.RestAPI\loc\zh-Hans\Observables.RestAPI.xml"
+          Pack="true"
+          PackagePath="lib\netstandard2.0\zh-Hans\;lib\net8.0\zh-Hans\;lib\net9.0\zh-Hans\"
+          Visible="false" />
   </ItemGroup>
 
 </Project>

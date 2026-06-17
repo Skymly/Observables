@@ -1,0 +1,38 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>Observables.WebSocket</name>
+    </assembly>
+    <members>
+        <member name="T:Observables.WebSocket.WebSocketAttribute">
+            <summary>标记用于源生成的 WebSocket 代理接口。</summary>
+        </member>
+        <member name="T:Observables.WebSocket.WebSocketSendAttribute">
+            <summary>客户端到服务器的消息发送，映射为 WebSocket send。</summary>
+        </member>
+        <member name="M:Observables.WebSocket.WebSocketSendAttribute.#ctor(System.String)">
+            <summary>客户端到服务器的消息发送，映射为 WebSocket send。</summary>
+        </member>
+        <member name="T:Observables.WebSocket.WebSocketReceiveAttribute">
+            <summary>服务器到客户端的消息接收，映射为入站 WebSocket 消息。</summary>
+        </member>
+        <member name="M:Observables.WebSocket.WebSocketReceiveAttribute.#ctor(System.String)">
+            <summary>服务器到客户端的消息接收，映射为入站 WebSocket 消息。</summary>
+        </member>
+        <member name="T:Observables.WebSocket.WebSocketConnectAttribute">
+            <summary>WebSocket 连接发起。</summary>
+        </member>
+        <member name="T:Observables.WebSocket.WebSocketCloseAttribute">
+            <summary>WebSocket 连接关闭。</summary>
+        </member>
+        <member name="T:Observables.WebSocket.WebSocketObservable">
+            <summary>将 <see cref="T:System.Net.WebSockets.ClientWebSocket"/> API 桥接到 R3 <see cref="T:R3.Observable`1"/>。</summary>
+        </member>
+        <member name="T:Observables.WebSocket.WebSocketService">
+            <summary>创建源生成的 WebSocket 代理实现。</summary>
+        </member>
+        <member name="M:Observables.WebSocket.WebSocketService.RegisterGeneratedFactory(System.Type,System.Func{System.Net.WebSockets.ClientWebSocket,System.Object})">
+            <summary>注册源生成的 WebSocket 代理工厂。</summary>
+        </member>
+    </members>
+</doc>

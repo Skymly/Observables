@@ -55,7 +55,7 @@ namespace Observables.RestAPI
         /// <param name="statusCode">The status code.</param>
         /// <param name="reasonPhrase">The reason phrase.</param>
         /// <param name="headers">The headers.</param>
-        /// <param name="RestApiSettings">The refit settings.</param>
+        /// <param name="RestApiSettings">The REST API settings.</param>
         /// <param name="innerException">The inner exception.</param>
         protected ApiException(
             HttpRequestMessage message,
@@ -90,7 +90,7 @@ namespace Observables.RestAPI
         /// <param name="statusCode">The status code.</param>
         /// <param name="reasonPhrase">The reason phrase.</param>
         /// <param name="headers">The headers.</param>
-        /// <param name="RestApiSettings">The refit settings.</param>
+        /// <param name="RestApiSettings">The REST API settings.</param>
         /// <param name="innerException">The inner exception.</param>
         protected ApiException(
             string exceptionMessage,
@@ -129,7 +129,7 @@ namespace Observables.RestAPI
         /// <param name="message">The HTTP Request message used to send the request.</param>
         /// <param name="httpMethod">The HTTP method used to send the request.</param>
         /// <param name="response">The HTTP Response message.</param>
-        /// <param name="RestApiSettings">Refit settings used to sent the request.</param>
+        /// <param name="RestApiSettings">REST API settings used to send the request.</param>
         /// <param name="innerException">Add an inner exception to the <see cref="ApiException"/>.</param>
         /// <returns>A newly created <see cref="ApiException"/>.</returns>
 #if NET8_0_OR_GREATER
@@ -169,7 +169,7 @@ namespace Observables.RestAPI
         /// <param name="message">The HTTP Request message used to send the request.</param>
         /// <param name="httpMethod">The HTTP method used to send the request.</param>
         /// <param name="response">The HTTP Response message.</param>
-        /// <param name="RestApiSettings">Refit settings used to send the request.</param>
+        /// <param name="RestApiSettings">REST API settings used to send the request.</param>
         /// <param name="innerException">Add an inner exception to the <see cref="ApiException"/>.</param>
         /// <returns>A newly created <see cref="ApiException"/>.</returns>
 #if NET8_0_OR_GREATER

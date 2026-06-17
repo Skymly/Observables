@@ -1,0 +1,17 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>Observables.Sse.Reactive</name>
+    </assembly>
+    <members>
+        <member name="T:Observables.Sse.Reactive.SystemReactiveSseAdapter">
+            <summary>将 SSE <c>text/event-stream</c> 端点桥接到 <see cref="T:System.IObservable`1"/>。</summary>
+        </member>
+        <member name="M:Observables.Sse.Reactive.SystemReactiveSseAdapter.FromEvent``1(Observables.Sse.SseConnection,System.String)">
+            <summary>
+            为每个订阅打开连接，发出命名事件的负载，
+            反序列化为 <typeparamref name="T"/>（字符串直通；net8.0+ 上使用 JSON）。
+            </summary>
+        </member>
+    </members>
+</doc>

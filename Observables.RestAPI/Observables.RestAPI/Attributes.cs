@@ -3,13 +3,13 @@ using System.Net.Http;
 namespace Observables.RestAPI
 {
     /// <summary>
-    /// HttpMethodAttribute.
+    /// Base attribute for HTTP verb attributes that map interface methods to REST paths.
     /// </summary>
     /// <seealso cref="System.Attribute" />
     /// <remarks>
     /// Initializes a new instance of the <see cref="HttpMethodAttribute"/> class.
     /// </remarks>
-    /// <param name="path">The path.</param>
+    /// <param name="path">The relative path template for the request.</param>
     public abstract class HttpMethodAttribute(string path) : Attribute
     {
         /// <summary>
@@ -535,13 +535,13 @@ namespace Observables.RestAPI
     }
 
     /// <summary>
-    /// QueryUriFormatAttribute.
+    /// Specifies how query-string parameters are encoded when building the request URI.
     /// </summary>
     /// <seealso cref="System.Attribute" />
     /// <remarks>
     /// Initializes a new instance of the <see cref="QueryUriFormatAttribute"/> class.
     /// </remarks>
-    /// <param name="uriFormat">The URI format.</param>
+    /// <param name="uriFormat">The URI encoding format to use for query parameters.</param>
     [AttributeUsage(AttributeTargets.Method)]
     public class QueryUriFormatAttribute(UriFormat uriFormat) : Attribute
     {

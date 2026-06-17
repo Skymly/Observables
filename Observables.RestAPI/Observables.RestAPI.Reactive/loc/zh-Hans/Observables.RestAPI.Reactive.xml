@@ -1,0 +1,18 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>Observables.RestAPI.Reactive</name>
+    </assembly>
+    <members>
+        <member name="T:Observables.RestAPI.Reactive.SystemReactiveObservableAdapter">
+            <summary>
+            将 Observables.RestAPI 异步请求核心桥接到 <see cref="T:System.IObservable`1"/>。
+            </summary>
+        </member>
+        <member name="M:Observables.RestAPI.Reactive.SystemReactiveObservableAdapter.FromAsync``1(System.Func{System.Threading.CancellationToken,System.Threading.Tasks.ValueTask{``0}})">
+            <summary>
+            通过异步工厂创建冷 <see cref="T:System.IObservable`1"/>。
+            </summary>
+        </member>
+    </members>
+</doc>

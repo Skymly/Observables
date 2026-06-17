@@ -1,0 +1,47 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>Observables.SignalR</name>
+    </assembly>
+    <members>
+        <member name="T:Observables.SignalR.HubAttribute">
+            <summary>标记用于源生成的 Hub 代理接口。</summary>
+        </member>
+        <member name="T:Observables.SignalR.HubInvokeAttribute">
+            <summary>客户端调用（单结果），映射为 HubConnection.InvokeAsync。</summary>
+        </member>
+        <member name="M:Observables.SignalR.HubInvokeAttribute.#ctor(System.String)">
+            <summary>客户端调用（单结果），映射为 HubConnection.InvokeAsync。</summary>
+        </member>
+        <member name="T:Observables.SignalR.HubSendAttribute">
+            <summary>客户端发送（无结果），映射为 HubConnection.SendAsync。</summary>
+        </member>
+        <member name="M:Observables.SignalR.HubSendAttribute.#ctor(System.String)">
+            <summary>客户端发送（无结果），映射为 HubConnection.SendAsync。</summary>
+        </member>
+        <member name="T:Observables.SignalR.HubStreamAttribute">
+            <summary>客户端流式传输，映射为 HubConnection.StreamAsync。</summary>
+        </member>
+        <member name="M:Observables.SignalR.HubStreamAttribute.#ctor(System.String)">
+            <summary>客户端流式传输，映射为 HubConnection.StreamAsync。</summary>
+        </member>
+        <member name="T:Observables.SignalR.HubOnAttribute">
+            <summary>服务器回调，映射为 HubConnection.On。</summary>
+        </member>
+        <member name="M:Observables.SignalR.HubOnAttribute.#ctor(System.String)">
+            <summary>服务器回调，映射为 HubConnection.On。</summary>
+        </member>
+        <member name="T:Observables.SignalR.HubConnectionArgs">
+            <summary>使用逐参数重载调用 Hub 方法，使参数在服务器端正确绑定。</summary>
+        </member>
+        <member name="T:Observables.SignalR.HubService">
+            <summary>创建源生成的 Hub 代理实现。</summary>
+        </member>
+        <member name="M:Observables.SignalR.HubService.RegisterGeneratedFactory(System.Type,System.Func{Microsoft.AspNetCore.SignalR.Client.HubConnection,System.Object})">
+            <summary>注册源生成的 Hub 代理工厂。</summary>
+        </member>
+        <member name="T:Observables.SignalR.SignalRObservable">
+            <summary>将 SignalR 客户端 API 桥接到 R3 <see cref="T:R3.Observable`1"/>。</summary>
+        </member>
+    </members>
+</doc>

@@ -1,0 +1,128 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>Observables.Nats</name>
+    </assembly>
+    <members>
+        <member name="T:Observables.Nats.NatsAttribute">
+            <summary>标记用于源生成的 NATS 主题代理接口。</summary>
+        </member>
+        <member name="T:Observables.Nats.NatsPublishAttribute">
+            <summary>客户端发布，映射为 NATS publish。</summary>
+        </member>
+        <member name="M:Observables.Nats.NatsPublishAttribute.#ctor(System.String)">
+            <summary>客户端发布，映射为 NATS publish。</summary>
+        </member>
+        <member name="T:Observables.Nats.NatsRequestAttribute">
+            <summary>请求-响应，映射为 NATS request。</summary>
+        </member>
+        <member name="M:Observables.Nats.NatsRequestAttribute.#ctor(System.String)">
+            <summary>请求-响应，映射为 NATS request。</summary>
+        </member>
+        <member name="T:Observables.Nats.NatsSubscribeAttribute">
+            <summary>主题订阅，映射为入站消息。</summary>
+        </member>
+        <member name="M:Observables.Nats.NatsSubscribeAttribute.#ctor(System.String)">
+            <summary>主题订阅，映射为入站消息。</summary>
+        </member>
+        <member name="T:Observables.Nats.DefaultNatsPayloadSerializer">
+            <summary>
+            默认序列化器：原始 <see cref="T:System.Byte"/>[] / UTF-8 <see cref="T:System.String"/> 通过
+            <see cref="T:Observables.Nats.PrimitiveNatsPayloadSerializer"/>；net8.0+ 上其他类型使用 JSON。
+            </summary>
+        </member>
+        <member name="T:Observables.Nats.INatsPayloadSerializer">
+            <summary>在 NATS 消息负载与 CLR 值之间进行转换。</summary>
+            <remarks>
+            默认实现仅支持 <see cref="T:System.Byte"/>[] 和 <see cref="T:System.String"/>。
+            通过 <see cref="P:Observables.Nats.NatsPayloadSerializers.Current"/> 注册自定义 INatsPayloadSerializer，
+            或通过 <see cref="M:Observables.Nats.NatsPayloadSerializers.Register``1(Observables.Nats.INatsPayloadSerializer{``0})"/> 注册类型化 INatsPayloadSerializer{T}。
+            便捷重载：<see cref="T:Observables.Nats.NatsPayloadSerializerExtensions"/>。
+            </remarks>
+        </member>
+        <member name="M:Observables.Nats.INatsPayloadSerializer.Deserialize(System.Type,System.ReadOnlySpan{System.Byte})">
+            <summary>将负载反序列化为 <paramref name="payloadType"/>。</summary>
+        </member>
+        <member name="M:Observables.Nats.INatsPayloadSerializer.Serialize(System.Type,System.Object)">
+            <summary>将 <paramref name="value"/> 序列化为线上负载。</summary>
+        </member>
+        <member name="T:Observables.Nats.INatsPayloadSerializer`1">
+            <summary>针对单一 CLR 类型的类型化 NATS 负载序列化器。</summary>
+        </member>
+        <member name="M:Observables.Nats.INatsPayloadSerializer`1.Deserialize(System.ReadOnlySpan{System.Byte})">
+            <summary>将负载反序列化为 <typeparamref name="T"/>。</summary>
+        </member>
+        <member name="M:Observables.Nats.INatsPayloadSerializer`1.Serialize(`0)">
+            <summary>将 <paramref name="value"/> 序列化为线上负载。</summary>
+        </member>
+        <member name="T:Observables.Nats.JsonNatsPayloadSerializer">
+            <summary>用于复杂 NATS 负载的 UTF-8 JSON 序列化器（net8.0+）。</summary>
+        </member>
+        <member name="T:Observables.Nats.NatsObservable">
+            <summary>将 NATS 客户端 API 桥接到 R3 <see cref="T:R3.Observable`1"/>。</summary>
+        </member>
+        <member name="T:Observables.Nats.NatsPayload">
+            <summary>R3 与 Reactive NATS 桥接共享的负载转换辅助方法。</summary>
+        </member>
+        <member name="T:Observables.Nats.NatsPayloadSerializerExtensions">
+            <summary><see cref="T:Observables.Nats.INatsPayloadSerializer"/> 与 <see cref="T:Observables.Nats.INatsPayloadSerializer`1"/> 的便捷重载。</summary>
+        </member>
+        <member name="M:Observables.Nats.NatsPayloadSerializerExtensions.Deserialize(Observables.Nats.INatsPayloadSerializer,System.Type,System.Byte[])">
+            <summary>将负载缓冲区反序列化为 <paramref name="payloadType"/>。</summary>
+        </member>
+        <member name="M:Observables.Nats.NatsPayloadSerializerExtensions.Deserialize``1(Observables.Nats.INatsPayloadSerializer,System.ReadOnlySpan{System.Byte})">
+            <summary>将负载反序列化为 <typeparamref name="T"/>。</summary>
+        </member>
+        <member name="M:Observables.Nats.NatsPayloadSerializerExtensions.Deserialize``1(Observables.Nats.INatsPayloadSerializer,System.Byte[])">
+            <summary>将负载缓冲区反序列化为 <typeparamref name="T"/>。</summary>
+        </member>
+        <member name="M:Observables.Nats.NatsPayloadSerializerExtensions.Serialize``1(Observables.Nats.INatsPayloadSerializer,``0)">
+            <summary>将 <paramref name="value"/> 序列化为线上负载。</summary>
+        </member>
+        <member name="M:Observables.Nats.NatsPayloadSerializerExtensions.Deserialize``1(Observables.Nats.INatsPayloadSerializer{``0},System.Byte[])">
+            <summary>将负载缓冲区反序列化为 <typeparamref name="T"/>。</summary>
+        </member>
+        <member name="T:Observables.Nats.NatsPayloadSerializers">
+            <summary>由 <see cref="T:Observables.Nats.NatsObservable"/> 与生成代理使用的全局 NATS 负载序列化器。</summary>
+        </member>
+        <member name="P:Observables.Nats.NatsPayloadSerializers.Current">
+            <summary>当不存在针对所请求负载类型的类型化注册时使用的回退序列化器。</summary>
+        </member>
+        <member name="M:Observables.Nats.NatsPayloadSerializers.Register``1(Observables.Nats.INatsPayloadSerializer{``0})">
+            <summary>注册类型化序列化器。对该 <typeparamref name="T"/> 优先于 <see cref="P:Observables.Nats.NatsPayloadSerializers.Current"/>。</summary>
+        </member>
+        <member name="M:Observables.Nats.NatsPayloadSerializers.Register``1(Observables.Nats.INatsPayloadSerializer)">
+            <summary>使用非泛型 <see cref="T:Observables.Nats.INatsPayloadSerializer"/> 注册 <typeparamref name="T"/>。</summary>
+        </member>
+        <member name="M:Observables.Nats.NatsPayloadSerializers.Register``1(System.Func{System.Byte[],``0},System.Func{``0,System.Byte[]})">
+            <summary>通过委托注册类型化序列化器（<paramref name="deserialize"/> 接收已复制的负载缓冲区）。</summary>
+        </member>
+        <member name="M:Observables.Nats.NatsPayloadSerializers.Unregister``1">
+            <summary>移除类型化注册（若存在）。</summary>
+        </member>
+        <member name="M:Observables.Nats.NatsPayloadSerializers.Deserialize(System.Type,System.ReadOnlySpan{System.Byte})">
+            <summary>使用 <see cref="P:Observables.Nats.NatsPayloadSerializers.Current"/> 反序列化负载。</summary>
+        </member>
+        <member name="M:Observables.Nats.NatsPayloadSerializers.Deserialize(System.Type,System.Byte[])">
+            <summary>使用 <see cref="P:Observables.Nats.NatsPayloadSerializers.Current"/> 反序列化负载缓冲区。</summary>
+        </member>
+        <member name="M:Observables.Nats.NatsPayloadSerializers.Deserialize``1(System.Byte[])">
+            <summary>将负载缓冲区反序列化为 <typeparamref name="T"/>。</summary>
+        </member>
+        <member name="M:Observables.Nats.NatsPayloadSerializers.Serialize(System.Type,System.Object)">
+            <summary>使用 <see cref="P:Observables.Nats.NatsPayloadSerializers.Current"/> 序列化 <paramref name="value"/>。</summary>
+        </member>
+        <member name="T:Observables.Nats.NatsService">
+            <summary>创建源生成的 NATS 主题代理实现。</summary>
+        </member>
+        <member name="M:Observables.Nats.NatsService.RegisterGeneratedFactory(System.Type,System.Func{NATS.Client.Core.INatsConnection,System.Object})">
+            <summary>注册源生成的主题代理工厂。</summary>
+        </member>
+        <member name="T:Observables.Nats.NatsSubject">
+            <summary>解析带有 <c>{parameter}</c> 占位符的主题模板。</summary>
+        </member>
+        <member name="T:Observables.Nats.PrimitiveNatsPayloadSerializer">
+            <summary>用于原始 <see cref="T:System.Byte"/>[] 与 UTF-8 <see cref="T:System.String"/> 负载的内置序列化器。</summary>
+        </member>
+    </members>
+</doc>

@@ -8,7 +8,7 @@ using System.Diagnostics.CodeAnalysis;
 namespace Observables.RestAPI
 {
     /// <summary>
-    /// RestService.
+    /// Creates REST API client implementations for declarative HTTP interfaces.
     /// </summary>
 #if NET8_0_OR_GREATER
     [RequiresUnreferencedCode(RestTrimAnnotations.Reflection)]
@@ -20,9 +20,9 @@ namespace Observables.RestAPI
         static readonly ConcurrentDictionary<Type, Func<HttpClient, IRequestBuilder, object>> GeneratedFactories = new();
 
         /// <summary>
-        /// Registers a source-generated Refit implementation factory.
+        /// Registers a source-generated REST API client implementation factory.
         /// </summary>
-        /// <param name="refitInterfaceType">The Refit interface type.</param>
+        /// <param name="refitInterfaceType">The REST API interface type.</param>
         /// <param name="factory">The generated implementation factory.</param>
         [EditorBrowsable(EditorBrowsableState.Never)]
 #if NET8_0_OR_GREATER
@@ -54,7 +54,7 @@ namespace Observables.RestAPI
         }
 
         /// <summary>
-        /// Generate a Refit implementation of the specified interface.
+        /// Generate a REST API client implementation of the specified interface.
         /// </summary>
         /// <typeparam name="T">Interface to create the implementation for.</typeparam>
         /// <param name="client">The <see cref="HttpClient"/> the implementation will use to send requests.</param>
@@ -72,7 +72,7 @@ namespace Observables.RestAPI
 #endif
 
         /// <summary>
-        /// Generate a Refit implementation of the specified interface.
+        /// Generate a REST API client implementation of the specified interface.
         /// </summary>
         /// <typeparam name="T">Interface to create the implementation for.</typeparam>
         /// <param name="client">The <see cref="HttpClient"/> the implementation will use to send requests.</param>
@@ -96,7 +96,7 @@ namespace Observables.RestAPI
         }
 
         /// <summary>
-        /// Generate a Refit implementation of the specified interface.
+        /// Generate a REST API client implementation of the specified interface.
         /// </summary>
         /// <typeparam name="T">Interface to create the implementation for.</typeparam>
         /// <param name="client">The <see cref="HttpClient"/> the implementation will use to send requests.</param>
@@ -113,7 +113,7 @@ namespace Observables.RestAPI
 #endif
 
         /// <summary>
-        /// Generate a Refit implementation of the specified interface.
+        /// Generate a REST API client implementation of the specified interface.
         /// </summary>
         /// <typeparam name="T">Interface to create the implementation for.</typeparam>
         /// <param name="hostUrl">Base address the implementation will use.</param>
@@ -136,7 +136,7 @@ namespace Observables.RestAPI
         }
 
         /// <summary>
-        /// Generate a Refit implementation of the specified interface.
+        /// Generate a REST API client implementation of the specified interface.
         /// </summary>
         /// <typeparam name="T">Interface to create the implementation for.</typeparam>
         /// <param name="hostUrl">Base address the implementation will use.</param>
@@ -153,7 +153,7 @@ namespace Observables.RestAPI
 #endif
 
         /// <summary>
-        /// Generate a Refit implementation of the specified interface.
+        /// Generate a REST API client implementation of the specified interface.
         /// </summary>
         /// <param name="refitInterfaceType">Interface to create the implementation for.</param>
         /// <param name="client">The <see cref="HttpClient"/> the implementation will use to send requests.</param>
@@ -196,7 +196,7 @@ namespace Observables.RestAPI
         }
 
         /// <summary>
-        /// Generate a Refit implementation of the specified interface.
+        /// Generate a REST API client implementation of the specified interface.
         /// </summary>
         /// <param name="refitInterfaceType">Interface to create the implementation for.</param>
         /// <param name="client">The <see cref="HttpClient"/> the implementation will use to send requests.</param>
@@ -227,7 +227,7 @@ namespace Observables.RestAPI
         }
 
         /// <summary>
-        /// Generate a Refit implementation of the specified interface.
+        /// Generate a REST API client implementation of the specified interface.
         /// </summary>
         /// <param name="refitInterfaceType">Interface to create the implementation for.</param>
         /// <param name="client">The <see cref="HttpClient"/> the implementation will use to send requests.</param>
@@ -247,7 +247,7 @@ namespace Observables.RestAPI
 #endif
 
         /// <summary>
-        /// Generate a Refit implementation of the specified interface.
+        /// Generate a REST API client implementation of the specified interface.
         /// </summary>
         /// <param name="refitInterfaceType">Interface to create the implementation for.</param>
         /// <param name="hostUrl">Base address the implementation will use.</param>
@@ -273,7 +273,7 @@ namespace Observables.RestAPI
         }
 
         /// <summary>
-        /// Generate a Refit implementation of the specified interface.
+        /// Generate a REST API client implementation of the specified interface.
         /// </summary>
         /// <param name="refitInterfaceType">Interface to create the implementation for.</param>
         /// <param name="hostUrl">Base address the implementation will use.</param>

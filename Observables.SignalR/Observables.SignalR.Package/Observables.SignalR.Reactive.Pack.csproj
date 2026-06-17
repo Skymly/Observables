@@ -26,6 +26,14 @@
     <PackageReference Include="System.Reactive" />
     <PackageReference Include="Microsoft.AspNetCore.SignalR.Client" />
     <None Include="README.SignalR.Reactive.pack.md" Pack="true" PackagePath="README.md" Visible="false" />
+    <None Include="..\Observables.SignalR\loc\zh-Hans\Observables.SignalR.xml"
+          Pack="true"
+          PackagePath="lib\netstandard2.0\zh-Hans\;lib\net8.0\zh-Hans\;lib\net9.0\zh-Hans\"
+          Visible="false" />
+    <None Include="..\Observables.SignalR.Reactive\loc\zh-Hans\Observables.SignalR.Reactive.xml"
+          Pack="true"
+          PackagePath="lib\netstandard2.0\zh-Hans\;lib\net8.0\zh-Hans\;lib\net9.0\zh-Hans\"
+          Visible="false" />
   </ItemGroup>
 
 </Project>

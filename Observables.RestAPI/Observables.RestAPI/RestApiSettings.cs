@@ -16,7 +16,7 @@ using System.Diagnostics.CodeAnalysis;
 namespace Observables.RestAPI
 {
     /// <summary>
-    /// Defines various parameters on how Refit should work.
+    /// Defines various parameters that control REST API client behavior.
     /// </summary>
 #if NET8_0_OR_GREATER
     [RequiresUnreferencedCode(RestTrimAnnotations.Reflection)]

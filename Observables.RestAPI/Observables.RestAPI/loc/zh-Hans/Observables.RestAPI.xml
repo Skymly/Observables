@@ -1,0 +1,2127 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>Observables.RestAPI</name>
+    </assembly>
+    <members>
+        <member name="T:Observables.RestAPI.ApiException">
+            <summary>
+            表示从服务器收到响应后发生的错误。
+            </summary>
+        </member>
+        <member name="P:Observables.RestAPI.ApiException.StatusCode">
+            <summary>
+            HTTP 响应状态码。
+            </summary>
+        </member>
+        <member name="P:Observables.RestAPI.ApiException.ReasonPhrase">
+            <summary>
+            通常由服务器与状态码一起发送的原因短语。
+            </summary>
+        </member>
+        <member name="P:Observables.RestAPI.ApiException.Headers">
+            <summary>
+            HTTP 响应头。
+            </summary>
+        </member>
+        <member name="P:Observables.RestAPI.ApiException.ContentHeaders">
+            <summary>
+            RFC 2616 中定义的 HTTP 响应内容头。
+            </summary>
+        </member>
+        <member name="P:Observables.RestAPI.ApiException.Content">
+            <summary>
+            HTTP 响应内容的字符串形式。
+            </summary>
+        </member>
+        <member name="P:Observables.RestAPI.ApiException.HasContent">
+            <summary>
+            响应是否包含内容？
+            </summary>
+        </member>
+        <member name="M:Observables.RestAPI.ApiException.#ctor(System.Net.Http.HttpRequestMessage,System.Net.Http.HttpMethod,System.String,System.Net.HttpStatusCode,System.String,System.Net.Http.Headers.HttpResponseHeaders,Observables.RestAPI.RestApiSettings,System.Exception)">
+            <summary>
+            初始化 <see cref="T:Observables.RestAPI.ApiException"/> 类的新实例。
+            </summary>
+            <param name="message">消息。</param>
+            <param name="httpMethod">HTTP 方法。</param>
+            <param name="content">内容。</param>
+            <param name="statusCode">状态码。</param>
+            <param name="reasonPhrase">原因短语。</param>
+            <param name="headers">响应头。</param>
+            <param name="RestApiSettings">REST API 设置。</param>
+            <param name="innerException">内部异常。</param>
+        </member>
+        <member name="M:Observables.RestAPI.ApiException.#ctor(System.String,System.Net.Http.HttpRequestMessage,System.Net.Http.HttpMethod,System.String,System.Net.HttpStatusCode,System.String,System.Net.Http.Headers.HttpResponseHeaders,Observables.RestAPI.RestApiSettings,System.Exception)">
+            <summary>
+            初始化 <see cref="T:Observables.RestAPI.ApiException"/> 类的新实例。
+            </summary>
+            <param name="exceptionMessage">异常消息。</param>
+            <param name="message">消息。</param>
+            <param name="httpMethod">HTTP 方法。</param>
+            <param name="content">内容。</param>
+            <param name="statusCode">状态码。</param>
+            <param name="reasonPhrase">原因短语。</param>
+            <param name="headers">响应头。</param>
+            <param name="RestApiSettings">REST API 设置。</param>
+            <param name="innerException">内部异常。</param>
+        </member>
+        <member name="M:Observables.RestAPI.ApiException.GetContentAsAsync``1">
+            <summary>
+            获取反序列化后的响应内容，作为可空的 <typeparamref name="T"/>。
+            </summary>
+            <typeparam name="T">内容反序列化的目标类型。</typeparam>
+            <returns>反序列化为 <typeparamref name="T"/> 的响应内容。</returns>
+        </member>
+        <member name="M:Observables.RestAPI.ApiException.Create(System.Net.Http.HttpRequestMessage,System.Net.Http.HttpMethod,System.Net.Http.HttpResponseMessage,Observables.RestAPI.RestApiSettings,System.Exception)">
+            <summary>
+            创建 <see cref="T:Observables.RestAPI.ApiException"/> 的实例。
+            </summary>
+            <param name="message">用于发送请求的 HTTP 请求消息。</param>
+            <param name="httpMethod">用于发送请求的 HTTP 方法。</param>
+            <param name="response">HTTP 响应消息。</param>
+            <param name="RestApiSettings">用于发送请求的 REST API 设置。</param>
+            <param name="innerException">向 <see cref="T:Observables.RestAPI.ApiException"/> 添加内部异常。</param>
+            <returns>新创建的 <see cref="T:Observables.RestAPI.ApiException"/>。</returns>
+        </member>
+        <member name="M:Observables.RestAPI.ApiException.Create(System.String,System.Net.Http.HttpRequestMessage,System.Net.Http.HttpMethod,System.Net.Http.HttpResponseMessage,Observables.RestAPI.RestApiSettings,System.Exception)">
+            <summary>
+            创建带有自定义异常消息的 <see cref="T:Observables.RestAPI.ApiException"/> 实例。
+            </summary>
+            <param name="exceptionMessage">自定义异常消息。</param>
+            <param name="message">用于发送请求的 HTTP 请求消息。</param>
+            <param name="httpMethod">用于发送请求的 HTTP 方法。</param>
+            <param name="response">HTTP 响应消息。</param>
+            <param name="RestApiSettings">用于发送请求的 REST API 设置。</param>
+            <param name="innerException">向 <see cref="T:Observables.RestAPI.ApiException"/> 添加内部异常。</param>
+            <returns>新创建的 <see cref="T:Observables.RestAPI.ApiException"/>。</returns>
+        </member>
+        <member name="T:Observables.RestAPI.ApiExceptionBase">
+            <summary>
+            表示发送 API 请求时发生的错误。
+            </summary>
+        </member>
+        <member name="P:Observables.RestAPI.ApiExceptionBase.HttpMethod">
+            <summary>
+            用于发送请求的 HTTP 方法。
+            </summary>
+        </member>
+        <member name="P:Observables.RestAPI.ApiExceptionBase.Uri">
+            <summary>
+            用于发送 HTTP 请求的 <see cref="T:System.Uri"/>。
+            </summary>
+        </member>
+        <member name="P:Observables.RestAPI.ApiExceptionBase.RequestMessage">
+            <summary>
+            用于发送请求的 HTTP 请求消息。
+            </summary>
+        </member>
+        <member name="P:Observables.RestAPI.ApiExceptionBase.RestApiSettings">
+            <summary>
+            用于发送请求的 REST API 设置。
+            </summary>
+        </member>
+        <member name="M:Observables.RestAPI.ApiExceptionBase.#ctor(System.Net.Http.HttpRequestMessage,System.Net.Http.HttpMethod,Observables.RestAPI.RestApiSettings,System.Exception)">
+            <summary>
+            初始化异常的新实例。
+            </summary>
+            <param name="message">用于发送请求的 HTTP 请求消息。</param>
+            <param name="httpMethod">用于发送请求的 HTTP 方法。</param>
+            <param name="restApiSettings">用于发送请求的 REST API 设置。</param>
+            <param name="innerException">导致 <see cref="T:Observables.RestAPI.ApiRequestException"/> 的异常。</param>
+        </member>
+        <member name="M:Observables.RestAPI.ApiExceptionBase.#ctor(System.String,System.Net.Http.HttpRequestMessage,System.Net.Http.HttpMethod,Observables.RestAPI.RestApiSettings,System.Exception)">
+            <summary>
+            使用自定义异常消息初始化异常的新实例。
+            </summary>
+            <param name="exceptionMessage">异常消息。</param>
+            <param name="message">用于发送请求的 HTTP 请求消息。</param>
+            <param name="httpMethod">用于发送请求的 HTTP 方法。</param>
+            <param name="restApiSettings">用于发送请求的 REST API 设置。</param>
+            <param name="innerException">导致 API 异常的异常。</param>
+        </member>
+        <member name="T:Observables.RestAPI.ApiRequestException">
+            <summary>
+            表示在从服务器收到响应之前发送 API 请求时发生的错误。
+            </summary>
+            <remarks>
+            此异常将包装由 <see cref="M:System.Net.Http.HttpClient.SendAsync(System.Net.Http.HttpRequestMessage)"/> 抛出的异常，
+            例如 <see cref="T:System.Net.Http.HttpRequestException"/> 和 <see cref="T:System.OperationCanceledException"/>。
+            </remarks>
+        </member>
+        <member name="M:Observables.RestAPI.ApiRequestException.#ctor(System.Net.Http.HttpRequestMessage,System.Net.Http.HttpMethod,Observables.RestAPI.RestApiSettings,System.Exception)">
+            <inheritdoc/>
+        </member>
+        <member name="M:Observables.RestAPI.ApiRequestException.#ctor(System.String,System.Net.Http.HttpRequestMessage,System.Net.Http.HttpMethod,Observables.RestAPI.RestApiSettings,System.Exception)">
+            <inheritdoc/>
+        </member>
+        <member name="T:Observables.RestAPI.ApiResponse`1">
+            <summary>
+            <see cref="T:Observables.RestAPI.IApiResponse`1"/> 的实现，提供附加功能。
+            </summary>
+            <typeparam name="T"></typeparam>
+            <remarks>
+            创建类型为 <typeparamref name="T"/> 的 <see cref="T:Observables.RestAPI.ApiResponse`1"/> 实例。
+            </remarks>
+            <param name="request">原始 HTTP 请求。</param>
+            <param name="response">原始 HTTP 响应消息。</param>
+            <param name="content">响应内容。</param>
+            <param name="settings">用于发送请求的 REST API 设置。</param>
+            <param name="error">请求失败时的异常。</param>
+            <exception cref="T:System.ArgumentNullException"></exception>
+        </member>
+        <member name="M:Observables.RestAPI.ApiResponse`1.#ctor(System.Net.Http.HttpRequestMessage,System.Net.Http.HttpResponseMessage,`0,Observables.RestAPI.RestApiSettings,Observables.RestAPI.ApiExceptionBase)">
+            <summary>
+            <see cref="T:Observables.RestAPI.IApiResponse`1"/> 的实现，提供附加功能。
+            </summary>
+            <typeparam name="T"></typeparam>
+            <remarks>
+            创建类型为 <typeparamref name="T"/> 的 <see cref="T:Observables.RestAPI.ApiResponse`1"/> 实例。
+            </remarks>
+            <param name="request">原始 HTTP 请求。</param>
+            <param name="response">原始 HTTP 响应消息。</param>
+            <param name="content">响应内容。</param>
+            <param name="settings">用于发送请求的 REST API 设置。</param>
+            <param name="error">请求失败时的异常。</param>
+            <exception cref="T:System.ArgumentNullException"></exception>
+        </member>
+        <member name="P:Observables.RestAPI.ApiResponse`1.Content">
+            <summary>
+            反序列化后的请求内容，类型为 <typeparamref name="T"/>。
+            </summary>
+        </member>
+        <member name="P:Observables.RestAPI.ApiResponse`1.Settings">
+            <summary>
+            用于发送请求的 REST API 设置。
+            </summary>
+        </member>
+        <member name="P:Observables.RestAPI.ApiResponse`1.Headers">
+            <summary>
+            HTTP 响应头。
+            </summary>
+        </member>
+        <member name="P:Observables.RestAPI.ApiResponse`1.ContentHeaders">
+            <summary>
+            RFC 2616 中定义的 HTTP 响应内容头。
+            </summary>
+        </member>
+        <member name="P:Observables.RestAPI.ApiResponse`1.IsSuccessStatusCode">
+            <summary>
+            指示请求是否成功。
+            </summary>
+        </member>
+        <member name="P:Observables.RestAPI.ApiResponse`1.IsSuccessful">
+            <summary>
+            指示请求是否成功且没有其他错误（例如，在内容反序列化期间）。
+            </summary>
+        </member>
+        <member name="P:Observables.RestAPI.ApiResponse`1.IsReceived">
+            <inheritdoc />
+        </member>
+        <member name="P:Observables.RestAPI.ApiResponse`1.ReasonPhrase">
+            <summary>
+            通常由服务器与状态码一起发送的原因短语。
+            </summary>
+        </member>
+        <member name="P:Observables.RestAPI.ApiResponse`1.RequestMessage">
+            <summary>
+            导致此响应的 HTTP 请求消息。
+            </summary>
+        </member>
+        <member name="P:Observables.RestAPI.ApiResponse`1.StatusCode">
+            <summary>
+            HTTP 响应状态码。
+            </summary>
+        </member>
+        <member name="P:Observables.RestAPI.ApiResponse`1.Version">
+            <summary>
+            HTTP 消息版本。
+            </summary>
+        </member>
+        <member name="P:Observables.RestAPI.ApiResponse`1.Error">
+            <summary>
+            请求或响应不成功时的 <see cref="T:Observables.RestAPI.ApiExceptionBase" /> 对象。
+            </summary>
+            <remarks>
+            可以使用 <see cref="M:Observables.RestAPI.ApiResponse`1.HasRequestError(Observables.RestAPI.ApiRequestException@)"/> 和 <see cref="M:Observables.RestAPI.ApiResponse`1.HasResponseError(Observables.RestAPI.ApiException@)"/> 方法
+            来检查错误类型。
+            </remarks>
+        </member>
+        <member name="M:Observables.RestAPI.ApiResponse`1.#ctor(System.Net.Http.HttpResponseMessage,`0,Observables.RestAPI.RestApiSettings,Observables.RestAPI.ApiExceptionBase)">
+            <summary>
+            <see cref="T:Observables.RestAPI.IApiResponse`1"/> 的实现，提供附加功能。
+            </summary>
+            <remarks>
+            创建类型为 <typeparamref name="T"/> 的 <see cref="T:Observables.RestAPI.ApiResponse`1"/> 实例。
+            </remarks>
+            <param name="response">原始 HTTP 响应消息。</param>
+            <param name="content">响应内容。</param>
+            <param name="settings">用于发送请求的 REST API 设置。</param>
+            <param name="error">请求失败时的异常。</param>
+            <exception cref="T:System.ArgumentNullException"></exception>
+        </member>
+        <member name="M:Observables.RestAPI.ApiResponse`1.Dispose">
+            <summary>
+            执行与释放、释放或重置非托管资源相关的应用程序定义的任务。
+            </summary>
+        </member>
+        <member name="M:Observables.RestAPI.ApiResponse`1.EnsureSuccessStatusCodeAsync">
+            <summary>
+            通过在失败时抛出异常来确保请求成功。
+            </summary>
+            <returns>当前的 <see cref="T:Observables.RestAPI.ApiResponse`1"/></returns>
+            <exception cref="T:Observables.RestAPI.ApiException">当从服务器收到不成功的响应时抛出。</exception>
+            <exception cref="T:Observables.RestAPI.ApiRequestException">当在从服务器收到响应之前请求失败时抛出。</exception>
+        </member>
+        <member name="M:Observables.RestAPI.ApiResponse`1.EnsureSuccessfulAsync">
+            <summary>
+            通过在失败时抛出异常来确保请求成功且没有其他错误。
+            </summary>
+            <returns>当前的 <see cref="T:Observables.RestAPI.ApiResponse`1"/></returns>
+            <exception cref="T:Observables.RestAPI.ApiException">当从服务器收到不成功的响应时抛出。</exception>
+            <exception cref="T:Observables.RestAPI.ApiRequestException">当在从服务器收到响应之前请求失败时抛出。</exception>
+        </member>
+        <member name="M:Observables.RestAPI.ApiResponse`1.HasRequestError(Observables.RestAPI.ApiRequestException@)">
+            <inheritdoc/>
+        </member>
+        <member name="M:Observables.RestAPI.ApiResponse`1.HasResponseError(Observables.RestAPI.ApiException@)">
+            <inheritdoc/>
+        </member>
+        <member name="T:Observables.RestAPI.IApiResponse`1">
+            <inheritdoc/>
+        </member>
+        <member name="P:Observables.RestAPI.IApiResponse`1.Error">
+            <summary>
+            请求或响应不成功时的异常对象。
+            </summary>
+            <remarks>
+            可以使用 <see cref="M:Observables.RestAPI.IApiResponse.HasRequestError(Observables.RestAPI.ApiRequestException@)"/> 和 <see cref="M:Observables.RestAPI.IApiResponse.HasResponseError(Observables.RestAPI.ApiException@)"/> 方法
+            来检查错误类型。
+            </remarks>
+        </member>
+        <member name="P:Observables.RestAPI.IApiResponse`1.ContentHeaders">
+            <summary>
+            RFC 2616 中定义的 HTTP 响应内容头。
+            </summary>
+        </member>
+        <member name="P:Observables.RestAPI.IApiResponse`1.IsSuccessStatusCode">
+            <summary>
+            指示请求是否成功。
+            </summary>
+        </member>
+        <member name="P:Observables.RestAPI.IApiResponse`1.IsSuccessful">
+            <summary>
+            指示请求是否成功且没有其他错误（例如，在内容反序列化期间）。
+            </summary>
+        </member>
+        <member name="P:Observables.RestAPI.IApiResponse`1.Content">
+            <summary>
+            反序列化后的请求内容，类型为 <typeparamref name="T"/>。
+            </summary>
+        </member>
+        <member name="T:Observables.RestAPI.IApiResponse">
+            <summary>
+            用于表示 API 响应的基础接口。
+            </summary>
+        </member>
+        <member name="P:Observables.RestAPI.IApiResponse.Headers">
+            <summary>
+            HTTP 响应头。
+            </summary>
+        </member>
+        <member name="P:Observables.RestAPI.IApiResponse.ContentHeaders">
+            <summary>
+            RFC 2616 中定义的 HTTP 响应内容头。
+            </summary>
+        </member>
+        <member name="P:Observables.RestAPI.IApiResponse.IsSuccessStatusCode">
+            <summary>
+            指示请求是否成功。
+            </summary>
+        </member>
+        <member name="P:Observables.RestAPI.IApiResponse.IsSuccessful">
+            <summary>
+            指示请求是否成功且没有其他错误（例如，在内容反序列化期间）。
+            </summary>
+        </member>
+        <member name="P:Observables.RestAPI.IApiResponse.IsReceived">
+            <summary>
+            指示是否从服务器收到了响应。
+            </summary>
+        </member>
+        <member name="P:Observables.RestAPI.IApiResponse.StatusCode">
+            <summary>
+            HTTP 响应状态码。
+            </summary>
+        </member>
+        <member name="P:Observables.RestAPI.IApiResponse.ReasonPhrase">
+            <summary>
+            通常由服务器与状态码一起发送的原因短语。
+            </summary>
+        </member>
+        <member name="P:Observables.RestAPI.IApiResponse.RequestMessage">
+            <summary>
+            导致此响应的 HTTP 请求消息。
+            </summary>
+        </member>
+        <member name="P:Observables.RestAPI.IApiResponse.Version">
+            <summary>
+            HTTP 消息版本。
+            </summary>
+        </member>
+        <member name="P:Observables.RestAPI.IApiResponse.Error">
+            <summary>
+            请求或响应不成功时的异常对象。
+            </summary>
+            <remarks>
+            可以使用 <see cref="M:Observables.RestAPI.IApiResponse.HasRequestError(Observables.RestAPI.ApiRequestException@)"/> 和 <see cref="M:Observables.RestAPI.IApiResponse.HasResponseError(Observables.RestAPI.ApiException@)"/> 方法来检查错误类型。
+            </remarks>
+        </member>
+        <member name="M:Observables.RestAPI.IApiResponse.HasRequestError(Observables.RestAPI.ApiRequestException@)">
+            <summary>
+            检查调用是否在从服务器收到响应之前失败。
+            </summary>
+            <param name="error">请求不成功时的 <see cref="T:Observables.RestAPI.ApiRequestException"/> 对象。</param>
+            <returns>如果调用在从服务器收到响应之前失败则为 <c>true</c>，否则为 <c>false</c>。</returns>
+        </member>
+        <member name="M:Observables.RestAPI.IApiResponse.HasResponseError(Observables.RestAPI.ApiException@)">
+            <summary>
+            检查调用是否因服务器的不成功响应而失败。
+            </summary>
+            <param name="error">响应不成功时的 <see cref="T:Observables.RestAPI.ApiException"/> 对象。</param>
+            <returns>如果调用因服务器的不成功响应而失败则为 <c>true</c>，否则为 <c>false</c>。</returns>
+        </member>
+        <member name="T:Observables.RestAPI.HttpMethodAttribute">
+            <summary>
+            将接口方法映射到 REST 路径的 HTTP 动词特性基类。
+            </summary>
+            <seealso cref="T:System.Attribute" />
+            <remarks>
+            初始化 <see cref="T:Observables.RestAPI.HttpMethodAttribute"/> 类的新实例。
+            </remarks>
+            <param name="path">请求的相对路径模板。</param>
+        </member>
+        <member name="M:Observables.RestAPI.HttpMethodAttribute.#ctor(System.String)">
+            <summary>
+            将接口方法映射到 REST 路径的 HTTP 动词特性基类。
+            </summary>
+            <seealso cref="T:System.Attribute" />
+            <remarks>
+            初始化 <see cref="T:Observables.RestAPI.HttpMethodAttribute"/> 类的新实例。
+            </remarks>
+            <param name="path">请求的相对路径模板。</param>
+        </member>
+        <member name="P:Observables.RestAPI.HttpMethodAttribute.Method">
+            <summary>
+            获取方法。
+            </summary>
+            <value>
+            方法。
+            </value>
+        </member>
+        <member name="P:Observables.RestAPI.HttpMethodAttribute.Path">
+            <summary>
+            获取或设置路径。
+            </summary>
+            <value>
+            路径。
+            </value>
+        </member>
+        <member name="T:Observables.RestAPI.GetAttribute">
+            <summary>
+            使用 HTTP 方法 'GET' 发送请求。
+            </summary>
+            <remarks>
+            初始化 <see cref="T:Observables.RestAPI.GetAttribute"/> 类的新实例。
+            </remarks>
+            <param name="path">路径。</param>
+        </member>
+        <member name="M:Observables.RestAPI.GetAttribute.#ctor(System.String)">
+            <summary>
+            使用 HTTP 方法 'GET' 发送请求。
+            </summary>
+            <remarks>
+            初始化 <see cref="T:Observables.RestAPI.GetAttribute"/> 类的新实例。
+            </remarks>
+            <param name="path">路径。</param>
+        </member>
+        <member name="P:Observables.RestAPI.GetAttribute.Method">
+            <summary>
+            获取方法。
+            </summary>
+            <value>
+            方法。
+            </value>
+        </member>
+        <member name="T:Observables.RestAPI.PostAttribute">
+            <summary>
+            使用 HTTP 方法 'POST' 发送请求。
+            </summary>
+            <remarks>
+            初始化 <see cref="T:Observables.RestAPI.PostAttribute"/> 类的新实例。
+            </remarks>
+            <param name="path">路径。</param>
+        </member>
+        <member name="M:Observables.RestAPI.PostAttribute.#ctor(System.String)">
+            <summary>
+            使用 HTTP 方法 'POST' 发送请求。
+            </summary>
+            <remarks>
+            初始化 <see cref="T:Observables.RestAPI.PostAttribute"/> 类的新实例。
+            </remarks>
+            <param name="path">路径。</param>
+        </member>
+        <member name="P:Observables.RestAPI.PostAttribute.Method">
+            <summary>
+            获取方法。
+            </summary>
+            <value>
+            方法。
+            </value>
+        </member>
+        <member name="T:Observables.RestAPI.PutAttribute">
+            <summary>
+            使用 HTTP 方法 'PUT' 发送请求。
+            </summary>
+            <remarks>
+            初始化 <see cref="T:Observables.RestAPI.PutAttribute"/> 类的新实例。
+            </remarks>
+            <param name="path">路径。</param>
+        </member>
+        <member name="M:Observables.RestAPI.PutAttribute.#ctor(System.String)">
+            <summary>
+            使用 HTTP 方法 'PUT' 发送请求。
+            </summary>
+            <remarks>
+            初始化 <see cref="T:Observables.RestAPI.PutAttribute"/> 类的新实例。
+            </remarks>
+            <param name="path">路径。</param>
+        </member>
+        <member name="P:Observables.RestAPI.PutAttribute.Method">
+            <summary>
+            获取方法。
+            </summary>
+            <value>
+            方法。
+            </value>
+        </member>
+        <member name="T:Observables.RestAPI.DeleteAttribute">
+            <summary>
+            使用 HTTP 方法 'DELETE' 发送请求。
+            </summary>
+            <remarks>
+            初始化 <see cref="T:Observables.RestAPI.DeleteAttribute"/> 类的新实例。
+            </remarks>
+            <param name="path">路径。</param>
+        </member>
+        <member name="M:Observables.RestAPI.DeleteAttribute.#ctor(System.String)">
+            <summary>
+            使用 HTTP 方法 'DELETE' 发送请求。
+            </summary>
+            <remarks>
+            初始化 <see cref="T:Observables.RestAPI.DeleteAttribute"/> 类的新实例。
+            </remarks>
+            <param name="path">路径。</param>
+        </member>
+        <member name="P:Observables.RestAPI.DeleteAttribute.Method">
+            <summary>
+            获取方法。
+            </summary>
+            <value>
+            方法。
+            </value>
+        </member>
+        <member name="T:Observables.RestAPI.PatchAttribute">
+            <summary>
+            使用 HTTP 方法 'PATCH' 发送请求。
+            </summary>
+            <remarks>
+            初始化 <see cref="T:Observables.RestAPI.PatchAttribute"/> 类的新实例。
+            </remarks>
+            <param name="path">路径。</param>
+        </member>
+        <member name="M:Observables.RestAPI.PatchAttribute.#ctor(System.String)">
+            <summary>
+            使用 HTTP 方法 'PATCH' 发送请求。
+            </summary>
+            <remarks>
+            初始化 <see cref="T:Observables.RestAPI.PatchAttribute"/> 类的新实例。
+            </remarks>
+            <param name="path">路径。</param>
+        </member>
+        <member name="P:Observables.RestAPI.PatchAttribute.Method">
+            <summary>
+            获取方法。
+            </summary>
+            <value>
+            方法。
+            </value>
+        </member>
+        <member name="T:Observables.RestAPI.OptionsAttribute">
+            <summary>
+            使用 HTTP 方法 'OPTION' 发送请求。
+            </summary>
+            <remarks>
+            初始化 <see cref="T:Observables.RestAPI.OptionsAttribute"/> 类的新实例。
+            </remarks>
+            <param name="path">路径。</param>
+        </member>
+        <member name="M:Observables.RestAPI.OptionsAttribute.#ctor(System.String)">
+            <summary>
+            使用 HTTP 方法 'OPTION' 发送请求。
+            </summary>
+            <remarks>
+            初始化 <see cref="T:Observables.RestAPI.OptionsAttribute"/> 类的新实例。
+            </remarks>
+            <param name="path">路径。</param>
+        </member>
+        <member name="P:Observables.RestAPI.OptionsAttribute.Method">
+            <summary>
+            获取方法。
+            </summary>
+            <value>
+            方法。
+            </value>
+        </member>
+        <member name="T:Observables.RestAPI.HeadAttribute">
+            <summary>
+            使用 HTTP 方法 'HEAD' 发送请求。
+            </summary>
+            <remarks>
+            初始化 <see cref="T:Observables.RestAPI.HeadAttribute"/> 类的新实例。
+            </remarks>
+            <param name="path">路径。</param>
+        </member>
+        <member name="M:Observables.RestAPI.HeadAttribute.#ctor(System.String)">
+            <summary>
+            使用 HTTP 方法 'HEAD' 发送请求。
+            </summary>
+            <remarks>
+            初始化 <see cref="T:Observables.RestAPI.HeadAttribute"/> 类的新实例。
+            </remarks>
+            <param name="path">路径。</param>
+        </member>
+        <member name="P:Observables.RestAPI.HeadAttribute.Method">
+            <summary>
+            获取方法。
+            </summary>
+            <value>
+            方法。
+            </value>
+        </member>
+        <member name="T:Observables.RestAPI.MultipartAttribute">
+            <summary>
+            以多部分形式发送请求。
+            </summary>
+            <remarks>
+            目前，多部分方法仅支持以下参数类型：<see cref="T:System.String"/>、<see cref="T:System.Byte"/> 数组、<see cref="T:System.IO.Stream"/>、<see cref="T:System.IO.FileInfo"/>。
+            </remarks>
+            <remarks>
+            初始化 <see cref="T:Observables.RestAPI.MultipartAttribute"/> 类的新实例。
+            </remarks>
+            <param name="boundaryText">边界文本。</param>
+        </member>
+        <member name="M:Observables.RestAPI.MultipartAttribute.#ctor(System.String)">
+            <summary>
+            以多部分形式发送请求。
+            </summary>
+            <remarks>
+            目前，多部分方法仅支持以下参数类型：<see cref="T:System.String"/>、<see cref="T:System.Byte"/> 数组、<see cref="T:System.IO.Stream"/>、<see cref="T:System.IO.FileInfo"/>。
+            </remarks>
+            <remarks>
+            初始化 <see cref="T:Observables.RestAPI.MultipartAttribute"/> 类的新实例。
+            </remarks>
+            <param name="boundaryText">边界文本。</param>
+        </member>
+        <member name="P:Observables.RestAPI.MultipartAttribute.BoundaryText">
+            <summary>
+            获取边界文本。
+            </summary>
+            <value>
+            边界文本。
+            </value>
+        </member>
+        <member name="T:Observables.RestAPI.BodySerializationMethod">
+            <summary>
+            定义 HTTP 请求正文的序列化方法。
+            </summary>
+        </member>
+        <member name="F:Observables.RestAPI.BodySerializationMethod.Default">
+            <summary>
+            使用 RestApiSettings 中的 ContentSerializer 对除字符串以外的所有内容进行编码。字符串按原样设置。
+            </summary>
+        </member>
+        <member name="F:Observables.RestAPI.BodySerializationMethod.Json">
+            <summary>
+            对所有内容（包括字符串）进行 JSON 编码。
+            </summary>
+        </member>
+        <member name="F:Observables.RestAPI.BodySerializationMethod.UrlEncoded">
+            <summary>
+            对值进行表单 URL 编码。
+            </summary>
+        </member>
+        <member name="F:Observables.RestAPI.BodySerializationMethod.Serialized">
+            <summary>
+            使用 RestApiSettings 中的 ContentSerializer 对所有内容进行编码。
+            </summary>
+        </member>
+        <member name="T:Observables.RestAPI.BodyAttribute">
+            <summary>
+            将参数设置为作为 HTTP 请求正文发送。
+            </summary>
+            <remarks>
+            将参数作为请求正文发送时有四种行为：<br/>
+            - 如果类型是/实现了 <see cref="T:System.IO.Stream"/>，内容将通过 <see cref="T:System.Net.Http.StreamContent"/> 进行流式传输。<br/>
+            - 如果类型是 <see cref="T:System.String"/>，除非设置了 <c>[Body(BodySerializationMethod.Json)]</c>（将作为 <see cref="T:System.Net.Http.StringContent"/> 发送），否则将直接用作内容。<br/>
+            - 如果参数具有 <c>[Body(BodySerializationMethod.UrlEncoded)]</c> 属性，内容将进行 URL 编码。<br/>
+            - 对于所有其他类型，将使用请求的 <see cref="T:Observables.RestAPI.RestApiSettings"/> 中指定的内容序列化器对对象进行序列化。
+            </remarks>
+        </member>
+        <member name="M:Observables.RestAPI.BodyAttribute.#ctor">
+            <summary>
+            初始化 <see cref="T:Observables.RestAPI.BodyAttribute"/> 类的新实例。
+            </summary>
+        </member>
+        <member name="M:Observables.RestAPI.BodyAttribute.#ctor(System.Boolean)">
+            <summary>
+            初始化 <see cref="T:Observables.RestAPI.BodyAttribute"/> 类的新实例。
+            </summary>
+            <param name="buffered">如果设置为 <c>true</c> 则启用缓冲。</param>
+        </member>
+        <member name="M:Observables.RestAPI.BodyAttribute.#ctor(Observables.RestAPI.BodySerializationMethod,System.Boolean)">
+            <summary>
+            初始化 <see cref="T:Observables.RestAPI.BodyAttribute"/> 类的新实例。
+            </summary>
+            <param name="serializationMethod">序列化方法。</param>
+            <param name="buffered">如果设置为 <c>true</c> 则启用缓冲。</param>
+        </member>
+        <member name="M:Observables.RestAPI.BodyAttribute.#ctor(Observables.RestAPI.BodySerializationMethod)">
+            <summary>
+            初始化 <see cref="T:Observables.RestAPI.BodyAttribute"/> 类的新实例。
+            </summary>
+            <param name="serializationMethod">序列化方法。</param>
+        </member>
+        <member name="P:Observables.RestAPI.BodyAttribute.Buffered">
+            <summary>
+            获取或设置缓冲状态。
+            </summary>
+            <value>
+            缓冲状态。
+            </value>
+        </member>
+        <member name="P:Observables.RestAPI.BodyAttribute.SerializationMethod">
+            <summary>
+            获取或设置序列化方法。
+            </summary>
+            <value>
+            序列化方法。
+            </value>
+        </member>
+        <member name="T:Observables.RestAPI.AliasAsAttribute">
+            <summary>
+            覆盖在查询字符串中发送的键。
+            </summary>
+            <remarks>
+            初始化 <see cref="T:Observables.RestAPI.AliasAsAttribute"/> 类的新实例。
+            </remarks>
+            <param name="name">名称。</param>
+        </member>
+        <member name="M:Observables.RestAPI.AliasAsAttribute.#ctor(System.String)">
+            <summary>
+            覆盖在查询字符串中发送的键。
+            </summary>
+            <remarks>
+            初始化 <see cref="T:Observables.RestAPI.AliasAsAttribute"/> 类的新实例。
+            </remarks>
+            <param name="name">名称。</param>
+        </member>
+        <member name="P:Observables.RestAPI.AliasAsAttribute.Name">
+            <summary>
+            获取或设置名称。
+            </summary>
+            <value>
+            名称。
+            </value>
+        </member>
+        <member name="T:Observables.RestAPI.AttachmentNameAttribute">
+            <summary>
+            初始化 <see cref="T:Observables.RestAPI.AttachmentNameAttribute"/> 类的新实例。
+            </summary>
+            <param name="name">名称。</param>
+        </member>
+        <member name="M:Observables.RestAPI.AttachmentNameAttribute.#ctor(System.String)">
+            <summary>
+            初始化 <see cref="T:Observables.RestAPI.AttachmentNameAttribute"/> 类的新实例。
+            </summary>
+            <param name="name">名称。</param>
+        </member>
+        <member name="P:Observables.RestAPI.AttachmentNameAttribute.Name">
+            <summary>
+            获取或设置名称。
+            </summary>
+            <value>
+            名称。
+            </value>
+        </member>
+        <member name="T:Observables.RestAPI.HeaderCollectionAttribute">
+            <summary>
+            允许提供一个要添加到请求中的头信息字典。
+            </summary>
+        </member>
+        <member name="T:Observables.RestAPI.HeadersAttribute">
+            <summary>
+            向请求添加多个头信息。
+            </summary>
+            <remarks>
+            初始化 <see cref="T:Observables.RestAPI.HeadersAttribute"/> 类的新实例。
+            </remarks>
+            <param name="headers">头信息。</param>
+        </member>
+        <member name="M:Observables.RestAPI.HeadersAttribute.#ctor(System.String[])">
+            <summary>
+            向请求添加多个头信息。
+            </summary>
+            <remarks>
+            初始化 <see cref="T:Observables.RestAPI.HeadersAttribute"/> 类的新实例。
+            </remarks>
+            <param name="headers">头信息。</param>
+        </member>
+        <member name="P:Observables.RestAPI.HeadersAttribute.Headers">
+            <summary>
+            获取头信息。
+            </summary>
+            <value>
+            头信息。
+            </value>
+        </member>
+        <member name="T:Observables.RestAPI.HeaderAttribute">
+            <summary>
+            向请求添加一个头信息。
+            </summary>
+            <remarks>
+            初始化 <see cref="T:Observables.RestAPI.HeaderAttribute"/> 类的新实例。
+            </remarks>
+            <param name="header">头信息。</param>
+        </member>
+        <member name="M:Observables.RestAPI.HeaderAttribute.#ctor(System.String)">
+            <summary>
+            向请求添加一个头信息。
+            </summary>
+            <remarks>
+            初始化 <see cref="T:Observables.RestAPI.HeaderAttribute"/> 类的新实例。
+            </remarks>
+            <param name="header">头信息。</param>
+        </member>
+        <member name="P:Observables.RestAPI.HeaderAttribute.Header">
+            <summary>
+            获取头信息。
+            </summary>
+            <value>
+            头信息。
+            </value>
+        </member>
+        <member name="T:Observables.RestAPI.PropertyAttribute">
+            <summary>
+            用于将值存储在 HttpRequestMessage.Properties 中，以便在自定义 DelegatingHandler 中进一步处理。
+            如果向构造函数提供了字符串，它将用作 HttpRequestMessage.Properties 字典中的键。
+            如果未指定键，则默认使用参数的名称。
+            </summary>
+        </member>
+        <member name="M:Observables.RestAPI.PropertyAttribute.#ctor">
+            <summary>
+            初始化 <see cref="T:Observables.RestAPI.PropertyAttribute"/> 类的新实例。
+            </summary>
+        </member>
+        <member name="M:Observables.RestAPI.PropertyAttribute.#ctor(System.String)">
+            <summary>
+            初始化 <see cref="T:Observables.RestAPI.PropertyAttribute"/> 类的新实例。
+            </summary>
+            <param name="key">键。</param>
+        </member>
+        <member name="P:Observables.RestAPI.PropertyAttribute.Key">
+            <summary>
+            指定用于在 HttpRequestMessage.Properties 字典中存储值的键。
+            </summary>
+        </member>
+        <member name="T:Observables.RestAPI.AuthorizeAttribute">
+            <summary>
+            使用关联参数的值向请求添加授权头。
+            </summary>
+            <remarks>
+            默认授权方案：Bearer
+            </remarks>
+            <remarks>
+            初始化 <see cref="T:Observables.RestAPI.AuthorizeAttribute"/> 类的新实例。
+            </remarks>
+            <param name="scheme">授权方案。</param>
+        </member>
+        <member name="M:Observables.RestAPI.AuthorizeAttribute.#ctor(System.String)">
+            <summary>
+            使用关联参数的值向请求添加授权头。
+            </summary>
+            <remarks>
+            默认授权方案：Bearer
+            </remarks>
+            <remarks>
+            初始化 <see cref="T:Observables.RestAPI.AuthorizeAttribute"/> 类的新实例。
+            </remarks>
+            <param name="scheme">授权方案。</param>
+        </member>
+        <member name="P:Observables.RestAPI.AuthorizeAttribute.Scheme">
+            <summary>
+            获取授权方案。
+            </summary>
+            <value>
+            授权方案。
+            </value>
+        </member>
+        <member name="T:Observables.RestAPI.QueryAttribute">
+            <summary>
+            关联的值将作为查询字符串添加到请求 URI 中，使用分隔符分隔值。（默认：'.'）
+            </summary>
+        </member>
+        <member name="M:Observables.RestAPI.QueryAttribute.#ctor">
+            <summary>
+            初始化 <see cref="T:Observables.RestAPI.QueryAttribute"/> 类的新实例。
+            </summary>
+        </member>
+        <member name="M:Observables.RestAPI.QueryAttribute.#ctor(System.String)">
+            <summary>
+            初始化 <see cref="T:Observables.RestAPI.QueryAttribute"/> 类的新实例。
+            </summary>
+            <param name="delimiter">分隔符。</param>
+        </member>
+        <member name="M:Observables.RestAPI.QueryAttribute.#ctor(System.String,System.String)">
+            <summary>
+            初始化 <see cref="T:Observables.RestAPI.QueryAttribute"/> 类的新实例。
+            </summary>
+            <param name="delimiter">分隔符。</param>
+            <param name="prefix">前缀。</param>
+        </member>
+        <member name="M:Observables.RestAPI.QueryAttribute.#ctor(System.String,System.String,System.String)">
+            <summary>
+            初始化 <see cref="T:Observables.RestAPI.QueryAttribute"/> 类的新实例。
+            </summary>
+            <param name="delimiter">分隔符。</param>
+            <param name="prefix">前缀。</param>
+            <param name="format">格式。</param>
+        </member>
+        <member name="M:Observables.RestAPI.QueryAttribute.#ctor(Observables.RestAPI.CollectionFormat)">
+            <summary>
+            初始化 <see cref="T:Observables.RestAPI.QueryAttribute"/> 类的新实例。
+            </summary>
+            <param name="collectionFormat">集合格式。</param>
+        </member>
+        <member name="P:Observables.RestAPI.QueryAttribute.TreatAsString">
+            <summary>
+            用于指定值应被视为字符串。
+            如果要在将对象添加到查询字符串之前调用 ToString()，请设置为 true。
+            </summary>
+        </member>
+        <member name="P:Observables.RestAPI.QueryAttribute.Delimiter">
+            <summary>
+            用于自定义查询参数对或表单编码时表单字段的名称。
+            </summary>
+            <seealso cref="P:Observables.RestAPI.QueryAttribute.Prefix"/>
+        </member>
+        <member name="P:Observables.RestAPI.QueryAttribute.Prefix">
+            <summary>
+            用于自定义编码值的名称。
+            </summary>
+            <remarks>
+            与 <see cref="P:Observables.RestAPI.QueryAttribute.Delimiter"/> 结合使用，格式为 <code>var name = $"{Prefix}{Delimiter}{originalFieldName}"</code>
+            其中 <c>originalFieldName</c> 是对象属性或方法参数的名称。
+            </remarks>
+            <example>
+            <code>
+            class Form
+            {
+              [Query("-", "dontlog")]
+              public string password { get; }
+            }
+            </code>
+            将导致编码后的表单中有一个名为 <c>dontlog-password</c> 的字段。
+            </example>
+        </member>
+        <member name="P:Observables.RestAPI.QueryAttribute.Format">
+            <summary>
+            用于自定义编码值的格式。
+            </summary>
+            <example>
+            <code>
+            interface IServerApi
+            {
+              [Get("/expenses")]
+              Task addExpense([Query(Format="0.00")] double expense);
+            }
+            </code>
+            调用 <c>serverApi.addExpense(5)</c> 将生成 URI <c>{baseUri}/expenses?expense=5.00</c>。
+            </example>
+        </member>
+        <member name="P:Observables.RestAPI.QueryAttribute.CollectionFormat">
+            <summary>
+            指定集合的编码方式。
+            </summary>
+        </member>
+        <member name="P:Observables.RestAPI.QueryAttribute.IsCollectionFormatSpecified">
+            <summary>
+            获取一个值，指示是否指定了集合格式。
+            </summary>
+            <value>
+              如果指定了集合格式则为 <c>true</c>；否则为 <c>false</c>。
+            </value>
+        </member>
+        <member name="T:Observables.RestAPI.QueryUriFormatAttribute">
+            <summary>
+            指定构建请求 URI 时如何编码查询字符串参数。
+            </summary>
+            <seealso cref="T:System.Attribute" />
+            <remarks>
+            初始化 <see cref="T:Observables.RestAPI.QueryUriFormatAttribute"/> 类的新实例。
+            </remarks>
+            <param name="uriFormat">用于查询参数的 URI 编码格式。</param>
+        </member>
+        <member name="M:Observables.RestAPI.QueryUriFormatAttribute.#ctor(System.UriFormat)">
+            <summary>
+            指定构建请求 URI 时如何编码查询字符串参数。
+            </summary>
+            <seealso cref="T:System.Attribute" />
+            <remarks>
+            初始化 <see cref="T:Observables.RestAPI.QueryUriFormatAttribute"/> 类的新实例。
+            </remarks>
+            <param name="uriFormat">用于查询参数的 URI 编码格式。</param>
+        </member>
+        <member name="P:Observables.RestAPI.QueryUriFormatAttribute.UriFormat">
+            <summary>
+            指定查询参数的编码方式。
+            </summary>
+        </member>
+        <member name="M:Observables.RestAPI.AuthenticatedHttpClientHandler.#ctor(System.Func{System.Net.Http.HttpRequestMessage,System.Threading.CancellationToken,System.Threading.Tasks.Task{System.String}},System.Net.Http.HttpMessageHandler)">
+            <summary>
+            初始化 <see cref="T:Observables.RestAPI.AuthenticatedHttpClientHandler"/> 类的新实例。
+            </summary>
+            <param name="getToken">获取认证令牌的函数。</param>
+            <param name="innerHandler">可选的内部处理程序。</param>
+            <exception cref="T:System.ArgumentNullException"><paramref name="getToken"/> 不能为 null。</exception>
+            <remarks>
+            警告：当 <paramref name="innerHandler"/> 为 <c>null</c> 时，此构造函数会将 <see cref="P:System.Net.Http.DelegatingHandler.InnerHandler"/> 设置为
+            <see cref="T:System.Net.Http.HttpClientHandler"/> 的实例。此行为与 <code>IHttpClientBuilder</code> 不兼容。
+            </remarks>
+        </member>
+        <member name="M:Observables.RestAPI.AuthenticatedHttpClientHandler.#ctor(System.Net.Http.HttpMessageHandler,System.Func{System.Net.Http.HttpRequestMessage,System.Threading.CancellationToken,System.Threading.Tasks.Task{System.String}})">
+            <summary>
+            初始化 <see cref="T:Observables.RestAPI.AuthenticatedHttpClientHandler"/> 类的新实例。
+            </summary>
+            <param name="innerHandler">可选的内部处理程序。</param>
+            <param name="getToken">获取认证令牌的函数。</param>
+            <exception cref="T:System.ArgumentNullException"><paramref name="getToken"/> 不能为 null。</exception>
+            <remarks>
+            当 <paramref name="innerHandler"/> 为 null 时，此函数不会自动将 <see cref="P:System.Net.Http.DelegatingHandler.InnerHandler"/> 设置为
+            <see cref="T:System.Net.Http.HttpClientHandler"/> 的实例，这与旧版（遗留）构造函数不同，并且符合
+            <code>IHttpClientBuilder</code> 期望的行为。
+            </remarks>
+        </member>
+        <member name="T:Observables.RestAPI.MethodTableKey">
+            <summary>
+            表示由方法名、泛型参数和参数组成的方法。
+            </summary>
+        </member>
+        <member name="M:Observables.RestAPI.MethodTableKey.#ctor(System.String,System.Type[],System.Type[])">
+            <summary>
+            构造 <see cref="T:Observables.RestAPI.MethodTableKey"/> 的实例。
+            </summary>
+            <param name="methodName">表示方法名称。</param>
+            <param name="parameters">包含方法参数的数组。</param>
+            <param name="genericArguments">包含方法泛型参数的数组。</param>
+        </member>
+        <member name="P:Observables.RestAPI.MethodTableKey.MethodName">
+            <summary>
+            方法名称。
+            </summary>
+        </member>
+        <member name="P:Observables.RestAPI.MethodTableKey.Parameters">
+            <summary>
+            包含方法参数的数组。
+            </summary>
+        </member>
+        <member name="P:Observables.RestAPI.MethodTableKey.GenericArguments">
+            <summary>
+            包含方法泛型参数的数组。
+            </summary>
+        </member>
+        <member name="T:Observables.RestAPI.CamelCaseUrlParameterKeyFormatter">
+            <summary>
+            提供 <see cref="T:Observables.RestAPI.IUrlParameterKeyFormatter"/> 的实现，以 camelCase 格式化 URL 参数键。
+            </summary>
+        </member>
+        <member name="M:Observables.RestAPI.CamelCaseUrlParameterKeyFormatter.Format(System.String)">
+            <summary>
+            格式化指定的键。
+            </summary>
+            <param name="key">键。</param>
+            <returns></returns>
+        </member>
+        <member name="T:Observables.RestAPI.CollectionFormat">
+            <summary>
+            在 https://swagger.io/docs/specification/2-0/describing-parameters/ 中定义的集合格式。
+            </summary>
+        </member>
+        <member name="F:Observables.RestAPI.CollectionFormat.RefitParameterFormatter">
+            <summary>
+            使用 <see cref="P:Observables.RestAPI.RestApiSettings.UrlParameterFormatter"/> 或
+            <see cref="P:Observables.RestAPI.RestApiSettings.FormUrlEncodedParameterFormatter"/> 格式化的值。
+            </summary>
+        </member>
+        <member name="F:Observables.RestAPI.CollectionFormat.Csv">
+            <summary>
+            逗号分隔值
+            </summary>
+        </member>
+        <member name="F:Observables.RestAPI.CollectionFormat.Ssv">
+            <summary>
+            空格分隔值
+            </summary>
+        </member>
+        <member name="F:Observables.RestAPI.CollectionFormat.Tsv">
+            <summary>
+            制表符分隔值
+            </summary>
+        </member>
+        <member name="F:Observables.RestAPI.CollectionFormat.Pipes">
+            <summary>
+            管道分隔值
+            </summary>
+        </member>
+        <member name="F:Observables.RestAPI.CollectionFormat.Multi">
+            <summary>
+            多个参数实例
+            </summary>
+        </member>
+        <member name="T:Observables.RestAPI.FormValueMultimap">
+            <summary>
+            将表单源从 .NET 表示形式转换为适当的 HTTP 表单编码表示形式。
+            </summary>
+            <remarks>根据 <see cref="T:Observables.RestAPI.QueryAttribute"/> 和
+            <see cref="P:Observables.RestAPI.RestApiSettings.FormUrlEncodedParameterFormatter"/> 中指定的规则执行字段重命名和值格式化。
+            给定的键可能会出现多次，具有相同或不同的值。</remarks>
+        </member>
+        <member name="P:Observables.RestAPI.FormValueMultimap.Keys">
+            <summary>
+            返回每个条目的一个键。如果多个条目共享相同的键，则该键会返回多次。
+            </summary>
+        </member>
+        <member name="T:Observables.RestAPI.HttpRequestMessageOptions">
+            <summary>
+            包含 HttpRequestMessage.Properties/Options 上 Observables.RestAPI 定义的属性。
+            </summary>
+        </member>
+        <member name="P:Observables.RestAPI.HttpRequestMessageOptions.InterfaceType">
+            <summary>
+            返回调用方法的顶级接口的 <see cref="T:System.Type"/>。
+            </summary>
+        </member>
+        <member name="P:Observables.RestAPI.HttpRequestMessageOptions.RestMethodInfo">
+            <summary>
+            返回顶级接口的 RestMethodInfo。
+            </summary>
+        </member>
+        <member name="T:Observables.RestAPI.JsonContentSerializer">
+            <summary>
+            为二进制兼容性保留的过时 UTF-8 JSON <see cref="T:Observables.RestAPI.IHttpContentSerializer"/>。
+            </summary>
+            <seealso cref="T:Observables.RestAPI.IHttpContentSerializer" />
+        </member>
+        <member name="M:Observables.RestAPI.JsonContentSerializer.ToHttpContent``1(``0)">
+            <summary>
+            转换为 HttpContent。
+            </summary>
+            <typeparam name="T">要序列化的对象类型。</typeparam>
+            <param name="item">要序列化的对象。</param>
+            <returns>
+              包含已序列化的 <typeparamref name="T" /> 对象的 <see cref="T:System.Net.Http.HttpContent" />。
+            </returns>
+            <exception cref="T:System.NotImplementedException"></exception>
+        </member>
+        <member name="M:Observables.RestAPI.JsonContentSerializer.FromHttpContentAsync``1(System.Net.Http.HttpContent,System.Threading.CancellationToken)">
+            <summary>
+            从 <see cref="T:System.Net.Http.HttpContent" /> 对象反序列化类型为 <typeparamref name="T" /> 的对象。
+            </summary>
+            <typeparam name="T">要反序列化的目标对象类型。</typeparam>
+            <param name="content">要反序列化的 HttpContent 对象。</param>
+            <param name="cancellationToken">用于中止反序列化的 CancellationToken。</param>
+            <returns>
+            反序列化后的类型为 <typeparamref name="T" /> 的对象。
+            </returns>
+            <exception cref="T:System.NotImplementedException"></exception>
+        </member>
+        <member name="M:Observables.RestAPI.JsonContentSerializer.GetFieldNameForProperty(System.Reflection.PropertyInfo)">
+            <summary>
+            计算给定属性的字段名称。这可能会受到序列化器识别的自定义属性的影响。
+            </summary>
+            <param name="propertyInfo">PropertyInfo 对象。</param>
+            <returns>
+            计算得到的字段名称。
+            </returns>
+            <exception cref="T:System.NotImplementedException"></exception>
+        </member>
+        <member name="T:Observables.RestAPI.MultipartItem">
+            <summary>
+            初始化 <see cref="T:Observables.RestAPI.MultipartItem"/> 类的新实例。
+            </summary>
+            <param name="fileName">文件名。</param>
+            <param name="contentType">内容类型。</param>
+            <exception cref="T:System.ArgumentNullException">fileName</exception>
+        </member>
+        <member name="M:Observables.RestAPI.MultipartItem.#ctor(System.String,System.String)">
+            <summary>
+            初始化 <see cref="T:Observables.RestAPI.MultipartItem"/> 类的新实例。
+            </summary>
+            <param name="fileName">文件名。</param>
+            <param name="contentType">内容类型。</param>
+            <exception cref="T:System.ArgumentNullException">fileName</exception>
+        </member>
+        <member name="M:Observables.RestAPI.MultipartItem.#ctor(System.String,System.String,System.String)">
+            <summary>
+            初始化 <see cref="T:Observables.RestAPI.MultipartItem"/> 类的新实例。
+            </summary>
+            <param name="fileName">文件名。</param>
+            <param name="contentType">内容类型。</param>
+            <param name="name">名称。</param>
+        </member>
+        <member name="P:Observables.RestAPI.MultipartItem.Name">
+            <summary>
+            获取名称。
+            </summary>
+            <value>
+            名称。
+            </value>
+        </member>
+        <member name="P:Observables.RestAPI.MultipartItem.ContentType">
+            <summary>
+            获取内容类型。
+            </summary>
+            <value>
+            内容类型。
+            </value>
+        </member>
+        <member name="P:Observables.RestAPI.MultipartItem.FileName">
+            <summary>
+            获取文件名。
+            </summary>
+            <value>
+            文件名。
+            </value>
+        </member>
+        <member name="M:Observables.RestAPI.MultipartItem.ToContent">
+            <summary>
+            转换为内容。
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:Observables.RestAPI.MultipartItem.CreateContent">
+            <summary>
+            创建内容。
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="T:Observables.RestAPI.StreamPart">
+            <summary>
+            允许在多部分表单正文中使用通用 <see cref="T:System.IO.Stream"/>。
+            </summary>
+            <remarks>
+            初始化 <see cref="T:Observables.RestAPI.StreamPart"/> 类的新实例。
+            </remarks>
+            <param name="value">值。</param>
+            <param name="fileName">文件名。</param>
+            <param name="contentType">内容类型。</param>
+            <param name="name">名称。</param>
+            <exception cref="T:System.ArgumentNullException">value</exception>
+        </member>
+        <member name="M:Observables.RestAPI.StreamPart.#ctor(System.IO.Stream,System.String,System.String,System.String)">
+            <summary>
+            允许在多部分表单正文中使用通用 <see cref="T:System.IO.Stream"/>。
+            </summary>
+            <remarks>
+            初始化 <see cref="T:Observables.RestAPI.StreamPart"/> 类的新实例。
+            </remarks>
+            <param name="value">值。</param>
+            <param name="fileName">文件名。</param>
+            <param name="contentType">内容类型。</param>
+            <param name="name">名称。</param>
+            <exception cref="T:System.ArgumentNullException">value</exception>
+        </member>
+        <member name="P:Observables.RestAPI.StreamPart.Value">
+            <summary>
+            获取值。
+            </summary>
+            <value>
+            值。
+            </value>
+        </member>
+        <member name="M:Observables.RestAPI.StreamPart.CreateContent">
+            <summary>
+            创建内容。
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="T:Observables.RestAPI.ByteArrayPart">
+            <summary>
+            允许在多部分表单正文中使用 <see cref="T:System.Byte"/> 数组。
+            </summary>
+            <remarks>
+            初始化 <see cref="T:Observables.RestAPI.ByteArrayPart"/> 类的新实例。
+            </remarks>
+            <param name="value">值。</param>
+            <param name="fileName">文件名。</param>
+            <param name="contentType">内容类型。</param>
+            <param name="name">名称。</param>
+            <exception cref="T:System.ArgumentNullException">value</exception>
+        </member>
+        <member name="M:Observables.RestAPI.ByteArrayPart.#ctor(System.Byte[],System.String,System.String,System.String)">
+            <summary>
+            允许在多部分表单正文中使用 <see cref="T:System.Byte"/> 数组。
+            </summary>
+            <remarks>
+            初始化 <see cref="T:Observables.RestAPI.ByteArrayPart"/> 类的新实例。
+            </remarks>
+            <param name="value">值。</param>
+            <param name="fileName">文件名。</param>
+            <param name="contentType">内容类型。</param>
+            <param name="name">名称。</param>
+            <exception cref="T:System.ArgumentNullException">value</exception>
+        </member>
+        <member name="P:Observables.RestAPI.ByteArrayPart.Value">
+            <summary>
+            获取值。
+            </summary>
+            <value>
+            值。
+            </value>
+        </member>
+        <member name="M:Observables.RestAPI.ByteArrayPart.CreateContent">
+            <summary>
+            创建内容。
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="T:Observables.RestAPI.FileInfoPart">
+            <summary>
+            允许在多部分表单正文中使用 <see cref="T:System.IO.FileInfo"/> 对象。
+            </summary>
+            <remarks>
+            初始化 <see cref="T:Observables.RestAPI.FileInfoPart"/> 类的新实例。
+            </remarks>
+            <param name="value">值。</param>
+            <param name="fileName">文件名。</param>
+            <param name="contentType">内容类型。</param>
+            <param name="name">名称。</param>
+            <exception cref="T:System.ArgumentNullException">value</exception>
+        </member>
+        <member name="M:Observables.RestAPI.FileInfoPart.#ctor(System.IO.FileInfo,System.String,System.String,System.String)">
+            <summary>
+            允许在多部分表单正文中使用 <see cref="T:System.IO.FileInfo"/> 对象。
+            </summary>
+            <remarks>
+            初始化 <see cref="T:Observables.RestAPI.FileInfoPart"/> 类的新实例。
+            </remarks>
+            <param name="value">值。</param>
+            <param name="fileName">文件名。</param>
+            <param name="contentType">内容类型。</param>
+            <param name="name">名称。</param>
+            <exception cref="T:System.ArgumentNullException">value</exception>
+        </member>
+        <member name="P:Observables.RestAPI.FileInfoPart.Value">
+            <summary>
+            获取值。
+            </summary>
+            <value>
+            值。
+            </value>
+        </member>
+        <member name="M:Observables.RestAPI.FileInfoPart.CreateContent">
+            <summary>
+            创建内容。
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="T:Observables.RestAPI.ProblemDetails">
+            <summary>
+            表示由实现 RFC 7807 的服务捕获的 ValidationException 详细信息的对象。
+            </summary>
+        </member>
+        <member name="P:Observables.RestAPI.ProblemDetails.Errors">
+            <summary>
+            请求的结果错误集合。
+            </summary>
+        </member>
+        <member name="P:Observables.RestAPI.ProblemDetails.Extensions">
+            <summary>
+            ProblemDetails 扩展集合。
+            </summary>
+        </member>
+        <member name="P:Observables.RestAPI.ProblemDetails.Type">
+            <summary>
+            标识问题类型的 URI 引用。
+            </summary>
+        </member>
+        <member name="P:Observables.RestAPI.ProblemDetails.Title">
+            <summary>
+            问题类型的简短、人类可读的摘要。
+            </summary>
+        </member>
+        <member name="P:Observables.RestAPI.ProblemDetails.Status">
+            <summary>
+            源服务器为此问题实例生成的 HTTP 状态码。
+            </summary>
+        </member>
+        <member name="P:Observables.RestAPI.ProblemDetails.Detail">
+            <summary>
+            针对此问题实例的人类可读说明。
+            </summary>
+        </member>
+        <member name="P:Observables.RestAPI.ProblemDetails.Instance">
+            <summary>
+            标识此问题特定实例的 URI 引用。
+            </summary>
+        </member>
+        <member name="T:Observables.RestAPI.IRequestBuilder">
+            <summary>
+            定义创建委托的方法，该委托执行具有指定参数的 REST API 方法并返回结果。
+            </summary>
+            <remarks>返回的委托可用于在给定 HTTP 客户端和参数数组的情况下动态调用 REST API 方法。此接口通常由代码生成或动态代理库使用，
+            以在运行时构造方法调用器。实现可能使用反射，在裁剪程序集时可能需要保留引用的类型。</remarks>
+        </member>
+        <member name="M:Observables.RestAPI.IRequestBuilder.BuildRestResultFuncForMethod(System.String,System.Type[],System.Type[])">
+            <summary>
+            构建使用提供的 HTTP 客户端和参数执行指定 REST 方法的委托。
+            </summary>
+            <remarks>返回的委托使用反射来调用指定的方法，在裁剪程序集时可能需要保留引用的接口和数据传输对象 (DTO)。
+            此方法通常用于在运行时动态生成 REST API 客户端调用。</remarks>
+            <param name="methodName">要为其生成 REST 调用委托的接口方法名称。必须对应于目标接口上定义的方法。</param>
+            <param name="parameterTypes">目标方法的参数类型数组，或为 null 以从方法签名推断。如果指定，顺序必须与方法的参数列表匹配。</param>
+            <param name="genericArgumentTypes">用于构造泛型方法的泛型参数类型数组，如果方法不是泛型则为 null。</param>
+            <returns>一个委托，接受 HttpClient 和参数值数组，并返回调用指定 REST 方法的结果。返回类型与方法声明的返回类型匹配。</returns>
+        </member>
+        <member name="T:Observables.RestAPI.IRequestBuilder`1">
+            <summary>
+            定义具有指定结果类型的请求构建器的泛型契约。
+            </summary>
+            <typeparam name="T">请求构建器生成的结果类型。</typeparam>
+        </member>
+        <member name="T:Observables.RestAPI.RequestBuilder">
+            <summary>
+            提供用于为声明式 REST API 接口类型创建请求构建器的静态方法。此类能够基于接口定义和可选设置生成强类型的 HTTP 客户端实现。
+            </summary>
+            <remarks>此类生成的请求构建器使用反射来分析提供的接口类型并为 HTTP API 调用创建实现。在使用裁剪或链接时，
+            确保引用的接口和数据传输对象被保留，因为正确操作需要反射。此类的所有成员都是线程安全的，
+            可以在多个线程之间并发使用。</remarks>
+        </member>
+        <member name="M:Observables.RestAPI.RequestBuilder.ForType``1(Observables.RestAPI.RestApiSettings)">
+            <summary>
+            为指定的接口类型创建 HTTP 请求构建器。
+            </summary>
+            <remarks>使用此方法获取给定 API 接口的请求构建器，通常用于高级场景，如自定义客户端生成或与依赖注入集成。
+            返回的构建器可用于创建与接口上定义的方法对应的 HTTP 请求。</remarks>
+            <typeparam name="T">定义要由请求构建器实现的 HTTP API 方法的接口类型。必须是接口。</typeparam>
+            <param name="settings">用于配置请求构建器的 REST API 设置。可以为 null 以使用默认设置。</param>
+            <returns><see cref="T:Observables.RestAPI.IRequestBuilder`1"/> 的实例，可用于为指定接口类型构造 HTTP 请求。</returns>
+        </member>
+        <member name="M:Observables.RestAPI.RequestBuilder.ForType``1">
+            <summary>
+            为指定类型创建请求构建器，使您能够构造针对该类型成员的请求。
+            </summary>
+            <typeparam name="T">要为其创建请求构建器的类型。此类型的方法将可用于请求构造。</typeparam>
+            <returns>可用于为指定类型构建请求的对象。</returns>
+        </member>
+        <member name="M:Observables.RestAPI.RequestBuilder.ForType(System.Type,Observables.RestAPI.RestApiSettings)">
+            <summary>
+            创建指定 REST API 接口的实现以发出 HTTP 请求。
+            </summary>
+            <remarks>返回的 <see cref="T:Observables.RestAPI.IRequestBuilder"/> 使用反射来分析提供的接口类型。在使用裁剪或链接时，确保所有引用的接口和数据传输对象都被保留以避免运行时错误。</remarks>
+            <param name="refitInterfaceType">定义 HTTP API 契约的接口类型。必须是使用 REST API 属性装饰的非泛型接口。</param>
+            <param name="settings">用于自定义生成的请求构建器行为的可选设置。如果为 null，则使用默认设置。</param>
+            <returns><see cref="T:Observables.RestAPI.IRequestBuilder"/> 实例，可用于为指定接口构造 HTTP 请求。</returns>
+        </member>
+        <member name="M:Observables.RestAPI.RequestBuilder.ForType(System.Type)">
+            <summary>
+            为指定的 REST API 接口类型创建 <see cref="T:Observables.RestAPI.IRequestBuilder"/> 实例。
+            </summary>
+            <remarks>指定的接口类型必须使用 REST API 属性装饰以定义 API 端点。如果启用了裁剪，确保所有引用的接口和数据传输对象被保留，因为反射用于分析接口方法。</remarks>
+            <param name="refitInterfaceType">定义 REST API 契约的接口类型。必须是使用 REST API 属性装饰的非泛型接口。</param>
+            <returns><see cref="T:Observables.RestAPI.IRequestBuilder"/> 实例，可用于为指定接口类型构造 HTTP 请求。</returns>
+        </member>
+        <member name="T:Observables.RestAPI.RestApiSettings">
+            <summary>
+            定义控制 REST API 客户端行为的各种参数。
+            </summary>
+        </member>
+        <member name="M:Observables.RestAPI.RestApiSettings.#ctor">
+            <summary>
+            使用默认参数创建新的 <see cref="T:Observables.RestAPI.RestApiSettings"/> 实例。
+            </summary>
+        </member>
+        <member name="M:Observables.RestAPI.RestApiSettings.#ctor(Observables.RestAPI.IHttpContentSerializer,Observables.RestAPI.IUrlParameterFormatter,Observables.RestAPI.IFormUrlEncodedParameterFormatter)">
+            <summary>
+            使用指定参数创建新的 <see cref="T:Observables.RestAPI.RestApiSettings"/> 实例。
+            </summary>
+            <param name="contentSerializer">要使用的 <see cref="T:Observables.RestAPI.IHttpContentSerializer"/> 实例。</param>
+            <param name="urlParameterFormatter">要使用的 <see cref="T:Observables.RestAPI.IUrlParameterFormatter"/> 实例（默认为 <see cref="T:Observables.RestAPI.DefaultUrlParameterFormatter"/>）。</param>
+            <param name="formUrlEncodedParameterFormatter">要使用的 <see cref="T:Observables.RestAPI.IFormUrlEncodedParameterFormatter"/> 实例（默认为 <see cref="T:Observables.RestAPI.DefaultFormUrlEncodedParameterFormatter"/>）。</param>
+        </member>
+        <member name="M:Observables.RestAPI.RestApiSettings.#ctor(Observables.RestAPI.IHttpContentSerializer,Observables.RestAPI.IUrlParameterFormatter,Observables.RestAPI.IFormUrlEncodedParameterFormatter,Observables.RestAPI.IUrlParameterKeyFormatter)">
+            <summary>
+            使用指定参数创建新的 <see cref="T:Observables.RestAPI.RestApiSettings"/> 实例。
+            </summary>
+            <param name="contentSerializer">要使用的 <see cref="T:Observables.RestAPI.IHttpContentSerializer"/> 实例。</param>
+            <param name="urlParameterFormatter">要使用的 <see cref="T:Observables.RestAPI.IUrlParameterFormatter"/> 实例（默认为 <see cref="T:Observables.RestAPI.DefaultUrlParameterFormatter"/>）。</param>
+            <param name="formUrlEncodedParameterFormatter">要使用的 <see cref="T:Observables.RestAPI.IFormUrlEncodedParameterFormatter"/> 实例（默认为 <see cref="T:Observables.RestAPI.DefaultFormUrlEncodedParameterFormatter"/>）。</param>
+            <param name="urlParameterKeyFormatter">要使用的 <see cref="T:Observables.RestAPI.IUrlParameterKeyFormatter"/> 实例（默认为 <see cref="T:Observables.RestAPI.DefaultUrlParameterKeyFormatter"/>）。</param>
+        </member>
+        <member name="P:Observables.RestAPI.RestApiSettings.AuthorizationHeaderValueGetter">
+            <summary>
+            提供一个函数来获取授权头。如果提供了 HttpClient 实例则不起作用。
+            </summary>
+        </member>
+        <member name="P:Observables.RestAPI.RestApiSettings.HttpMessageHandlerFactory">
+            <summary>
+            提供自定义的内部 HttpMessageHandler。如果提供了 HttpClient 实例则不起作用。
+            </summary>
+        </member>
+        <member name="P:Observables.RestAPI.RestApiSettings.ExceptionFactory">
+            <summary>
+            提供基于 <see cref="T:System.Net.Http.HttpResponseMessage"/> 的 <see cref="T:System.Exception"/> 函数。
+            如果函数返回 null - 则不抛出异常。
+            </summary>
+        </member>
+        <member name="P:Observables.RestAPI.RestApiSettings.DeserializationExceptionFactory">
+            <summary>
+            提供在遇到反序列化异常时的 <see cref="T:System.Exception"/> 函数。
+            如果函数返回 null - 则不抛出异常。
+            </summary>
+        </member>
+        <member name="P:Observables.RestAPI.RestApiSettings.ContentSerializer">
+            <summary>
+            定义请求内容的序列化方式。（默认为 <see cref="T:Observables.RestAPI.SystemTextJsonContentSerializer"/>）
+            </summary>
+        </member>
+        <member name="P:Observables.RestAPI.RestApiSettings.UrlParameterKeyFormatter">
+            <summary>
+            用于格式化 URL 参数键的 <see cref="T:Observables.RestAPI.IUrlParameterKeyFormatter"/> 实例（默认为 <see cref="T:Observables.RestAPI.DefaultUrlParameterKeyFormatter" />）。
+            允许自定义键命名约定。
+            </summary>
+        </member>
+        <member name="P:Observables.RestAPI.RestApiSettings.UrlParameterFormatter">
+            <summary>
+            要使用的 <see cref="T:Observables.RestAPI.IUrlParameterFormatter"/> 实例（默认为 <see cref="T:Observables.RestAPI.DefaultUrlParameterFormatter"/>）。
+            </summary>
+        </member>
+        <member name="P:Observables.RestAPI.RestApiSettings.FormUrlEncodedParameterFormatter">
+            <summary>
+            要使用的 <see cref="T:Observables.RestAPI.IFormUrlEncodedParameterFormatter"/> 实例（默认为 <see cref="T:Observables.RestAPI.DefaultFormUrlEncodedParameterFormatter"/>）。
+            </summary>
+        </member>
+        <member name="P:Observables.RestAPI.RestApiSettings.CollectionFormat">
+            <summary>
+            设置要使用的默认集合格式。（默认为 <see cref="F:Observables.RestAPI.CollectionFormat.RefitParameterFormatter"/>）
+            </summary>
+        </member>
+        <member name="P:Observables.RestAPI.RestApiSettings.Buffered">
+            <summary>
+            设置发送请求正文内容时的默认行为。（默认为 false，请求正文不会流式传输到服务器）
+            </summary>
+        </member>
+        <member name="P:Observables.RestAPI.RestApiSettings.HttpRequestMessageOptions">
+            <summary>
+            可选的键值对，显示在属性 <see cref="P:System.Net.Http.HttpRequestMessage.Properties"/> 中。
+            </summary>
+        </member>
+        <member name="P:Observables.RestAPI.RestApiSettings.Version">
+            <summary>
+            获取或设置版本。
+            </summary>
+            <value>
+            版本。
+            </value>
+        </member>
+        <member name="P:Observables.RestAPI.RestApiSettings.VersionPolicy">
+            <summary>
+            获取或设置版本策略。
+            </summary>
+            <value>
+            版本策略。
+            </value>
+        </member>
+        <member name="T:Observables.RestAPI.IHttpContentSerializer">
+            <summary>
+            提供到 <see cref="T:System.Net.Http.HttpContent"/> 的内容序列化。
+            </summary>
+        </member>
+        <member name="M:Observables.RestAPI.IHttpContentSerializer.ToHttpContent``1(``0)">
+            <summary>
+            将类型为 <typeparamref name="T"/> 的对象序列化为 <see cref="T:System.Net.Http.HttpContent"/>。
+            </summary>
+            <typeparam name="T">要序列化的对象类型。</typeparam>
+            <param name="item">要序列化的对象。</param>
+            <returns>包含已序列化的 <typeparamref name="T"/> 对象的 <see cref="T:System.Net.Http.HttpContent"/>。</returns>
+        </member>
+        <member name="M:Observables.RestAPI.IHttpContentSerializer.FromHttpContentAsync``1(System.Net.Http.HttpContent,System.Threading.CancellationToken)">
+            <summary>
+            从 <see cref="T:System.Net.Http.HttpContent"/> 对象反序列化类型为 <typeparamref name="T"/> 的对象。
+            </summary>
+            <typeparam name="T">要反序列化的目标对象类型。</typeparam>
+            <param name="content">要反序列化的 HttpContent 对象。</param>
+            <param name="cancellationToken">用于中止反序列化的 CancellationToken。</param>
+            <returns>反序列化后的类型为 <typeparamref name="T"/> 的对象。</returns>
+        </member>
+        <member name="M:Observables.RestAPI.IHttpContentSerializer.GetFieldNameForProperty(System.Reflection.PropertyInfo)">
+            <summary>
+            计算给定属性的字段名称。这可能会受到序列化器识别的自定义属性的影响。
+            </summary>
+            <param name="propertyInfo">PropertyInfo 对象。</param>
+            <returns>计算得到的字段名称。</returns>
+        </member>
+        <member name="T:Observables.RestAPI.IUrlParameterKeyFormatter">
+            <summary>
+            提供格式化 URL 参数键的机制，允许自定义键命名约定。
+            </summary>
+        </member>
+        <member name="M:Observables.RestAPI.IUrlParameterKeyFormatter.Format(System.String)">
+            <summary>
+            格式化指定的键。
+            </summary>
+            <param name="key">键。</param>
+            <returns></returns>
+        </member>
+        <member name="T:Observables.RestAPI.IUrlParameterFormatter">
+            <summary>
+            提供 URL 参数格式化。
+            </summary>
+        </member>
+        <member name="M:Observables.RestAPI.IUrlParameterFormatter.Format(System.Object,System.Reflection.ICustomAttributeProvider,System.Type)">
+            <summary>
+            格式化指定的值。
+            </summary>
+            <param name="value">值。</param>
+            <param name="attributeProvider">属性提供程序。</param>
+            <param name="type">容器类类型。</param>
+            <returns></returns>
+        </member>
+        <member name="T:Observables.RestAPI.IFormUrlEncodedParameterFormatter">
+            <summary>
+            提供表单 URL 编码参数格式化。
+            </summary>
+        </member>
+        <member name="M:Observables.RestAPI.IFormUrlEncodedParameterFormatter.Format(System.Object,System.String)">
+            <summary>
+            格式化指定的值。
+            </summary>
+            <param name="value">值。</param>
+            <param name="formatString">格式字符串。</param>
+            <returns></returns>
+        </member>
+        <member name="T:Observables.RestAPI.DefaultUrlParameterKeyFormatter">
+            <summary>
+            默认的 URL 参数键格式化器。不执行任何格式化。
+            </summary>
+        </member>
+        <member name="M:Observables.RestAPI.DefaultUrlParameterKeyFormatter.Format(System.String)">
+            <summary>
+            格式化指定的键。
+            </summary>
+            <param name="key">键。</param>
+            <returns></returns>
+        </member>
+        <member name="T:Observables.RestAPI.DefaultUrlParameterFormatter">
+            <summary>
+            默认的 URL 参数格式化器。
+            </summary>
+        </member>
+        <member name="M:Observables.RestAPI.DefaultUrlParameterFormatter.AddFormat``2(System.String)">
+            <summary>
+            为包含在指定类型容器类中的指定参数类型添加格式。
+            可能会被 QueryAttribute 格式覆盖。
+            </summary>
+            <param name="format">格式字符串。</param>
+            <typeparam name="TContainer">容器类类型。</typeparam>
+            <typeparam name="TParameter">参数类型。</typeparam>
+        </member>
+        <member name="M:Observables.RestAPI.DefaultUrlParameterFormatter.AddFormat``1(System.String)">
+            <summary>
+            为指定参数类型添加格式。
+            可能会被 QueryAttribute 格式或容器特定格式覆盖。
+            </summary>
+            <param name="format">格式字符串。</param>
+            <typeparam name="TParameter">参数类型。</typeparam>
+        </member>
+        <member name="M:Observables.RestAPI.DefaultUrlParameterFormatter.Format(System.Object,System.Reflection.ICustomAttributeProvider,System.Type)">
+            <summary>
+            格式化指定的参数值。
+            </summary>
+            <param name="parameterValue">参数值。</param>
+            <param name="attributeProvider">属性提供程序。</param>
+            <param name="type">容器类类型。</param>
+            <returns></returns>
+            <exception cref="T:System.ArgumentNullException">attributeProvider</exception>
+        </member>
+        <member name="T:Observables.RestAPI.DefaultFormUrlEncodedParameterFormatter">
+            <summary>
+            默认的表单 URL 编码参数格式化器。
+            </summary>
+        </member>
+        <member name="M:Observables.RestAPI.DefaultFormUrlEncodedParameterFormatter.Format(System.Object,System.String)">
+            <summary>
+            格式化指定的参数值。
+            </summary>
+            <param name="parameterValue">参数值。</param>
+            <param name="formatString">格式字符串。</param>
+            <returns></returns>
+        </member>
+        <member name="T:Observables.RestAPI.DefaultApiExceptionFactory">
+            <summary>
+            默认的 API 异常工厂。
+            </summary>
+        </member>
+        <member name="M:Observables.RestAPI.DefaultApiExceptionFactory.#ctor(Observables.RestAPI.RestApiSettings)">
+            <summary>
+            默认的 API 异常工厂。
+            </summary>
+        </member>
+        <member name="M:Observables.RestAPI.DefaultApiExceptionFactory.CreateAsync(System.Net.Http.HttpResponseMessage)">
+            <summary>
+            异步创建。
+            </summary>
+            <param name="responseMessage">响应消息。</param>
+            <returns></returns>
+        </member>
+        <member name="T:Observables.RestAPI.RestMethodInfo">
+            <summary>
+            RestMethodInfo。
+            </summary>
+        </member>
+        <member name="M:Observables.RestAPI.RestMethodInfo.#ctor(System.String,System.Type,System.Reflection.MethodInfo,System.String,System.Type)">
+            <summary>
+            RestMethodInfo。
+            </summary>
+        </member>
+        <member name="T:Observables.RestAPI.RestMethodParameterInfo">
+            <summary>
+            描述构建 HTTP 请求时使用的 REST 方法参数。
+            </summary>
+        </member>
+        <member name="M:Observables.RestAPI.RestMethodParameterInfo.#ctor(System.String,System.Reflection.ParameterInfo)">
+            <summary>
+            初始化 <see cref="T:Observables.RestAPI.RestMethodParameterInfo"/> 类的新实例。
+            </summary>
+            <param name="name">名称。</param>
+            <param name="parameterInfo">参数信息。</param>
+        </member>
+        <member name="M:Observables.RestAPI.RestMethodParameterInfo.#ctor(System.Boolean,System.Reflection.ParameterInfo)">
+            <summary>
+            初始化 <see cref="T:Observables.RestAPI.RestMethodParameterInfo"/> 类的新实例。
+            </summary>
+            <param name="isObjectPropertyParameter">如果设置为 <c>true</c> 则为对象属性参数。</param>
+            <param name="parameterInfo">参数信息。</param>
+        </member>
+        <member name="P:Observables.RestAPI.RestMethodParameterInfo.Name">
+            <summary>
+            获取或设置名称。
+            </summary>
+            <value>
+            名称。
+            </value>
+        </member>
+        <member name="P:Observables.RestAPI.RestMethodParameterInfo.ParameterInfo">
+            <summary>
+            获取或设置参数信息。
+            </summary>
+            <value>
+            参数信息。
+            </value>
+        </member>
+        <member name="P:Observables.RestAPI.RestMethodParameterInfo.IsObjectPropertyParameter">
+            <summary>
+            获取或设置一个值，指示此实例是否为对象属性参数。
+            </summary>
+            <value>
+              如果此实例是对象属性参数则为 <c>true</c>；否则为 <c>false</c>。
+            </value>
+        </member>
+        <member name="P:Observables.RestAPI.RestMethodParameterInfo.ParameterProperties">
+            <summary>
+            获取或设置参数属性。
+            </summary>
+            <value>
+            参数属性。
+            </value>
+        </member>
+        <member name="P:Observables.RestAPI.RestMethodParameterInfo.Type">
+            <summary>
+            获取或设置类型。
+            </summary>
+            <value>
+            类型。
+            </value>
+        </member>
+        <member name="T:Observables.RestAPI.RestMethodParameterProperty">
+            <summary>
+            描述从复杂 REST 方法参数展开的对象属性。
+            </summary>
+            <remarks>
+            初始化 <see cref="T:Observables.RestAPI.RestMethodParameterProperty"/> 类的新实例。
+            </remarks>
+            <param name="name">名称。</param>
+            <param name="propertyInfo">属性信息。</param>
+        </member>
+        <member name="M:Observables.RestAPI.RestMethodParameterProperty.#ctor(System.String,System.Reflection.PropertyInfo)">
+            <summary>
+            描述从复杂 REST 方法参数展开的对象属性。
+            </summary>
+            <remarks>
+            初始化 <see cref="T:Observables.RestAPI.RestMethodParameterProperty"/> 类的新实例。
+            </remarks>
+            <param name="name">名称。</param>
+            <param name="propertyInfo">属性信息。</param>
+        </member>
+        <member name="P:Observables.RestAPI.RestMethodParameterProperty.Name">
+            <summary>
+            获取或设置名称。
+            </summary>
+            <value>
+            名称。
+            </value>
+        </member>
+        <member name="P:Observables.RestAPI.RestMethodParameterProperty.PropertyInfo">
+            <summary>
+            获取或设置属性信息。
+            </summary>
+            <value>
+            属性信息。
+            </value>
+        </member>
+        <member name="T:Observables.RestAPI.ParameterType">
+            <summary>
+            指示 REST 方法参数在链路上的绑定方式。
+            </summary>
+        </member>
+        <member name="F:Observables.RestAPI.ParameterType.Normal">
+            <summary>
+            普通参数。
+            </summary>
+        </member>
+        <member name="F:Observables.RestAPI.ParameterType.RoundTripping">
+            <summary>
+            往返参数。
+            </summary>
+        </member>
+        <member name="T:Observables.RestAPI.RestService">
+            <summary>
+            为声明式 HTTP 接口创建 REST API 客户端实现。
+            </summary>
+        </member>
+        <member name="M:Observables.RestAPI.RestService.RegisterGeneratedFactory(System.Type,System.Func{System.Net.Http.HttpClient,Observables.RestAPI.IRequestBuilder,System.Object})">
+            <summary>
+            注册源生成的 REST API 客户端实现工厂。
+            </summary>
+            <param name="refitInterfaceType">REST API 接口类型。</param>
+            <param name="factory">生成的实现工厂。</param>
+        </member>
+        <member name="M:Observables.RestAPI.RestService.For``1(System.Net.Http.HttpClient,Observables.RestAPI.IRequestBuilder{``0})">
+            <summary>
+            生成指定接口的 REST API 客户端实现。
+            </summary>
+            <typeparam name="T">要创建实现的接口。</typeparam>
+            <param name="client">实现将用于发送请求的 <see cref="T:System.Net.Http.HttpClient"/>。</param>
+            <param name="builder">用于构建请求的 <see cref="T:Observables.RestAPI.IRequestBuilder"/>。</param>
+            <returns>实现 <typeparamref name="T"/> 的实例。</returns>
+        </member>
+        <member name="M:Observables.RestAPI.RestService.For``1(System.Net.Http.HttpClient,Observables.RestAPI.RestApiSettings)">
+            <summary>
+            生成指定接口的 REST API 客户端实现。
+            </summary>
+            <typeparam name="T">要创建实现的接口。</typeparam>
+            <param name="client">实现将用于发送请求的 <see cref="T:System.Net.Http.HttpClient"/>。</param>
+            <param name="settings">用于配置 HttpClient 的 <see cref="T:Observables.RestAPI.RestApiSettings"/>。</param>
+            <returns>实现 <typeparamref name="T"/> 的实例。</returns>
+        </member>
+        <member name="M:Observables.RestAPI.RestService.For``1(System.Net.Http.HttpClient)">
+            <summary>
+            生成指定接口的 REST API 客户端实现。
+            </summary>
+            <typeparam name="T">要创建实现的接口。</typeparam>
+            <param name="client">实现将用于发送请求的 <see cref="T:System.Net.Http.HttpClient"/>。</param>
+            <returns>实现 <typeparamref name="T"/> 的实例。</returns>
+        </member>
+        <member name="M:Observables.RestAPI.RestService.For``1(System.String,Observables.RestAPI.RestApiSettings)">
+            <summary>
+            生成指定接口的 REST API 客户端实现。
+            </summary>
+            <typeparam name="T">要创建实现的接口。</typeparam>
+            <param name="hostUrl">实现将使用的基础地址。</param>
+            <param name="settings">用于配置 HttpClient 的 <see cref="T:Observables.RestAPI.RestApiSettings"/>。</param>
+            <returns>实现 <typeparamref name="T"/> 的实例。</returns>
+        </member>
+        <member name="M:Observables.RestAPI.RestService.For``1(System.String)">
+            <summary>
+            生成指定接口的 REST API 客户端实现。
+            </summary>
+            <typeparam name="T">要创建实现的接口。</typeparam>
+            <param name="hostUrl">实现将使用的基础地址。</param>
+            <returns>实现 <typeparamref name="T"/> 的实例。</returns>
+        </member>
+        <member name="M:Observables.RestAPI.RestService.For(System.Type,System.Net.Http.HttpClient,Observables.RestAPI.IRequestBuilder)">
+            <summary>
+            生成指定接口的 REST API 客户端实现。
+            </summary>
+            <param name="refitInterfaceType">要创建实现的接口。</param>
+            <param name="client">实现将用于发送请求的 <see cref="T:System.Net.Http.HttpClient"/>。</param>
+            <param name="builder">用于构建请求的 <see cref="T:Observables.RestAPI.IRequestBuilder"/>。</param>
+            <returns>实现 <paramref name="refitInterfaceType"/> 的实例。</returns>
+        </member>
+        <member name="M:Observables.RestAPI.RestService.For(System.Type,System.Net.Http.HttpClient,Observables.RestAPI.RestApiSettings)">
+            <summary>
+            生成指定接口的 REST API 客户端实现。
+            </summary>
+            <param name="refitInterfaceType">要创建实现的接口。</param>
+            <param name="client">实现将用于发送请求的 <see cref="T:System.Net.Http.HttpClient"/>。</param>
+            <param name="settings">用于配置 HttpClient 的 <see cref="T:Observables.RestAPI.RestApiSettings"/>。</param>
+            <returns>实现 <paramref name="refitInterfaceType"/> 的实例。</returns>
+        </member>
+        <member name="M:Observables.RestAPI.RestService.For(System.Type,System.Net.Http.HttpClient)">
+            <summary>
+            生成指定接口的 REST API 客户端实现。
+            </summary>
+            <param name="refitInterfaceType">要创建实现的接口。</param>
+            <param name="client">实现将用于发送请求的 <see cref="T:System.Net.Http.HttpClient"/>。</param>
+            <returns>实现 <paramref name="refitInterfaceType"/> 的实例。</returns>
+        </member>
+        <member name="M:Observables.RestAPI.RestService.For(System.Type,System.String,Observables.RestAPI.RestApiSettings)">
+            <summary>
+            生成指定接口的 REST API 客户端实现。
+            </summary>
+            <param name="refitInterfaceType">要创建实现的接口。</param>
+            <param name="hostUrl">实现将使用的基础地址。</param>
+            <param name="settings">用于配置 HttpClient 的 <see cref="T:Observables.RestAPI.RestApiSettings"/>。</param>
+            <returns>实现 <paramref name="refitInterfaceType"/> 的实例。</returns>
+        </member>
+        <member name="M:Observables.RestAPI.RestService.For(System.Type,System.String)">
+            <summary>
+            生成指定接口的 REST API 客户端实现。
+            </summary>
+            <param name="refitInterfaceType">要创建实现的接口。</param>
+            <param name="hostUrl">实现将使用的基础地址。</param>
+            <returns>实现 <paramref name="refitInterfaceType"/> 的实例。</returns>
+        </member>
+        <member name="M:Observables.RestAPI.RestService.CreateHttpClient(System.String,Observables.RestAPI.RestApiSettings)">
+            <summary>
+            创建以 <paramref name="hostUrl"/> 为基础地址的 <see cref="T:System.Net.Http.HttpClient"/>。
+            </summary>
+            <param name="hostUrl">基础地址。</param>
+            <param name="settings">用于配置 HttpClient 的 <see cref="T:Observables.RestAPI.RestApiSettings"/>。</param>
+            <returns>使用提供的各种参数创建的 <see cref="T:System.Net.Http.HttpClient"/>。</returns>
+            <exception cref="T:System.ArgumentException"></exception>
+        </member>
+        <member name="T:Observables.RestAPI.SystemTextJsonContentSerializer">
+            <summary>
+            使用 System.Text.Json API 实现 <see cref="T:Observables.RestAPI.IHttpContentSerializer"/> 的<see langword="class"/>。
+            </summary>
+            <remarks>
+            使用指定参数创建新的 <see cref="T:Observables.RestAPI.SystemTextJsonContentSerializer"/> 实例。
+            </remarks>
+            <param name="jsonSerializerOptions">用于当前实例的序列化选项。</param>
+        </member>
+        <member name="M:Observables.RestAPI.SystemTextJsonContentSerializer.#ctor(System.Text.Json.JsonSerializerOptions)">
+            <summary>
+            使用 System.Text.Json API 实现 <see cref="T:Observables.RestAPI.IHttpContentSerializer"/> 的<see langword="class"/>。
+            </summary>
+            <remarks>
+            使用指定参数创建新的 <see cref="T:Observables.RestAPI.SystemTextJsonContentSerializer"/> 实例。
+            </remarks>
+            <param name="jsonSerializerOptions">用于当前实例的序列化选项。</param>
+        </member>
+        <member name="M:Observables.RestAPI.SystemTextJsonContentSerializer.#ctor">
+            <summary>
+            创建新的 <see cref="T:Observables.RestAPI.SystemTextJsonContentSerializer"/> 实例。
+            </summary>
+        </member>
+        <member name="M:Observables.RestAPI.SystemTextJsonContentSerializer.ToHttpContent``1(``0)">
+            <inheritdoc/>
+        </member>
+        <member name="M:Observables.RestAPI.SystemTextJsonContentSerializer.FromHttpContentAsync``1(System.Net.Http.HttpContent,System.Threading.CancellationToken)">
+            <inheritdoc/>
+        </member>
+        <member name="M:Observables.RestAPI.SystemTextJsonContentSerializer.GetFieldNameForProperty(System.Reflection.PropertyInfo)">
+            <summary>
+            计算给定属性的字段名称。这可能会受到序列化器识别的自定义属性的影响。
+            </summary>
+            <param name="propertyInfo">PropertyInfo 对象。</param>
+            <returns>
+            计算得到的字段名称。
+            </returns>
+            <exception cref="T:System.ArgumentNullException">propertyInfo</exception>
+        </member>
+        <member name="M:Observables.RestAPI.SystemTextJsonContentSerializer.GetDefaultJsonSerializerOptions">
+            <summary>
+            创建新的 <see cref="T:System.Text.Json.JsonSerializerOptions"/> 并用默认参数填充。
+            </summary>
+        </member>
+        <member name="T:Observables.RestAPI.ObjectToInferredTypesConverter">
+            <summary>
+            在反序列化松散类型的 <see langword="object"/> 属性时，从 JSON 标记推断 CLR 类型。
+            </summary>
+            <remarks>
+            改编自 System.Text.Json 示例：
+            https://learn.microsoft.com/dotnet/standard/serialization/system-text-json-converters-how-to#deserialize-inferred-types-to-object-properties
+            </remarks>
+        </member>
+        <member name="M:Observables.RestAPI.ObjectToInferredTypesConverter.Read(System.Text.Json.Utf8JsonReader@,System.Type,System.Text.Json.JsonSerializerOptions)">
+            <summary>
+            读取 JSON 并将其转换为 <paramref name="typeToConvert"/> 指定的类型。
+            </summary>
+            <param name="reader">读取器。</param>
+            <param name="typeToConvert">要转换的类型。</param>
+            <param name="options">指定要使用的序列化选项的对象。</param>
+            <returns>
+            转换后的值。
+            </returns>
+        </member>
+        <member name="M:Observables.RestAPI.ObjectToInferredTypesConverter.Write(System.Text.Json.Utf8JsonWriter,System.Object,System.Text.Json.JsonSerializerOptions)">
+            <summary>
+            写入指定的 writer。
+            </summary>
+            <param name="writer">写入器。</param>
+            <param name="objectToWrite">要写入的对象。</param>
+            <param name="options">选项。</param>
+        </member>
+        <member name="M:Observables.RestAPI.UniqueName.GetServiceKeySuffix(System.Object)">
+            <summary>
+            返回要添加到给定类型唯一名称中的服务键后缀。
+            </summary>
+            <param name="serviceKey">用于创建后缀的服务键。</param>
+            <returns>要添加到给定类型唯一名称中的后缀。</returns>
+        </member>
+        <member name="T:Observables.RestAPI.ValidationApiException">
+            <summary>
+            根据 RFC 7807 抛出的 ApiException，包含验证异常的详细信息。
+            </summary>
+        </member>
+        <member name="M:Observables.RestAPI.ValidationApiException.Create(Observables.RestAPI.ApiException)">
+            <summary>
+            从现有的 ApiException 创建 ValidationException 的新实例。
+            </summary>
+            <param name="exception">用于构建 ValidationException 的 ApiException 实例。</param>
+            <returns>ValidationApiException</returns>
+        </member>
+        <member name="P:Observables.RestAPI.ValidationApiException.Content">
+            <summary>
+            RFC 7807 验证异常的详细信息。
+            </summary>
+        </member>
+        <member name="M:Observables.RestAPI.ValueStringBuilder.GetPinnableReference">
+            <summary>
+            获取构建器的可固定引用。
+            不确保在 <see cref="P:Observables.RestAPI.ValueStringBuilder.Length"/> 之后存在空字符。
+            此重载在 C# 7.3+ 编译器中进行模式匹配，因此可以省略
+            显式方法调用，直接编写例如 "fixed (char* c = builder)"。
+            </summary>
+        </member>
+        <member name="M:Observables.RestAPI.ValueStringBuilder.GetPinnableReference(System.Boolean)">
+            <summary>
+            获取构建器的可固定引用。
+            </summary>
+            <param name="terminate">确保构建器在 <see cref="P:Observables.RestAPI.ValueStringBuilder.Length"/> 之后有一个空字符。</param>
+        </member>
+        <member name="P:Observables.RestAPI.ValueStringBuilder.RawChars">
+            <summary>返回构建器的底层存储。</summary>
+        </member>
+        <member name="M:Observables.RestAPI.ValueStringBuilder.AsSpan(System.Boolean)">
+            <summary>
+            返回构建器内容周围的 span。
+            </summary>
+            <param name="terminate">确保构建器在 <see cref="P:Observables.RestAPI.ValueStringBuilder.Length"/> 之后有一个空字符。</param>
+        </member>
+        <member name="M:Observables.RestAPI.ValueStringBuilder.Grow(System.Int32)">
+            <summary>
+            调整内部缓冲区的大小，通过将当前缓冲区大小加倍或
+            将 <paramref name="additionalCapacityBeyondPos"/> 加到
+            <see cref="F:Observables.RestAPI.ValueStringBuilder._pos"/> 上，以较大者为准。
+            </summary>
+            <param name="additionalCapacityBeyondPos">
+            超出当前位置请求的字符数。
+            </param>
+        </member>
+        <member name="T:System.Net.Http.PushStreamContent">
+            <summary>
+            提供 <see cref="T:System.Net.Http.HttpContent"/> 实现，公开可直接写入的输出 <see cref="T:System.IO.Stream"/>。
+            将数据推送到输出流的能力与 <see cref="T:System.Net.Http.StreamContent"/>（数据是拉取而非推送）不同。
+            </summary>
+        </member>
+        <member name="M:System.Net.Http.PushStreamContent.#ctor(System.Action{System.IO.Stream,System.Net.Http.HttpContent,System.Net.TransportContext})">
+            <summary>
+            初始化 <see cref="T:System.Net.Http.PushStreamContent"/> 类的新实例。当输出流可用时调用
+            <paramref name="onStreamAvailable"/> 操作，允许操作直接写入流。当流关闭时，
+            它将向内容发出完成信号，HTTP 请求或响应将完成。
+            </summary>
+            <param name="onStreamAvailable">当输出流可用时调用的操作。</param>
+        </member>
+        <member name="M:System.Net.Http.PushStreamContent.#ctor(System.Func{System.IO.Stream,System.Net.Http.HttpContent,System.Net.TransportContext,System.Threading.Tasks.Task})">
+            <summary>
+            初始化 <see cref="T:System.Net.Http.PushStreamContent"/> 类的新实例。
+            </summary>
+            <param name="onStreamAvailable">当输出流可用时调用的操作。当返回的任务完成时，流会自动关闭。</param>
+        </member>
+        <member name="M:System.Net.Http.PushStreamContent.#ctor(System.Action{System.IO.Stream,System.Net.Http.HttpContent,System.Net.TransportContext},System.String)">
+            <summary>
+            使用给定的媒体类型初始化 <see cref="T:System.Net.Http.PushStreamContent"/> 类的新实例。
+            </summary>
+        </member>
+        <member name="M:System.Net.Http.PushStreamContent.#ctor(System.Func{System.IO.Stream,System.Net.Http.HttpContent,System.Net.TransportContext,System.Threading.Tasks.Task},System.String)">
+            <summary>
+            使用给定的媒体类型初始化 <see cref="T:System.Net.Http.PushStreamContent"/> 类的新实例。
+            </summary>
+        </member>
+        <member name="M:System.Net.Http.PushStreamContent.#ctor(System.Action{System.IO.Stream,System.Net.Http.HttpContent,System.Net.TransportContext},System.Net.Http.Headers.MediaTypeHeaderValue)">
+            <summary>
+            使用给定的 <see cref="T:System.Net.Http.Headers.MediaTypeHeaderValue"/> 初始化 <see cref="T:System.Net.Http.PushStreamContent"/> 类的新实例。
+            </summary>
+        </member>
+        <member name="M:System.Net.Http.PushStreamContent.#ctor(System.Func{System.IO.Stream,System.Net.Http.HttpContent,System.Net.TransportContext,System.Threading.Tasks.Task},System.Net.Http.Headers.MediaTypeHeaderValue)">
+            <summary>
+            使用给定的 <see cref="T:System.Net.Http.Headers.MediaTypeHeaderValue"/> 初始化 <see cref="T:System.Net.Http.PushStreamContent"/> 类的新实例。
+            </summary>
+        </member>
+        <member name="T:System.Net.Http.PushStreamContent.AsyncVoid">
+            <summary>
+            用作将 Task "转换" 为 Task{T} 中的 T。
+            </summary>
+        </member>
+        <member name="M:System.Net.Http.PushStreamContent.SerializeToStreamAsync(System.IO.Stream,System.Net.TransportContext)">
+            <summary>
+            调用此方法时，它会使用输出流调用构造函数中提供的操作以进行写入。操作完成工作后关闭流，
+            这将关闭此内容实例并完成 HTTP 请求或响应。
+            </summary>
+            <param name="stream">要写入的 <see cref="T:System.IO.Stream"/>。</param>
+            <param name="context">关联的 <see cref="T:System.Net.TransportContext"/>。</param>
+            <returns>正在异步序列化对象内容的 <see cref="T:System.Threading.Tasks.Task"/> 实例。</returns>
+        </member>
+        <member name="M:System.Net.Http.PushStreamContent.TryComputeLength(System.Int64@)">
+            <summary>
+            如果可能，计算流的长度。
+            </summary>
+            <param name="length">流的计算长度。</param>
+            <returns>如果已计算长度则为 <c>true</c>；否则为 <c>false</c>。</returns>
+        </member>
+        <member name="T:System.Net.Http.DelegatingStream">
+            <summary>
+            委托给内部流的流。
+            取自 System.Net.Http。
+            </summary>
+        </member>
+        <member name="M:System.Net.Http.DelegatingStream.#ctor(System.IO.Stream)">
+            <summary>
+            委托给内部流的流。
+            取自 System.Net.Http。
+            </summary>
+        </member>
+    </members>
+</doc>

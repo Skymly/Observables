@@ -114,13 +114,16 @@ namespace Observables.RestAPI
     }
 
     /// <summary>
-    /// ObjectToInferredTypesConverter.
-    /// From https://docs.microsoft.com/en-us/dotnet/standard/serialization/system-text-json-converters-how-to?pivots=dotnet-5-0#deserialize-inferred-types-to-object-properties
+    /// Infers CLR types from JSON tokens when deserializing loosely typed <see langword="object"/> properties.
     /// </summary>
+    /// <remarks>
+    /// Adapted from the System.Text.Json sample at
+    /// https://learn.microsoft.com/dotnet/standard/serialization/system-text-json-converters-how-to#deserialize-inferred-types-to-object-properties
+    /// </remarks>
     public class ObjectToInferredTypesConverter : JsonConverter<object>
     {
         /// <summary>
-        /// Reads and converts the JSON to type typeToConvert />.
+        /// Reads JSON and converts it to the type specified by <paramref name="typeToConvert"/>.
         /// </summary>
         /// <param name="reader">The reader.</param>
         /// <param name="typeToConvert">The type to convert.</param>

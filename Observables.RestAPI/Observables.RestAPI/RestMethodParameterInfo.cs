@@ -3,7 +3,7 @@ using System.Reflection;
 namespace Observables.RestAPI
 {
     /// <summary>
-    /// RestMethodParameterInfo.
+    /// Describes a REST method parameter used when building HTTP requests.
     /// </summary>
     public class RestMethodParameterInfo
     {
@@ -71,7 +71,7 @@ namespace Observables.RestAPI
     }
 
     /// <summary>
-    /// RestMethodParameterProperty.
+    /// Describes an object property expanded from a complex REST method parameter.
     /// </summary>
     /// <remarks>
     /// Initializes a new instance of the <see cref="RestMethodParameterProperty"/> class.
@@ -98,7 +98,7 @@ namespace Observables.RestAPI
     }
 
     /// <summary>
-    /// ParameterType.
+    /// Indicates how a REST method parameter is bound on the wire.
     /// </summary>
     public enum ParameterType
     {

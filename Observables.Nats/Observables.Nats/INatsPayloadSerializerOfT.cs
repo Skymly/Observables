@@ -1,6 +1,6 @@
 namespace Observables.Nats;
 
-/// <summary>Typed MQTT payload serializer for a single CLR type.</summary>
+/// <summary>Typed NATS payload serializer for a single CLR type.</summary>
 public interface INatsPayloadSerializer<T>
 {
     /// <summary>Deserializes a payload to <typeparamref name="T"/>.</summary>

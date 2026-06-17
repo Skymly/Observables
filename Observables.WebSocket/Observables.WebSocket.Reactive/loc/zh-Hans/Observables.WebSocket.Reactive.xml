@@ -1,0 +1,11 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>Observables.WebSocket.Reactive</name>
+    </assembly>
+    <members>
+        <member name="T:Observables.WebSocket.Reactive.SystemReactiveWebSocketAdapter">
+            <summary>将 <see cref="T:System.Net.WebSockets.ClientWebSocket"/> API 桥接到 <see cref="T:System.IObservable`1"/>。</summary>
+        </member>
+    </members>
+</doc>

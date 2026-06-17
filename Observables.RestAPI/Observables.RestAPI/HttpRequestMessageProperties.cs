@@ -1,7 +1,7 @@
 namespace Observables.RestAPI
 {
     /// <summary>
-    /// Contains Refit-defined properties on the HttpRequestMessage.Properties/Options
+    /// Contains Observables.RestAPI-defined properties on HttpRequestMessage.Properties/Options.
     /// </summary>
     public static class HttpRequestMessageOptions
     {
@@ -11,7 +11,7 @@ namespace Observables.RestAPI
         public static string InterfaceType { get; } = "Refit.InterfaceType";
 
         /// <summary>
-        /// Returns the <see cref="Refit.RestMethodInfo"/> of the top-level interface
+        /// Returns the RestMethodInfo of the top-level interface
         /// </summary>
         public static string RestMethodInfo { get; } = "Refit.RestMethodInfo";
     }

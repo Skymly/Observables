@@ -1,0 +1,50 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>Observables.Grpc</name>
+    </assembly>
+    <members>
+        <member name="T:Observables.Grpc.GrpcAttribute">
+            <summary>标记用于源生成的 gRPC 代理接口。</summary>
+        </member>
+        <member name="M:Observables.Grpc.GrpcAttribute.#ctor(System.String)">
+            <summary>标记用于源生成的 gRPC 代理接口。</summary>
+        </member>
+        <member name="T:Observables.Grpc.GrpcUnaryAttribute">
+            <summary>一元 RPC：单请求，单响应。</summary>
+        </member>
+        <member name="M:Observables.Grpc.GrpcUnaryAttribute.#ctor(System.String)">
+            <summary>一元 RPC：单请求，单响应。</summary>
+        </member>
+        <member name="T:Observables.Grpc.GrpcServerStreamAttribute">
+            <summary>服务端流式 RPC：单请求，多响应。</summary>
+        </member>
+        <member name="M:Observables.Grpc.GrpcServerStreamAttribute.#ctor(System.String)">
+            <summary>服务端流式 RPC：单请求，多响应。</summary>
+        </member>
+        <member name="T:Observables.Grpc.GrpcClientStreamAttribute">
+            <summary>客户端流式 RPC：请求流，单响应。</summary>
+        </member>
+        <member name="M:Observables.Grpc.GrpcClientStreamAttribute.#ctor(System.String)">
+            <summary>客户端流式 RPC：请求流，单响应。</summary>
+        </member>
+        <member name="T:Observables.Grpc.GrpcDuplexAttribute">
+            <summary>双向流式 RPC：双向流。</summary>
+        </member>
+        <member name="M:Observables.Grpc.GrpcDuplexAttribute.#ctor(System.String)">
+            <summary>双向流式 RPC：双向流。</summary>
+        </member>
+        <member name="T:Observables.Grpc.GrpcMarshallers">
+            <summary>为支持的消息类型创建 gRPC 序列化器。</summary>
+        </member>
+        <member name="T:Observables.Grpc.GrpcObservable">
+            <summary>将 <see cref="T:Grpc.Core.CallInvoker"/> API 桥接到 R3 <see cref="T:R3.Observable`1"/>。</summary>
+        </member>
+        <member name="T:Observables.Grpc.GrpcService">
+            <summary>创建源生成的 gRPC 代理实现。</summary>
+        </member>
+        <member name="M:Observables.Grpc.GrpcService.RegisterGeneratedFactory(System.Type,System.Func{Grpc.Core.CallInvoker,System.Object})">
+            <summary>注册源生成的 gRPC 代理工厂。</summary>
+        </member>
+    </members>
+</doc>

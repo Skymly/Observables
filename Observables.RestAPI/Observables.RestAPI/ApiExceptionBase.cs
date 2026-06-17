@@ -26,7 +26,7 @@ public abstract class ApiExceptionBase : Exception
     public HttpRequestMessage RequestMessage { get; }
 
     /// <summary>
-    /// Refit settings used to send the request.
+    /// REST API settings used to send the request.
     /// </summary>
     public RestApiSettings RestApiSettings { get; }
 
@@ -35,7 +35,7 @@ public abstract class ApiExceptionBase : Exception
     /// </summary>
     /// <param name="message">The HTTP Request message used to send the request.</param>
     /// <param name="httpMethod">The HTTP method used to send the request.</param>
-    /// <param name="RestApiSettings">The refit settings used to send the request.</param>
+    /// <param name="restApiSettings">The REST API settings used to send the request.</param>
     /// <param name="innerException">The exception that is the cause of the <see cref="ApiRequestException"/>.</param>
     protected ApiExceptionBase(
         HttpRequestMessage message,
@@ -58,7 +58,7 @@ public abstract class ApiExceptionBase : Exception
     /// <param name="exceptionMessage">The exception message.</param>
     /// <param name="message">The HTTP Request message used to send the request.</param>
     /// <param name="httpMethod">The HTTP method used to send the request.</param>
-    /// <param name="RestApiSettings">The refit settings used to send the request.</param>
+    /// <param name="restApiSettings">The REST API settings used to send the request.</param>
     /// <param name="innerException">The exception that is the cause of the API exception.</param>
     protected ApiExceptionBase(
         string exceptionMessage,

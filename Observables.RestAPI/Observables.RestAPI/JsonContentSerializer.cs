@@ -4,9 +4,9 @@ using System.Reflection;
 namespace Observables.RestAPI
 {
     /// <summary>
-    /// JsonContentSerializer.
+    /// Obsolete UTF-8 JSON <see cref="IHttpContentSerializer"/> retained for binary compatibility.
     /// </summary>
-    /// <seealso cref="Refit.IHttpContentSerializer" />
+    /// <seealso cref="IHttpContentSerializer" />
     [Obsolete(
         "Use NewtonsoftJsonContentSerializer in the Refit.Newtonsoft.Json package instead",
         true

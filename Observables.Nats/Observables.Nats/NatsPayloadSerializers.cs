@@ -12,7 +12,7 @@ public static class NatsPayloadSerializers
     static INatsPayloadSerializer s_current = DefaultNatsPayloadSerializer.Instance;
     static readonly System.Collections.Concurrent.ConcurrentDictionary<Type, object> s_typed = new();
 
-    /// <summary>Fallback serializer when no typed registration exists for <typeparamref name="T"/>.</summary>
+    /// <summary>Fallback serializer when no typed registration exists for the requested payload type.</summary>
     public static INatsPayloadSerializer Current
     {
         get => s_current;

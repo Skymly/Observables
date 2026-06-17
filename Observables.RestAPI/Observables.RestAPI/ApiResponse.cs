@@ -33,7 +33,7 @@ namespace Observables.RestAPI
     /// <param name="request">Original HTTP Request.</param>
     /// <param name="response">Original HTTP Response message.</param>
     /// <param name="content">Response content.</param>
-    /// <param name="settings">Refit settings used to send the request.</param>
+    /// <param name="settings">REST API settings used to send the request.</param>
     /// <param name="error">The exception, if the request failed.</param>
     /// <exception cref="ArgumentNullException"></exception>
 #if NET8_0_OR_GREATER
@@ -56,7 +56,7 @@ namespace Observables.RestAPI
         public T? Content { get; } = content;
 
         /// <summary>
-        /// Refit settings used to send the request.
+        /// REST API settings used to send the request.
         /// </summary>
         public RestApiSettings Settings { get; } = settings;
 
@@ -143,7 +143,7 @@ namespace Observables.RestAPI
         /// </remarks>
         /// <param name="response">Original HTTP Response message.</param>
         /// <param name="content">Response content.</param>
-        /// <param name="settings">Refit settings used to send the request.</param>
+        /// <param name="settings">REST API settings used to send the request.</param>
         /// <param name="error">The exception, if the request failed.</param>
         /// <exception cref="ArgumentNullException"></exception>
         public ApiResponse(

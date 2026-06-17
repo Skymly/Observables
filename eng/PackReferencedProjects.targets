@@ -26,6 +26,11 @@
         <PackagePath>lib/$(TargetFramework)/%(Filename)%(Extension)</PackagePath>
         <BuildAction>None</BuildAction>
       </TfmSpecificPackageFile>
+      <_ObsLibXml Include="@(_ObservablesPackLibPath->'%(RootDir)%(Directory)%(Filename).xml')" />
+      <TfmSpecificPackageFile Include="@(_ObsLibXml)" Condition="Exists('%(Identity)')">
+        <PackagePath>lib/$(TargetFramework)/%(Filename)%(Extension)</PackagePath>
+        <BuildAction>None</BuildAction>
+      </TfmSpecificPackageFile>
     </ItemGroup>
   </Target>
 

@@ -4,28 +4,28 @@ namespace Observables.SignalR;
 [AttributeUsage(AttributeTargets.Interface)]
 public sealed class HubAttribute : Attribute;
 
-/// <summary>Client invoke (single result) mapped to <see cref="Microsoft.AspNetCore.SignalR.Client.HubConnection.InvokeAsync{TResult}"/>.</summary>
+/// <summary>Client invoke (single result) mapped to HubConnection.InvokeAsync.</summary>
 [AttributeUsage(AttributeTargets.Method)]
 public sealed class HubInvokeAttribute(string? methodName = null) : Attribute
 {
     public string? MethodName { get; } = methodName;
 }
 
-/// <summary>Client send (no result) mapped to <see cref="Microsoft.AspNetCore.SignalR.Client.HubConnection.SendAsync"/>.</summary>
+/// <summary>Client send (no result) mapped to HubConnection.SendAsync.</summary>
 [AttributeUsage(AttributeTargets.Method)]
 public sealed class HubSendAttribute(string? methodName = null) : Attribute
 {
     public string? MethodName { get; } = methodName;
 }
 
-/// <summary>Client stream mapped to <see cref="Microsoft.AspNetCore.SignalR.Client.HubConnection.StreamAsync{T}"/>.</summary>
+/// <summary>Client stream mapped to HubConnection.StreamAsync.</summary>
 [AttributeUsage(AttributeTargets.Method)]
 public sealed class HubStreamAttribute(string? methodName = null) : Attribute
 {
     public string? MethodName { get; } = methodName;
 }
 
-/// <summary>Server callback mapped to <see cref="Microsoft.AspNetCore.SignalR.Client.HubConnection.On{T}(string, Action{T})"/>.</summary>
+/// <summary>Server callback mapped to HubConnection.On.</summary>
 [AttributeUsage(AttributeTargets.Property)]
 public sealed class HubOnAttribute(string? methodName = null) : Attribute
 {

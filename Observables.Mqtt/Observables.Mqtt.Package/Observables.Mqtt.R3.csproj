@@ -25,6 +25,10 @@
     <PackageReference Include="R3" />
     <PackageReference Include="MQTTnet" />
     <None Include="README.Mqtt.R3.pack.md" Pack="true" PackagePath="README.md" Visible="false" />
+    <None Include="..\Observables.Mqtt\loc\zh-Hans\Observables.Mqtt.xml"
+          Pack="true"
+          PackagePath="lib\netstandard2.0\zh-Hans\;lib\net8.0\zh-Hans\;lib\net9.0\zh-Hans\"
+          Visible="false" />
   </ItemGroup>
 
 </Project>

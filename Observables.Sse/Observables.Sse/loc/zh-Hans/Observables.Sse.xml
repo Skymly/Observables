@@ -1,0 +1,71 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>Observables.Sse</name>
+    </assembly>
+    <members>
+        <member name="T:Observables.Sse.SseAttribute">
+            <summary>标记用于源生成的 Server-Sent Events (SSE) 代理接口。</summary>
+        </member>
+        <member name="T:Observables.Sse.SseEventAttribute">
+            <summary>
+            将属性映射到命名的 SSE 事件流。当 <paramref name="eventName"/> 为 null 时，
+            属性订阅默认的 SSE 事件类型（"message"）。
+            </summary>
+        </member>
+        <member name="M:Observables.Sse.SseEventAttribute.#ctor(System.String)">
+            <summary>
+            将属性映射到命名的 SSE 事件流。当 <paramref name="eventName"/> 为 null 时，
+            属性订阅默认的 SSE 事件类型（"message"）。
+            </summary>
+        </member>
+        <member name="T:Observables.Sse.SseConnection">
+            <summary>将 <see cref="P:Observables.Sse.SseConnection.HttpClient"/> 绑定到 SSE 端点，供生成代理使用。</summary>
+        </member>
+        <member name="P:Observables.Sse.SseConnection.HttpClient">
+            <summary>用于打开 <c>text/event-stream</c> 连接的 HTTP 客户端。</summary>
+        </member>
+        <member name="P:Observables.Sse.SseConnection.Endpoint">
+            <summary>SSE 端点 URI。</summary>
+        </member>
+        <member name="T:Observables.Sse.SseObservable">
+            <summary>将 SSE <c>text/event-stream</c> 端点桥接到 R3 <see cref="T:R3.Observable`1"/>。</summary>
+        </member>
+        <member name="M:Observables.Sse.SseObservable.FromEvent``1(Observables.Sse.SseConnection,System.String)">
+            <summary>
+            为每个订阅打开连接，发出命名事件的负载，
+            反序列化为 <typeparamref name="T"/>（字符串直通；net8.0+ 上使用 JSON）。
+            </summary>
+        </member>
+        <member name="T:Observables.Sse.SseEvent">
+            <summary>单个已解析的 Server-Sent Event。</summary>
+        </member>
+        <member name="P:Observables.Sse.SseEvent.EventName">
+            <summary>事件类型（当线上 <c>event</c> 字段不存在时为 "message"）。</summary>
+        </member>
+        <member name="P:Observables.Sse.SseEvent.Data">
+            <summary>拼接后的 <c>data</c> 负载（不含尾部换行符）。</summary>
+        </member>
+        <member name="P:Observables.Sse.SseEvent.Id">
+            <summary>最后一个 <c>id</c> 字段（若有）。</summary>
+        </member>
+        <member name="T:Observables.Sse.SseProtocol">
+            <summary>
+            R3 与 System.Reactive SSE 桥接共享的最小 <c>text/event-stream</c> 解析器。
+            遵循 WHATWG SSE 字段语法（event / data / id / comment）。
+            </summary>
+        </member>
+        <member name="M:Observables.Sse.SseProtocol.ReadEventAsync(System.IO.StreamReader)">
+            <summary>从流中读取下一个已分发的事件，流末尾返回 null。</summary>
+        </member>
+        <member name="M:Observables.Sse.SseProtocol.Deserialize``1(System.String)">
+            <summary>将 SSE <c>data</c> 负载反序列化为 <typeparamref name="T"/>。</summary>
+        </member>
+        <member name="T:Observables.Sse.SseService">
+            <summary>创建源生成的 SSE 代理实现。</summary>
+        </member>
+        <member name="M:Observables.Sse.SseService.RegisterGeneratedFactory(System.Type,System.Func{Observables.Sse.SseConnection,System.Object})">
+            <summary>注册源生成的 SSE 代理工厂。</summary>
+        </member>
+    </members>
+</doc>

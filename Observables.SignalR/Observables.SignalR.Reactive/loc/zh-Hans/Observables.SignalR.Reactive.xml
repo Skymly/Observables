@@ -1,0 +1,11 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>Observables.SignalR.Reactive</name>
+    </assembly>
+    <members>
+        <member name="T:Observables.SignalR.Reactive.SystemReactiveSignalRAdapter">
+            <summary>将 SignalR 客户端 API 桥接到 <see cref="T:System.IObservable`1"/>。</summary>
+        </member>
+    </members>
+</doc>

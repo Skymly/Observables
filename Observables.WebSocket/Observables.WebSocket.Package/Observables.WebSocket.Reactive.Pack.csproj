@@ -25,6 +25,14 @@
     <ObservablesPackLibProjectReference Include="..\Observables.WebSocket.Reactive\Observables.WebSocket.Reactive.csproj" />
     <PackageReference Include="System.Reactive" />
     <None Include="README.WebSocket.Reactive.pack.md" Pack="true" PackagePath="README.md" Visible="false" />
+    <None Include="..\Observables.WebSocket\loc\zh-Hans\Observables.WebSocket.xml"
+          Pack="true"
+          PackagePath="lib\netstandard2.0\zh-Hans\;lib\net8.0\zh-Hans\;lib\net9.0\zh-Hans\"
+          Visible="false" />
+    <None Include="..\Observables.WebSocket.Reactive\loc\zh-Hans\Observables.WebSocket.Reactive.xml"
+          Pack="true"
+          PackagePath="lib\netstandard2.0\zh-Hans\;lib\net8.0\zh-Hans\;lib\net9.0\zh-Hans\"
+          Visible="false" />
   </ItemGroup>
 
 </Project>

@@ -26,6 +26,14 @@
     <PackageReference Include="System.Reactive" />
     <PackageReference Include="NATS.Client.Core" />
     <None Include="README.Nats.Reactive.pack.md" Pack="true" PackagePath="README.md" Visible="false" />
+    <None Include="..\Observables.Nats\loc\zh-Hans\Observables.Nats.xml"
+          Pack="true"
+          PackagePath="lib\netstandard2.0\zh-Hans\;lib\net8.0\zh-Hans\;lib\net9.0\zh-Hans\"
+          Visible="false" />
+    <None Include="..\Observables.Nats.Reactive\loc\zh-Hans\Observables.Nats.Reactive.xml"
+          Pack="true"
+          PackagePath="lib\netstandard2.0\zh-Hans\;lib\net8.0\zh-Hans\;lib\net9.0\zh-Hans\"
+          Visible="false" />
   </ItemGroup>
 
 </Project>

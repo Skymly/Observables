@@ -5,7 +5,7 @@ Declarative WebSocket proxies for R3 `Observable<T>` (Roslyn-generated proxies).
 ## Install
 
 ```xml
-<PackageReference Include="Observables.WebSocket.R3" Version="0.1.0" />
+<PackageReference Include="Observables.WebSocket.R3" Version="0.1.1" />
 <PackageReference Include="R3" Version="1.3.0" />
 ```
 

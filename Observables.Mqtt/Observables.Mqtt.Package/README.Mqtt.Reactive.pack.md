@@ -5,7 +5,7 @@ Declarative mqtt hub client interfaces for [System.Reactive](https://github.com/
 ## Install
 
 ```xml
-<PackageReference Include="Observables.Mqtt.Reactive" Version="0.1.0" />
+<PackageReference Include="Observables.Mqtt.Reactive" Version="0.1.1" />
 <PackageReference Include="System.Reactive" Version="6.0.1" />
 ```
 

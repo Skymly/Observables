@@ -5,7 +5,7 @@ Declarative gRPC proxies for System.Reactive `IObservable<T>` (Roslyn-generated 
 ## Install
 
 ```xml
-<PackageReference Include="Observables.Grpc.Reactive" Version="0.1.0" />
+<PackageReference Include="Observables.Grpc.Reactive" Version="0.1.1" />
 <PackageReference Include="System.Reactive" Version="6.0.1" />
 <PackageReference Include="Grpc.Net.Client" Version="2.67.0" />
 ```

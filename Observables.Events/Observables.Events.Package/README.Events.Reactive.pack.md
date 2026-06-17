@@ -5,7 +5,7 @@ Roslyn source generators that turn classic .NET events into `System.Reactive` `I
 ## Install
 
 ```xml
-<PackageReference Include="Observables.Events.Reactive" Version="0.1.0" />
+<PackageReference Include="Observables.Events.Reactive" Version="0.1.1" />
 <PackageReference Include="System.Reactive" Version="6.0.1" />
 ```
 

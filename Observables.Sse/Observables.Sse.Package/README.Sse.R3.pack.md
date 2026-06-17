@@ -5,7 +5,7 @@ Declarative Server-Sent Events (SSE) proxies for R3 `Observable<T>` (Roslyn-gene
 ## Install
 
 ```xml
-<PackageReference Include="Observables.Sse.R3" Version="0.1.0" />
+<PackageReference Include="Observables.Sse.R3" Version="0.1.1" />
 <PackageReference Include="R3" Version="1.3.0" />
 ```
 

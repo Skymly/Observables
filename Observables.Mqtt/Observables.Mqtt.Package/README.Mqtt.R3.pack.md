@@ -5,7 +5,7 @@ Declarative mqtt hub client interfaces for [R3](https://github.com/Cysharp/R3) `
 ## Install
 
 ```xml
-<PackageReference Include="Observables.Mqtt.R3" Version="0.1.0" />
+<PackageReference Include="Observables.Mqtt.R3" Version="0.1.1" />
 <PackageReference Include="R3" Version="1.3.0" />
 ```
 

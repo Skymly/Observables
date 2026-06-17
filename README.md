@@ -1,112 +1,66 @@
 # Observables
 
-面向 **反应式编程（Rx）** 的 Roslyn 源生成器套件。远端仓库：[github.com/Skymly/Observables](https://github.com/Skymly/Observables)（公开）。
+面向 **反应式编程（Rx）** 的 Roslyn 源生成器套件：用声明式接口把 .NET 事件、HTTP、SignalR、MQTT、WebSocket、gRPC、SSE、NATS 等边界桥接到 **R3** 或 **System.Reactive**。
 
-里程碑与发版规划见 [docs/ROADMAP.md](docs/ROADMAP.md)；开发规范与工程治理见 [AGENTS.md](./AGENTS.md)。
+| 资源 | 链接 |
+|------|------|
+| 源码 | [github.com/Skymly/Observables](https://github.com/Skymly/Observables) |
+| 用户文档 | [Observables.Docs](https://skymly.github.io/Observables.Docs/) |
+| 示例应用 | [Observables.Samples](https://github.com/Skymly/Observables.Samples) |
+| NuGet | [nuget.org/profiles/Skymly](https://www.nuget.org/profiles/Skymly) |
+| 贡献与发版 | [CONTRIBUTING.md](./CONTRIBUTING.md) |
 
 ## 运行时与包名
 
+每个功能域成对发布，**R3** 与 **System.Reactive** 互不混用依赖：
+
 | NuGet 包 ID | 运行时 |
 |-------------|--------|
-| `Observables.<Feature>.Reactive` | [System.Reactive](https://github.com/dotnet/reactive)（`IObservable<T>` 等） |
 | `Observables.<Feature>.R3` | [R3](https://github.com/Cysharp/R3) |
+| `Observables.<Feature>.Reactive` | [System.Reactive](https://github.com/dotnet/reactive)（`IObservable<T>` 等） |
 
-每个功能域成对发布，互不混用依赖。开发与测试阶段用解决方案内项目（如 `Observables.Events.R3.SourceGenerators`）通过 `ProjectReference` + `OutputItemType="Analyzer"` 引用。
+开发与测试阶段用解决方案内项目（如 `Observables.Events.R3.SourceGenerators`）通过 `ProjectReference` + `OutputItemType="Analyzer"` 引用。
 
-## 全库与域结构
+## 快速开始
+
+在 [NuGet](https://www.nuget.org/profiles/Skymly) 安装对应域的包（当前稳定版见 [CONTRIBUTING.md](./CONTRIBUTING.md#releases-and-versioning)），并单独引用反应式后端：
+
+```powershell
+dotnet add package Observables.Events.R3
+dotnet add package R3
+```
+
+System.Reactive 路径将 `Observables.Events.R3` 换为 `Observables.Events.Reactive`，并添加 `System.Reactive` 包。
+
+从 GitHub Packages 安装或贡献、发版流程见 [CONTRIBUTING.md](./CONTRIBUTING.md)。
+
+## 功能域
+
+八域均已提供运行时（按需）、双路源生成器、测试与 NuGet 包；共享层另有 `Observables.Core`、`Observables.SourceGenerators.Shared`、`Observables.Analyzers`、`Observables.CodeFixes`。
+
+| 域 | 说明 |
+|----|------|
+| **Events** | 经典与路由 .NET 事件 → `Observable` / `IObservable` |
+| **RestAPI** | 声明式类型安全 HTTP 客户端 |
+| **SignalR** | Hub 成员代理 |
+| **Mqtt** | MQTT 主题代理 |
+| **WebSocket** | WebSocket 客户端代理 |
+| **Grpc** | `CallInvoker` 代理 |
+| **Sse** | `text/event-stream` 事件流 |
+| **Nats** | Core NATS subject 代理（v1 不含 JetStream） |
+
+设计稿见 `docs/design/`。路由事件生成默认关闭；在消费者项目中设置 `<ObservableRoutedEvents>true</ObservableRoutedEvents>`（见 `Observables.Events/Observables.Events/targets/observables.events.props`）。
+
+### 仓库结构（摘要）
 
 | 层级 | 说明 |
 |------|------|
-| **`Observables.Core`** | 全库通用运行时（多域复用的 Attribute、枚举、接口等） |
-| **`Observables.SourceGenerators.Shared`** | 全库通用生成器基础设施（诊断、符号扩展等） |
+| **`Observables.Core`** | 全库通用运行时 |
+| **`Observables.SourceGenerators.Shared`** | 全库通用生成器基础设施 |
 | **`Observables.<Feature>`** | 域运行时（按需；纯生成域如 Events 可不建） |
 | **`Observables.<Feature>.Reactive`** | System.Reactive 桥接运行时（按需） |
 | **`Observables.<Feature>.R3.SourceGenerators`** / **`.Reactive.SourceGenerators`** | 双路源生成器 |
-| **`Observables.<Feature>.Package`** | 发布时打包，产出上述两个 NuGet 包 |
-
-### NuGet（`0.1.1` 稳定版）
-
-**16 包**（八域各 `.R3` + `.Reactive`）。**`0.1.1`** 发布至 [nuget.org](https://www.nuget.org/profiles/Skymly) 与 GitHub Packages（tag `v0.1.1`，含 zh-Hans IntelliSense）。
-
-| 包 ID | 说明 |
-|-------|------|
-| `Observables.Events.R3` | Events 生成器 + R3 依赖（DevelopmentDependency） |
-| `Observables.Events.Reactive` | Events 生成器 + System.Reactive 依赖 |
-| `Observables.RestAPI.R3` | RestAPI 运行时 + R3 生成器 |
-| `Observables.RestAPI.Reactive` | RestAPI + Reactive 桥接 + 生成器 |
-| `Observables.SignalR.R3` | SignalR 运行时 + R3 生成器 |
-| `Observables.SignalR.Reactive` | SignalR + Reactive 桥接 + 生成器 |
-| `Observables.Mqtt.R3` | MQTT 运行时 + R3 生成器 |
-| `Observables.Mqtt.Reactive` | MQTT + Reactive 桥接 + 生成器 |
-| `Observables.WebSocket.R3` | WebSocket 运行时 + R3 生成器 |
-| `Observables.WebSocket.Reactive` | WebSocket + Reactive 桥接 + 生成器 |
-| `Observables.Grpc.R3` | gRPC 运行时 + R3 生成器 |
-| `Observables.Grpc.Reactive` | gRPC + Reactive 桥接 + 生成器 |
-| `Observables.Sse.R3` | SSE 运行时 + R3 生成器 |
-| `Observables.Sse.Reactive` | SSE + Reactive 桥接 + 生成器 |
-| `Observables.Nats.R3` | NATS 运行时 + R3 生成器 |
-| `Observables.Nats.Reactive` | NATS + Reactive 桥接 + 生成器 |
-
-```xml
-<PackageReference Include="Observables.Events.R3" Version="0.1.1" />
-<PackageReference Include="R3" Version="1.3.0" />
-```
-
-从 [GitHub Packages](https://github.com/orgs/Skymly/packages) 安装时，在 `nuget.config` 中增加：
-
-```xml
-<packageSources>
-  <add key="nuget.org" value="https://api.nuget.org/v3/index.json" />
-  <add key="github" value="https://nuget.pkg.github.com/Skymly/index.json" />
-</packageSources>
-<packageSourceCredentials>
-  <github>
-    <add key="Username" value="YOUR_GITHUB_USERNAME" />
-    <add key="ClearTextPassword" value="YOUR_GITHUB_PAT_WITH_PACKAGES_READ" />
-  </github>
-</packageSourceCredentials>
-```
-
-本地打包与校验：
-
-```powershell
-dotnet run --project build/_build.csproj -- --target PackVerify --configuration Release
-```
-
-**发布到 NuGet**（与 [MvvmAIO.Markup](https://github.com/MvvmAIO/MvvmAIO.Markup) 相同：由维护者推送 `v*` tag 触发 CI，而非 PR/main 自动发布）：
-
-```powershell
-# 1. 确认 eng/Observables.Package.props 中 PackageVersion 与 tag 一致
-git tag -a v0.1.1 -m "0.1.1"
-git push origin v0.1.1
-# 2. GitHub Actions「Publish NuGet」workflow 使用 secrets 执行 Publish
-```
-
-本地手动推送（可选）：
-
-```powershell
-$env:VERSION = '0.1.1'
-$env:NUGET_API_KEY = '...'
-$env:GITHUB_TOKEN = '...'
-dotnet run --project build/_build.csproj -- --target Publish --configuration Release
-```
-
-## 域实现状态
-
-| 域 | R3 生成器 | System.Reactive 生成器 | NuGet（`0.1.1`） |
-|----|-----------|------------------------|---------------------|
-| **Events**（经典 + 路由 .NET 事件） | `Events.R3.SourceGenerators` | `Events.Reactive.SourceGenerators` | 已纳入发版 |
-| **RestAPI**（声明式 HTTP 客户端） | `RestAPI.R3.SourceGenerators` | `RestAPI.Reactive.SourceGenerators` | 已纳入发版 |
-| **SignalR**（Hub 代理） | `SignalR.R3.SourceGenerators` | `SignalR.Reactive.SourceGenerators` | 已纳入发版 |
-| **Mqtt**（主题代理） | `Mqtt.R3.SourceGenerators` | `Mqtt.Reactive.SourceGenerators` | 已纳入发版 |
-| **WebSocket**（客户端代理） | `WebSocket.R3.SourceGenerators` | `WebSocket.Reactive.SourceGenerators` | 已纳入发版 |
-| **Grpc**（CallInvoker 代理） | `Grpc.R3.SourceGenerators` | `Grpc.Reactive.SourceGenerators` | 已纳入发版 |
-| **Sse**（`text/event-stream` 代理） | `Sse.R3.SourceGenerators` | `Sse.Reactive.SourceGenerators` | 已纳入发版（M5） |
-| **Nats**（Core NATS subject 代理） | `Nats.R3.SourceGenerators` | `Nats.Reactive.SourceGenerators` | 已纳入发版（M6） |
-
-八域均含运行时 + 双路生成器 + 测试；共享层另有 `Observables.Analyzers` 与 `Observables.CodeFixes`。设计稿见 `docs/design/`；发版顺序见 [docs/ROADMAP.md](docs/ROADMAP.md)。
-
-路由事件生成默认关闭；在消费者项目中设置 `<ObservableRoutedEvents>true</ObservableRoutedEvents>`（见 `Observables.Events/Observables.Events/targets/observables.events.props`）。
+| **`Observables.<Feature>.Package`** | 发布打包，产出上述两个 NuGet 包 |
 
 ## RestAPI
 
@@ -119,7 +73,7 @@ dotnet run --project build/_build.csproj -- --target Publish --configuration Rel
 
 ## Sse（Server-Sent Events）
 
-声明式 `text/event-stream` 客户端：在 `[Sse]` 接口上用 `[SseEvent("名称")]` 标注属性，生成器产出按事件名过滤、自动反序列化的 `Observable<T>` / `IObservable<T>` 代理。`[SseEvent]` 不带参数时映射默认 `message` 事件。
+在 `[Sse]` 接口上用 `[SseEvent("名称")]` 标注属性，生成器产出按事件名过滤、自动反序列化的 `Observable<T>` / `IObservable<T>` 代理。`[SseEvent]` 不带参数时映射默认 `message` 事件。
 
 ```csharp
 [Sse]
@@ -140,7 +94,7 @@ using var d = feed.Prices.Subscribe(tick => Console.WriteLine(tick));
 
 ## Nats（Core NATS）
 
-声明式 Core NATS subject 客户端：在 `[Nats]` 接口上用 `[NatsSubscribe]` / `[NatsPublish]` / `[NatsRequest]` 标注成员，生成器产出订阅热流、发布冷流与请求-响应单值流。
+在 `[Nats]` 接口上用 `[NatsSubscribe]` / `[NatsPublish]` / `[NatsRequest]` 标注成员，生成器产出订阅热流、发布冷流与请求-响应单值流。
 
 ```csharp
 [Nats]
@@ -160,7 +114,7 @@ await using var nats = new NatsConnection(new NatsOpts { Url = "nats://127.0.0.1
 var hub = NatsService.For<IOrderHub>(nats);
 ```
 
-依赖 [NATS.Client.Core](https://www.nuget.org/packages/NATS.Client.Core)。v1 不含 JetStream。设计稿见 [docs/design/nats.md](docs/design/nats.md)。
+依赖 [NATS.Client.Core](https://www.nuget.org/packages/NATS.Client.Core)。设计稿见 [docs/design/nats.md](docs/design/nats.md)。
 
 ## 构建
 
@@ -172,6 +126,8 @@ dotnet build Observables.slnx
 dotnet run --project build/_build.csproj -- --target Ci --configuration Release
 ```
 
-需 **.NET 10 SDK**（`global.json` 用于 Nuke `build/`）；库与测试目标为 **netstandard2.0** / **net8.0** 等，另需 **.NET 8 SDK**。
+需 **.NET 10 SDK**（`global.json` 用于 Nuke `build/`）；库与测试目标为 **netstandard2.0** / **net8.0** 等，另需 **.NET 8 SDK**。本地打包、发版与贡献规范见 [CONTRIBUTING.md](./CONTRIBUTING.md)。
 
-代理与贡献者请参阅 [AGENTS.md](./AGENTS.md)。
+## License
+
+MIT — see [LICENSE](LICENSE).

@@ -6,6 +6,8 @@
 
     <File Path="README.md" />
 
+    <File Path="CONTRIBUTING.md" />
+
     <File Path="Directory.Build.props" />
 
     <File Path="global.json" />

@@ -135,7 +135,7 @@ Observables/
 
 | 文件夹 | 内容 |
 |--------|------|
-| **Solution Items** | `AGENTS.md`、`README.md`、公共 MSBuild props |
+| **Solution Items** | `AGENTS.md`、`README.md`、`CONTRIBUTING.md`、公共 MSBuild props |
 | **Shared** | `Observables.Core`、`Observables.SourceGenerators.Shared` |
 | **Events** | 双路生成器、测试、`Events.Package`；`Observables.Events/Observables.Events/targets/observables.events.props`（`ObservableRoutedEvents` 默认 `false`） |
 | **RestAPI** / **SignalR** / … | 该域全部项目；RestAPI 含 `SourceGenerators.Shared`（shproj，`Id` 固定）、`RestAPI.Package`、**Tests** |
@@ -249,7 +249,7 @@ Observables/
 ### 8. 文档同步纪律
 
 - 任一域的状态/版本变化，**三处必须同步**：
-  1. 主仓 [`README.md`](README.md)「域实现状态」与预览包清单。
+  1. 主仓 [`README.md`](README.md) 功能域说明；版本与包清单见 [`CONTRIBUTING.md`](CONTRIBUTING.md)。
   2. Observables.Docs（中英；新域加对应页，更新 `diagnostics.md`、`reference.md`）。
   3. Observables.Samples（新域加 `Observables.Samples.<Feature>`）。
 - 设计稿放主仓 `docs/design/<feature>.md`；面向用户的使用文档放 Observables.Docs。

@@ -116,6 +116,15 @@ public sealed class EmptyProxyInterfaceAnalyzerTests
         Assert.Contains(diagnostics, d => d.Id == "OBS9007");
     }
 
+    [Fact]
+    public void ProxyDomainCatalog_RestApi_uses_own_empty_interface_descriptor()
+    {
+        // Regression: RestApi used to incorrectly reuse EmptyHubInterface (OBS4007).
+        var domain = ProxyDomainCatalog.RestApi;
+        Assert.Equal("OBS3007", domain.EmptyInterfaceDescriptor.Id);
+        Assert.Equal("Empty RestAPI proxy interface", domain.EmptyInterfaceDescriptor.Title);
+    }
+
     static string BuildSource(string body, params string[] usings)
     {
         var usingLines = string.Join('\n', usings.Select(u => $"using {u};"));

@@ -132,7 +132,7 @@ internal static class ProxyDomainCatalog
         displayName: "RestAPI",
         interfaceMarkerMetadataName: string.Empty,
         reactiveAdapterMetadataName: "Observables.RestAPI.Reactive.SystemReactiveObservableAdapter",
-        emptyInterfaceDescriptor: DiagnosticDescriptors.EmptyHubInterface,
+        emptyInterfaceDescriptor: DiagnosticDescriptors.EmptyRestApiInterface,
         methodAttributes: [],
         propertyAttributes: []);
 

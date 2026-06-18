@@ -67,4 +67,13 @@ internal static class DiagnosticDescriptors
             "Observables.Nats",
             DiagnosticSeverity.Warning,
             isEnabledByDefault: true);
+
+    public static readonly DiagnosticDescriptor EmptyRestApiInterface =
+        new(
+            "OBS3007",
+            "Empty RestAPI proxy interface",
+            "Interface '{0}' is marked with HTTP method attributes but declares no valid members. Add HTTP boundary members or remove the attributes.",
+            "Observables.RestAPI",
+            DiagnosticSeverity.Warning,
+            isEnabledByDefault: true);
 }

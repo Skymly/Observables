@@ -14,7 +14,8 @@ public sealed class EmptyProxyInterfaceAnalyzer : DiagnosticAnalyzer
             DiagnosticDescriptors.EmptyWebSocketInterface,
             DiagnosticDescriptors.EmptyGrpcInterface,
             DiagnosticDescriptors.EmptySseInterface,
-            DiagnosticDescriptors.EmptyNatsInterface);
+            DiagnosticDescriptors.EmptyNatsInterface,
+            DiagnosticDescriptors.EmptyRestApiInterface);
 
     public override void Initialize(AnalysisContext context)
     {

@@ -1,6 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <Import Project="..\..\Observables.SourceGenerators.R3.props" />
+  <Import Project="..\..\Observables.SourceGenerators.EventsDiagnostics.props" />
 
   <PropertyGroup>
     <Description>Source generators for classic .NET events → R3 Observable.</Description>

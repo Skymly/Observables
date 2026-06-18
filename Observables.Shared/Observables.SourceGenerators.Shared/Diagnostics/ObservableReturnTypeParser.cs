@@ -12,11 +12,6 @@ public static class ObservableReturnTypeParser
     /// <summary>
     /// Validates return type against the active generator backend (R3 vs System.Reactive).
     /// </summary>
-    /// <param name="isR3Generator">True when compiling the R3 source generator (SIGNALR_R3, MQTT_R3, etc.).</param>
-    /// <param name="reactiveAdapterMetadataName">
-    /// Fully qualified metadata name of the Reactive bridge type, e.g.
-    /// <c>Observables.SignalR.Reactive.SystemReactiveSignalRAdapter</c>.
-    /// </param>
     public static bool TryParse(
         ITypeSymbol returnType,
         Compilation compilation,

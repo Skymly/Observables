@@ -1,7 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <Import Project="..\..\Observables.SourceGenerators.R3.props" />
-  <Import Project="..\..\Observables.SourceGenerators.InterfaceProxy.props" />
 
   <PropertyGroup>
     <Description>Source generator for WebSocket proxies → R3 Observable.</Description>

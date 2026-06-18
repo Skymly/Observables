@@ -15,7 +15,6 @@
     <Deterministic>true</Deterministic>
     <ContinuousIntegrationBuild Condition="'$(CI)' == 'true'">true</ContinuousIntegrationBuild>
     <ObservablesAnalyzerRoslynFolder>analyzers/dotnet/roslyn4.12/cs</ObservablesAnalyzerRoslynFolder>
-    <ObservablesSharedGeneratorProject>$(MSBuildThisFileDirectory)../Observables.Shared/Observables.SourceGenerators.Shared/Observables.SourceGenerators.Shared.csproj</ObservablesSharedGeneratorProject>
     <ObservablesCodeFixesProject>$(MSBuildThisFileDirectory)../Observables.Shared/Observables.CodeFixes/Observables.CodeFixes.csproj</ObservablesCodeFixesProject>
     <ObservablesCodeFixesOutputDir>$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)../Observables.Shared/Observables.CodeFixes/bin/$(Configuration)/netstandard2.0/'))</ObservablesCodeFixesOutputDir>
     <ObservablesAnalyzersProject>$(MSBuildThisFileDirectory)../Observables.Shared/Observables.Analyzers/Observables.Analyzers.csproj</ObservablesAnalyzersProject>

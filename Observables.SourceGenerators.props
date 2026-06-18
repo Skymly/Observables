@@ -1,5 +1,7 @@
 <Project>
 
+  <Import Project="$(MSBuildThisFileDirectory)Observables.SourceGenerators.SharedSource.props" />
+
   <PropertyGroup>
     <ObservablesReactiveBackend>SystemReactive</ObservablesReactiveBackend>
     <TargetFramework>netstandard2.0</TargetFramework>

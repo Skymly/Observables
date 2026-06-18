@@ -9,9 +9,6 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\..\Observables.Shared\Observables.SourceGenerators.Shared\Observables.SourceGenerators.Shared.csproj" />
-  </ItemGroup>
 
   <Import Project="..\Observables.RestAPI.SourceGenerators.Shared\Observables.RestAPI.SourceGenerators.Shared.projitems" Label="Shared" />
 

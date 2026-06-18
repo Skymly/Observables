@@ -7,7 +7,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\Observables.Shared\Observables.SourceGenerators.Shared\Observables.SourceGenerators.Shared.csproj" />
     <PackageReference Include="R3" PrivateAssets="all" />
   </ItemGroup>
 

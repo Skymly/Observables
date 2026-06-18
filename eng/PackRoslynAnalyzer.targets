@@ -11,8 +11,6 @@
   -->
 
   <PropertyGroup>
-    <ObservablesPackSharedGeneratorProject Condition="'$(ObservablesPackSharedGeneratorProject)' == ''">$(ObservablesSharedGeneratorProject)</ObservablesPackSharedGeneratorProject>
-    <ObservablesPackSharedOutputDir Condition="'$(ObservablesPackSharedOutputDir)' == ''">$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)../Observables.Shared/Observables.SourceGenerators.Shared/bin/$(Configuration)/netstandard2.0/'))</ObservablesPackSharedOutputDir>
     <ObservablesPackCodeFixesProject Condition="'$(ObservablesPackCodeFixesProject)' == ''">$(ObservablesCodeFixesProject)</ObservablesPackCodeFixesProject>
     <ObservablesPackCodeFixesOutputDir Condition="'$(ObservablesPackCodeFixesOutputDir)' == ''">$(ObservablesCodeFixesOutputDir)</ObservablesPackCodeFixesOutputDir>
     <ObservablesPackAnalyzersProject Condition="'$(ObservablesPackAnalyzersProject)' == ''">$(ObservablesAnalyzersProject)</ObservablesPackAnalyzersProject>
@@ -21,7 +19,6 @@
 
   <Target Name="ObservablesPackBuildAnalyzerInputs" BeforeTargets="GenerateNuspec">
     <MSBuild Projects="$(ObservablesPackGeneratorProject)" Targets="Build" Properties="Configuration=$(Configuration);NoBuild=false" />
-    <MSBuild Projects="$(ObservablesPackSharedGeneratorProject)" Targets="Build" Properties="Configuration=$(Configuration);NoBuild=false" />
     <MSBuild Projects="$(ObservablesPackCodeFixesProject)" Targets="Build" Properties="Configuration=$(Configuration);NoBuild=false" Condition="'$(ObservablesPackCodeFixesProject)' != ''" />
     <MSBuild Projects="$(ObservablesPackAnalyzersProject)" Targets="Build" Properties="Configuration=$(Configuration);NoBuild=false" Condition="'$(ObservablesPackAnalyzersProject)' != ''" />
   </Target>
@@ -31,21 +28,17 @@
           BeforeTargets="_GetPackageFiles">
     <PropertyGroup>
       <_ObservablesPackGeneratorDll>$(ObservablesPackGeneratorOutputDir)$(ObservablesPackGeneratorAssemblyName)</_ObservablesPackGeneratorDll>
-      <_ObservablesPackSharedDll>$(ObservablesPackSharedOutputDir)Observables.SourceGenerators.Shared.dll</_ObservablesPackSharedDll>
       <_ObservablesPackCodeFixesDll>$(ObservablesPackCodeFixesOutputDir)Observables.CodeFixes.dll</_ObservablesPackCodeFixesDll>
       <_ObservablesPackAnalyzersDll>$(ObservablesPackAnalyzersOutputDir)Observables.Analyzers.dll</_ObservablesPackAnalyzersDll>
     </PropertyGroup>
     <Error Condition="!Exists('$(_ObservablesPackGeneratorDll)')"
            Text="Observables pack: missing generator assembly '$(_ObservablesPackGeneratorDll)'." />
-    <Error Condition="!Exists('$(_ObservablesPackSharedDll)')"
-           Text="Observables pack: missing shared assembly '$(_ObservablesPackSharedDll)'." />
     <Error Condition="'$(ObservablesPackCodeFixesProject)' != '' and !Exists('$(_ObservablesPackCodeFixesDll)')"
            Text="Observables pack: missing code fix assembly '$(_ObservablesPackCodeFixesDll)'." />
     <Error Condition="'$(ObservablesPackAnalyzersProject)' != '' and !Exists('$(_ObservablesPackAnalyzersDll)')"
            Text="Observables pack: missing analyzer assembly '$(_ObservablesPackAnalyzersDll)'." />
     <ItemGroup>
       <None Include="$(_ObservablesPackGeneratorDll)" Pack="true" PackagePath="$(ObservablesAnalyzerRoslynFolder)" Visible="false" />
-      <None Include="$(_ObservablesPackSharedDll)" Pack="true" PackagePath="$(ObservablesAnalyzerRoslynFolder)" Visible="false" />
       <None Include="$(_ObservablesPackCodeFixesDll)" Pack="true" PackagePath="$(ObservablesAnalyzerRoslynFolder)" Visible="false" Condition="'$(ObservablesPackCodeFixesProject)' != '' and Exists('$(_ObservablesPackCodeFixesDll)')" />
       <None Include="$(_ObservablesPackAnalyzersDll)" Pack="true" PackagePath="$(ObservablesAnalyzerRoslynFolder)" Visible="false" Condition="'$(ObservablesPackAnalyzersProject)' != '' and Exists('$(_ObservablesPackAnalyzersDll)')" />
       <None Include="$(ObservablesPackPackagePropsFile)" Pack="true" PackagePath="build/$(PackageId).props" Visible="false" Condition="'$(ObservablesPackPackagePropsFile)' != '' and Exists('$(ObservablesPackPackagePropsFile)')" />

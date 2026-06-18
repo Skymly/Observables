@@ -13,14 +13,11 @@
     <AdditionalFiles Include="$(MSBuildThisFileDirectory)AnalyzerReleases.Unshipped.md" />
     <Compile Include="$(MSBuildThisFileDirectory)DiagnosticDescriptors.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Emitter.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)ImmutableEquatableArray.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)IncrementalValuesProviderExtensions.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)IsExternalInit.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Models\ContextGenerationModel.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Models\MqttBoundaryKind.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Models\MqttInterfaceModel.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Models\MqttMemberModel.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Parser.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)SourceWriter.cs" />
   </ItemGroup>
 </Project>

@@ -36,7 +36,7 @@ System.Reactive 路径将 `Observables.Events.R3` 换为 `Observables.Events.Rea
 
 ## 功能域
 
-八域均已提供运行时（按需）、双路源生成器、测试与 NuGet 包；共享层另有 `Observables.Core`、`Observables.SourceGenerators.Shared`、`Observables.Analyzers`、`Observables.CodeFixes`。
+八域均已提供运行时（按需）、双路源生成器、测试与 NuGet 包；共享层另有 `Observables.Core`、`Observables.Analyzers`、`Observables.CodeFixes`。
 
 | 域 | 说明 |
 |----|------|
@@ -56,22 +56,190 @@ System.Reactive 路径将 `Observables.Events.R3` 换为 `Observables.Events.Rea
 | 层级 | 说明 |
 |------|------|
 | **`Observables.Core`** | 全库通用运行时 |
-| **`Observables.SourceGenerators.Shared`** | 全库通用生成器基础设施 |
+| **`Observables.SourceGenerators.Shared`** | 全库通用生成器基础设施（link-compile 共享源码） |
 | **`Observables.<Feature>`** | 域运行时（按需；纯生成域如 Events 可不建） |
 | **`Observables.<Feature>.Reactive`** | System.Reactive 桥接运行时（按需） |
 | **`Observables.<Feature>.R3.SourceGenerators`** / **`.Reactive.SourceGenerators`** | 双路源生成器 |
 | **`Observables.<Feature>.Package`** | 发布打包，产出上述两个 NuGet 包 |
 
+## Events
+
+经典 .NET 事件 → `Observable<T>` / `IObservable<T>`。无需定义接口——对任何含 `event` 成员的类型调用 `.Events()` 扩展方法，生成器自动为每个事件产出对应的 Observable 属性。
+
+### 基本用法
+
+```csharp
+// 任何含 event 的类或接口都可以使用
+public class Button
+{
+    public event EventHandler? Clicked;
+    public event Action<string>? TextChanged;
+}
+
+// R3 路径
+var btn = new Button();
+using var d1 = btn.Events().Clicked.Subscribe(_ => Console.WriteLine("Clicked!"));
+using var d2 = btn.Events().TextChanged.Subscribe(text => Console.WriteLine(text));
+
+// System.Reactive 路径
+using var d3 = btn.Events().Clicked.Subscribe(_ => Console.WriteLine("Clicked!"));
+```
+
+### Events vs EventHandlers
+
+- **`.Events()`** — 将事件参数直接映射为 `Observable<(T1, T2)>` 元组（去掉 `sender`），适合只关心载荷的场景。
+- **`.EventHandlers()`** — 保留 `(sender, EventArgs)` 元组形状，适合需要 sender 的场景。
+
+```csharp
+public interface INotifyPropertyChanged
+{
+    event PropertyChangedEventHandler? PropertyChanged;
+}
+
+// Events() → Observable<PropertyChangedEventArgs>
+_ = obj.Events().PropertyChanged.Subscribe(e => Console.WriteLine(e.PropertyName));
+
+// EventHandlers() → Observable<(object sender, PropertyChangedEventArgs e)>
+_ = obj.EventHandlers().PropertyChanged.Subscribe(t => Console.WriteLine(t.e.PropertyName));
+```
+
+### 路由事件（WPF / Avalonia）
+
+默认关闭。在消费者项目中设置 `<ObservableRoutedEvents>true</ObservableRoutedEvents>` 启用，生成器会为路由事件产出 `.RoutedEvents()` / `.RoutedEventHandlers()` 扩展方法。详见 `Observables.Events/Observables.Events/targets/observables.events.props`。
+
+设计稿见 `docs/design/events.md`。
+
 ## RestAPI
 
-声明式类型安全 HTTP 客户端：`Observables.RestAPI`（运行时）+ `Observables.RestAPI.R3.SourceGenerators` 或 `Observables.RestAPI.Reactive.SourceGenerators` + 可选 `Observables.RestAPI.Reactive` / `HttpClientFactory`。
+声明式类型安全 HTTP 客户端。用 `[Get]` / `[Post]` / `[Put]` / `[Delete]` / `[Patch]` 等特性标注接口方法，生成器自动产出 `HttpClient` 代理实现。支持路径模板 `{param}`、JSON 序列化、`Observable<T>` / `IObservable<T>` / `Task<T>` 返回类型。
+
+### 基本用法
+
+```csharp
+// 定义接口 — 无需手写 HttpClient 调用
+public interface IUserApi
+{
+    [Get("/users/{id}")]
+    Observable<User> GetUser(int id);          // R3 路径
+
+    [Post("/users")]
+    Observable<User> CreateUser([Body] User user);
+
+    [Delete("/users/{id}")]
+    Observable<Unit> DeleteUser(int id);
+}
+
+// 创建代理
+var api = RestService.For<IUserApi>("https://api.example.com");
+using var d = api.GetUser(42).Subscribe(u => Console.WriteLine(u.Name));
+```
+
+### System.Reactive 路径
+
+将 `Observable<T>` 换为 `IObservable<T>`，并引用 `Observables.RestAPI.Reactive` 包：
+
+```csharp
+public interface IUserApi
+{
+    [Get("/users/{id}")]
+    IObservable<User> GetUser(int id);
+}
+
+var api = RestService.For<IUserApi>("https://api.example.com");
+api.GetUser(42).Subscribe(u => Console.WriteLine(u.Name));
+```
+
+### 包结构
+
+| 包 | 用途 |
+|----|------|
+| `Observables.RestAPI` | 运行时（`RestService`、`HttpClient` 代理基础设施） |
+| `Observables.RestAPI.R3` | R3 源生成器 + 运行时 |
+| `Observables.RestAPI.Reactive` | System.Reactive 桥接运行时 + 源生成器 |
 
 该域的运行时部分包含由 [Refit](https://github.com/reactiveui/refit) 适配而来的代码，许可信息见 [NOTICE.md](NOTICE.md)。
 
-```xml
-<ProjectReference Include="Observables.RestAPI" />
-<ProjectReference Include="Observables.RestAPI.R3.SourceGenerators" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+## SignalR
+
+在 `[Hub]` 接口上用 `[HubInvoke]` / `[HubOn]` / `[HubSend]` / `[HubStream]` 标注成员，生成器产出 SignalR Hub 代理。`HubInvoke` 映射方法调用，`HubOn` 映射服务器推送事件。
+
+```csharp
+[Hub]
+public interface IChatHub
+{
+    [HubInvoke]
+    Observable<int> GetUserCount();
+
+    [HubOn("ReceiveMessage")]
+    Observable<ChatMessage> ReceiveMessage { get; }
+}
+
+var hub = HubService.For<IChatHub>(hubConnection);
+using var d = hub.ReceiveMessage.Subscribe(msg => Console.WriteLine(msg.Text));
 ```
+
+依赖 [Microsoft.AspNetCore.SignalR.Client](https://www.nuget.org/packages/Microsoft.AspNetCore.SignalR.Client)。
+
+## Mqtt
+
+在 `[Mqtt]` 接口上用 `[MqttSubscribe]` 标注属性（订阅热流）、`[MqttPublish]` 标注方法（发布冷流），生成器产出 MQTT 主题代理。
+
+```csharp
+[Mqtt]
+public interface ISensorHub
+{
+    [MqttSubscribe("sensors/temperature/#")]
+    Observable<SensorData> Temperature { get; }
+
+    [MqttPublish("commands/{deviceId}/reboot")]
+    Observable<Unit> Reboot(string deviceId);
+}
+
+var hub = MqttService.For<ISensorHub>(mqttClient);
+using var d = hub.Temperature.Subscribe(data => Console.WriteLine(data.Value));
+```
+
+依赖 [MQTTnet](https://www.nuget.org/packages/MQTTnet)。
+
+## WebSocket
+
+在 `[WebSocket]` 接口上用 `[WebSocketReceive]` 标注属性（接收消息）、`[WebSocketSend]` / `[WebSocketConnect]` / `[WebSocketClose]` 标注方法，生成器产出 WebSocket 代理。
+
+```csharp
+[WebSocket]
+public interface IRealtimeHub
+{
+    [WebSocketReceive("tick")]
+    Observable<Tick> Ticks { get; }
+
+    [WebSocketSend("subscribe")]
+    Observable<Unit> Subscribe(string channel);
+}
+
+var hub = WebSocketService.For<IRealtimeHub>(clientWebSocket);
+using var d = hub.Ticks.Subscribe(tick => Console.WriteLine(tick.Price));
+```
+
+## Grpc
+
+在 `[Grpc]` 接口上用 `[GrpcUnary]` / `[GrpcServerStream]` / `[GrpcClientStream]` / `[GrpcDuplex]` 标注方法，生成器产出 `CallInvoker` 代理。
+
+```csharp
+[Grpc("echo.Echo")]
+public interface IEchoService
+{
+    [GrpcUnary("UnaryEcho")]
+    Observable<string> UnaryEcho(string request);
+
+    [GrpcServerStream("ServerStreamEcho")]
+    Observable<string> ServerStreamEcho(string request);
+}
+
+var svc = GrpcService.For<IEchoService>(callInvoker);
+using var d = svc.UnaryEcho("hello").Subscribe(reply => Console.WriteLine(reply));
+```
+
+依赖 [Grpc.Net.Client](https://www.nuget.org/packages/Grpc.Net.Client)。
 
 ## Sse（Server-Sent Events）
 
@@ -82,17 +250,17 @@ System.Reactive 路径将 `Observables.Events.R3` 换为 `Observables.Events.Rea
 public interface IPriceFeed
 {
     [SseEvent("price")]
-    Observable<PriceTick> Prices { get; }   // System.Reactive 用 IObservable<T>
+    Observable<PriceTick> Prices { get; }
 
     [SseEvent]
-    Observable<string> Heartbeats { get; }  // 默认 message 事件
+    Observable<string> Heartbeats { get; }
 }
 
 var feed = SseService.For<IPriceFeed>(new SseConnection(httpClient, endpoint));
 using var d = feed.Prices.Subscribe(tick => Console.WriteLine(tick));
 ```
 
-每次 `Subscribe` 发起一次 SSE 连接；`string` 直接透传，其它类型按 `System.Text.Json` 反序列化。设计稿见 [docs/design/sse.md](docs/design/sse.md)。
+每次 `Subscribe` 发起一次 SSE 连接；`string` 直接透传，其它类型按 `System.Text.Json` 反序列化。
 
 ## Nats（Core NATS）
 
@@ -116,7 +284,7 @@ await using var nats = new NatsConnection(new NatsOpts { Url = "nats://127.0.0.1
 var hub = NatsService.For<IOrderHub>(nats);
 ```
 
-依赖 [NATS.Client.Core](https://www.nuget.org/packages/NATS.Client.Core)。设计稿见 [docs/design/nats.md](docs/design/nats.md)。
+依赖 [NATS.Client.Core](https://www.nuget.org/packages/NATS.Client.Core)。
 
 ## 构建
 

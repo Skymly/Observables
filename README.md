@@ -66,6 +66,8 @@ System.Reactive 路径将 `Observables.Events.R3` 换为 `Observables.Events.Rea
 
 声明式类型安全 HTTP 客户端：`Observables.RestAPI`（运行时）+ `Observables.RestAPI.R3.SourceGenerators` 或 `Observables.RestAPI.Reactive.SourceGenerators` + 可选 `Observables.RestAPI.Reactive` / `HttpClientFactory`。
 
+该域的运行时部分包含由 [Refit](https://github.com/reactiveui/refit) 适配而来的代码，许可信息见 [NOTICE.md](NOTICE.md)。
+
 ```xml
 <ProjectReference Include="Observables.RestAPI" />
 <ProjectReference Include="Observables.RestAPI.R3.SourceGenerators" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
@@ -130,4 +132,6 @@ dotnet run --project build/_build.csproj -- --target Ci --configuration Release
 
 ## License
 
-MIT — see [LICENSE](LICENSE).
+Observables is licensed under the MIT License — see [LICENSE](LICENSE).
+
+Third-party attributions, including the Refit-derived code used by `Observables.RestAPI`, are listed in [NOTICE.md](NOTICE.md).

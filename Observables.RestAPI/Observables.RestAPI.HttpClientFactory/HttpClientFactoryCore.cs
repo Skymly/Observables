@@ -16,9 +16,6 @@ internal static class HttpClientFactoryCore
     {
         services.AddSingleton(provider => new SettingsFor<T>(settings?.Invoke(provider)));
 
-        services.AddSingleton<IRequestBuilder<T>>(provider =>
-            RequestBuilder.ForType<T>(provider.GetRequiredService<SettingsFor<T>>().Settings));
-
         var builder = services.AddHttpClient(typeof(T).FullName ?? typeof(T).Name, configureClient ?? (_ => { }));
 
         builder.ConfigurePrimaryHttpMessageHandler(sp =>
@@ -26,7 +23,7 @@ internal static class HttpClientFactoryCore
                 ?? new HttpClientHandler());
 
         return builder.AddTypedClient((client, serviceProvider) =>
-            RestService.For<T>(client, serviceProvider.GetRequiredService<IRequestBuilder<T>>()));
+            RestService.For<T>(client, serviceProvider.GetRequiredService<SettingsFor<T>>().Settings));
     }
 
     static HttpMessageHandler? CreateInnerHandlerIfProvided(RestApiSettings? settings)

@@ -11,17 +11,15 @@ namespace Observables.RestAPI.Implementation
     /// <inheritdoc />
     [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
     [global::System.Diagnostics.DebuggerNonUserCode]
-    [global::RestApiInternalGenerated.PreserveAttribute]
     [global::System.Reflection.Obfuscation(Exclude=true)]
     [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
     internal static partial class Generated
     {
 #if NET5_0_OR_GREATER
         [System.Runtime.CompilerServices.ModuleInitializer]
-        [System.Diagnostics.CodeAnalysis.DynamicDependency(System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.All, typeof(global::Observables.RestAPI.Implementation.Generated))]
         public static void Initialize()
         {
-                        global::Observables.RestAPI.RestService.RegisterGeneratedFactory(typeof(global::IUserApi), static (client, requestBuilder) => new global::Observables.RestAPI.Implementation.Generated.IUserApi(client, requestBuilder));
+                        global::Observables.RestAPI.RestService.RegisterGeneratedFactory(typeof(global::IUserApi), static (client, settings) => new global::Observables.RestAPI.Implementation.Generated.IUserApi(client, settings));
         }
 #endif
     }
@@ -40,7 +38,6 @@ namespace Observables.RestAPI.Implementation
     /// <inheritdoc />
     [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
     [global::System.Diagnostics.DebuggerNonUserCode]
-    [global::RestApiInternalGenerated.PreserveAttribute]
     [global::System.Reflection.Obfuscation(Exclude=true)]
     [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
     partial class IUserApi
@@ -48,48 +45,28 @@ namespace Observables.RestAPI.Implementation
     {
         /// <inheritdoc />
         public global::System.Net.Http.HttpClient Client { get; }
-        readonly global::Observables.RestAPI.IRequestBuilder requestBuilder;
+        readonly global::Observables.RestAPI.RestApiSettings _settings;
 
         /// <inheritdoc />
-        public IUserApi(global::System.Net.Http.HttpClient client, global::Observables.RestAPI.IRequestBuilder requestBuilder)
+        public IUserApi(global::System.Net.Http.HttpClient client, global::Observables.RestAPI.RestApiSettings? settings)
         {
             Client = client;
-            this.requestBuilder = requestBuilder;
+            _settings = settings ?? new global::Observables.RestAPI.RestApiSettings();
         }
 
-
-        private static readonly global::System.Type[] ______typeParameters = new global::System.Type[] {typeof(int) };
 
         /// <inheritdoc />
         public async global::System.Threading.Tasks.Task<global::User> GetUser(int @id)
         {
-            var ______arguments = new object[] { @id };
-            var ______func = requestBuilder.BuildRestResultFuncForMethod("GetUser", ______typeParameters );
-
-            return await ((global::System.Threading.Tasks.Task<global::User>)______func(this.Client, ______arguments)).ConfigureAwait(false);
+            var ______ct = global::System.Threading.CancellationToken.None;
+            if (Client.BaseAddress == null) throw new global::System.InvalidOperationException("BaseAddress must be set on the HttpClient instance");
+            var ______path = "/users/" + global::Observables.RestAPI.RestApiBridge.FormatPathParameter(@id, _settings);
+            var ______request = new global::System.Net.Http.HttpRequestMessage { Method = global::System.Net.Http.HttpMethod.Get };
+            ______request.RequestUri = new global::System.Uri(______path, global::System.UriKind.Relative);
+            return await global::Observables.RestAPI.RestApiBridge.SendAsync<global::User, global::User>(Client, ______request, _settings, false, false, ______ct).ConfigureAwait(false);
         }
     }
     }
 }
 
-#pragma warning restore
-
---- PreserveAttribute.g.cs ---
-
-#pragma warning disable
-namespace RestApiInternalGenerated
-{
-    [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
-    [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-    [global::System.AttributeUsage (global::System.AttributeTargets.Class | global::System.AttributeTargets.Struct | global::System.AttributeTargets.Enum | global::System.AttributeTargets.Constructor | global::System.AttributeTargets.Method | global::System.AttributeTargets.Property | global::System.AttributeTargets.Field | global::System.AttributeTargets.Event | global::System.AttributeTargets.Interface | global::System.AttributeTargets.Delegate)]
-    sealed class PreserveAttribute : global::System.Attribute
-    {
-        //
-        // Fields
-        //
-        public bool AllMembers;
-
-        public bool Conditional;
-    }
-}
 #pragma warning restore

@@ -6,8 +6,6 @@ namespace Observables.RestAPI.Generators;
 
 internal static class Emitter
 {
-    private const string TypeParameterVariableName = "______typeParameters";
-
     public static void EmitSharedCode(
         ContextGenerationModel model,
         Action<string, SourceText> addSource
@@ -16,36 +14,14 @@ internal static class Emitter
         if (model.Interfaces.Count == 0)
             return;
 
-        var attributeText = $$"""
-
-            #pragma warning disable
-            namespace {{model.RestApiInternalNamespace}}
-            {
-                [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
-                [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-                [global::System.AttributeUsage (global::System.AttributeTargets.Class | global::System.AttributeTargets.Struct | global::System.AttributeTargets.Enum | global::System.AttributeTargets.Constructor | global::System.AttributeTargets.Method | global::System.AttributeTargets.Property | global::System.AttributeTargets.Field | global::System.AttributeTargets.Event | global::System.AttributeTargets.Interface | global::System.AttributeTargets.Delegate)]
-                sealed class PreserveAttribute : global::System.Attribute
-                {
-                    //
-                    // Fields
-                    //
-                    public bool AllMembers;
-
-                    public bool Conditional;
-                }
-            }
-            #pragma warning restore
-
-            """;
-        // add the attribute text
-        addSource("PreserveAttribute.g.cs", SourceText.From(attributeText, Encoding.UTF8));
-
+        // No PreserveAttribute generation — Path B eliminates it.
+        // Only emit the ModuleInitializer that registers generated factories.
         var generatedFactoryRegistrations = string.Join(
             "\n",
             model.Interfaces
                 .Where(static interfaceModel => !interfaceModel.ClassDeclaration.Contains("<"))
                 .Select(static interfaceModel =>
-                    $"                        global::Observables.RestAPI.RestService.RegisterGeneratedFactory(typeof({interfaceModel.InterfaceDisplayName}), static (client, requestBuilder) => new global::Observables.RestAPI.Implementation.Generated.{interfaceModel.Ns}{interfaceModel.ClassSuffix}(client, requestBuilder));"
+                    $"                        global::Observables.RestAPI.RestService.RegisterGeneratedFactory(typeof({interfaceModel.InterfaceDisplayName}), static (client, settings) => new global::Observables.RestAPI.Implementation.Generated.{interfaceModel.Ns}{interfaceModel.ClassSuffix}(client, settings));"
                 )
         );
 
@@ -58,14 +34,12 @@ internal static class Emitter
                 /// <inheritdoc />
                 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
                 [global::System.Diagnostics.DebuggerNonUserCode]
-                [{{model.PreserveAttributeDisplayName}}]
                 [global::System.Reflection.Obfuscation(Exclude=true)]
                 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
                 internal static partial class Generated
                 {
             #if NET5_0_OR_GREATER
                     [System.Runtime.CompilerServices.ModuleInitializer]
-                    [System.Diagnostics.CodeAnalysis.DynamicDependency(System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.All, typeof(global::Observables.RestAPI.Implementation.Generated))]
                     public static void Initialize()
                     {
             {{generatedFactoryRegistrations}}
@@ -76,6 +50,7 @@ internal static class Emitter
             #pragma warning restore
 
             """;
+
         addSource("Generated.g.cs", SourceText.From(generatedClassText, Encoding.UTF8));
     }
 
@@ -83,12 +58,9 @@ internal static class Emitter
     {
         var source = new SourceWriter();
 
-        // if nullability is supported emit the nullable directive
         if (model.Nullability != Nullability.None)
         {
-            source.WriteLine(
-                "#nullable " + (model.Nullability == Nullability.Enabled ? "enable" : "disable")
-            );
+            source.WriteLine("#nullable " + (model.Nullability == Nullability.Enabled ? "enable" : "disable"));
         }
 
         source.WriteLine(
@@ -103,7 +75,6 @@ internal static class Emitter
                 /// <inheritdoc />
                 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
                 [global::System.Diagnostics.DebuggerNonUserCode]
-                [{{model.PreserveAttributeDisplayName}}]
                 [global::System.Reflection.Obfuscation(Exclude=true)]
                 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
                 partial class {{model.Ns}}{{model.ClassDeclaration}}
@@ -120,13 +91,13 @@ internal static class Emitter
             {
                 /// <inheritdoc />
                 public global::System.Net.Http.HttpClient Client { get; }
-                readonly global::Observables.RestAPI.IRequestBuilder requestBuilder;
+                readonly global::Observables.RestAPI.RestApiSettings _settings;
 
                 /// <inheritdoc />
-                public {{model.Ns}}{{model.ClassSuffix}}(global::System.Net.Http.HttpClient client, global::Observables.RestAPI.IRequestBuilder requestBuilder)
+                public {{model.Ns}}{{model.ClassSuffix}}(global::System.Net.Http.HttpClient client, global::Observables.RestAPI.RestApiSettings? settings)
                 {
                     Client = client;
-                    this.requestBuilder = requestBuilder;
+                    _settings = settings ?? new global::Observables.RestAPI.RestApiSettings();
                 }
 
             """
@@ -136,28 +107,17 @@ internal static class Emitter
         var uniqueNames = new UniqueNameBuilder();
         uniqueNames.Reserve(model.MemberNames);
 
-        // Handle Refit Methods
         foreach (var method in model.RefitMethods)
-        {
             WriteRefitMethod(source, method, true, uniqueNames);
-        }
 
         foreach (var method in model.DerivedRefitMethods)
-        {
             WriteRefitMethod(source, method, false, uniqueNames);
-        }
 
-        // Handle non-refit Methods that aren't static or properties or have a method body
         foreach (var method in model.NonRefitMethods)
-        {
             WriteNonRefitMethod(source, method);
-        }
 
-        // Handle Dispose
         if (model.DisposeMethod)
-        {
             WriteDisposableMethod(source);
-        }
 
         source.Indentation -= 2;
         source.WriteLine(
@@ -173,116 +133,278 @@ internal static class Emitter
     }
 
     /// <summary>
-    /// Generates the body of the Refit method
+    /// Generates the body of a REST method that directly builds and sends an HttpRequestMessage.
     /// </summary>
-    /// <param name="source"></param>
-    /// <param name="methodModel"></param>
-    /// <param name="isTopLevel">True if directly from the type we're generating for, false for methods found on base interfaces</param>
-    /// <param name="uniqueNames">Contains the unique member names in the interface scope.</param>
-    private static void WriteRefitMethod(
+    static void WriteRefitMethod(
         SourceWriter source,
         MethodModel methodModel,
         bool isTopLevel,
         UniqueNameBuilder uniqueNames
     )
     {
-        var parameterTypesExpression = GenerateTypeParameterExpression(
-            source,
-            methodModel,
-            uniqueNames
-        );
-
-        var returnType = methodModel.ReturnType;
         var (isAsync, @return, configureAwait) = methodModel.ReturnTypeMetadata switch
         {
-            ReturnTypeInfo.AsyncVoid => (true, "await (", ").ConfigureAwait(false)"),
-            ReturnTypeInfo.AsyncResult => (true, "return await (", ").ConfigureAwait(false)"),
+            ReturnTypeInfo.AsyncVoid => (true, "await ", ".ConfigureAwait(false)"),
+            ReturnTypeInfo.AsyncResult => (true, "return await ", ".ConfigureAwait(false)"),
             ReturnTypeInfo.Return => (false, "return ", ""),
             ReturnTypeInfo.R3Observable => (false, "return ", ""),
             ReturnTypeInfo.SystemReactiveObservable => (false, "return ", ""),
             ReturnTypeInfo.SyncVoid => (false, "", ""),
-            ReturnTypeInfo.Unsupported => throw new ArgumentOutOfRangeException(
-                nameof(methodModel.ReturnTypeMetadata),
-                methodModel.ReturnTypeMetadata,
-                "Unsupported return type."
-            ),
-            _ => throw new ArgumentOutOfRangeException(
-                nameof(methodModel.ReturnTypeMetadata),
-                methodModel.ReturnTypeMetadata,
-                "Unsupported value."
-            ),
+            ReturnTypeInfo.Unsupported => throw new ArgumentOutOfRangeException(nameof(methodModel.ReturnTypeMetadata), methodModel.ReturnTypeMetadata, "Unsupported return type."),
+            _ => throw new ArgumentOutOfRangeException(nameof(methodModel.ReturnTypeMetadata), methodModel.ReturnTypeMetadata, "Unsupported value."),
         };
 
         var isExplicit = methodModel.IsExplicitInterface || !isTopLevel;
         WriteMethodOpening(source, methodModel, isExplicit, isExplicit, isAsync);
 
-        // Build the list of args for the array
-        var argArray = methodModel
-            .Parameters.AsArray()
-            .Select(static param => $"@{param.MetadataName}")
-            .ToArray();
-
-        // List of generic arguments
-        var genericArray = methodModel
-            .Constraints.AsArray()
-            .Select(static typeParam => $"typeof({typeParam.DeclaredName})")
-            .ToArray();
-
-        var argumentsArrayString =
-            argArray.Length == 0
-                ? "global::System.Array.Empty<object>()"
-                : $"new object[] {{ {string.Join(", ", argArray)} }}";
-
-        var genericString =
-            genericArray.Length > 0
-                ? $", new global::System.Type[] {{ {string.Join(", ", genericArray)} }}"
-                : string.Empty;
-
-        // Normalize method lookup key: strip explicit interface prefix if present (e.g. IFoo.Bar -> Bar)
-        var lookupName = methodModel.Name;
-        var lastDotIndex = lookupName.LastIndexOf('.');
-        if (lastDotIndex >= 0 && lastDotIndex < lookupName.Length - 1)
+        // Generate the request body
+        var needsAsyncWrapper = methodModel.ReturnTypeMetadata is ReturnTypeInfo.R3Observable or ReturnTypeInfo.SystemReactiveObservable;
+        if (needsAsyncWrapper)
         {
-            lookupName = lookupName.Substring(lastDotIndex + 1);
+            WriteObservableBody(source, methodModel);
         }
-
-        var callExpression = methodModel.ReturnTypeMetadata switch
+        else
         {
-            ReturnTypeInfo.SyncVoid => "______func(this.Client, ______arguments);",
-            ReturnTypeInfo.SystemReactiveObservable =>
-                $"return global::Observables.RestAPI.Reactive.SystemReactiveObservableAdapter.FromAsync(async ct => await (({ToTaskReturnType(returnType)})______func(this.Client, ______arguments)).WaitAsync(ct).ConfigureAwait(false));",
-            _ => $"{@return}({returnType})______func(this.Client, ______arguments){configureAwait};",
-        };
-
-        source.WriteLine(
-            $"""
-            var ______arguments = {argumentsArrayString};
-            var ______func = requestBuilder.BuildRestResultFuncForMethod("{lookupName}", {parameterTypesExpression}{genericString} );
-
-            {callExpression}
-            """
-        );
+            WriteDirectBody(source, methodModel, @return, configureAwait);
+        }
 
         WriteMethodClosing(source);
     }
 
-    private static void WriteNonRefitMethod(SourceWriter source, MethodModel methodModel)
+    static void WriteDirectBody(SourceWriter source, MethodModel methodModel, string @return, string configureAwait)
+    {
+        var ctVar = "______ct";
+        var ctParamIndex = methodModel.CancellationTokenIndex;
+
+        // Extract cancellation token
+        if (ctParamIndex.HasValue)
+        {
+            source.WriteLine($"var {ctVar} = @{methodModel.Parameters[ctParamIndex.Value].MetadataName};");
+        }
+        else
+        {
+            source.WriteLine($"var {ctVar} = global::System.Threading.CancellationToken.None;");
+        }
+
+        WriteRequestBuilding(source, methodModel);
+
+        // Send and handle response
+        if (methodModel.ReturnTypeMetadata == ReturnTypeInfo.AsyncVoid)
+        {
+            source.WriteLine($"await global::Observables.RestAPI.RestApiBridge.SendVoidAsync(Client, ______request, _settings, {ctVar}){configureAwait};");
+        }
+        else if (methodModel.ReturnTypeMetadata == ReturnTypeInfo.SyncVoid)
+        {
+            source.WriteLine($"global::Observables.RestAPI.RestApiBridge.SendVoidAsync(Client, ______request, _settings, {ctVar}).GetAwaiter().GetResult();");
+        }
+        else if (methodModel.ReturnTypeMetadata == ReturnTypeInfo.AsyncResult)
+        {
+            source.WriteLine($"{@return}global::Observables.RestAPI.RestApiBridge.SendAsync<{methodModel.ReturnResultType}, {methodModel.DeserializedResultType}>(Client, ______request, _settings, {(methodModel.IsApiResponse ? "true" : "false")}, {(methodModel.BodyBuffered ? "true" : "false")}, {ctVar}){configureAwait};");
+        }
+        else if (methodModel.ReturnTypeMetadata == ReturnTypeInfo.Return)
+        {
+            // Synchronous return — block on the async call
+            source.WriteLine($"{@return}global::Observables.RestAPI.RestApiBridge.SendAsync<{methodModel.ReturnResultType}, {methodModel.DeserializedResultType}>(Client, ______request, _settings, {(methodModel.IsApiResponse ? "true" : "false")}, {(methodModel.BodyBuffered ? "true" : "false")}, {ctVar}).GetAwaiter().GetResult();");
+        }
+    }
+
+    static void WriteObservableBody(SourceWriter source, MethodModel methodModel)
+    {
+#if RESTAPI_R3
+        source.WriteLine($"return global::R3.Observable.FromAsync(async ______ct =>");
+#elif RESTAPI_SYSTEM_REACTIVE
+        source.WriteLine($"return global::Observables.RestAPI.Reactive.SystemReactiveObservableAdapter.FromAsync(async ______ct =>");
+#else
+        source.WriteLine($"return global::R3.Observable.FromAsync(async ______ct =>");
+#endif
+        source.WriteLine("{");
+        source.Indentation++;
+
+        WriteRequestBuilding(source, methodModel);
+
+        // Send
+        source.WriteLine($"return await global::Observables.RestAPI.RestApiBridge.SendAsync<{methodModel.ReturnResultType}, {methodModel.DeserializedResultType}>(Client, ______request, _settings, {(methodModel.IsApiResponse ? "true" : "false")}, {(methodModel.BodyBuffered ? "true" : "false")}, ______ct).ConfigureAwait(false);");
+
+        source.Indentation--;
+        source.WriteLine("});");
+    }
+
+    /// <summary>
+    /// Emits the common request-building statements shared by direct and observable method bodies:
+    /// BaseAddress check, path construction, query parameters, request message creation,
+    /// multipart setup, headers, parameter processing, and RequestUri assignment.
+    /// </summary>
+    static void WriteRequestBuilding(SourceWriter source, MethodModel methodModel)
+    {
+        // BaseAddress check
+        source.WriteLine("""if (Client.BaseAddress == null) throw new global::System.InvalidOperationException("BaseAddress must be set on the HttpClient instance");""");
+
+        // Build path
+        source.WriteLine("var ______path = " + BuildPathExpression(methodModel) + ";");
+
+        // Build query params
+        WriteQueryParameters(source, methodModel);
+
+        // Create request
+        source.WriteLine($"var ______request = new global::System.Net.Http.HttpRequestMessage {{ Method = {GetHttpMethodExpression(methodModel.HttpMethod)} }};");
+
+        // Multipart content
+        if (methodModel.IsMultipart)
+        {
+            source.WriteLine($"var ______multipart = new global::System.Net.Http.MultipartFormDataContent(\"{EscapeString(methodModel.MultipartBoundary)}\");");
+            source.WriteLine("______request.Content = ______multipart;");
+        }
+
+        // Add headers
+        WriteHeaders(source, methodModel.Headers);
+
+        // Process parameters: headers, authorize, property, body, multipart
+        WriteParameters(source, methodModel);
+
+        // Set RequestUri
+        source.WriteLine("______request.RequestUri = new global::System.Uri(______path, global::System.UriKind.Relative);");
+    }
+
+    static void WriteQueryParameters(SourceWriter source, MethodModel methodModel)
+    {
+        var hasQuery = methodModel.Parameters.Any(p => p.Kind == ParameterKind.Query);
+        if (!hasQuery)
+            return;
+
+        source.WriteLine("var ______queryParams = new global::System.Collections.Generic.List<global::System.Collections.Generic.KeyValuePair<string, string?>>();");
+        foreach (var param in methodModel.Parameters)
+        {
+            if (param.Kind == ParameterKind.Query)
+            {
+                var key = param.AliasAs ?? param.MetadataName;
+                var prefix = EscapeString(param.QueryPrefix ?? "");
+                var delimiter = EscapeString(param.QueryDelimiter);
+                var format = EscapeString(param.QueryFormat ?? "");
+                source.WriteLine($"global::Observables.RestAPI.RestApiBridge.AddQueryParameter(______queryParams, \"{EscapeString(key)}\", @{param.MetadataName}, _settings, prefix: \"{prefix}\", delimiter: \"{delimiter}\", format: \"{format}\", treatAsString: {(param.QueryTreatAsString ? "true" : "false")}, collectionFormat: {param.QueryCollectionFormat}, isCollectionFormatSpecified: {(param.QueryIsCollectionFormatSpecified ? "true" : "false")});");
+            }
+        }
+        source.WriteLine($"______path = global::Observables.RestAPI.RestApiBridge.BuildRelativePath(______path, ______queryParams, (global::System.UriFormat){methodModel.QueryUriFormat});");
+    }
+
+    static void WriteHeaders(SourceWriter source, ImmutableEquatableArray<string> headers)
+    {
+        foreach (var header in headers)
+        {
+            var colonIdx = header.IndexOf(':');
+            if (colonIdx > 0)
+            {
+                var hKey = header.Substring(0, colonIdx).Trim();
+                var hVal = colonIdx + 1 < header.Length ? header.Substring(colonIdx + 1).Trim() : "";
+                source.WriteLine($"______request.Headers.TryAddWithoutValidation(\"{EscapeString(hKey)}\", \"{EscapeString(hVal)}\");");
+            }
+        }
+    }
+
+    static void WriteParameters(SourceWriter source, MethodModel methodModel)
+    {
+        foreach (var param in methodModel.Parameters)
+        {
+            switch (param.Kind)
+            {
+                case ParameterKind.Header:
+                    var headerName = param.HeaderName ?? param.MetadataName;
+                    source.WriteLine($"______request.Headers.TryAddWithoutValidation(\"{EscapeString(headerName)}\", global::Observables.RestAPI.RestApiBridge.FormatQueryValue(@{param.MetadataName}, _settings));");
+                    break;
+                case ParameterKind.HeaderCollection:
+                    source.WriteLine($"if (@{param.MetadataName} != null) foreach (var ______hdr in @{param.MetadataName}) ______request.Headers.TryAddWithoutValidation(______hdr.Key, ______hdr.Value);");
+                    break;
+                case ParameterKind.Authorize:
+                    var scheme = param.AuthorizeScheme ?? "Bearer";
+                    source.WriteLine($"______request.Headers.TryAddWithoutValidation(\"Authorization\", \"{scheme} \" + @{param.MetadataName});");
+                    break;
+                case ParameterKind.Property:
+                    var propKey = param.PropertyKey ?? param.MetadataName;
+                    source.WriteLine("#if NET6_0_OR_GREATER");
+                    source.WriteLine($"______request.Options.Set(new global::System.Net.Http.HttpRequestOptionsKey<object>(\"{EscapeString(propKey)}\"), @{param.MetadataName}!);");
+                    source.WriteLine("#else");
+                    source.WriteLine($"______request.Properties[\"{EscapeString(propKey)}\"] = @{param.MetadataName}!;");
+                    source.WriteLine("#endif");
+                    break;
+                case ParameterKind.Body:
+                    WriteBodyContent(source, methodModel, param);
+                    break;
+                case ParameterKind.Multipart:
+                    source.WriteLine($"global::Observables.RestAPI.RestApiBridge.AddMultipartItem(______multipart, \"{EscapeString(param.MetadataName)}\", \"{EscapeString(param.MetadataName)}\", @{param.MetadataName}, _settings);");
+                    break;
+            }
+        }
+    }
+
+    static void WriteBodyContent(SourceWriter source, MethodModel methodModel, ParameterModel param)
+    {
+        var bodySerMethod = (BodySerializationMethod)methodModel.BodySerializationMethod;
+
+        if (bodySerMethod == BodySerializationMethod.UrlEncoded)
+        {
+            source.WriteLine($"______request.Content = global::Observables.RestAPI.RestApiBridge.CreateFormUrlEncodedContent(@{param.MetadataName}!, _settings);");
+        }
+        else
+        {
+            source.WriteLine($"______request.Content = global::Observables.RestAPI.RestApiBridge.SerializeBody(@{param.MetadataName}!, _settings, {methodModel.BodySerializationMethod});");
+        }
+    }
+
+    static string BuildPathExpression(MethodModel methodModel)
+    {
+        if (methodModel.PathFragments.Count == 0)
+            return "\"\"";
+
+        var parts = new List<string>();
+        foreach (var frag in methodModel.PathFragments)
+        {
+            if (frag.IsConstant)
+            {
+                parts.Add($"\"{EscapeString(frag.ConstantValue!)}\"");
+            }
+            else
+            {
+                var paramName = methodModel.Parameters[frag.ParameterIndex].MetadataName;
+                parts.Add($"global::Observables.RestAPI.RestApiBridge.FormatPathParameter(@{paramName}, _settings)");
+            }
+        }
+
+        if (parts.Count == 1) return parts[0];
+        return string.Join(" + ", parts);
+    }
+
+    static string GetHttpMethodExpression(string httpMethod) => httpMethod switch
+    {
+        "GET" => "global::System.Net.Http.HttpMethod.Get",
+        "POST" => "global::System.Net.Http.HttpMethod.Post",
+        "PUT" => "global::System.Net.Http.HttpMethod.Put",
+        "DELETE" => "global::System.Net.Http.HttpMethod.Delete",
+        "HEAD" => "global::System.Net.Http.HttpMethod.Head",
+        "PATCH" => "new global::System.Net.Http.HttpMethod(\"PATCH\")",
+        "OPTIONS" => "new global::System.Net.Http.HttpMethod(\"OPTIONS\")",
+        _ => "global::System.Net.Http.HttpMethod.Get",
+    };
+
+    static string EscapeString(string s) => s
+        .Replace("\\", "\\\\")
+        .Replace("\"", "\\\"")
+        .Replace("\n", "\\n")
+        .Replace("\r", "\\r")
+        .Replace("\t", "\\t");
+
+    static void WriteNonRefitMethod(SourceWriter source, MethodModel methodModel)
     {
         var isExplicit = methodModel.IsExplicitInterface;
         WriteMethodOpening(source, methodModel, isExplicit, isExplicit);
-
         source.WriteLine(
             @"throw new global::System.NotImplementedException(""Either this method has no Rest API HTTP method attribute or you've used something other than a string literal for the 'path' argument."");"
         );
-
         WriteMethodClosing(source);
     }
 
-    private static void WriteDisposableMethod(SourceWriter source)
+    static void WriteDisposableMethod(SourceWriter source)
     {
         source.WriteLine(
             """
-
             /// <inheritdoc />
             void global::System.IDisposable.Dispose()
             {
@@ -292,38 +414,7 @@ internal static class Emitter
         );
     }
 
-    private static string GenerateTypeParameterExpression(
-        SourceWriter source,
-        MethodModel methodModel,
-        UniqueNameBuilder uniqueNames
-    )
-    {
-        // use Array.Empty if method has no parameters.
-        if (methodModel.Parameters.Count == 0)
-            return "global::System.Array.Empty<global::System.Type>()";
-
-        // if one of the parameters is/contains a type parameter then it cannot be cached as it will change type between calls.
-        if (methodModel.Parameters.Any(x => x.IsGeneric))
-        {
-            var typeEnumerable = methodModel.Parameters.Select(param => $"typeof({param.Type})");
-            return $"new global::System.Type[] {{ {string.Join(", ", typeEnumerable)} }}";
-        }
-
-        // find a name and generate field declaration.
-        var typeParameterFieldName = uniqueNames.New(TypeParameterVariableName);
-        var types = string.Join(", ", methodModel.Parameters.Select(x => $"typeof({x.Type})"));
-
-        source.WriteLine(
-            $$"""
-
-            private static readonly global::System.Type[] {{typeParameterFieldName}} = new global::System.Type[] {{{types}} };
-            """
-        );
-
-        return typeParameterFieldName;
-    }
-
-    private static void WriteMethodOpening(
+    static void WriteMethodOpening(
         SourceWriter source,
         MethodModel methodModel,
         bool isDerivedExplicitImpl,
@@ -344,9 +435,7 @@ internal static class Emitter
         {
             var ct = methodModel.ContainingType;
             if (!ct.StartsWith("global::"))
-            {
                 ct = "global::" + ct;
-            }
             builder.Append(@$"{ct}.");
         }
         builder.Append(@$"{methodModel.DeclaredMethod}(");
@@ -359,7 +448,6 @@ internal static class Emitter
                 var annotation = param.Annotation;
                 list.Add($@"{param.Type}{(annotation ? '?' : string.Empty)} @{param.MetadataName}");
             }
-
             builder.Append(string.Join(", ", list));
         }
 
@@ -374,90 +462,38 @@ internal static class Emitter
         source.Indentation++;
     }
 
-    private static void WriteMethodClosing(SourceWriter source)
+    static void WriteMethodClosing(SourceWriter source)
     {
         source.Indentation--;
         source.WriteLine("}");
     }
 
-    private static void GenerateConstraints(
+    static void GenerateConstraints(
         SourceWriter writer,
         ImmutableEquatableArray<TypeConstraint> typeParameters,
         bool isOverrideOrExplicitImplementation
     )
     {
-        // Need to loop over the constraints and create them
         foreach (var typeParameter in typeParameters)
-        {
-            WriteConstraintsForTypeParameter(
-                writer,
-                typeParameter,
-                isOverrideOrExplicitImplementation
-            );
-        }
+            WriteConstraintsForTypeParameter(writer, typeParameter, isOverrideOrExplicitImplementation);
     }
 
-    private static void WriteConstraintsForTypeParameter(
+    static void WriteConstraintsForTypeParameter(
         SourceWriter source,
         TypeConstraint typeParameter,
         bool isOverrideOrExplicitImplementation
     )
     {
-        // Explicit interface implementations and overrides can only have class or struct constraints
-
         var parameters = new List<string>();
         var knownConstraints = typeParameter.KnownTypeConstraint;
-        if (knownConstraints.HasFlag(KnownTypeConstraint.Class))
-        {
-            parameters.Add("class");
-        }
-        if (
-            knownConstraints.HasFlag(KnownTypeConstraint.Unmanaged)
-            && !isOverrideOrExplicitImplementation
-        )
-        {
-            parameters.Add("unmanaged");
-        }
-        if (knownConstraints.HasFlag(KnownTypeConstraint.Struct))
-        {
-            parameters.Add("struct");
-        }
-        if (
-            knownConstraints.HasFlag(KnownTypeConstraint.NotNull)
-            && !isOverrideOrExplicitImplementation
-        )
-        {
-            parameters.Add("notnull");
-        }
-        if (!isOverrideOrExplicitImplementation)
-        {
-            parameters.AddRange(typeParameter.Constraints);
-        }
-
-        // new constraint has to be last
-        if (
-            knownConstraints.HasFlag(KnownTypeConstraint.New) && !isOverrideOrExplicitImplementation
-        )
-        {
-            parameters.Add("new()");
-        }
+        if (knownConstraints.HasFlag(KnownTypeConstraint.Class)) parameters.Add("class");
+        if (knownConstraints.HasFlag(KnownTypeConstraint.Unmanaged) && !isOverrideOrExplicitImplementation) parameters.Add("unmanaged");
+        if (knownConstraints.HasFlag(KnownTypeConstraint.Struct)) parameters.Add("struct");
+        if (knownConstraints.HasFlag(KnownTypeConstraint.NotNull) && !isOverrideOrExplicitImplementation) parameters.Add("notnull");
+        if (!isOverrideOrExplicitImplementation) parameters.AddRange(typeParameter.Constraints);
+        if (knownConstraints.HasFlag(KnownTypeConstraint.New) && !isOverrideOrExplicitImplementation) parameters.Add("new()");
 
         if (parameters.Count > 0)
-        {
             source.WriteLine($"where {typeParameter.TypeName} : {string.Join(", ", parameters)}");
-        }
-    }
-
-    static string ToTaskReturnType(string observableReturnType)
-    {
-        var start = observableReturnType.IndexOf('<');
-        var end = observableReturnType.LastIndexOf('>');
-        if (start < 0 || end <= start)
-        {
-            return "global::System.Threading.Tasks.Task";
-        }
-
-        var inner = observableReturnType.Substring(start + 1, end - start - 1);
-        return $"global::System.Threading.Tasks.Task<{inner}>";
     }
 }

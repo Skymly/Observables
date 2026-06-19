@@ -1,7 +1,6 @@
 namespace Observables.RestAPI.Generators;
 
 internal sealed record InterfaceModel(
-    string PreserveAttributeDisplayName,
     string FileName,
     string ClassName,
     string Ns,

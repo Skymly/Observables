@@ -136,9 +136,6 @@ Observables.RestAPI.IHttpContentSerializer
 Observables.RestAPI.IHttpContentSerializer.FromHttpContentAsync<T>(System.Net.Http.HttpContent! content, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<T?>!
 Observables.RestAPI.IHttpContentSerializer.GetFieldNameForProperty(System.Reflection.PropertyInfo! propertyInfo) -> string?
 Observables.RestAPI.IHttpContentSerializer.ToHttpContent<T>(T item) -> System.Net.Http.HttpContent!
-Observables.RestAPI.IRequestBuilder
-Observables.RestAPI.IRequestBuilder.BuildRestResultFuncForMethod(string! methodName, System.Type![]? parameterTypes = null, System.Type![]? genericArgumentTypes = null) -> System.Func<System.Net.Http.HttpClient!, object![]!, object?>!
-Observables.RestAPI.IRequestBuilder<T>
 Observables.RestAPI.IUrlParameterFormatter
 Observables.RestAPI.IUrlParameterFormatter.Format(object? value, System.Reflection.ICustomAttributeProvider! attributeProvider, System.Type! type) -> string?
 Observables.RestAPI.IUrlParameterKeyFormatter
@@ -162,9 +159,6 @@ Observables.RestAPI.ObjectToInferredTypesConverter
 Observables.RestAPI.ObjectToInferredTypesConverter.ObjectToInferredTypesConverter() -> void
 Observables.RestAPI.OptionsAttribute
 Observables.RestAPI.OptionsAttribute.OptionsAttribute(string! path) -> void
-Observables.RestAPI.ParameterType
-Observables.RestAPI.ParameterType.Normal = 0 -> Observables.RestAPI.ParameterType
-Observables.RestAPI.ParameterType.RoundTripping = 1 -> Observables.RestAPI.ParameterType
 Observables.RestAPI.PatchAttribute
 Observables.RestAPI.PatchAttribute.PatchAttribute(string! path) -> void
 Observables.RestAPI.PostAttribute
@@ -211,7 +205,6 @@ Observables.RestAPI.QueryAttribute.TreatAsString.set -> void
 Observables.RestAPI.QueryUriFormatAttribute
 Observables.RestAPI.QueryUriFormatAttribute.QueryUriFormatAttribute(System.UriFormat uriFormat) -> void
 Observables.RestAPI.QueryUriFormatAttribute.UriFormat.get -> System.UriFormat
-Observables.RestAPI.RequestBuilder
 Observables.RestAPI.RestApiSettings
 Observables.RestAPI.RestApiSettings.AuthorizationHeaderValueGetter.get -> System.Func<System.Net.Http.HttpRequestMessage!, System.Threading.CancellationToken, System.Threading.Tasks.Task<string!>!>?
 Observables.RestAPI.RestApiSettings.AuthorizationHeaderValueGetter.set -> void
@@ -242,37 +235,6 @@ Observables.RestAPI.RestApiSettings.Version.get -> System.Version!
 Observables.RestAPI.RestApiSettings.Version.set -> void
 Observables.RestAPI.RestApiSettings.VersionPolicy.get -> System.Net.Http.HttpVersionPolicy
 Observables.RestAPI.RestApiSettings.VersionPolicy.set -> void
-Observables.RestAPI.RestMethodInfo
-Observables.RestAPI.RestMethodInfo.HostingType.get -> System.Type!
-Observables.RestAPI.RestMethodInfo.HostingType.init -> void
-Observables.RestAPI.RestMethodInfo.MethodInfo.get -> System.Reflection.MethodInfo!
-Observables.RestAPI.RestMethodInfo.MethodInfo.init -> void
-Observables.RestAPI.RestMethodInfo.Name.get -> string!
-Observables.RestAPI.RestMethodInfo.Name.init -> void
-Observables.RestAPI.RestMethodInfo.RelativePath.get -> string!
-Observables.RestAPI.RestMethodInfo.RelativePath.init -> void
-Observables.RestAPI.RestMethodInfo.RestMethodInfo(string! Name, System.Type! HostingType, System.Reflection.MethodInfo! MethodInfo, string! RelativePath, System.Type! ReturnType) -> void
-Observables.RestAPI.RestMethodInfo.ReturnType.get -> System.Type!
-Observables.RestAPI.RestMethodInfo.ReturnType.init -> void
-Observables.RestAPI.RestMethodParameterInfo
-Observables.RestAPI.RestMethodParameterInfo.IsObjectPropertyParameter.get -> bool
-Observables.RestAPI.RestMethodParameterInfo.IsObjectPropertyParameter.set -> void
-Observables.RestAPI.RestMethodParameterInfo.Name.get -> string?
-Observables.RestAPI.RestMethodParameterInfo.Name.set -> void
-Observables.RestAPI.RestMethodParameterInfo.ParameterInfo.get -> System.Reflection.ParameterInfo!
-Observables.RestAPI.RestMethodParameterInfo.ParameterInfo.set -> void
-Observables.RestAPI.RestMethodParameterInfo.ParameterProperties.get -> System.Collections.Generic.List<Observables.RestAPI.RestMethodParameterProperty!>!
-Observables.RestAPI.RestMethodParameterInfo.ParameterProperties.set -> void
-Observables.RestAPI.RestMethodParameterInfo.RestMethodParameterInfo(bool isObjectPropertyParameter, System.Reflection.ParameterInfo! parameterInfo) -> void
-Observables.RestAPI.RestMethodParameterInfo.RestMethodParameterInfo(string! name, System.Reflection.ParameterInfo! parameterInfo) -> void
-Observables.RestAPI.RestMethodParameterInfo.Type.get -> Observables.RestAPI.ParameterType
-Observables.RestAPI.RestMethodParameterInfo.Type.set -> void
-Observables.RestAPI.RestMethodParameterProperty
-Observables.RestAPI.RestMethodParameterProperty.Name.get -> string!
-Observables.RestAPI.RestMethodParameterProperty.Name.set -> void
-Observables.RestAPI.RestMethodParameterProperty.PropertyInfo.get -> System.Reflection.PropertyInfo!
-Observables.RestAPI.RestMethodParameterProperty.PropertyInfo.set -> void
-Observables.RestAPI.RestMethodParameterProperty.RestMethodParameterProperty(string! name, System.Reflection.PropertyInfo! propertyInfo) -> void
 Observables.RestAPI.RestService
 Observables.RestAPI.StreamPart
 Observables.RestAPI.StreamPart.StreamPart(System.IO.Stream! value, string! fileName, string? contentType = null, string? name = null) -> void
@@ -301,23 +263,15 @@ override Observables.RestAPI.StreamPart.CreateContent() -> System.Net.Http.HttpC
 static Observables.RestAPI.ApiException.Create(string! exceptionMessage, System.Net.Http.HttpRequestMessage! message, System.Net.Http.HttpMethod! httpMethod, System.Net.Http.HttpResponseMessage! response, Observables.RestAPI.RestApiSettings! RestApiSettings, System.Exception? innerException = null) -> System.Threading.Tasks.Task<Observables.RestAPI.ApiException!>!
 static Observables.RestAPI.ApiException.Create(System.Net.Http.HttpRequestMessage! message, System.Net.Http.HttpMethod! httpMethod, System.Net.Http.HttpResponseMessage! response, Observables.RestAPI.RestApiSettings! RestApiSettings, System.Exception? innerException = null) -> System.Threading.Tasks.Task<Observables.RestAPI.ApiException!>!
 static Observables.RestAPI.HttpRequestMessageOptions.InterfaceType.get -> string!
-static Observables.RestAPI.HttpRequestMessageOptions.RestMethodInfo.get -> string!
-static Observables.RestAPI.RequestBuilder.ForType(System.Type! refitInterfaceType, Observables.RestAPI.RestApiSettings? settings) -> Observables.RestAPI.IRequestBuilder!
-static Observables.RestAPI.RequestBuilder.ForType(System.Type! refitInterfaceType) -> Observables.RestAPI.IRequestBuilder!
-static Observables.RestAPI.RequestBuilder.ForType<T>() -> Observables.RestAPI.IRequestBuilder<T>!
-static Observables.RestAPI.RequestBuilder.ForType<T>(Observables.RestAPI.RestApiSettings? settings) -> Observables.RestAPI.IRequestBuilder<T>!
 static Observables.RestAPI.RestService.CreateHttpClient(string! hostUrl, Observables.RestAPI.RestApiSettings? settings) -> System.Net.Http.HttpClient!
 static Observables.RestAPI.RestService.For(System.Type! refitInterfaceType, string! hostUrl, Observables.RestAPI.RestApiSettings? settings) -> object!
 static Observables.RestAPI.RestService.For(System.Type! refitInterfaceType, string! hostUrl) -> object!
-static Observables.RestAPI.RestService.For(System.Type! refitInterfaceType, System.Net.Http.HttpClient! client, Observables.RestAPI.IRequestBuilder! builder) -> object!
 static Observables.RestAPI.RestService.For(System.Type! refitInterfaceType, System.Net.Http.HttpClient! client, Observables.RestAPI.RestApiSettings? settings) -> object!
 static Observables.RestAPI.RestService.For(System.Type! refitInterfaceType, System.Net.Http.HttpClient! client) -> object!
 static Observables.RestAPI.RestService.For<T>(string! hostUrl, Observables.RestAPI.RestApiSettings? settings) -> T
 static Observables.RestAPI.RestService.For<T>(string! hostUrl) -> T
-static Observables.RestAPI.RestService.For<T>(System.Net.Http.HttpClient! client, Observables.RestAPI.IRequestBuilder<T>! builder) -> T
 static Observables.RestAPI.RestService.For<T>(System.Net.Http.HttpClient! client, Observables.RestAPI.RestApiSettings? settings) -> T
 static Observables.RestAPI.RestService.For<T>(System.Net.Http.HttpClient! client) -> T
-static Observables.RestAPI.RestService.RegisterGeneratedFactory(System.Type! refitInterfaceType, System.Func<System.Net.Http.HttpClient!, Observables.RestAPI.IRequestBuilder!, object!>! factory) -> void
 static Observables.RestAPI.SystemTextJsonContentSerializer.GetDefaultJsonSerializerOptions() -> System.Text.Json.JsonSerializerOptions!
 static Observables.RestAPI.ValidationApiException.Create(Observables.RestAPI.ApiException! exception) -> Observables.RestAPI.ValidationApiException!
 virtual Observables.RestAPI.DefaultFormUrlEncodedParameterFormatter.Format(object? parameterValue, string? formatString) -> string?

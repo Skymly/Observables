@@ -9,15 +9,6 @@ namespace Observables.RestAPI.Generators;
 
 internal static class Parser
 {
-    /// <summary>
-    /// Generates the interface stubs.
-    /// </summary>
-    /// <param name="compilation">The compilation.</param>
-    /// <param name="RestApiInternalNamespace">The refit internal namespace.</param>
-    /// <param name="candidateMethods">The candidate methods.</param>
-    /// <param name="candidateInterfaces">The candidate interfaces.</param>
-    /// <param name="cancellationToken">The cancellation token.</param>
-    /// <returns></returns>
     public static (
         List<Diagnostic> diagnostics,
         ContextGenerationModel contextGenerationSpec
@@ -35,431 +26,195 @@ internal static class Parser
         var wellKnownTypes = new WellKnownTypes(compilation);
 
         RestApiInternalNamespace = $"{RestApiInternalNamespace ?? string.Empty}RestApiInternalGenerated";
-
-        // Remove - as they are valid in csproj, but invalid in a namespace
         RestApiInternalNamespace = RestApiInternalNamespace.Replace('-', '_').Replace('@', '_');
 
-        // we're going to create a new compilation that contains the attribute.
-        // TODO: we should allow source generators to provide source during initialize, so that this step isn't required.
         var options = (CSharpParseOptions)compilation.SyntaxTrees[0].Options;
 
         var disposableInterfaceSymbol = wellKnownTypes.Get(typeof(IDisposable));
-        var httpMethodBaseAttributeSymbol = wellKnownTypes.TryGet(
-            "Observables.RestAPI.HttpMethodAttribute"
-        );
+        var httpMethodBaseAttributeSymbol = wellKnownTypes.TryGet("Observables.RestAPI.HttpMethodAttribute");
 
         var diagnostics = new List<Diagnostic>();
         if (httpMethodBaseAttributeSymbol == null)
         {
             diagnostics.Add(Diagnostic.Create(DiagnosticDescriptors.RestApiCoreNotReferenced, null));
-            return (
-                diagnostics,
-                new ContextGenerationModel(
-                    RestApiInternalNamespace,
-                    string.Empty,
-                    ImmutableEquatableArray.Empty<InterfaceModel>()
-                )
-            );
+            return (diagnostics, new ContextGenerationModel(RestApiInternalNamespace, ImmutableEquatableArray.Empty<InterfaceModel>()));
         }
 
-        // Check the candidates and keep the ones we're actually interested in
-
-#pragma warning disable RS1024 // Compare symbols correctly
-        var interfaceToNullableEnabledMap = new Dictionary<INamedTypeSymbol, bool>(
-            SymbolEqualityComparer.Default
-        );
-#pragma warning restore RS1024 // Compare symbols correctly
+#pragma warning disable RS1024
+        var interfaceToNullableEnabledMap = new Dictionary<INamedTypeSymbol, bool>(SymbolEqualityComparer.Default);
+#pragma warning restore RS1024
         var methodSymbols = new List<IMethodSymbol>();
         foreach (var group in candidateMethods.GroupBy(m => m.SyntaxTree))
         {
             var model = compilation.GetSemanticModel(group.Key);
             foreach (var method in group)
             {
-                // Get the symbol being declared by the method
-                var methodSymbol = model.GetDeclaredSymbol(
-                    method,
-                    cancellationToken: cancellationToken
-                );
+                var methodSymbol = model.GetDeclaredSymbol(method, cancellationToken: cancellationToken);
                 if (!IsRefitMethod(methodSymbol, httpMethodBaseAttributeSymbol))
                     continue;
 
-                var isAnnotated =
-                    compilation.Options.NullableContextOptions == NullableContextOptions.Enable
+                var isAnnotated = compilation.Options.NullableContextOptions == NullableContextOptions.Enable
                     || model.GetNullableContext(method.SpanStart) == NullableContext.Enabled;
                 interfaceToNullableEnabledMap[methodSymbol!.ContainingType] = isAnnotated;
-
                 methodSymbols.Add(methodSymbol!);
             }
         }
 
         var interfaces = methodSymbols
-            .GroupBy<IMethodSymbol, INamedTypeSymbol>(
-                m => m.ContainingType,
-                SymbolEqualityComparer.Default
-            )
-            .ToDictionary<
-                IGrouping<INamedTypeSymbol, IMethodSymbol>,
-                INamedTypeSymbol,
-                List<IMethodSymbol>
-            >(g => g.Key, v => [.. v], SymbolEqualityComparer.Default);
+            .GroupBy<IMethodSymbol, INamedTypeSymbol>(m => m.ContainingType, SymbolEqualityComparer.Default)
+            .ToDictionary<IGrouping<INamedTypeSymbol, IMethodSymbol>, INamedTypeSymbol, List<IMethodSymbol>>(
+                g => g.Key, v => [.. v], SymbolEqualityComparer.Default);
 
-        // Look through the candidate interfaces
-        var interfaceSymbols = new List<INamedTypeSymbol>();
         foreach (var group in candidateInterfaces.GroupBy(i => i.SyntaxTree))
         {
             var model = compilation.GetSemanticModel(group.Key);
             foreach (var iface in group)
             {
-                // get the symbol belonging to the interface
-                var ifaceSymbol = model.GetDeclaredSymbol(
-                    iface,
-                    cancellationToken: cancellationToken
-                );
-
-                // See if we already know about it, might be a dup
+                var ifaceSymbol = model.GetDeclaredSymbol(iface, cancellationToken: cancellationToken);
                 if (ifaceSymbol is null || interfaces.ContainsKey(ifaceSymbol))
                     continue;
 
-                // The interface has no refit methods, but its base interfaces might
                 var hasDerivedRefit = ifaceSymbol
                     .AllInterfaces.SelectMany(i => i.GetMembers().OfType<IMethodSymbol>())
                     .Any(m => IsRefitMethod(m, httpMethodBaseAttributeSymbol));
 
                 if (hasDerivedRefit)
                 {
-                    // Add the interface to the generation list with an empty set of methods
-                    // The logic already looks for base refit methods
                     interfaces.Add(ifaceSymbol, []);
-                    var isAnnotated =
-                        model.GetNullableContext(iface.SpanStart) == NullableContext.Enabled;
-
-                    interfaceToNullableEnabledMap[ifaceSymbol] = isAnnotated;
+                    interfaceToNullableEnabledMap[ifaceSymbol] = model.GetNullableContext(iface.SpanStart) == NullableContext.Enabled;
                 }
             }
         }
 
         cancellationToken.ThrowIfCancellationRequested();
 
-        // Bail out if there aren't any interfaces to generate code for. This may be the case with transitives
         if (interfaces.Count == 0)
-            return (
-                diagnostics,
-                new ContextGenerationModel(
-                    RestApiInternalNamespace,
-                    string.Empty,
-                    ImmutableEquatableArray.Empty<InterfaceModel>()
-                )
-            );
+            return (diagnostics, new ContextGenerationModel(RestApiInternalNamespace, ImmutableEquatableArray.Empty<InterfaceModel>()));
 
         var supportsNullable = options.LanguageVersion >= LanguageVersion.CSharp8;
-
         var keyCount = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
-
-        var attributeText =
-            @$"
-#pragma warning disable
-namespace {RestApiInternalNamespace}
-{{
-    [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
-    [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-    [global::System.AttributeUsage (global::System.AttributeTargets.Class | global::System.AttributeTargets.Struct | global::System.AttributeTargets.Enum | global::System.AttributeTargets.Constructor | global::System.AttributeTargets.Method | global::System.AttributeTargets.Property | global::System.AttributeTargets.Field | global::System.AttributeTargets.Event | global::System.AttributeTargets.Interface | global::System.AttributeTargets.Delegate)]
-    sealed class PreserveAttribute : global::System.Attribute
-    {{
-        //
-        // Fields
-        //
-        public bool AllMembers;
-
-        public bool Conditional;
-    }}
-}}
-#pragma warning restore
-";
-
-        // TODO: Delete?
-        // Is it necessary to add the attributes to the compilation now, does it affect the users ide experience?
-        // Is it needed in order to get the preserve attribute display name.
-        // Will the compilation ever change this.
-        compilation = compilation.AddSyntaxTrees(
-            CSharpSyntaxTree.ParseText(
-                SourceText.From(attributeText, Encoding.UTF8),
-                options,
-                cancellationToken: cancellationToken
-            )
-        );
-
-        // get the newly bound attribute
-        var preserveAttributeSymbol = compilation.GetTypeByMetadataName(
-            $"{RestApiInternalNamespace}.PreserveAttribute"
-        )!;
-
-        var preserveAttributeDisplayName = preserveAttributeSymbol.ToDisplayString(
-            SymbolDisplayFormat.FullyQualifiedFormat
-        );
-
         var interfaceModels = new List<InterfaceModel>();
-        // group the fields by interface and generate the source
+
         foreach (var group in interfaces)
         {
             cancellationToken.ThrowIfCancellationRequested();
 
-            // each group is keyed by the Interface INamedTypeSymbol and contains the members
-            // with a refit attribute on them. Types may contain other members, without the attribute, which we'll
-            // need to check for and error out on
             var keyName = group.Key.Name;
             int value;
             while (keyCount.TryGetValue(keyName, out value))
-            {
                 keyName = $"{keyName}{++value}";
-            }
             keyCount[keyName] = value;
             var fileName = $"{keyName}.g.cs";
 
-            var interfaceModel = ProcessInterface(
-                fileName,
-                diagnostics,
-                group.Key,
-                group.Value,
-                preserveAttributeDisplayName,
-                disposableInterfaceSymbol,
-                httpMethodBaseAttributeSymbol,
-                supportsNullable,
-                interfaceToNullableEnabledMap[group.Key],
-                wellKnownTypes
-            );
-
-            interfaceModels.Add(interfaceModel);
+            interfaceModels.Add(ProcessInterface(
+                fileName, diagnostics, group.Key, group.Value,
+                disposableInterfaceSymbol, httpMethodBaseAttributeSymbol,
+                supportsNullable, interfaceToNullableEnabledMap[group.Key], wellKnownTypes));
         }
 
-        var contextGenerationSpec = new ContextGenerationModel(
-            RestApiInternalNamespace,
-            preserveAttributeDisplayName,
-            interfaceModels.ToImmutableEquatableArray()
-        );
-        return (diagnostics, contextGenerationSpec);
+        return (diagnostics, new ContextGenerationModel(RestApiInternalNamespace, interfaceModels.ToImmutableEquatableArray()));
     }
 
     static InterfaceModel ProcessInterface(
-        string fileName,
-        List<Diagnostic> diagnostics,
-        INamedTypeSymbol interfaceSymbol,
-        List<IMethodSymbol> refitMethods,
-        string preserveAttributeDisplayName,
-        ISymbol disposableInterfaceSymbol,
-        INamedTypeSymbol httpMethodBaseAttributeSymbol,
-        bool supportsNullable,
-        bool nullableEnabled,
-        WellKnownTypes wellKnownTypes
-    )
+        string fileName, List<Diagnostic> diagnostics, INamedTypeSymbol interfaceSymbol,
+        List<IMethodSymbol> refitMethods, ISymbol disposableInterfaceSymbol,
+        INamedTypeSymbol httpMethodBaseAttributeSymbol, bool supportsNullable, bool nullableEnabled,
+        WellKnownTypes wellKnownTypes)
     {
-        // Get the class name with the type parameters, then remove the namespace
         var className = interfaceSymbol.ToDisplayString();
         var lastDot = className.LastIndexOf('.');
-        if (lastDot > 0)
-        {
-            className = className.Substring(lastDot + 1);
-        }
+        if (lastDot > 0) className = className.Substring(lastDot + 1);
         var classDeclaration = $"{interfaceSymbol.ContainingType?.Name}{className}";
-
-        // Get the class name itself
         var classSuffix = $"{interfaceSymbol.ContainingType?.Name}{interfaceSymbol.Name}";
         var ns = interfaceSymbol.ContainingNamespace?.ToDisplayString();
-
-        // if it's the global namespace, our lookup rules say it should be the same as the class name
-        if (interfaceSymbol.ContainingNamespace is { IsGlobalNamespace: true })
-        {
-            ns = string.Empty;
-        }
-
-        // Remove dots
+        if (interfaceSymbol.ContainingNamespace is { IsGlobalNamespace: true }) ns = string.Empty;
         ns = ns!.Replace(".", "");
-        var interfaceDisplayName = interfaceSymbol.ToDisplayString(
-            SymbolDisplayFormat.FullyQualifiedFormat
-        );
+        var interfaceDisplayName = interfaceSymbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
 
-        // Get any other methods on the refit interfaces. We'll need to generate something for them and warn
-        var nonRefitMethods = interfaceSymbol
-            .GetMembers()
-            .OfType<IMethodSymbol>()
-            .Except(refitMethods, SymbolEqualityComparer.Default)
-            .Cast<IMethodSymbol>()
-            .ToArray();
+        var nonRefitMethods = interfaceSymbol.GetMembers().OfType<IMethodSymbol>()
+            .Except(refitMethods, SymbolEqualityComparer.Default).Cast<IMethodSymbol>().ToArray();
 
-        // get methods for all inherited
-        var derivedMethods = interfaceSymbol
-            .AllInterfaces.SelectMany(i => i.GetMembers().OfType<IMethodSymbol>())
-            .ToList();
+        var derivedMethods = interfaceSymbol.AllInterfaces
+            .SelectMany(i => i.GetMembers().OfType<IMethodSymbol>()).ToList();
 
-        // Look for disposable
-        var disposeMethod = derivedMethods.Find(
-            m =>
-                m.ContainingType?.Equals(disposableInterfaceSymbol, SymbolEqualityComparer.Default)
-                == true
-        );
-        if (disposeMethod != null)
-        {
-            //remove it from the derived methods list so we don't process it with the rest
-            derivedMethods.Remove(disposeMethod);
-        }
+        var disposeMethod = derivedMethods.Find(m =>
+            m.ContainingType?.Equals(disposableInterfaceSymbol, SymbolEqualityComparer.Default) == true);
+        if (disposeMethod != null) derivedMethods.Remove(disposeMethod);
 
-        // Pull out the refit methods from the derived types
         var derivedRefitMethods = derivedMethods
-            .Where(m => IsRefitMethod(m, httpMethodBaseAttributeSymbol))
-            .ToArray();
+            .Where(m => IsRefitMethod(m, httpMethodBaseAttributeSymbol)).ToArray();
         var derivedNonRefitMethods = derivedMethods
-            .Except(derivedRefitMethods, SymbolEqualityComparer.Default)
-            .Cast<IMethodSymbol>()
-            .ToArray();
+            .Except(derivedRefitMethods, SymbolEqualityComparer.Default).Cast<IMethodSymbol>().ToArray();
 
-        // Exclude base interface methods that the current interface explicitly implements.
-        // This avoids false positive OBS3001 diagnostics for cases like:
-        // interface IFoo { int Bar(); } and interface IRemoteFoo : IFoo { [Get] abstract int IFoo.Bar(); }
         if (derivedNonRefitMethods.Length > 0)
         {
-            var explicitlyImplementedBaseMethods = new HashSet<IMethodSymbol>(
-                SymbolEqualityComparer.Default
-            );
-
+            var explicitImpls = new HashSet<IMethodSymbol>(SymbolEqualityComparer.Default);
             foreach (var member in interfaceSymbol.GetMembers().OfType<IMethodSymbol>())
-            {
-                foreach (var baseMethod in member.ExplicitInterfaceImplementations)
-                {
-                    // Use OriginalDefinition for robustness when comparing generic methods
-                    explicitlyImplementedBaseMethods.Add(
-                        baseMethod.OriginalDefinition ?? baseMethod
-                    );
-                }
-            }
-
-            if (explicitlyImplementedBaseMethods.Count > 0)
-            {
+                foreach (var bm in member.ExplicitInterfaceImplementations)
+                    explicitImpls.Add(bm.OriginalDefinition ?? bm);
+            if (explicitImpls.Count > 0)
                 derivedNonRefitMethods = derivedNonRefitMethods
-                    .Where(m => !explicitlyImplementedBaseMethods.Contains(m.OriginalDefinition ?? m))
-                    .ToArray();
-            }
+                    .Where(m => !explicitImpls.Contains(m.OriginalDefinition ?? m)).ToArray();
         }
 
-        var memberNames = interfaceSymbol
-            .GetMembers()
-            .Select(x => x.Name)
-            .Distinct()
-            .ToImmutableEquatableArray();
-
-        // Handle Refit Methods
+        var memberNames = interfaceSymbol.GetMembers().Select(x => x.Name).Distinct().ToImmutableEquatableArray();
         var refitMethodsArray = refitMethods
             .Select(m => ParseMethod(m, true, httpMethodBaseAttributeSymbol, wellKnownTypes, diagnostics))
             .ToImmutableEquatableArray();
-
-        // Only include refit methods discovered on base interfaces here.
-        // Do NOT duplicate the current interface's refit methods.
         var derivedRefitMethodsArray = derivedRefitMethods
             .Select(m => ParseMethod(m, false, httpMethodBaseAttributeSymbol, wellKnownTypes, diagnostics))
             .ToImmutableEquatableArray();
 
-        // Handle non-refit Methods that aren't static or properties or have a method body
         var nonRefitMethodModelList = new List<MethodModel>();
         foreach (var method in nonRefitMethods)
         {
-            if (
-                method.IsStatic
-                || method.MethodKind == MethodKind.PropertyGet
-                || method.MethodKind == MethodKind.PropertySet
-                || !method.IsAbstract
-            )
-                continue;
-
+            if (method.IsStatic || method.MethodKind == MethodKind.PropertyGet
+                || method.MethodKind == MethodKind.PropertySet || !method.IsAbstract) continue;
             nonRefitMethodModelList.Add(ParseNonRefitMethod(method, diagnostics, isDerived: false));
         }
         foreach (var method in derivedNonRefitMethods)
         {
-            if (
-                method.IsStatic
-                || method.MethodKind == MethodKind.PropertyGet
-                || method.MethodKind == MethodKind.PropertySet
-                || !method.IsAbstract
-            )
-                continue;
-
-            // Derived non-refit methods should be emitted as explicit interface implementations
+            if (method.IsStatic || method.MethodKind == MethodKind.PropertyGet
+                || method.MethodKind == MethodKind.PropertySet || !method.IsAbstract) continue;
             nonRefitMethodModelList.Add(ParseNonRefitMethod(method, diagnostics, isDerived: true));
         }
 
-        var nonRefitMethodModels = nonRefitMethodModelList.ToImmutableEquatableArray();
-
         var constraints = GenerateConstraints(interfaceSymbol.TypeParameters, false);
-        var hasDispose = disposeMethod != null;
         var nullability = (supportsNullable, nullableEnabled) switch
         {
             (false, _) => Nullability.None,
             (true, true) => Nullability.Enabled,
             (true, false) => Nullability.Disabled,
         };
-        return new InterfaceModel(
-            preserveAttributeDisplayName,
-            fileName,
-            className,
-            ns,
-            classDeclaration,
-            interfaceDisplayName,
-            classSuffix,
-            constraints,
-            memberNames,
-            nonRefitMethodModels,
-            refitMethodsArray,
-            derivedRefitMethodsArray,
-            nullability,
-            hasDispose
-        );
+        return new InterfaceModel(fileName, className, ns, classDeclaration, interfaceDisplayName,
+            classSuffix, constraints, memberNames, nonRefitMethodModelList.ToImmutableEquatableArray(),
+            refitMethodsArray, derivedRefitMethodsArray, nullability, disposeMethod != null);
     }
 
-    private static MethodModel ParseNonRefitMethod(
-        IMethodSymbol methodSymbol,
-        List<Diagnostic> diagnostics,
-        bool isDerived
-    )
+    static MethodModel ParseNonRefitMethod(IMethodSymbol methodSymbol, List<Diagnostic> diagnostics, bool isDerived)
     {
-        // report invalid error diagnostic
         foreach (var location in methodSymbol.Locations)
         {
-            var diagnostic = Diagnostic.Create(
-                DiagnosticDescriptors.InvalidRestApiMember,
-                location,
-                methodSymbol.ContainingType.Name,
-                methodSymbol.Name
-            );
-            diagnostics.Add(diagnostic);
+            diagnostics.Add(Diagnostic.Create(DiagnosticDescriptors.InvalidRestApiMember, location,
+                methodSymbol.ContainingType.Name, methodSymbol.Name));
         }
 
-        // Parse like a regular method, but force explicit implementation for derived base-interface methods
         var explicitImpl = methodSymbol.ExplicitInterfaceImplementations.FirstOrDefault();
         var containingTypeSymbol = explicitImpl?.ContainingType ?? methodSymbol.ContainingType;
-        var containingType = containingTypeSymbol.ToDisplayString(
-            SymbolDisplayFormat.FullyQualifiedFormat
-        );
+        var containingType = containingTypeSymbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
 
-        // Method name should be simple name only (never include interface qualifier)
         var declaredBaseName = methodSymbol.Name;
         var lastDot = declaredBaseName.LastIndexOf('.');
-        if (lastDot >= 0)
-        {
-            declaredBaseName = declaredBaseName.Substring(lastDot + 1);
-        }
+        if (lastDot >= 0) declaredBaseName = declaredBaseName.Substring(lastDot + 1);
 
         if (methodSymbol.TypeParameters.Length > 0)
         {
-            var typeParams = string.Join(
-                ", ",
-                methodSymbol.TypeParameters.Select(
-                    tp => tp.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)
-                )
-            );
+            var typeParams = string.Join(", ", methodSymbol.TypeParameters
+                .Select(tp => tp.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)));
             declaredBaseName += $"<{typeParams}>";
         }
 
-        var returnType = methodSymbol.ReturnType.ToDisplayString(
-            SymbolDisplayFormat.FullyQualifiedFormat
-        );
-
+        var returnType = methodSymbol.ReturnType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
         var returnTypeInfo = methodSymbol.ReturnType.MetadataName switch
         {
             "Task" => ReturnTypeInfo.AsyncVoid,
@@ -469,72 +224,33 @@ namespace {RestApiInternalNamespace}
         };
 
         var parameters = methodSymbol.Parameters.Select(ParseParameter).ToImmutableEquatableArray();
-
         var isExplicit = isDerived || explicitImpl is not null;
         var constraints = GenerateConstraints(methodSymbol.TypeParameters, isExplicit);
 
-        return new MethodModel(
-            methodSymbol.Name,
-            returnType,
-            containingType,
-            declaredBaseName,
-            returnTypeInfo,
-            parameters,
-            constraints,
-            isExplicit
-        );
+        return new MethodModel(methodSymbol.Name, returnType, containingType, declaredBaseName,
+            returnTypeInfo, parameters, constraints, isExplicit);
     }
 
-    private static bool IsRefitMethod(
-        IMethodSymbol? methodSymbol,
-        INamedTypeSymbol httpMethodAttribute
-    )
-    {
-        return methodSymbol
-                ?.GetAttributes()
-                .Any(ad => ad.AttributeClass?.InheritsFromOrEquals(httpMethodAttribute) == true)
-            == true;
-    }
+    static bool IsRefitMethod(IMethodSymbol? methodSymbol, INamedTypeSymbol httpMethodAttribute) =>
+        methodSymbol?.GetAttributes().Any(ad => ad.AttributeClass?.InheritsFromOrEquals(httpMethodAttribute) == true) == true;
 
-    static void ValidatePathTemplate(
-        IMethodSymbol methodSymbol,
-        INamedTypeSymbol httpMethodBaseAttributeSymbol,
-        List<Diagnostic> diagnostics)
+    static void ValidatePathTemplate(IMethodSymbol methodSymbol, INamedTypeSymbol httpMethodBaseAttributeSymbol, List<Diagnostic> diagnostics)
     {
         AttributeData? httpAttr = null;
-        foreach (var attribute in methodSymbol.GetAttributes())
+        foreach (var attr in methodSymbol.GetAttributes())
         {
-            if (attribute.AttributeClass?.InheritsFromOrEquals(httpMethodBaseAttributeSymbol) == true)
-            {
-                httpAttr = attribute;
-                break;
-            }
+            if (attr.AttributeClass?.InheritsFromOrEquals(httpMethodBaseAttributeSymbol) == true) { httpAttr = attr; break; }
         }
-
-        if (httpAttr?.ConstructorArguments is not { Length: 1 } args
-            || args[0].Value is not string path)
-        {
-            return;
-        }
+        if (httpAttr?.ConstructorArguments is not { Length: 1 } args || args[0].Value is not string path) return;
 
         var placeholders = ExtractPathPlaceholders(path);
         var paramNames = new HashSet<string>(StringComparer.Ordinal);
         foreach (var parameter in methodSymbol.Parameters)
-        {
-            if (!IsCancellationTokenParameter(parameter))
-            {
-                paramNames.Add(parameter.Name);
-            }
-        }
+            if (!IsCancellationTokenParameter(parameter)) paramNames.Add(parameter.Name);
 
         if (!placeholders.SetEquals(paramNames))
-        {
-            diagnostics.Add(
-                Diagnostic.Create(
-                    DiagnosticDescriptors.PathParameterMismatch,
-                    methodSymbol.Locations.FirstOrDefault(),
-                    methodSymbol.Name));
-        }
+            diagnostics.Add(Diagnostic.Create(DiagnosticDescriptors.PathParameterMismatch,
+                methodSymbol.Locations.FirstOrDefault(), methodSymbol.Name));
     }
 
     static HashSet<string> ExtractPathPlaceholders(string path)
@@ -542,26 +258,13 @@ namespace {RestApiInternalNamespace}
         var placeholders = new HashSet<string>(StringComparer.Ordinal);
         for (var i = 0; i < path.Length; i++)
         {
-            if (path[i] != '{')
-            {
-                continue;
-            }
-
+            if (path[i] != '{') continue;
             var close = path.IndexOf('}', i + 1);
-            if (close < 0)
-            {
-                break;
-            }
-
+            if (close < 0) break;
             var name = path.Substring(i + 1, close - i - 1);
-            if (!string.IsNullOrEmpty(name))
-            {
-                placeholders.Add(name);
-            }
-
+            if (!string.IsNullOrEmpty(name)) placeholders.Add(name);
             i = close;
         }
-
         return placeholders;
     }
 
@@ -569,242 +272,455 @@ namespace {RestApiInternalNamespace}
         parameter.Type.Name == "CancellationToken"
         && parameter.Type.ContainingNamespace?.ToDisplayString() == "System.Threading";
 
-    private static ImmutableEquatableArray<TypeConstraint> GenerateConstraints(
-        ImmutableArray<ITypeParameterSymbol> typeParameters,
-        bool isOverrideOrExplicitImplementation
-    )
-    {
-        // Need to loop over the constraints and create them
-        return typeParameters
-            .Select(
-                typeParameter =>
-                    ParseConstraintsForTypeParameter(
-                        typeParameter,
-                        isOverrideOrExplicitImplementation
-                    )
-            )
+    static ImmutableEquatableArray<TypeConstraint> GenerateConstraints(
+        ImmutableArray<ITypeParameterSymbol> typeParameters, bool isOverrideOrExplicitImplementation) =>
+        typeParameters.Select(tp => ParseConstraintsForTypeParameter(tp, isOverrideOrExplicitImplementation))
             .ToImmutableEquatableArray();
-    }
 
-    private static TypeConstraint ParseConstraintsForTypeParameter(
-        ITypeParameterSymbol typeParameter,
-        bool isOverrideOrExplicitImplementation
-    )
+    static TypeConstraint ParseConstraintsForTypeParameter(ITypeParameterSymbol tp, bool isOverrideOrExplicit)
     {
-        // Explicit interface implementations and overrides can only have class or struct constraints
         var known = KnownTypeConstraint.None;
-
-        if (typeParameter.HasReferenceTypeConstraint)
-        {
-            known |= KnownTypeConstraint.Class;
-        }
-        if (typeParameter.HasUnmanagedTypeConstraint && !isOverrideOrExplicitImplementation)
-        {
-            known |= KnownTypeConstraint.Unmanaged;
-        }
-
-        // unmanaged constraints are both structs and unmanaged so the struct constraint is redundant
-        if (typeParameter.HasValueTypeConstraint && !typeParameter.HasUnmanagedTypeConstraint)
-        {
-            known |= KnownTypeConstraint.Struct;
-        }
-        if (typeParameter.HasNotNullConstraint && !isOverrideOrExplicitImplementation)
-        {
-            known |= KnownTypeConstraint.NotNull;
-        }
+        if (tp.HasReferenceTypeConstraint) known |= KnownTypeConstraint.Class;
+        if (tp.HasUnmanagedTypeConstraint && !isOverrideOrExplicit) known |= KnownTypeConstraint.Unmanaged;
+        if (tp.HasValueTypeConstraint && !tp.HasUnmanagedTypeConstraint) known |= KnownTypeConstraint.Struct;
+        if (tp.HasNotNullConstraint && !isOverrideOrExplicit) known |= KnownTypeConstraint.NotNull;
 
         var constraints = ImmutableEquatableArray<string>.Empty;
-        if (!isOverrideOrExplicitImplementation)
-        {
-            constraints = typeParameter
-                .ConstraintTypes.Select(
-                    typeConstraint =>
-                        typeConstraint.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)
-                )
+        if (!isOverrideOrExplicit)
+            constraints = tp.ConstraintTypes.Select(t => t.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat))
                 .ToImmutableEquatableArray();
-        }
+        if (tp.HasConstructorConstraint && !isOverrideOrExplicit) known |= KnownTypeConstraint.New;
 
-        // new constraint has to be last
-        if (typeParameter.HasConstructorConstraint && !isOverrideOrExplicitImplementation)
-        {
-            known |= KnownTypeConstraint.New;
-        }
-
-        var declaredName = typeParameter.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
-        return new TypeConstraint(typeParameter.Name, declaredName, known, constraints);
+        return new TypeConstraint(tp.Name, tp.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat), known, constraints);
     }
 
-    private static ParameterModel ParseParameter(IParameterSymbol param)
+    static ParameterModel ParseParameter(IParameterSymbol param)
     {
-        var annotation =
-            !param.Type.IsValueType && param.NullableAnnotation == NullableAnnotation.Annotated;
-
+        var annotation = !param.Type.IsValueType && param.NullableAnnotation == NullableAnnotation.Annotated;
         var paramType = param.Type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
         var isGeneric = ContainsTypeParameter(param.Type);
-
         return new ParameterModel(param.MetadataName, paramType, annotation, isGeneric);
     }
 
-    private static bool ContainsTypeParameter(ITypeSymbol symbol)
+    static bool ContainsTypeParameter(ITypeSymbol symbol)
     {
-        if (symbol is ITypeParameterSymbol)
-            return true;
-
-        if (symbol is not INamedTypeSymbol { TypeParameters.Length: > 0 } namedType)
-            return false;
-
+        if (symbol is ITypeParameterSymbol) return true;
+        if (symbol is not INamedTypeSymbol { TypeParameters.Length: > 0 } namedType) return false;
         foreach (var typeArg in namedType.TypeArguments)
-        {
-            if (ContainsTypeParameter(typeArg))
-                return true;
-        }
-
+            if (ContainsTypeParameter(typeArg)) return true;
         return false;
     }
 
-    private static MethodModel ParseMethod(
-        IMethodSymbol methodSymbol,
-        bool isImplicitInterface,
-        INamedTypeSymbol httpMethodBaseAttributeSymbol,
-        WellKnownTypes wellKnownTypes,
-        List<Diagnostic> diagnostics
-    )
+    static MethodModel ParseMethod(IMethodSymbol methodSymbol, bool isImplicitInterface,
+        INamedTypeSymbol httpMethodBaseAttributeSymbol, WellKnownTypes wellKnownTypes, List<Diagnostic> diagnostics)
     {
-        var returnType = methodSymbol.ReturnType.ToDisplayString(
-            SymbolDisplayFormat.FullyQualifiedFormat
-        );
-
-        // For explicit interface implementations, the containing type for the explicit method signature
-        // must be the interface being implemented (e.g. IFoo), not the interface that declares it.
+        var returnType = methodSymbol.ReturnType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
         var explicitImpl = methodSymbol.ExplicitInterfaceImplementations.FirstOrDefault();
         var containingTypeSymbol = explicitImpl?.ContainingType ?? methodSymbol.ContainingType;
-        var containingType = containingTypeSymbol.ToDisplayString(
-            SymbolDisplayFormat.FullyQualifiedFormat
-        );
+        var containingType = containingTypeSymbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
 
-        // Simple method name (strip any explicit interface qualifier if present)
         var declaredBaseName = methodSymbol.Name;
         var lastDot = declaredBaseName.LastIndexOf('.');
-        if (lastDot >= 0)
-        {
-            declaredBaseName = declaredBaseName.Substring(lastDot + 1);
-        }
-
+        if (lastDot >= 0) declaredBaseName = declaredBaseName.Substring(lastDot + 1);
         if (methodSymbol.TypeParameters.Length > 0)
         {
-            var typeParams = string.Join(
-                ", ",
-                methodSymbol.TypeParameters.Select(
-                    tp => tp.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)
-                )
-            );
+            var typeParams = string.Join(", ", methodSymbol.TypeParameters
+                .Select(tp => tp.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)));
             declaredBaseName += $"<{typeParams}>";
         }
 
-        var returnTypeInfo = ClassifyReturnType(
-            methodSymbol.ReturnType,
-            methodSymbol,
-            wellKnownTypes,
-            diagnostics
-        );
-
+        var returnTypeInfo = ClassifyReturnType(methodSymbol.ReturnType, methodSymbol, wellKnownTypes, diagnostics);
         ValidatePathTemplate(methodSymbol, httpMethodBaseAttributeSymbol, diagnostics);
 
-        var parameters = methodSymbol.Parameters.Select(ParseParameter).ToImmutableEquatableArray();
+        var httpSemantics = ParseHttpSemantics(methodSymbol, httpMethodBaseAttributeSymbol);
+        var parameters = methodSymbol.Parameters
+            .Select((p, i) => ParseParameterWithKind(p, i, httpSemantics))
+            .ToImmutableEquatableArray();
 
         var isExplicit = explicitImpl is not null;
         var constraints = GenerateConstraints(methodSymbol.TypeParameters, isExplicit || !isImplicitInterface);
+        var (returnResultType, deserializedResultType, isApiResponse) = ExtractReturnTypeInfo(methodSymbol.ReturnType, returnTypeInfo);
 
-        return new MethodModel(
-            methodSymbol.Name,
-            returnType,
-            containingType,
-            declaredBaseName,
-            returnTypeInfo,
-            parameters,
-            constraints,
-            isExplicit
-        );
+        return new MethodModel(methodSymbol.Name, returnType, containingType, declaredBaseName,
+            returnTypeInfo, parameters, constraints, isExplicit,
+            HttpMethod: httpSemantics.HttpMethod,
+            PathFragments: httpSemantics.PathFragments,
+            CancellationTokenIndex: httpSemantics.CancellationTokenIndex,
+            BodyParameterIndex: httpSemantics.BodyParameterIndex,
+            BodySerializationMethod: httpSemantics.BodySerializationMethod,
+            BodyBuffered: httpSemantics.BodyBuffered,
+            Headers: httpSemantics.Headers,
+            IsMultipart: httpSemantics.IsMultipart,
+            MultipartBoundary: httpSemantics.MultipartBoundary,
+            QueryUriFormat: httpSemantics.QueryUriFormat,
+            IsApiResponse: isApiResponse,
+            ReturnResultType: returnResultType,
+            DeserializedResultType: deserializedResultType);
     }
 
-    private static ReturnTypeInfo ClassifyReturnType(
-        ITypeSymbol returnType,
-        IMethodSymbol methodSymbol,
-        WellKnownTypes wellKnownTypes,
-        List<Diagnostic> diagnostics
-    )
+    static (string ReturnResultType, string DeserializedResultType, bool IsApiResponse) ExtractReturnTypeInfo(
+        ITypeSymbol returnType, ReturnTypeInfo returnTypeInfo)
     {
-        if (returnType.SpecialType == SpecialType.System_Void)
+        if (returnTypeInfo == ReturnTypeInfo.SyncVoid || returnTypeInfo == ReturnTypeInfo.AsyncVoid)
+            return ("void", "void", false);
+
+        ITypeSymbol? innerType = null;
+        if (returnType is INamedTypeSymbol { IsGenericType: true } namedType)
+            innerType = namedType.TypeArguments.FirstOrDefault();
+
+        if (innerType == null)
+            return (returnType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat),
+                    returnType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat), false);
+
+        var innerDisplay = innerType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
+        var isApiResponse = innerType is INamedTypeSymbol innerNamed
+            && (innerNamed.Name == "ApiResponse" || innerNamed.Name == "IApiResponse") && innerNamed.IsGenericType;
+
+        if (isApiResponse && innerType is INamedTypeSymbol apiResponseNamed)
         {
-            return ReturnTypeInfo.SyncVoid;
+            var bodyType = apiResponseNamed.TypeArguments.FirstOrDefault();
+            var bodyDisplay = bodyType?.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat) ?? "object";
+            return (innerDisplay, bodyDisplay, true);
         }
 
-        if (returnType.MetadataName == "Task")
-        {
-            return ReturnTypeInfo.AsyncVoid;
-        }
+        return (innerDisplay, innerDisplay, false);
+    }
+
+    static ReturnTypeInfo ClassifyReturnType(ITypeSymbol returnType, IMethodSymbol methodSymbol,
+        WellKnownTypes wellKnownTypes, List<Diagnostic> diagnostics)
+    {
+        if (returnType.SpecialType == SpecialType.System_Void) return ReturnTypeInfo.SyncVoid;
+        if (returnType.MetadataName == "Task") return ReturnTypeInfo.AsyncVoid;
 
         if (returnType is INamedTypeSymbol { IsGenericType: true } namedType)
         {
             var def = namedType.OriginalDefinition;
             var metadata = def.MetadataName;
-
-            if (metadata is "Task`1" or "ValueTask`1")
-            {
-                return ReturnTypeInfo.AsyncResult;
-            }
+            if (metadata is "Task`1" or "ValueTask`1") return ReturnTypeInfo.AsyncResult;
 
 #if RESTAPI_R3
-            if (metadata == "Observable`1"
-                && def.ContainingNamespace?.ToDisplayString() == "R3")
-            {
+            if (metadata == "Observable`1" && def.ContainingNamespace?.ToDisplayString() == "R3")
                 return ReturnTypeInfo.R3Observable;
-            }
-
             if (metadata == "IObservable`1")
             {
-                diagnostics.Add(
-                    Diagnostic.Create(
-                        DiagnosticDescriptors.SystemReactiveNotReferenced,
-                        methodSymbol.Locations.FirstOrDefault(),
-                        returnType.ToDisplayString()
-                    )
-                );
+                diagnostics.Add(Diagnostic.Create(DiagnosticDescriptors.SystemReactiveNotReferenced,
+                    methodSymbol.Locations.FirstOrDefault(), returnType.ToDisplayString()));
                 return ReturnTypeInfo.Unsupported;
             }
 #elif RESTAPI_SYSTEM_REACTIVE
-            if (metadata == "Observable`1"
-                && def.ContainingNamespace?.ToDisplayString() == "R3")
+            if (metadata == "Observable`1" && def.ContainingNamespace?.ToDisplayString() == "R3")
             {
-                diagnostics.Add(
-                    Diagnostic.Create(
-                        DiagnosticDescriptors.UnsupportedReturnType,
-                        methodSymbol.Locations.FirstOrDefault(),
-                        returnType.ToDisplayString()
-                    )
-                );
+                diagnostics.Add(Diagnostic.Create(DiagnosticDescriptors.UnsupportedReturnType,
+                    methodSymbol.Locations.FirstOrDefault(), returnType.ToDisplayString()));
                 return ReturnTypeInfo.Unsupported;
             }
-
             if (metadata == "IObservable`1")
             {
                 if (wellKnownTypes.TryGet("Observables.RestAPI.Reactive.SystemReactiveObservableAdapter") != null)
-                {
                     return ReturnTypeInfo.SystemReactiveObservable;
-                }
-
-                diagnostics.Add(
-                    Diagnostic.Create(
-                        DiagnosticDescriptors.SystemReactiveNotReferenced,
-                        methodSymbol.Locations.FirstOrDefault(),
-                        returnType.ToDisplayString()
-                    )
-                );
+                diagnostics.Add(Diagnostic.Create(DiagnosticDescriptors.SystemReactiveNotReferenced,
+                    methodSymbol.Locations.FirstOrDefault(), returnType.ToDisplayString()));
                 return ReturnTypeInfo.Unsupported;
             }
 #endif
         }
-
         return ReturnTypeInfo.Return;
+    }
+
+    // ─── HTTP semantic parsing ───────────────────────────────────────────
+
+    class HttpSemantics
+    {
+        public string HttpMethod { get; set; } = "";
+        public ImmutableEquatableArray<PathFragmentModel> PathFragments { get; set; } = ImmutableEquatableArray<PathFragmentModel>.Empty;
+        public List<ParameterClassification> ParameterClassifications { get; set; } = new();
+        public int? CancellationTokenIndex { get; set; }
+        public int? BodyParameterIndex { get; set; }
+        public int BodySerializationMethod { get; set; }
+        public bool BodyBuffered { get; set; }
+        public ImmutableEquatableArray<string> Headers { get; set; } = ImmutableEquatableArray<string>.Empty;
+        public bool IsMultipart { get; set; }
+        public string MultipartBoundary { get; set; } = "----MyGreatBoundary";
+        public int QueryUriFormat { get; set; }
+    }
+
+    class ParameterClassification
+    {
+        public int Index { get; set; }
+        public ParameterKind Kind { get; set; } = ParameterKind.None;
+        public string? AliasAs { get; set; }
+        public string? HeaderName { get; set; }
+        public string? AuthorizeScheme { get; set; }
+        public string? PropertyKey { get; set; }
+        public string? QueryFormat { get; set; }
+        public string? QueryPrefix { get; set; }
+        public string QueryDelimiter { get; set; } = ".";
+        public bool QueryTreatAsString { get; set; }
+        public int QueryCollectionFormat { get; set; }
+        public bool QueryIsCollectionFormatSpecified { get; set; }
+        public BodySerializationMethod BodySerializationMethod { get; set; } = BodySerializationMethod.Default;
+        public bool BodyBuffered { get; set; }
+    }
+
+    static HttpSemantics ParseHttpSemantics(IMethodSymbol methodSymbol, INamedTypeSymbol httpMethodBaseAttributeSymbol)
+    {
+        var semantics = new HttpSemantics();
+
+        AttributeData? httpAttr = null;
+        foreach (var attr in methodSymbol.GetAttributes())
+        {
+            if (attr.AttributeClass?.InheritsFromOrEquals(httpMethodBaseAttributeSymbol) == true) { httpAttr = attr; break; }
+        }
+
+        if (httpAttr != null && httpAttr.ConstructorArguments is { Length: >= 1 } args && args[0].Value is string path)
+        {
+            semantics.HttpMethod = ExtractHttpMethodName(httpAttr.AttributeClass!);
+            semantics.PathFragments = ParsePathFragments(path, methodSymbol).ToImmutableEquatableArray();
+        }
+
+        // MultipartAttribute
+        foreach (var attr in methodSymbol.GetAttributes())
+        {
+            if (attr.AttributeClass?.Name == "MultipartAttribute" && attr.AttributeClass?.ContainingNamespace?.ToDisplayString() == "Observables.RestAPI")
+            {
+                semantics.IsMultipart = true;
+                if (attr.ConstructorArguments is { Length: >= 1 } cargs && cargs[0].Value is string boundary)
+                    semantics.MultipartBoundary = boundary;
+                break;
+            }
+        }
+
+        // Headers (interface + method level)
+        var headersList = new List<string>();
+        foreach (var attr in methodSymbol.ContainingType.GetAttributes())
+        {
+            if (attr.AttributeClass?.Name == "HeadersAttribute" && attr.AttributeClass?.ContainingNamespace?.ToDisplayString() == "Observables.RestAPI"
+                && attr.ConstructorArguments is { Length: >= 1 } cargs)
+            {
+                foreach (var h in cargs[0].Values)
+                    if (h.Value is string hs) headersList.Add(hs);
+            }
+        }
+        foreach (var attr in methodSymbol.GetAttributes())
+        {
+            if (attr.AttributeClass?.Name == "HeadersAttribute" && attr.AttributeClass?.ContainingNamespace?.ToDisplayString() == "Observables.RestAPI"
+                && attr.ConstructorArguments is { Length: >= 1 } cargs)
+            {
+                foreach (var h in cargs[0].Values)
+                    if (h.Value is string hs) headersList.Add(hs);
+                break;
+            }
+        }
+        semantics.Headers = headersList.ToImmutableEquatableArray();
+
+        // QueryUriFormatAttribute
+        foreach (var attr in methodSymbol.GetAttributes())
+        {
+            if (attr.AttributeClass?.Name == "QueryUriFormatAttribute" && attr.AttributeClass?.ContainingNamespace?.ToDisplayString() == "Observables.RestAPI"
+                && attr.ConstructorArguments is { Length: >= 1 } cargs && cargs[0].Value is int uriFormat)
+            {
+                semantics.QueryUriFormat = uriFormat;
+                break;
+            }
+        }
+
+        // Classify parameters
+        var pathParamIndices = new HashSet<int>();
+        foreach (var frag in semantics.PathFragments)
+            if (!frag.IsConstant) pathParamIndices.Add(frag.ParameterIndex);
+
+        for (var i = 0; i < methodSymbol.Parameters.Length; i++)
+        {
+            var param = methodSymbol.Parameters[i];
+            var classification = ClassifyParameter(param, i);
+
+            // If parameter is in path and not explicitly classified, mark as Path
+            if (classification.Kind == ParameterKind.None && pathParamIndices.Contains(i))
+                classification.Kind = ParameterKind.Path;
+
+            // If multipart and not classified and not in path, mark as Multipart
+            if (semantics.IsMultipart && classification.Kind == ParameterKind.None && !pathParamIndices.Contains(i))
+                classification.Kind = ParameterKind.Multipart;
+
+            // If not multipart, not classified, not in path, not cancellation token → default to Query
+            if (!semantics.IsMultipart && classification.Kind == ParameterKind.None && !pathParamIndices.Contains(i))
+                classification.Kind = ParameterKind.Query;
+
+            semantics.ParameterClassifications.Add(classification);
+
+            if (classification.Kind == ParameterKind.Body)
+            {
+                semantics.BodyParameterIndex = i;
+                semantics.BodySerializationMethod = (int)classification.BodySerializationMethod;
+                semantics.BodyBuffered = classification.BodyBuffered;
+            }
+            if (classification.Kind == ParameterKind.CancellationToken)
+                semantics.CancellationTokenIndex = i;
+        }
+
+        return semantics;
+    }
+
+    static string ExtractHttpMethodName(INamedTypeSymbol attrClass) => attrClass.Name switch
+    {
+        "GetAttribute" => "GET",
+        "PostAttribute" => "POST",
+        "PutAttribute" => "PUT",
+        "DeleteAttribute" => "DELETE",
+        "PatchAttribute" => "PATCH",
+        "OptionsAttribute" => "OPTIONS",
+        "HeadAttribute" => "HEAD",
+        _ => "GET",
+    };
+
+    static List<PathFragmentModel> ParsePathFragments(string path, IMethodSymbol methodSymbol)
+    {
+        var fragments = new List<PathFragmentModel>();
+        var paramNames = new Dictionary<string, int>(StringComparer.Ordinal);
+        for (var i = 0; i < methodSymbol.Parameters.Length; i++)
+            paramNames[methodSymbol.Parameters[i].Name] = i;
+
+        var sb = new StringBuilder();
+        for (var i = 0; i < path.Length; i++)
+        {
+            if (path[i] == '{')
+            {
+                if (sb.Length > 0) { fragments.Add(PathFragmentModel.Constant(sb.ToString())); sb.Clear(); }
+                var close = path.IndexOf('}', i + 1);
+                if (close < 0) { sb.Append(path.Substring(i)); break; }
+                var name = path.Substring(i + 1, close - i - 1);
+                if (paramNames.TryGetValue(name, out var idx))
+                    fragments.Add(PathFragmentModel.Parameter(idx));
+                else
+                    sb.Append('{').Append(name).Append('}');
+                i = close;
+            }
+            else
+            {
+                sb.Append(path[i]);
+            }
+        }
+        if (sb.Length > 0) fragments.Add(PathFragmentModel.Constant(sb.ToString()));
+        return fragments;
+    }
+
+    static ParameterModel ParseParameterWithKind(IParameterSymbol param, int paramIndex, HttpSemantics httpSemantics)
+    {
+        var baseParam = ParseParameter(param);
+        var classification = httpSemantics.ParameterClassifications.FirstOrDefault(c => c.Index == paramIndex);
+
+        return baseParam with
+        {
+            Kind = classification.Kind,
+            AliasAs = classification.AliasAs,
+            HeaderName = classification.HeaderName,
+            AuthorizeScheme = classification.AuthorizeScheme,
+            PropertyKey = classification.PropertyKey,
+            QueryFormat = classification.QueryFormat,
+            QueryPrefix = classification.QueryPrefix,
+            QueryDelimiter = classification.QueryDelimiter,
+            QueryTreatAsString = classification.QueryTreatAsString,
+            QueryCollectionFormat = classification.QueryCollectionFormat,
+            QueryIsCollectionFormatSpecified = classification.QueryIsCollectionFormatSpecified,
+        };
+    }
+
+    static ParameterClassification ClassifyParameter(IParameterSymbol param, int index)
+    {
+        var result = new ParameterClassification { Index = index };
+
+        if (IsCancellationTokenParameter(param))
+        {
+            result.Kind = ParameterKind.CancellationToken;
+            return result;
+        }
+
+        foreach (var attr in param.GetAttributes())
+        {
+            var attrName = attr.AttributeClass?.Name;
+            var attrNs = attr.AttributeClass?.ContainingNamespace?.ToDisplayString();
+
+            if (attrName == "BodyAttribute" && attrNs == "Observables.RestAPI")
+            {
+                result.Kind = ParameterKind.Body;
+                if (attr.ConstructorArguments is { Length: >= 1 } cargs)
+                {
+                    if (cargs[0].Value is int serMethod) result.BodySerializationMethod = (BodySerializationMethod)serMethod;
+                    else if (cargs[0].Value is bool buffered) result.BodyBuffered = buffered;
+                }
+                if (attr.ConstructorArguments is { Length: >= 2 } cargs2 && cargs2[1].Value is bool buffered2)
+                    result.BodyBuffered = buffered2;
+                return result;
+            }
+
+            if (attrName == "HeaderAttribute" && attrNs == "Observables.RestAPI")
+            {
+                result.Kind = ParameterKind.Header;
+                if (attr.ConstructorArguments is { Length: >= 1 } cargs && cargs[0].Value is string header)
+                    result.HeaderName = header;
+                return result;
+            }
+
+            if (attrName == "HeaderCollectionAttribute" && attrNs == "Observables.RestAPI")
+            {
+                result.Kind = ParameterKind.HeaderCollection;
+                return result;
+            }
+
+            if (attrName == "AuthorizeAttribute" && attrNs == "Observables.RestAPI")
+            {
+                result.Kind = ParameterKind.Authorize;
+                if (attr.ConstructorArguments is { Length: >= 1 } cargs && cargs[0].Value is string scheme)
+                    result.AuthorizeScheme = scheme;
+                return result;
+            }
+
+            if (attrName == "PropertyAttribute" && attrNs == "Observables.RestAPI")
+            {
+                result.Kind = ParameterKind.Property;
+                if (attr.ConstructorArguments is { Length: >= 1 } cargs && cargs[0].Value is string key)
+                    result.PropertyKey = key;
+                return result;
+            }
+
+            if (attrName == "AliasAsAttribute" && attrNs == "Observables.RestAPI")
+            {
+                if (attr.ConstructorArguments is { Length: >= 1 } cargs && cargs[0].Value is string alias)
+                    result.AliasAs = alias;
+            }
+
+            if (attrName == "QueryAttribute" && attrNs == "Observables.RestAPI")
+            {
+                result.Kind = ParameterKind.Query;
+                foreach (var namedArg in attr.NamedArguments)
+                {
+                    if (namedArg.Key == "Format" && namedArg.Value.Value is string format) result.QueryFormat = format;
+                    if (namedArg.Key == "Prefix" && namedArg.Value.Value is string prefix) result.QueryPrefix = prefix;
+                    if (namedArg.Key == "TreatAsString" && namedArg.Value.Value is bool treatAsString) result.QueryTreatAsString = treatAsString;
+                    if (namedArg.Key == "CollectionFormat" && namedArg.Value.Value is int cf)
+                    {
+                        result.QueryCollectionFormat = cf;
+                        result.QueryIsCollectionFormatSpecified = true;
+                    }
+                }
+                if (attr.ConstructorArguments is { Length: >= 1 } cargs)
+                {
+                    if (cargs[0].Value is string delimiter) result.QueryDelimiter = delimiter;
+                    else if (cargs[0].Value is int cf)
+                    {
+                        result.QueryCollectionFormat = cf;
+                        result.QueryIsCollectionFormatSpecified = true;
+                    }
+                }
+                if (attr.ConstructorArguments is { Length: >= 2 } cargs2 && cargs2[1].Value is string prefix2)
+                    result.QueryPrefix = prefix2;
+                if (attr.ConstructorArguments is { Length: >= 3 } cargs3 && cargs3[2].Value is string format2)
+                    result.QueryFormat = format2;
+                return result;
+            }
+        }
+
+        result.Kind = ParameterKind.None;
+        return result;
     }
 }

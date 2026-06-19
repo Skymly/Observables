@@ -9,10 +9,5 @@ namespace Observables.RestAPI
         /// Returns the <see cref="System.Type"/> of the top-level interface where the method was called from
         /// </summary>
         public static string InterfaceType { get; } = "Refit.InterfaceType";
-
-        /// <summary>
-        /// Returns the RestMethodInfo of the top-level interface
-        /// </summary>
-        public static string RestMethodInfo { get; } = "Refit.RestMethodInfo";
     }
 }

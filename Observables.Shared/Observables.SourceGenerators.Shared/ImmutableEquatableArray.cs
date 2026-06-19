@@ -1,16 +1,21 @@
 using System.Collections;
 
-namespace Observables.SignalR.Generators;
+namespace Observables.SourceGenerators.Shared;
 
 internal static class ImmutableEquatableArray
 {
     public static ImmutableEquatableArray<T> Empty<T>()
         where T : IEquatable<T> => ImmutableEquatableArray<T>.Empty;
 
-    public static ImmutableEquatableArray<T> ToImmutableEquatableArray<T>(this IEnumerable<T>? values)
+    public static ImmutableEquatableArray<T> ToImmutableEquatableArray<T>(
+        this IEnumerable<T>? values
+    )
         where T : IEquatable<T> => values == null ? Empty<T>() : new(values);
 }
 
+/// <summary>
+/// Provides an immutable list implementation which implements sequence equality.
+/// </summary>
 internal sealed class ImmutableEquatableArray<T>
     : IEquatable<ImmutableEquatableArray<T>>,
         IReadOnlyList<T>
@@ -42,13 +47,15 @@ internal sealed class ImmutableEquatableArray<T>
             hash = Combine(hash, value.GetHashCode());
         }
 
-        return hash;
-
         static int Combine(int h1, int h2)
         {
+            // RyuJIT optimizes this to use the ROL instruction
+            // Related GitHub pull request: https://github.com/dotnet/coreclr/pull/1830
             uint rol5 = ((uint)h1 << 5) | ((uint)h1 >> 27);
             return ((int)rol5 + h1) ^ h2;
         }
+
+        return hash;
     }
 
     public Enumerator GetEnumerator() => new(_values);
@@ -71,6 +78,7 @@ internal sealed class ImmutableEquatableArray<T>
         public bool MoveNext()
         {
             var newIndex = _index + 1;
+
             if ((uint)newIndex < (uint)_values.Length)
             {
                 _index = newIndex;

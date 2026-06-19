@@ -1,0 +1,38 @@
+<Project>
+
+  <!--
+    Shared source files for all Observables source generators.
+    Import this props file to link-compile the shared infrastructure without
+    referencing Observables.SourceGenerators.Shared as an analyzer dependency.
+  -->
+
+  <ItemGroup>
+    <!-- Core utilities -->
+    <Compile Include="$(MSBuildThisFileDirectory)Observables.Shared/Observables.SourceGenerators.Shared/SourceWriter.cs">
+      <Link>Shared/SourceWriter.cs</Link>
+    </Compile>
+    <Compile Include="$(MSBuildThisFileDirectory)Observables.Shared/Observables.SourceGenerators.Shared/ImmutableEquatableArray.cs">
+      <Link>Shared/ImmutableEquatableArray.cs</Link>
+    </Compile>
+    <Compile Include="$(MSBuildThisFileDirectory)Observables.Shared/Observables.SourceGenerators.Shared/IsExternalInit.cs">
+      <Link>Shared/IsExternalInit.cs</Link>
+    </Compile>
+
+    <!-- Existing shared infrastructure (already in Observables.SourceGenerators.Shared namespace) -->
+    <Compile Include="$(MSBuildThisFileDirectory)Observables.Shared/Observables.SourceGenerators.Shared/GeneratedSourceHeader.cs">
+      <Link>Shared/GeneratedSourceHeader.cs</Link>
+    </Compile>
+    <Compile Include="$(MSBuildThisFileDirectory)Observables.Shared/Observables.SourceGenerators.Shared/Extensions/INamedTypeSymbolExtensions.cs">
+      <Link>Shared/Extensions/INamedTypeSymbolExtensions.cs</Link>
+    </Compile>
+    <Compile Include="$(MSBuildThisFileDirectory)Observables.Shared/Observables.SourceGenerators.Shared/Diagnostics/ObservableReturnTypeParser.cs">
+      <Link>Shared/Diagnostics/ObservableReturnTypeParser.cs</Link>
+    </Compile>
+  </ItemGroup>
+
+  <!-- Global using to avoid qualifying shared types -->
+  <ItemGroup>
+    <Using Include="Observables.SourceGenerators.Shared" />
+  </ItemGroup>
+
+</Project>

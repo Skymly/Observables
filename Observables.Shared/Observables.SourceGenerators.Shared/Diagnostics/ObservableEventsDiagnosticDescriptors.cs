@@ -1,6 +1,6 @@
 using Microsoft.CodeAnalysis;
 
-namespace Observables.SourceGenerators.Shared.Diagnostics;
+namespace Observables.SourceGenerators.Shared;
 
 internal static class ObservableEventsDiagnosticDescriptors
 {

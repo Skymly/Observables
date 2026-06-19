@@ -1,0 +1,19 @@
+<Project>
+
+  <!--
+    Events-specific diagnostic descriptors.
+    Import only into Events source generators (R3 and Reactive).
+    Do NOT import into other domain generators to avoid RS2008 conflicts.
+  -->
+
+  <ItemGroup>
+    <Compile Include="$(MSBuildThisFileDirectory)Observables.Shared/Observables.SourceGenerators.Shared/Diagnostics/ObservableEventsDiagnosticDescriptors.cs">
+      <Link>Shared/ObservableEventsDiagnosticDescriptors.cs</Link>
+    </Compile>
+
+    <!-- Analyzer releases for Events-specific diagnostics -->
+    <AdditionalFiles Include="$(MSBuildThisFileDirectory)Observables.Shared/Observables.SourceGenerators.Shared/AnalyzerReleases.Shipped.md" />
+    <AdditionalFiles Include="$(MSBuildThisFileDirectory)Observables.Shared/Observables.SourceGenerators.Shared/AnalyzerReleases.Unshipped.md" />
+  </ItemGroup>
+
+</Project>

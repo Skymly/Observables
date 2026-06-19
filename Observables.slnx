@@ -24,7 +24,6 @@
 
     <Project Path="Observables.Shared/Observables.Core/Observables.Core.csproj" />
 
-    <Project Path="Observables.Shared/Observables.SourceGenerators.Shared/Observables.SourceGenerators.Shared.csproj" />
 
     <Project Path="Observables.Shared/Observables.CodeFixes/Observables.CodeFixes.csproj" />
 

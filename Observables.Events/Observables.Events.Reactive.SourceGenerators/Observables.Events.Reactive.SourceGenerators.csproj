@@ -1,13 +1,13 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <Import Project="..\..\Observables.SourceGenerators.props" />
+  <Import Project="..\..\Observables.SourceGenerators.EventsDiagnostics.props" />
 
   <PropertyGroup>
     <Description>Source generators for classic .NET events → System.Reactive (IObservable).</Description>
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\Observables.Shared\Observables.SourceGenerators.Shared\Observables.SourceGenerators.Shared.csproj" />
     <PackageReference Include="System.Reactive" PrivateAssets="all" />
   </ItemGroup>
 

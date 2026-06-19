@@ -2,8 +2,9 @@ using System.Diagnostics;
 using System.Text;
 using Microsoft.CodeAnalysis.Text;
 
-namespace Observables.Mqtt.Generators;
+namespace Observables.SourceGenerators.Shared;
 
+// From https://github.com/dotnet/runtime/blob/233826c88d2100263fb9e9535d96f75824ba0aea/src/libraries/Common/src/SourceGenerators/SourceWriter.cs#L11
 internal sealed class SourceWriter
 {
     const char IndentationChar = ' ';
@@ -19,11 +20,21 @@ internal sealed class SourceWriter
         {
             if (value < 0)
             {
-                throw new ArgumentOutOfRangeException(nameof(value));
+                Throw();
+                static void Throw() => throw new ArgumentOutOfRangeException(nameof(value));
             }
 
             indentation = value;
         }
+    }
+
+    public void Append(string text) => sb.Append(text);
+
+    public void WriteLine(char value)
+    {
+        AddIndentation();
+        sb.Append(value);
+        sb.AppendLine();
     }
 
     public void WriteLine(string text)
@@ -40,28 +51,39 @@ internal sealed class SourceWriter
         {
             ReadOnlySpan<char> nextLine = GetNextLine(ref remainingText, out isFinalLine);
 
-            if (nextLine.Length > 0)
+            if (!nextLine.IsEmpty)
             {
                 AddIndentation();
             }
-
             AppendSpan(sb, nextLine);
             sb.AppendLine();
         }
         while (!isFinalLine);
     }
 
+    public void WriteLine() => sb.AppendLine();
+
     public SourceText ToSourceText()
     {
-        Debug.Assert(indentation == 0);
+        Debug.Assert(indentation == 0 && sb.Length > 0);
         return SourceText.From(sb.ToString(), Encoding.UTF8);
     }
 
-    void AddIndentation() => sb.Append(IndentationChar, CharsPerIndentation * indentation);
-
-    static ReadOnlySpan<char> GetNextLine(ref ReadOnlySpan<char> remainingText, out bool isFinalLine)
+    public void Reset()
     {
-        if (remainingText.Length == 0)
+        sb.Clear();
+        indentation = 0;
+    }
+
+    private void AddIndentation() =>
+        sb.Append(IndentationChar, CharsPerIndentation * indentation);
+
+    private static ReadOnlySpan<char> GetNextLine(
+        ref ReadOnlySpan<char> remainingText,
+        out bool isFinalLine
+    )
+    {
+        if (remainingText.IsEmpty)
         {
             isFinalLine = true;
             return default;
@@ -93,11 +115,11 @@ internal sealed class SourceWriter
         return next;
     }
 
-    static void AppendSpan(StringBuilder builder, ReadOnlySpan<char> span)
+    private static unsafe void AppendSpan(StringBuilder builder, ReadOnlySpan<char> span)
     {
-        for (var i = 0; i < span.Length; i++)
+        fixed (char* ptr = span)
         {
-            builder.Append(span[i]);
+            builder.Append(ptr, span.Length);
         }
     }
 }

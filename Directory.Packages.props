@@ -50,6 +50,8 @@
   <!-- Build (Nuke) -->
   <ItemGroup>
     <PackageVersion Include="Nuke.Common" Version="10.1.0" />
+    <PackageVersion Include="NuGet.Packaging" Version="7.6.0" />
+    <PackageVersion Include="System.Security.Cryptography.Xml" Version="10.0.9" />
   </ItemGroup>
 
   <!-- Test -->

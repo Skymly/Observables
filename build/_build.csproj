@@ -11,6 +11,8 @@
 
   <ItemGroup>
     <PackageReference Include="Nuke.Common" />
+    <PackageReference Include="NuGet.Packaging" />
+    <PackageReference Include="System.Security.Cryptography.Xml" />
   </ItemGroup>
 
 </Project>

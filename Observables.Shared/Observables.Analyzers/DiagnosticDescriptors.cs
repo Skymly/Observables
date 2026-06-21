@@ -47,7 +47,7 @@ internal static class DiagnosticDescriptors
             "Empty gRPC proxy interface",
             "Interface '{0}' is marked with [Grpc] but declares no members. Add gRPC boundary members or remove [Grpc].",
             "Observables.Grpc",
-            DiagnosticSeverity.Error,
+            DiagnosticSeverity.Warning,
             isEnabledByDefault: true);
 
     public static readonly DiagnosticDescriptor EmptySseInterface =

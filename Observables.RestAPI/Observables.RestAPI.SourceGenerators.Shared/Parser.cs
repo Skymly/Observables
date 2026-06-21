@@ -40,9 +40,7 @@ internal static class Parser
             return (diagnostics, new ContextGenerationModel(RestApiInternalNamespace, ImmutableEquatableArray.Empty<InterfaceModel>()));
         }
 
-#pragma warning disable RS1024
         var interfaceToNullableEnabledMap = new Dictionary<INamedTypeSymbol, bool>(SymbolEqualityComparer.Default);
-#pragma warning restore RS1024
         var methodSymbols = new List<IMethodSymbol>();
         foreach (var group in candidateMethods.GroupBy(m => m.SyntaxTree))
         {

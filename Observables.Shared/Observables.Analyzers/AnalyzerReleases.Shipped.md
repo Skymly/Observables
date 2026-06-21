@@ -8,4 +8,4 @@ OBS0001 | Observables | Error | Conflicting R3 and Reactive packages
 OBS4007 | Observables.SignalR | Warning | Empty hub proxy interface
 OBS5007 | Observables.Mqtt | Warning | Empty MQTT proxy interface
 OBS6007 | Observables.WebSocket | Warning | Empty WebSocket proxy interface
-OBS7007 | Observables.Grpc | Error | Empty gRPC proxy interface
+OBS7007 | Observables.Grpc | Warning | Empty gRPC proxy interface

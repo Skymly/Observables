@@ -118,7 +118,7 @@ Consumers choose channel creation (`GrpcChannel.ForAddress`, DI, test hosts). Th
 | OBS7004 | Error | Member shape does not match boundary attribute |
 | OBS7005 | Error | `IObservable<T>` without `Observables.Grpc.Reactive` |
 | OBS7006 | Error | Unsupported parameter combination |
-| OBS7007 | Error | Empty `[Grpc]` interface (`Observables.Analyzers`) |
+| OBS7007 | Warning | Empty `[Grpc]` interface (`Observables.Analyzers`) |
 
 ## Entry Point
 

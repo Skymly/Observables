@@ -43,6 +43,7 @@ internal static class Emitter
             #if NET5_0_OR_GREATER
             {{dependencyAttributes}}
                     [System.Runtime.CompilerServices.ModuleInitializer]
+                    [global::System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessage("ILLink", "IL2026", Justification = "Factory registration only; the proxy is invoked by user code that declares RequiresUnreferencedCode.")]
                     internal static void Initialize()
                     {
             {{registrations}}
@@ -74,6 +75,10 @@ internal static class Emitter
             {
                 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
                 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
+            #if NET8_0_OR_GREATER
+                [global::System.Diagnostics.CodeAnalysis.RequiresUnreferencedCode("WebSocket payload serialization uses System.Text.Json reflection. Preserve payload type members when trimming.")]
+                [global::System.Diagnostics.CodeAnalysis.RequiresDynamicCode("WebSocket payload serialization uses System.Text.Json reflection.")]
+            #endif
                 internal sealed class {{model.ClassName}} : {{model.InterfaceDisplayName}}
                 {
                     private readonly global::System.Net.WebSockets.ClientWebSocket _socket;

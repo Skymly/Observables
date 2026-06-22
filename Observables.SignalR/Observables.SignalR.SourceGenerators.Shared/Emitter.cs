@@ -43,6 +43,7 @@ internal static class Emitter
             #if NET5_0_OR_GREATER
             {{dependencyAttributes}}
                     [System.Runtime.CompilerServices.ModuleInitializer]
+                    [global::System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessage("ILLink", "IL2026", Justification = "Factory registration only; the proxy is invoked by user code that declares RequiresUnreferencedCode.")]
                     internal static void Initialize()
                     {
             {{registrations}}
@@ -74,6 +75,10 @@ internal static class Emitter
             {
                 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
                 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
+            #if NET8_0_OR_GREATER
+                [global::System.Diagnostics.CodeAnalysis.RequiresUnreferencedCode("SignalR hub proxy uses reflection for method invocation and serialization. Preserve required members when trimming.")]
+                [global::System.Diagnostics.CodeAnalysis.RequiresDynamicCode("SignalR hub proxy uses reflection for method invocation and serialization.")]
+            #endif
                 internal sealed class {{model.ClassName}} : {{model.InterfaceDisplayName}}
                 {
                     private readonly global::Microsoft.AspNetCore.SignalR.Client.HubConnection _connection;

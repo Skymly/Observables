@@ -16,14 +16,9 @@
     TreatWarningsAsErrors (inherited from ProjectDefaults) turns any
     IL2xxx / IL3xxx trim warning into a build failure.
 
-    IL2026 is suppressed because the R3 source generators do not yet emit
-    [RequiresUnreferencedCode] on generated proxy methods. The generated
-    code calls runtime helpers (RestApiBridge.SendAsync, MqttObservable.
-    FromSubscribe, NatsObservable.FromRequest, etc.) that carry
-    [RequiresUnreferencedCode] at class or method level. Until the
-    generators propagate the annotation, IL2026 from generated code is
-    expected. All other IL2xxx/IL3xxx codes (including IL2077 DAM
-    mismatches) remain active and will fail the build.
+    IL2104 is suppressed for third-party libraries (e.g. SignalR Client
+    Core 8.0.8) that ship with their own trim warnings.
+    All other trim warnings (IL2077, IL2057, IL3050, …) remain errors.
   -->
 
   <PropertyGroup>
@@ -38,14 +33,11 @@
     <TrimMode>full</TrimMode>
 
     <!--
-      Suppress IL2026 from generated proxy code. The R3 source generators
-      call runtime helpers with [RequiresUnreferencedCode] but do not yet
-      annotate the generated methods. See csproj comment above.
       IL2104 is suppressed for third-party libraries (e.g. SignalR Client
       Core 8.0.8) that ship with their own trim warnings.
-      All other trim warnings (IL2077, IL2057, IL3050, …) remain errors.
+      All other trim warnings (IL2026, IL2077, IL2057, IL3050, …) remain errors.
     -->
-    <NoWarn>$(NoWarn);IL2026;IL2104</NoWarn>
+    <NoWarn>$(NoWarn);IL2104</NoWarn>
   </PropertyGroup>
 
   <!-- Domain runtimes -->

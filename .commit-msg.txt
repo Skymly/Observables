@@ -1,0 +1,21 @@
+fix(trim): propagate RequiresUnreferencedCode to generated proxy classes
+
+Add [RequiresUnreferencedCode] and [RequiresDynamicCode] annotations to
+the generated proxy class in all 7 domain emitters. The generated proxy
+methods call runtime helpers (RestApiBridge.SendAsync, MqttObservable.
+FromSubscribe, etc.) that carry these annotations; without propagating
+them, ILLink reports IL2026 on the generated methods.
+
+Add [UnconditionalSuppressMessage("ILLink", "IL2026")] to the module
+initializer Initialize() method in all 7 emitters. The module initializer
+only registers factory delegates — it does not invoke reflection itself.
+The suppression is safe because the actual reflection happens when user
+code calls XxxService.For<T>(), which has the RequiresUnreferencedCode
+annotation on the proxy class.
+
+Remove the blanket NoWarn IL2026 from TrimTests.csproj. IL2026 is now
+properly handled per-method instead of suppressed project-wide. All
+other trim warnings (IL2077, IL2057, IL3050, etc.) remain active.
+
+Update RestAPI generator test snapshots to reflect the new annotations
+in generated code.

@@ -6,7 +6,7 @@
 
   <ItemGroup>
     <ProjectReference Include="Observables.Events.R3.csproj" />
-    <ProjectReference Include="Observables.Events.Reactive.csproj" />
+    <ProjectReference Include="Observables.Events.Reactive.Pack.csproj" />
   </ItemGroup>
 
 </Project>

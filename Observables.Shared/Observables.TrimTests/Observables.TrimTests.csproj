@@ -1,0 +1,80 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    ILLink trim-analysis smoke project.
+
+    References all 7 domain runtimes + their R3 source generators so that
+    source-generated proxy implementations are produced and analysed by the
+    trim analyser during `dotnet build` (compile-time IL2xxx warnings) and
+    `dotnet publish -r <rid>` (ILLink cross-assembly analysis).
+
+    The project is a console app (not a test project) — it never runs.
+    Its sole purpose is to compile, trigger source generation, and let
+    ILLink verify that RequiresUnreferencedCode / RequiresDynamicCode /
+    DynamicallyAccessedMembers annotations are correct under full trim.
+
+    TreatWarningsAsErrors (inherited from ProjectDefaults) turns any
+    IL2xxx / IL3xxx trim warning into a build failure.
+
+    IL2026 is suppressed because the R3 source generators do not yet emit
+    [RequiresUnreferencedCode] on generated proxy methods. The generated
+    code calls runtime helpers (RestApiBridge.SendAsync, MqttObservable.
+    FromSubscribe, NatsObservable.FromRequest, etc.) that carry
+    [RequiresUnreferencedCode] at class or method level. Until the
+    generators propagate the annotation, IL2026 from generated code is
+    expected. All other IL2xxx/IL3xxx codes (including IL2077 DAM
+    mismatches) remain active and will fail the build.
+  -->
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <RootNamespace>Observables.TrimTests</RootNamespace>
+    <IsPackable>false</IsPackable>
+
+    <!-- Trim analysis -->
+    <IsTrimmable>true</IsTrimmable>
+    <PublishTrimmed>true</PublishTrimmed>
+    <TrimMode>full</TrimMode>
+
+    <!--
+      Suppress IL2026 from generated proxy code. The R3 source generators
+      call runtime helpers with [RequiresUnreferencedCode] but do not yet
+      annotate the generated methods. See csproj comment above.
+      IL2104 is suppressed for third-party libraries (e.g. SignalR Client
+      Core 8.0.8) that ship with their own trim warnings.
+      All other trim warnings (IL2077, IL2057, IL3050, …) remain errors.
+    -->
+    <NoWarn>$(NoWarn);IL2026;IL2104</NoWarn>
+  </PropertyGroup>
+
+  <!-- Domain runtimes -->
+  <ItemGroup>
+    <ProjectReference Include="..\..\Observables.RestAPI\Observables.RestAPI\Observables.RestAPI.csproj" />
+    <ProjectReference Include="..\..\Observables.Mqtt\Observables.Mqtt\Observables.Mqtt.csproj" />
+    <ProjectReference Include="..\..\Observables.Nats\Observables.Nats\Observables.Nats.csproj" />
+    <ProjectReference Include="..\..\Observables.SignalR\Observables.SignalR\Observables.SignalR.csproj" />
+    <ProjectReference Include="..\..\Observables.WebSocket\Observables.WebSocket\Observables.WebSocket.csproj" />
+    <ProjectReference Include="..\..\Observables.Grpc\Observables.Grpc\Observables.Grpc.csproj" />
+    <ProjectReference Include="..\..\Observables.Sse\Observables.Sse\Observables.Sse.csproj" />
+  </ItemGroup>
+
+  <!-- R3 source generators (analyzer references → generate proxy implementations) -->
+  <ItemGroup>
+    <ProjectReference Include="..\..\Observables.RestAPI\Observables.RestAPI.R3.SourceGenerators\Observables.RestAPI.R3.SourceGenerators.csproj"
+                      OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+    <ProjectReference Include="..\..\Observables.Mqtt\Observables.Mqtt.R3.SourceGenerators\Observables.Mqtt.R3.SourceGenerators.csproj"
+                      OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+    <ProjectReference Include="..\..\Observables.Nats\Observables.Nats.R3.SourceGenerators\Observables.Nats.R3.SourceGenerators.csproj"
+                      OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+    <ProjectReference Include="..\..\Observables.SignalR\Observables.SignalR.R3.SourceGenerators\Observables.SignalR.R3.SourceGenerators.csproj"
+                      OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+    <ProjectReference Include="..\..\Observables.WebSocket\Observables.WebSocket.R3.SourceGenerators\Observables.WebSocket.R3.SourceGenerators.csproj"
+                      OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+    <ProjectReference Include="..\..\Observables.Grpc\Observables.Grpc.R3.SourceGenerators\Observables.Grpc.R3.SourceGenerators.csproj"
+                      OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+    <ProjectReference Include="..\..\Observables.Sse\Observables.Sse.R3.SourceGenerators\Observables.Sse.R3.SourceGenerators.csproj"
+                      OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+  </ItemGroup>
+
+</Project>

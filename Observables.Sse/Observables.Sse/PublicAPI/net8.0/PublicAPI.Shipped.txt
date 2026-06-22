@@ -1,6 +1,5 @@
 #nullable enable
 Observables.Sse.SseAttribute
-Observables.Sse.SseAttribute.SseAttribute() -> void
 Observables.Sse.SseConnection
 Observables.Sse.SseConnection.Endpoint.get -> System.Uri!
 Observables.Sse.SseConnection.HttpClient.get -> System.Net.Http.HttpClient!

@@ -2,7 +2,10 @@ namespace Observables.Nats;
 
 /// <summary>Marks a NATS subject proxy interface for source generation.</summary>
 [AttributeUsage(AttributeTargets.Interface)]
-public sealed class NatsAttribute : Attribute;
+public sealed class NatsAttribute(string? connectionName = null) : Attribute
+{
+    public string? ConnectionName { get; } = connectionName;
+}
 
 /// <summary>Client publish mapped to NATS publish.</summary>
 [AttributeUsage(AttributeTargets.Method)]

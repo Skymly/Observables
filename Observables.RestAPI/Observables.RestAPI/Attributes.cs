@@ -3,6 +3,26 @@ using System.Net.Http;
 namespace Observables.RestAPI
 {
     /// <summary>
+    /// Optional interface-level marker that declares an interface as an Observables RestAPI proxy.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// RestAPI interfaces are normally identified by the presence of HTTP method attributes
+    /// (<see cref="GetAttribute"/>, <see cref="PostAttribute"/>, etc.) on their methods.
+    /// This attribute is <b>not required</b> for the source generator to work.
+    /// </para>
+    /// <para>
+    /// Apply <c>[RestApi]</c> when you want the empty-interface analyzer (<c>OBS3007</c>) to
+    /// report a warning even when the interface has no methods yet, or to make the intent
+    /// explicit in documentation and tooling.
+    /// </para>
+    /// </remarks>
+    [AttributeUsage(AttributeTargets.Interface)]
+    public sealed class RestApiAttribute : Attribute
+    {
+    }
+
+    /// <summary>
     /// Base attribute for HTTP verb attributes that map interface methods to REST paths.
     /// </summary>
     /// <seealso cref="System.Attribute" />

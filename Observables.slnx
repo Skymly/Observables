@@ -33,6 +33,8 @@
 
     <Project Path="Observables.Shared/Observables.Analyzers.Tests/Observables.Analyzers.Tests.csproj" />
 
+    <Project Path="Observables.Shared/Observables.TrimTests/Observables.TrimTests.csproj" />
+
   </Folder>
 
   <Folder Name="/Events/">
@@ -48,6 +50,8 @@
     <Project Path="Observables.Events/Observables.Events.R3.SourceGenerators/Observables.Events.R3.SourceGenerators.csproj" />
 
     <Project Path="Observables.Events/Observables.Events.R3.SourceGenerators.Tests/Observables.Events.R3.SourceGenerators.Tests.csproj" />
+
+    <Project Path="Observables.Events/Observables.Events.Tests/Observables.Events.Tests.csproj" />
 
   </Folder>
 

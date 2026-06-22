@@ -9,7 +9,6 @@ Observables.Nats.INatsPayloadSerializer<T>
 Observables.Nats.INatsPayloadSerializer<T>.Deserialize(System.ReadOnlySpan<byte> payload) -> T
 Observables.Nats.INatsPayloadSerializer<T>.Serialize(T value) -> byte[]!
 Observables.Nats.NatsAttribute
-Observables.Nats.NatsAttribute.NatsAttribute() -> void
 Observables.Nats.NatsObservable
 Observables.Nats.NatsPayloadSerializerExtensions
 Observables.Nats.NatsPayloadSerializers

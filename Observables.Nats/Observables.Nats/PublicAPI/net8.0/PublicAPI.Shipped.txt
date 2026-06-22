@@ -12,7 +12,6 @@ Observables.Nats.JsonNatsPayloadSerializer
 Observables.Nats.JsonNatsPayloadSerializer.Deserialize(System.Type! payloadType, System.ReadOnlySpan<byte> payload) -> object!
 Observables.Nats.JsonNatsPayloadSerializer.Serialize(System.Type! payloadType, object? value) -> byte[]!
 Observables.Nats.NatsAttribute
-Observables.Nats.NatsAttribute.NatsAttribute() -> void
 Observables.Nats.NatsObservable
 Observables.Nats.NatsPayloadSerializerExtensions
 Observables.Nats.NatsPayloadSerializers

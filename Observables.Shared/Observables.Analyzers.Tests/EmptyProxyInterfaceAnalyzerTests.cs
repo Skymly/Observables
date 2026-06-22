@@ -159,6 +159,55 @@ public sealed class EmptyProxyInterfaceAnalyzerTests
     }
 
     [Fact]
+    public void OBS3007_on_empty_restapi_interface()
+    {
+        const string source =
+            """
+            using Observables.RestAPI;
+
+            [RestApi]
+            public interface IEmptyApi
+            {
+            }
+            """;
+
+        var diagnostics = AnalyzerTestHarness.RunAnalyzers(
+            BuildSource(source, "Observables.RestAPI"),
+            additionalReferences: [AnalyzerTestHarness.CreateReference<global::Observables.RestAPI.RestApiAttribute>()],
+            new EmptyProxyInterfaceAnalyzer());
+
+        Assert.Contains(diagnostics, d => d.Id == "OBS3007");
+    }
+
+    [Fact]
+    public void No_OBS3007_when_restapi_interface_has_members()
+    {
+        const string source =
+            """
+            using Observables.RestAPI;
+            using System.Threading.Tasks;
+
+            [RestApi]
+            public interface IUserApi
+            {
+                [Get("/users/{id}")]
+                Task<string> GetUser(int id);
+            }
+            """;
+
+        var diagnostics = AnalyzerTestHarness.RunAnalyzers(
+            BuildSource(source, "Observables.RestAPI", "System.Threading.Tasks"),
+            additionalReferences:
+            [
+                AnalyzerTestHarness.CreateReference<global::Observables.RestAPI.RestApiAttribute>(),
+                AnalyzerTestHarness.CreateReference<global::Observables.RestAPI.GetAttribute>(),
+            ],
+            new EmptyProxyInterfaceAnalyzer());
+
+        Assert.DoesNotContain(diagnostics, d => d.Id == "OBS3007");
+    }
+
+    [Fact]
     public void ProxyDomainCatalog_RestApi_uses_own_empty_interface_descriptor()
     {
         // Regression: RestApi used to incorrectly reuse EmptyHubInterface (OBS4007).

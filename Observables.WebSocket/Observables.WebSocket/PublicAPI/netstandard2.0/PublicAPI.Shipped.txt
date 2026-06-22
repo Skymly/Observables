@@ -1,6 +1,5 @@
 #nullable enable
 Observables.WebSocket.WebSocketAttribute
-Observables.WebSocket.WebSocketAttribute.WebSocketAttribute() -> void
 Observables.WebSocket.WebSocketCloseAttribute
 Observables.WebSocket.WebSocketCloseAttribute.WebSocketCloseAttribute() -> void
 Observables.WebSocket.WebSocketConnectAttribute

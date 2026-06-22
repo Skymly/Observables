@@ -48,7 +48,7 @@ internal static class Parser
             foreach (var method in group)
             {
                 var methodSymbol = model.GetDeclaredSymbol(method, cancellationToken: cancellationToken);
-                if (!IsRefitMethod(methodSymbol, httpMethodBaseAttributeSymbol))
+                if (!IsHttpMethodAttribute(methodSymbol, httpMethodBaseAttributeSymbol))
                     continue;
 
                 var isAnnotated = compilation.Options.NullableContextOptions == NullableContextOptions.Enable
@@ -72,11 +72,11 @@ internal static class Parser
                 if (ifaceSymbol is null || interfaces.ContainsKey(ifaceSymbol))
                     continue;
 
-                var hasDerivedRefit = ifaceSymbol
+                var hasDerivedHttpMethod = ifaceSymbol
                     .AllInterfaces.SelectMany(i => i.GetMembers().OfType<IMethodSymbol>())
-                    .Any(m => IsRefitMethod(m, httpMethodBaseAttributeSymbol));
+                    .Any(m => IsHttpMethodAttribute(m, httpMethodBaseAttributeSymbol));
 
-                if (hasDerivedRefit)
+                if (hasDerivedHttpMethod)
                 {
                     interfaces.Add(ifaceSymbol, []);
                     interfaceToNullableEnabledMap[ifaceSymbol] = model.GetNullableContext(iface.SpanStart) == NullableContext.Enabled;
@@ -115,7 +115,7 @@ internal static class Parser
 
     static InterfaceModel ProcessInterface(
         string fileName, List<Diagnostic> diagnostics, INamedTypeSymbol interfaceSymbol,
-        List<IMethodSymbol> refitMethods, ISymbol disposableInterfaceSymbol,
+        List<IMethodSymbol> httpMethodSymbols, ISymbol disposableInterfaceSymbol,
         INamedTypeSymbol httpMethodBaseAttributeSymbol, bool supportsNullable, bool nullableEnabled,
         WellKnownTypes wellKnownTypes)
     {
@@ -129,8 +129,8 @@ internal static class Parser
         ns = ns!.Replace(".", "");
         var interfaceDisplayName = interfaceSymbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
 
-        var nonRefitMethods = interfaceSymbol.GetMembers().OfType<IMethodSymbol>()
-            .Except(refitMethods, SymbolEqualityComparer.Default).Cast<IMethodSymbol>().ToArray();
+        var nonHttpMethods = interfaceSymbol.GetMembers().OfType<IMethodSymbol>()
+            .Except(httpMethodSymbols, SymbolEqualityComparer.Default).Cast<IMethodSymbol>().ToArray();
 
         var derivedMethods = interfaceSymbol.AllInterfaces
             .SelectMany(i => i.GetMembers().OfType<IMethodSymbol>()).ToList();
@@ -139,42 +139,42 @@ internal static class Parser
             m.ContainingType?.Equals(disposableInterfaceSymbol, SymbolEqualityComparer.Default) == true);
         if (disposeMethod != null) derivedMethods.Remove(disposeMethod);
 
-        var derivedRefitMethods = derivedMethods
-            .Where(m => IsRefitMethod(m, httpMethodBaseAttributeSymbol)).ToArray();
-        var derivedNonRefitMethods = derivedMethods
-            .Except(derivedRefitMethods, SymbolEqualityComparer.Default).Cast<IMethodSymbol>().ToArray();
+        var derivedHttpMethods = derivedMethods
+            .Where(m => IsHttpMethodAttribute(m, httpMethodBaseAttributeSymbol)).ToArray();
+        var derivedNonHttpMethods = derivedMethods
+            .Except(derivedHttpMethods, SymbolEqualityComparer.Default).Cast<IMethodSymbol>().ToArray();
 
-        if (derivedNonRefitMethods.Length > 0)
+        if (derivedNonHttpMethods.Length > 0)
         {
             var explicitImpls = new HashSet<IMethodSymbol>(SymbolEqualityComparer.Default);
             foreach (var member in interfaceSymbol.GetMembers().OfType<IMethodSymbol>())
                 foreach (var bm in member.ExplicitInterfaceImplementations)
                     explicitImpls.Add(bm.OriginalDefinition ?? bm);
             if (explicitImpls.Count > 0)
-                derivedNonRefitMethods = derivedNonRefitMethods
+                derivedNonHttpMethods = derivedNonHttpMethods
                     .Where(m => !explicitImpls.Contains(m.OriginalDefinition ?? m)).ToArray();
         }
 
         var memberNames = interfaceSymbol.GetMembers().Select(x => x.Name).Distinct().ToImmutableEquatableArray();
-        var refitMethodsArray = refitMethods
+        var httpMethodsArray = httpMethodSymbols
             .Select(m => ParseMethod(m, true, httpMethodBaseAttributeSymbol, wellKnownTypes, diagnostics))
             .ToImmutableEquatableArray();
-        var derivedRefitMethodsArray = derivedRefitMethods
+        var derivedHttpMethodsArray = derivedHttpMethods
             .Select(m => ParseMethod(m, false, httpMethodBaseAttributeSymbol, wellKnownTypes, diagnostics))
             .ToImmutableEquatableArray();
 
-        var nonRefitMethodModelList = new List<MethodModel>();
-        foreach (var method in nonRefitMethods)
+        var nonHttpMethodModelList = new List<MethodModel>();
+        foreach (var method in nonHttpMethods)
         {
             if (method.IsStatic || method.MethodKind == MethodKind.PropertyGet
                 || method.MethodKind == MethodKind.PropertySet || !method.IsAbstract) continue;
-            nonRefitMethodModelList.Add(ParseNonRefitMethod(method, diagnostics, isDerived: false));
+            nonHttpMethodModelList.Add(ParseNonHttpMethod(method, diagnostics, isDerived: false));
         }
-        foreach (var method in derivedNonRefitMethods)
+        foreach (var method in derivedNonHttpMethods)
         {
             if (method.IsStatic || method.MethodKind == MethodKind.PropertyGet
                 || method.MethodKind == MethodKind.PropertySet || !method.IsAbstract) continue;
-            nonRefitMethodModelList.Add(ParseNonRefitMethod(method, diagnostics, isDerived: true));
+            nonHttpMethodModelList.Add(ParseNonHttpMethod(method, diagnostics, isDerived: true));
         }
 
         var constraints = GenerateConstraints(interfaceSymbol.TypeParameters, false);
@@ -185,11 +185,11 @@ internal static class Parser
             (true, false) => Nullability.Disabled,
         };
         return new InterfaceModel(fileName, className, ns, classDeclaration, interfaceDisplayName,
-            classSuffix, constraints, memberNames, nonRefitMethodModelList.ToImmutableEquatableArray(),
-            refitMethodsArray, derivedRefitMethodsArray, nullability, disposeMethod != null);
+            classSuffix, constraints, memberNames, nonHttpMethodModelList.ToImmutableEquatableArray(),
+            httpMethodsArray, derivedHttpMethodsArray, nullability, disposeMethod != null);
     }
 
-    static MethodModel ParseNonRefitMethod(IMethodSymbol methodSymbol, List<Diagnostic> diagnostics, bool isDerived)
+    static MethodModel ParseNonHttpMethod(IMethodSymbol methodSymbol, List<Diagnostic> diagnostics, bool isDerived)
     {
         foreach (var location in methodSymbol.Locations)
         {
@@ -229,7 +229,7 @@ internal static class Parser
             returnTypeInfo, parameters, constraints, isExplicit);
     }
 
-    static bool IsRefitMethod(IMethodSymbol? methodSymbol, INamedTypeSymbol httpMethodAttribute) =>
+    static bool IsHttpMethodAttribute(IMethodSymbol? methodSymbol, INamedTypeSymbol httpMethodAttribute) =>
         methodSymbol?.GetAttributes().Any(ad => ad.AttributeClass?.InheritsFromOrEquals(httpMethodAttribute) == true) == true;
 
     static void ValidatePathTemplate(IMethodSymbol methodSymbol, INamedTypeSymbol httpMethodBaseAttributeSymbol, List<Diagnostic> diagnostics)

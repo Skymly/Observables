@@ -8,7 +8,7 @@ public sealed class CsprojPackageReferenceEditorTests
             <TargetFramework>net8.0</TargetFramework>
           </PropertyGroup>
           <ItemGroup>
-            <PackageReference Include="Observables.RestAPI.R3" Version="0.1.0-preview4" />
+            <PackageReference Include="Observables.RestAPI.R3" Version="0.1.1" />
           </ItemGroup>
         </Project>
         """;
@@ -19,9 +19,9 @@ public sealed class CsprojPackageReferenceEditorTests
         var updated = CsprojPackageReferenceEditor.AddPackageReferenceIfMissing(
             SampleCsproj,
             "Observables.RestAPI",
-            version: "0.1.0-preview4");
+            version: "0.1.1");
 
-        Assert.Contains("<PackageReference Include=\"Observables.RestAPI\" Version=\"0.1.0-preview4\" />", updated);
+        Assert.Contains("<PackageReference Include=\"Observables.RestAPI\" Version=\"0.1.1\" />", updated);
         Assert.Equal(2, updated.Split("<PackageReference", StringSplitOptions.None).Length - 1);
     }
 
@@ -47,10 +47,10 @@ public sealed class CsprojPackageReferenceEditorTests
             SampleCsproj,
             "Observables.RestAPI.R3",
             "Observables.RestAPI.Reactive",
-            version: "0.1.0-preview4");
+            version: "0.1.1");
 
         Assert.DoesNotContain("Observables.RestAPI.R3", updated);
-        Assert.Contains("<PackageReference Include=\"Observables.RestAPI.Reactive\" Version=\"0.1.0-preview4\" />", updated);
+        Assert.Contains("<PackageReference Include=\"Observables.RestAPI.Reactive\" Version=\"0.1.1\" />", updated);
     }
 
     [Fact]
@@ -60,6 +60,6 @@ public sealed class CsprojPackageReferenceEditorTests
             SampleCsproj,
             "Observables.RestAPI.R3");
 
-        Assert.Equal("0.1.0-preview4", version);
+        Assert.Equal("0.1.1", version);
     }
 }

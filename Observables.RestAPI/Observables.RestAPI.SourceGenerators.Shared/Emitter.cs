@@ -107,14 +107,14 @@ internal static class Emitter
         var uniqueNames = new UniqueNameBuilder();
         uniqueNames.Reserve(model.MemberNames);
 
-        foreach (var method in model.RefitMethods)
-            WriteRefitMethod(source, method, true, uniqueNames);
+        foreach (var method in model.HttpMethods)
+            WriteHttpMethod(source, method, true, uniqueNames);
 
-        foreach (var method in model.DerivedRefitMethods)
-            WriteRefitMethod(source, method, false, uniqueNames);
+        foreach (var method in model.DerivedHttpMethods)
+            WriteHttpMethod(source, method, false, uniqueNames);
 
-        foreach (var method in model.NonRefitMethods)
-            WriteNonRefitMethod(source, method);
+        foreach (var method in model.NonHttpMethods)
+            WriteNonHttpMethod(source, method);
 
         if (model.DisposeMethod)
             WriteDisposableMethod(source);
@@ -135,7 +135,7 @@ internal static class Emitter
     /// <summary>
     /// Generates the body of a REST method that directly builds and sends an HttpRequestMessage.
     /// </summary>
-    static void WriteRefitMethod(
+    static void WriteHttpMethod(
         SourceWriter source,
         MethodModel methodModel,
         bool isTopLevel,
@@ -398,7 +398,7 @@ internal static class Emitter
         .Replace("\r", "\\r")
         .Replace("\t", "\\t");
 
-    static void WriteNonRefitMethod(SourceWriter source, MethodModel methodModel)
+    static void WriteNonHttpMethod(SourceWriter source, MethodModel methodModel)
     {
         var isExplicit = methodModel.IsExplicitInterface;
         WriteMethodOpening(source, methodModel, isExplicit, isExplicit);

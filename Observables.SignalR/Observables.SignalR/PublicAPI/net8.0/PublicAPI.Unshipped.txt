@@ -1,1 +1,3 @@
 #nullable enable
+Observables.SignalR.HubAttribute.HubAttribute(string? hubName = null) -> void
+Observables.SignalR.HubAttribute.HubName.get -> string?

@@ -130,13 +130,13 @@ internal static class ProxyDomainCatalog
 
     internal static readonly ProxyDomain RestApi = new(
         displayName: "RestAPI",
-        interfaceMarkerMetadataName: string.Empty,
+        interfaceMarkerMetadataName: "Observables.RestAPI.RestApiAttribute",
         reactiveAdapterMetadataName: "Observables.RestAPI.Reactive.SystemReactiveObservableAdapter",
         emptyInterfaceDescriptor: DiagnosticDescriptors.EmptyRestApiInterface,
         methodAttributes: [],
         propertyAttributes: []);
 
-    internal static readonly IReadOnlyList<ProxyDomain> InterfaceProxyDomains = [SignalR, Mqtt, WebSocket, Grpc, Sse, Nats];
+    internal static readonly IReadOnlyList<ProxyDomain> InterfaceProxyDomains = [SignalR, Mqtt, WebSocket, Grpc, Sse, Nats, RestApi];
 
     internal static readonly IReadOnlyList<ProxyDomain> ReactiveConflictDomains =
         [SignalR, Mqtt, WebSocket, Grpc, Sse, Nats, RestApi];

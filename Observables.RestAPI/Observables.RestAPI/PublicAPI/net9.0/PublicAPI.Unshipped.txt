@@ -11,3 +11,5 @@ static Observables.RestAPI.RestApiBridge.SendAsync<T, TBody>(System.Net.Http.Htt
 static Observables.RestAPI.RestApiBridge.SendVoidAsync(System.Net.Http.HttpClient! client, System.Net.Http.HttpRequestMessage! request, Observables.RestAPI.RestApiSettings! settings, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task!
 static Observables.RestAPI.RestApiBridge.SerializeBody<T>(T value, Observables.RestAPI.RestApiSettings! settings, int bodySerializationMethod = 0) -> System.Net.Http.HttpContent!
 static Observables.RestAPI.RestService.RegisterGeneratedFactory(System.Type! refitInterfaceType, System.Func<System.Net.Http.HttpClient!, Observables.RestAPI.RestApiSettings?, object!>! factory) -> void
+Observables.RestAPI.RestApiAttribute
+Observables.RestAPI.RestApiAttribute.RestApiAttribute() -> void

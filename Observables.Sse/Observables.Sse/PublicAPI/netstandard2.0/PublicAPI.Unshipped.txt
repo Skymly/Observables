@@ -1,1 +1,3 @@
 #nullable enable
+Observables.Sse.SseAttribute.SseAttribute(string? endpointName = null) -> void
+Observables.Sse.SseAttribute.EndpointName.get -> string?

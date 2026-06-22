@@ -9,7 +9,6 @@ Observables.Mqtt.IMqttPayloadSerializer<T>
 Observables.Mqtt.IMqttPayloadSerializer<T>.Deserialize(System.ReadOnlySpan<byte> payload) -> T
 Observables.Mqtt.IMqttPayloadSerializer<T>.Serialize(T value) -> byte[]!
 Observables.Mqtt.MqttAttribute
-Observables.Mqtt.MqttAttribute.MqttAttribute() -> void
 Observables.Mqtt.MqttObservable
 Observables.Mqtt.MqttPayloadSerializerExtensions
 Observables.Mqtt.MqttPayloadSerializers

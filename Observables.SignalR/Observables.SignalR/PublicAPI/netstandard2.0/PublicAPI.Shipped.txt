@@ -1,6 +1,5 @@
 #nullable enable
 Observables.SignalR.HubAttribute
-Observables.SignalR.HubAttribute.HubAttribute() -> void
 Observables.SignalR.HubConnectionArgs
 Observables.SignalR.HubInvokeAttribute
 Observables.SignalR.HubInvokeAttribute.HubInvokeAttribute(string? methodName = null) -> void

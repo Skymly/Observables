@@ -205,24 +205,34 @@ namespace Observables.RestAPI
             return new NonGenericEnumConverter(typeToConvert, enumType, isNullable);
         }
 
-        sealed class NonGenericEnumConverter(
-            Type targetType,
+        sealed class NonGenericEnumConverter : JsonConverter<object?>
+        {
+            readonly Type targetType;
 #if NET5_0_OR_GREATER
             [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicFields)]
 #endif
-            Type enumType,
-            bool isNullable)
-            : JsonConverter<object?>
-        {
-            readonly Dictionary<string, object> namesToValues = GetNamesToValues(
-                enumType,
-                StringComparer.Ordinal
-            );
-            readonly Dictionary<string, object> namesToValuesIgnoreCase = GetNamesToValues(
-                enumType,
-                StringComparer.OrdinalIgnoreCase
-            );
-            readonly Dictionary<object, string> valuesToNames = GetValuesToNames(enumType);
+            readonly Type enumType;
+            readonly bool isNullable;
+            readonly Dictionary<string, object> namesToValues;
+            readonly Dictionary<string, object> namesToValuesIgnoreCase;
+            readonly Dictionary<object, string> valuesToNames;
+
+#if NET5_0_OR_GREATER
+            public NonGenericEnumConverter(
+                Type targetType,
+                [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicFields)] Type enumType,
+                bool isNullable)
+#else
+            public NonGenericEnumConverter(Type targetType, Type enumType, bool isNullable)
+#endif
+            {
+                this.targetType = targetType;
+                this.enumType = enumType;
+                this.isNullable = isNullable;
+                namesToValues = GetNamesToValues(enumType, StringComparer.Ordinal);
+                namesToValuesIgnoreCase = GetNamesToValues(enumType, StringComparer.OrdinalIgnoreCase);
+                valuesToNames = GetValuesToNames(enumType);
+            }
 
             public override bool CanConvert(Type typeToConvert) => typeToConvert == targetType;
 

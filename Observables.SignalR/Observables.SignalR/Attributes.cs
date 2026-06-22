@@ -2,7 +2,10 @@ namespace Observables.SignalR;
 
 /// <summary>Marks a hub proxy interface for source generation.</summary>
 [AttributeUsage(AttributeTargets.Interface)]
-public sealed class HubAttribute : Attribute;
+public sealed class HubAttribute(string? hubName = null) : Attribute
+{
+    public string? HubName { get; } = hubName;
+}
 
 /// <summary>Client invoke (single result) mapped to HubConnection.InvokeAsync.</summary>
 [AttributeUsage(AttributeTargets.Method)]

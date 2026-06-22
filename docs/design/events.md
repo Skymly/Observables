@@ -174,7 +174,7 @@ Observables.Events/
 │   └── targets/observables.events.props             # ObservableRoutedEvents 默认 false
 ├── Observables.Events.Package/                      # Traversal 根，产出 2 个 NuGet 包
 │   ├── Observables.Events.R3.csproj                 # PackageId = Observables.Events.R3
-│   ├── Observables.Events.Reactive.csproj           # PackageId = Observables.Events.Reactive
+│   ├── Observables.Events.Reactive.Pack.csproj      # PackageId = Observables.Events.Reactive
 │   └── build/
 │       ├── Observables.Events.R3.props              # buildTransitive 标记
 │       └── Observables.Events.Reactive.props

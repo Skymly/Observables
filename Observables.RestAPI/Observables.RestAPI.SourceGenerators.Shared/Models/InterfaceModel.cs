@@ -9,9 +9,9 @@ internal sealed record InterfaceModel(
     string ClassSuffix,
     ImmutableEquatableArray<TypeConstraint> Constraints,
     ImmutableEquatableArray<string> MemberNames,
-    ImmutableEquatableArray<MethodModel> NonRefitMethods,
-    ImmutableEquatableArray<MethodModel> RefitMethods,
-    ImmutableEquatableArray<MethodModel> DerivedRefitMethods,
+    ImmutableEquatableArray<MethodModel> NonHttpMethods,
+    ImmutableEquatableArray<MethodModel> HttpMethods,
+    ImmutableEquatableArray<MethodModel> DerivedHttpMethods,
     Nullability Nullability,
     bool DisposeMethod
 );

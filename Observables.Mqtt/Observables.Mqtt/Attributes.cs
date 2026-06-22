@@ -2,7 +2,10 @@ namespace Observables.Mqtt;
 
 /// <summary>Marks a topic proxy interface for source generation.</summary>
 [AttributeUsage(AttributeTargets.Interface)]
-public sealed class MqttAttribute : Attribute;
+public sealed class MqttAttribute(string? clientName = null) : Attribute
+{
+    public string? ClientName { get; } = clientName;
+}
 
 /// <summary>Client publish mapped to MQTT publish.</summary>
 [AttributeUsage(AttributeTargets.Method)]

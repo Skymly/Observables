@@ -153,6 +153,8 @@ Observables/
 | **Mqtt** | `Observables.Mqtt` | `Mqtt.R3.SourceGenerators` | `Mqtt.Reactive.SourceGenerators` | R3 + Reactive 生成器测试；`Mqtt.Tests` / `Mqtt.Reactive.Tests`（进程内 MQTTnet broker E2E） |
 | **WebSocket** | `Observables.WebSocket` | `WebSocket.R3.SourceGenerators` | `WebSocket.Reactive.SourceGenerators` | Core / Reactive / R3 + Reactive 生成器测试；E2E（`WebSocket.Tests` / `WebSocket.Reactive.Tests`） |
 | **Grpc** | `Observables.Grpc` | `Grpc.R3.SourceGenerators` | `Grpc.Reactive.SourceGenerators` | R3 + Reactive 生成器测试；E2E（`Grpc.Tests` / `Grpc.Reactive.Tests`，进程内 `TestServer`） |
+| **Sse** | `Observables.Sse` | `Sse.R3.SourceGenerators` | `Sse.Reactive.SourceGenerators` | R3 + Reactive 生成器测试；E2E（`Sse.Tests` / `Sse.Reactive.Tests`，内嵌 HTTP server） |
+| **Nats** | `Observables.Nats` | `Nats.R3.SourceGenerators` | `Nats.Reactive.SourceGenerators` | R3 + Reactive 生成器测试；E2E（`Nats.Tests` / `Nats.Reactive.Tests`，进程内 nats-server） |
 
 **RestAPI 运行时**：`RestApiSettings`、`RestService.For<T>()`；命名空间 `Observables.RestAPI`。
 

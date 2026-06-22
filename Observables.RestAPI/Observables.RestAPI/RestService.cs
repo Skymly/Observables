@@ -29,7 +29,7 @@ namespace Observables.RestAPI
         public static void RegisterGeneratedFactory(
             [DynamicallyAccessedMembers(
                 DynamicallyAccessedMemberTypes.PublicMethods |
-                DynamicallyAccessedMemberTypes.NonPublicMethods
+                DynamicallyAccessedMemberTypes.PublicProperties
             )] Type refitInterfaceType,
             Func<HttpClient, RestApiSettings?, object> factory
         )
@@ -59,7 +59,7 @@ namespace Observables.RestAPI
         public static T For<
             [DynamicallyAccessedMembers(
                 DynamicallyAccessedMemberTypes.PublicMethods |
-                DynamicallyAccessedMemberTypes.NonPublicMethods
+                DynamicallyAccessedMemberTypes.PublicProperties
             )] T>(HttpClient client, RestApiSettings? settings)
 #else
         public static T For<T>(HttpClient client, RestApiSettings? settings)
@@ -76,7 +76,7 @@ namespace Observables.RestAPI
         public static T For<
             [DynamicallyAccessedMembers(
                 DynamicallyAccessedMemberTypes.PublicMethods |
-                DynamicallyAccessedMemberTypes.NonPublicMethods
+                DynamicallyAccessedMemberTypes.PublicProperties
             )] T>(HttpClient client) => For<T>(client, (RestApiSettings?)null);
 #else
         public static T For<T>(HttpClient client) => For<T>(client, (RestApiSettings?)null);
@@ -93,7 +93,7 @@ namespace Observables.RestAPI
         public static T For<
             [DynamicallyAccessedMembers(
                 DynamicallyAccessedMemberTypes.PublicMethods |
-                DynamicallyAccessedMemberTypes.NonPublicMethods
+                DynamicallyAccessedMemberTypes.PublicProperties
             )] T>(string hostUrl, RestApiSettings? settings)
 #else
         public static T For<T>(string hostUrl, RestApiSettings? settings)
@@ -113,7 +113,7 @@ namespace Observables.RestAPI
         public static T For<
             [DynamicallyAccessedMembers(
                 DynamicallyAccessedMemberTypes.PublicMethods |
-                DynamicallyAccessedMemberTypes.NonPublicMethods
+                DynamicallyAccessedMemberTypes.PublicProperties
             )] T>(string hostUrl) => For<T>(hostUrl, null);
 #else
         public static T For<T>(string hostUrl) => For<T>(hostUrl, null);
@@ -130,7 +130,7 @@ namespace Observables.RestAPI
         public static object For(
             [DynamicallyAccessedMembers(
                 DynamicallyAccessedMemberTypes.PublicMethods |
-                DynamicallyAccessedMemberTypes.NonPublicMethods
+                DynamicallyAccessedMemberTypes.PublicProperties
             )] Type refitInterfaceType,
             HttpClient client,
             RestApiSettings? settings
@@ -153,7 +153,7 @@ namespace Observables.RestAPI
                 refitInterfaceType,
                 static ([DynamicallyAccessedMembers(
                     DynamicallyAccessedMemberTypes.PublicMethods |
-                    DynamicallyAccessedMemberTypes.NonPublicMethods)] Type type) => GetGeneratedType(type));
+                    DynamicallyAccessedMemberTypes.PublicProperties)] Type type) => GetGeneratedType(type));
 #else
             var generatedType = TypeMapping.GetOrAdd(refitInterfaceType, GetGeneratedType);
 #endif
@@ -171,7 +171,7 @@ namespace Observables.RestAPI
         public static object For(
             [DynamicallyAccessedMembers(
                 DynamicallyAccessedMemberTypes.PublicMethods |
-                DynamicallyAccessedMemberTypes.NonPublicMethods
+                DynamicallyAccessedMemberTypes.PublicProperties
             )] Type refitInterfaceType,
             HttpClient client
         ) => For(refitInterfaceType, client, (RestApiSettings?)null);
@@ -191,7 +191,7 @@ namespace Observables.RestAPI
         public static object For(
             [DynamicallyAccessedMembers(
                 DynamicallyAccessedMemberTypes.PublicMethods |
-                DynamicallyAccessedMemberTypes.NonPublicMethods
+                DynamicallyAccessedMemberTypes.PublicProperties
             )] Type refitInterfaceType,
             string hostUrl,
             RestApiSettings? settings
@@ -214,7 +214,7 @@ namespace Observables.RestAPI
         public static object For(
             [DynamicallyAccessedMembers(
                 DynamicallyAccessedMemberTypes.PublicMethods |
-                DynamicallyAccessedMemberTypes.NonPublicMethods
+                DynamicallyAccessedMemberTypes.PublicProperties
             )] Type refitInterfaceType,
             string hostUrl
         ) => For(refitInterfaceType, hostUrl, null);
@@ -268,7 +268,7 @@ namespace Observables.RestAPI
         static Type GetGeneratedType(
             [DynamicallyAccessedMembers(
                 DynamicallyAccessedMemberTypes.PublicMethods |
-                DynamicallyAccessedMemberTypes.NonPublicMethods
+                DynamicallyAccessedMemberTypes.PublicProperties
             )] Type refitInterfaceType
         )
 #else

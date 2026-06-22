@@ -12,7 +12,7 @@
 | 共享层 | `Observables.Core`、`Observables.SourceGenerators.Shared`、`Observables.CodeFixes`、`Observables.Analyzers` |
 | nuget.org 已发 | **`0.1.0-preview6`** — **12 包**；**`0.1.0-preview7`** — **14 包**（+ Sse）；**`0.1.0-preview8`** — **16 包**（+ Nats）；**`0.1.0`** — **16 包**（稳定版）；**`0.1.1-preview1`** — 本地化 IntelliSense 预览；**`0.1.1`** — **16 包**（稳定版，`v0.1.1` tag + GitHub Release） |
 | 构建 | 主仓 Nuke `Ci` / `CiPack` / `Publish`；`PackVerify` + `eng/nuget-smoke`（**16** 消费者） |
-| 示例仓 CI | `Observables.Samples` Nuke `Ci`（NuGet `0.1.1-preview1`，待同步 `0.1.1`） |
+| 示例仓 CI | `Observables.Samples` Nuke `Ci`（NuGet `0.1.1`，已同步） |
 
 ### 已知工程债（详见 AGENTS.md「工程治理」）
 

@@ -1997,5 +1997,19 @@
             取自 System.Net.Http。
             </summary>
         </member>
+        <member name="T:Observables.RestAPI.RestApiAttribute">
+            <summary>
+            可选的接口级标记，声明接口为 Observables RestAPI 代理。
+            </summary>
+            <remarks>
+            <para>
+            RestAPI 接口通常通过方法上的 HTTP 方法特性（<see cref="T:Observables.RestAPI.GetAttribute"/>、<see cref="T:Observables.RestAPI.PostAttribute"/> 等）识别。
+            此特性<b>非必需</b>，源生成器无需即可工作。
+            </para>
+            <para>
+            当希望空接口分析器（<c>OBS3007</c>）在接口尚无方法时也报告警告，或在文档与工具中显式声明代理意图时，应用 <c>[RestApi]</c>。
+            </para>
+            </remarks>
+        </member>
     </members>
 </doc>

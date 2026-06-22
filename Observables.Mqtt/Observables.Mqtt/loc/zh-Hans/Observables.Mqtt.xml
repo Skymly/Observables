@@ -7,6 +7,9 @@
         <member name="T:Observables.Mqtt.MqttAttribute">
             <summary>标记用于源生成的主题代理接口。</summary>
         </member>
+        <member name="M:Observables.Mqtt.MqttAttribute.#ctor(System.String)">
+            <summary>标记用于源生成的主题代理接口，可选指定客户端名称。</summary>
+        </member>
         <member name="T:Observables.Mqtt.MqttPublishAttribute">
             <summary>客户端发布，映射为 MQTT publish。</summary>
         </member>

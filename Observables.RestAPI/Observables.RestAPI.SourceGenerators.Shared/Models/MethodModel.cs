@@ -17,7 +17,7 @@ internal sealed record MethodModel(
     int? CancellationTokenIndex = null,
     int? BodyParameterIndex = null,
     int BodySerializationMethod = 0,
-    bool BodyBuffered = false,
+    bool? BodyBuffered = null,
     ImmutableEquatableArray<string> Headers = default!,
     bool IsMultipart = false,
     string MultipartBoundary = "----MyGreatBoundary",

@@ -188,6 +188,8 @@ internal static class Emitter
 
         WriteRequestBuilding(source, methodModel);
 
+        var bodyBufferedExpression = GetBodyBufferedExpression(methodModel);
+
         // Send and handle response
         if (methodModel.ReturnTypeMetadata == ReturnTypeInfo.AsyncVoid)
         {
@@ -199,12 +201,12 @@ internal static class Emitter
         }
         else if (methodModel.ReturnTypeMetadata == ReturnTypeInfo.AsyncResult)
         {
-            source.WriteLine($"{@return}global::Observables.RestAPI.RestApiBridge.SendAsync<{methodModel.ReturnResultType}, {methodModel.DeserializedResultType}>(Client, ______request, _settings, {(methodModel.IsApiResponse ? "true" : "false")}, {(methodModel.BodyBuffered ? "true" : "false")}, {ctVar}){configureAwait};");
+            source.WriteLine($"{@return}global::Observables.RestAPI.RestApiBridge.SendAsync<{methodModel.ReturnResultType}, {methodModel.DeserializedResultType}>(Client, ______request, _settings, {(methodModel.IsApiResponse ? "true" : "false")}, {bodyBufferedExpression}, {ctVar}){configureAwait};");
         }
         else if (methodModel.ReturnTypeMetadata == ReturnTypeInfo.Return)
         {
             // Synchronous return — block on the async call
-            source.WriteLine($"{@return}global::Observables.RestAPI.RestApiBridge.SendAsync<{methodModel.ReturnResultType}, {methodModel.DeserializedResultType}>(Client, ______request, _settings, {(methodModel.IsApiResponse ? "true" : "false")}, {(methodModel.BodyBuffered ? "true" : "false")}, {ctVar}).GetAwaiter().GetResult();");
+            source.WriteLine($"{@return}global::Observables.RestAPI.RestApiBridge.SendAsync<{methodModel.ReturnResultType}, {methodModel.DeserializedResultType}>(Client, ______request, _settings, {(methodModel.IsApiResponse ? "true" : "false")}, {bodyBufferedExpression}, {ctVar}).GetAwaiter().GetResult();");
         }
     }
 
@@ -223,11 +225,16 @@ internal static class Emitter
         WriteRequestBuilding(source, methodModel);
 
         // Send
-        source.WriteLine($"return await global::Observables.RestAPI.RestApiBridge.SendAsync<{methodModel.ReturnResultType}, {methodModel.DeserializedResultType}>(Client, ______request, _settings, {(methodModel.IsApiResponse ? "true" : "false")}, {(methodModel.BodyBuffered ? "true" : "false")}, ______ct).ConfigureAwait(false);");
+        source.WriteLine($"return await global::Observables.RestAPI.RestApiBridge.SendAsync<{methodModel.ReturnResultType}, {methodModel.DeserializedResultType}>(Client, ______request, _settings, {(methodModel.IsApiResponse ? "true" : "false")}, {GetBodyBufferedExpression(methodModel)}, ______ct).ConfigureAwait(false);");
 
         source.Indentation--;
         source.WriteLine("});");
     }
+
+    static string GetBodyBufferedExpression(MethodModel methodModel) =>
+        methodModel.BodyBuffered.HasValue
+            ? (methodModel.BodyBuffered.Value ? "true" : "false")
+            : (methodModel.BodyParameterIndex.HasValue || methodModel.IsMultipart ? "_settings.Buffered" : "false");
 
     /// <summary>
     /// Emits the common request-building statements shared by direct and observable method bodies:

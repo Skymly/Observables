@@ -435,7 +435,7 @@ internal static class Parser
         public int? CancellationTokenIndex { get; set; }
         public int? BodyParameterIndex { get; set; }
         public int BodySerializationMethod { get; set; }
-        public bool BodyBuffered { get; set; }
+        public bool? BodyBuffered { get; set; }
         public ImmutableEquatableArray<string> Headers { get; set; } = ImmutableEquatableArray<string>.Empty;
         public bool IsMultipart { get; set; }
         public string MultipartBoundary { get; set; } = "----MyGreatBoundary";
@@ -457,7 +457,7 @@ internal static class Parser
         public int QueryCollectionFormat { get; set; }
         public bool QueryIsCollectionFormatSpecified { get; set; }
         public BodySerializationMethod BodySerializationMethod { get; set; } = BodySerializationMethod.Default;
-        public bool BodyBuffered { get; set; }
+        public bool? BodyBuffered { get; set; }
     }
 
     static HttpSemantics ParseHttpSemantics(IMethodSymbol methodSymbol, INamedTypeSymbol httpMethodBaseAttributeSymbol)

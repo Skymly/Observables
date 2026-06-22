@@ -48,6 +48,30 @@ public class CoreGeneratorTests
     }
 
     [Fact]
+    public Task Body_without_buffered_override_uses_settings_buffered_default()
+    {
+        GeneratorRunOutput output = GeneratorTestHarness.Run(
+            """
+            public interface IUserApi
+            {
+                [Post("/users")]
+                Task<User> CreateUser([Body] User user);
+            }
+
+            public sealed class User
+            {
+                public int Id { get; set; }
+            }
+            """);
+
+        Assert.Contains(
+            ", false, _settings.Buffered, ______ct)",
+            GeneratorTestHarness.ToSnapshot(output),
+            StringComparison.Ordinal);
+        return Task.CompletedTask;
+    }
+
+    [Fact]
     public Task GetUser_path_parameter_mismatch_reports_OBS3004()
     {
         GeneratorRunOutput output = GeneratorTestHarness.Run(

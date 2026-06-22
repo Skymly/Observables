@@ -96,6 +96,48 @@ public sealed class EmptyProxyInterfaceAnalyzerTests
     }
 
     [Fact]
+    public void OBS7007_on_empty_grpc_interface()
+    {
+        const string source =
+            """
+            using Observables.Grpc;
+
+            [Grpc]
+            public interface IGreeter
+            {
+            }
+            """;
+
+        var diagnostics = AnalyzerTestHarness.RunAnalyzers(
+            BuildSource(source, "Observables.Grpc"),
+            additionalReferences: [AnalyzerTestHarness.CreateReference<global::Observables.Grpc.GrpcAttribute>()],
+            new EmptyProxyInterfaceAnalyzer());
+
+        Assert.Contains(diagnostics, d => d.Id == "OBS7007");
+    }
+
+    [Fact]
+    public void OBS8007_on_empty_sse_interface()
+    {
+        const string source =
+            """
+            using Observables.Sse;
+
+            [Sse]
+            public interface IEvents
+            {
+            }
+            """;
+
+        var diagnostics = AnalyzerTestHarness.RunAnalyzers(
+            BuildSource(source, "Observables.Sse"),
+            additionalReferences: [AnalyzerTestHarness.CreateReference<global::Observables.Sse.SseAttribute>()],
+            new EmptyProxyInterfaceAnalyzer());
+
+        Assert.Contains(diagnostics, d => d.Id == "OBS8007");
+    }
+
+    [Fact]
     public void OBS9007_on_empty_nats_interface()
     {
         const string source =

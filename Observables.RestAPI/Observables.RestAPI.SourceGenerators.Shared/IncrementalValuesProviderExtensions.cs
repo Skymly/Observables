@@ -24,28 +24,6 @@ internal static class IncrementalValuesProviderExtensions
     }
 
     /// <summary>
-    /// Registers an output node into an <see cref="IncrementalGeneratorInitializationContext"/> to output diagnostics.
-    /// </summary>
-    /// <param name="context">The input <see cref="IncrementalGeneratorInitializationContext"/> instance.</param>
-    /// <param name="diagnostics">The input <see cref="IncrementalValuesProvider{TValues}"/> sequence of diagnostics.</param>
-    public static void ReportDiagnostics(
-        this IncrementalGeneratorInitializationContext context,
-        IncrementalValueProvider<ImmutableEquatableArray<Diagnostic>> diagnostics
-    )
-    {
-        context.RegisterSourceOutput(
-            diagnostics,
-            static (context, diagnostics) =>
-            {
-                foreach (var diagnostic in diagnostics)
-                {
-                    context.ReportDiagnostic(diagnostic);
-                }
-            }
-        );
-    }
-
-    /// <summary>
     /// Registers an implementation source output for the provided mappers.
     /// </summary>
     /// <param name="context">The context, on which the output is registered.</param>

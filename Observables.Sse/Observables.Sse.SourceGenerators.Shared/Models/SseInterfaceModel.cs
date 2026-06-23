@@ -7,10 +7,3 @@ internal sealed record SseInterfaceModel(
     string GeneratedNamespace,
     ImmutableEquatableArray<SseMemberModel> Members,
     Nullability Nullability);
-
-internal enum Nullability : byte
-{
-    Enabled,
-    Disabled,
-    None,
-}

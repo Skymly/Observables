@@ -8,10 +8,3 @@ internal sealed record GrpcInterfaceModel(
     string ServiceName,
     ImmutableEquatableArray<GrpcMemberModel> Members,
     Nullability Nullability);
-
-internal enum Nullability : byte
-{
-    Enabled,
-    Disabled,
-    None,
-}

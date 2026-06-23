@@ -7,10 +7,3 @@ internal sealed record NatsInterfaceModel(
     string GeneratedNamespace,
     ImmutableEquatableArray<NatsMemberModel> Members,
     Nullability Nullability);
-
-internal enum Nullability : byte
-{
-    Enabled,
-    Disabled,
-    None,
-}

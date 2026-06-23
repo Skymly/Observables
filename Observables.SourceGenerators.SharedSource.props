@@ -28,6 +28,12 @@
     <Compile Include="$(MSBuildThisFileDirectory)Observables.Shared/Observables.SourceGenerators.Shared/Diagnostics/ObservableReturnTypeParser.cs">
       <Link>Shared/Diagnostics/ObservableReturnTypeParser.cs</Link>
     </Compile>
+    <Compile Include="$(MSBuildThisFileDirectory)Observables.Shared/Observables.SourceGenerators.Shared/Nullability.cs">
+      <Link>Shared/Nullability.cs</Link>
+    </Compile>
+    <Compile Include="$(MSBuildThisFileDirectory)Observables.Shared/Observables.SourceGenerators.Shared/IncrementalValuesProviderExtensions.cs">
+      <Link>Shared/IncrementalValuesProviderExtensions.cs</Link>
+    </Compile>
   </ItemGroup>
 
   <!-- Global using to avoid qualifying shared types -->

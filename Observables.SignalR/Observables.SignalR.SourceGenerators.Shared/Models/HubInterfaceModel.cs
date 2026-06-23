@@ -7,10 +7,3 @@ internal sealed record HubInterfaceModel(
     string GeneratedNamespace,
     ImmutableEquatableArray<HubMemberModel> Members,
     Nullability Nullability);
-
-internal enum Nullability : byte
-{
-    Enabled,
-    Disabled,
-    None,
-}

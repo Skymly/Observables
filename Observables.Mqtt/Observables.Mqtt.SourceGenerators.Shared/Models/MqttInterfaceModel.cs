@@ -7,10 +7,3 @@ internal sealed record MqttInterfaceModel(
     string GeneratedNamespace,
     ImmutableEquatableArray<MqttMemberModel> Members,
     Nullability Nullability);
-
-internal enum Nullability : byte
-{
-    Enabled,
-    Disabled,
-    None,
-}

@@ -7,10 +7,3 @@ internal sealed record WebSocketInterfaceModel(
     string GeneratedNamespace,
     ImmutableEquatableArray<WebSocketMemberModel> Members,
     Nullability Nullability);
-
-internal enum Nullability : byte
-{
-    Enabled,
-    Disabled,
-    None,
-}

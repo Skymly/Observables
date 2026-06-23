@@ -15,10 +15,3 @@ internal sealed record InterfaceModel(
     Nullability Nullability,
     bool DisposeMethod
 );
-
-internal enum Nullability : byte
-{
-    Enabled,
-    Disabled,
-    None
-}

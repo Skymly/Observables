@@ -68,10 +68,10 @@
 
 ## Verification
 
-- [ ] `dotnet build Observables.slnx -c Release` — 0 error / 0 warning
-- [ ] 全部生成器测试通过
-- [ ] TrimTests publish 无 IL 警告
-- [ ] Doc localization parity 14 项目通过
+- [x] `dotnet build Observables.slnx -c Release` — 0 error / 0 warning
+- [x] 全部生成器测试通过（events, restapi, signalr, mqtt, websocket, grpc, sse, shared + nats generator tests）
+- [x] TrimTests publish 无 IL 警告
+- [x] Doc localization parity 14 项目通过
 
 ## Risks/Considerations
 

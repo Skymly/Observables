@@ -1,9 +1,11 @@
+using VerifyXunit;
+
 namespace Observables.Grpc.R3.SourceGenerators.Tests;
 
 public sealed class GrpcInterfaceGeneratorTests
 {
     [Fact]
-    public void Grpc_interface_generates_proxy_and_registration()
+    public Task Grpc_interface_generates_proxy_and_registration()
     {
         const string userSource =
             """
@@ -25,15 +27,7 @@ public sealed class GrpcInterfaceGeneratorTests
             """;
 
         var output = GeneratorTestHarness.Run(userSource);
-        var snapshot = GeneratorTestHarness.ToSnapshot(output);
-
-        Assert.DoesNotContain("OBS7002", snapshot, StringComparison.Ordinal);
-        Assert.Contains("EchoServiceGeneratedProxy", snapshot, StringComparison.Ordinal);
-        Assert.Contains("RegisterGeneratedFactory", snapshot, StringComparison.Ordinal);
-        Assert.Contains("FromUnary", snapshot, StringComparison.Ordinal);
-        Assert.Contains("FromServerStreaming", snapshot, StringComparison.Ordinal);
-        Assert.Contains("FromClientStreaming", snapshot, StringComparison.Ordinal);
-        Assert.Contains("FromDuplexStreaming", snapshot, StringComparison.Ordinal);
+        return Verifier.Verify(GeneratorTestHarness.ToSnapshot(output));
     }
 
     [Fact]

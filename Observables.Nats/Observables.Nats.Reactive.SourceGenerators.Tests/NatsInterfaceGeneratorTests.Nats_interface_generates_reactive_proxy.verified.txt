@@ -1,0 +1,53 @@
+﻿Diagnostics:
+  <none>
+
+Generated Sources:
+--- NatsProxyRegistration.g.cs ---
+
+#pragma warning disable
+namespace Observables.Nats.Reactive.Generated
+{
+    [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+    [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
+    internal static class NatsProxyRegistration
+    {
+#if NET5_0_OR_GREATER
+                    [global::System.Diagnostics.CodeAnalysis.DynamicDependency(global::System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.PublicConstructors | global::System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.PublicMethods | global::System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.PublicProperties, typeof(Observables.Nats.Reactive.Generated.OrderHubGeneratedProxy))]
+        [System.Runtime.CompilerServices.ModuleInitializer]
+        [global::System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessage("ILLink", "IL2026", Justification = "Factory registration only; the proxy is invoked by user code that declares RequiresUnreferencedCode.")]
+        internal static void Initialize()
+        {
+            global::Observables.Nats.NatsService.RegisterGeneratedFactory(typeof(global::IOrderHub), static c => new Observables.Nats.Reactive.Generated.OrderHubGeneratedProxy(c));
+        }
+#endif
+    }
+}
+#pragma warning restore
+
+--- OrderHubGeneratedProxy.Nats.g.cs ---
+#nullable enable
+#pragma warning disable
+namespace Observables.Nats.Reactive.Generated
+{
+    [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+    [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
+#if NET8_0_OR_GREATER
+    [global::System.Diagnostics.CodeAnalysis.RequiresUnreferencedCode("NATS payload serialization uses reflection. Preserve payload type members when trimming.")]
+    [global::System.Diagnostics.CodeAnalysis.RequiresDynamicCode("NATS payload serialization uses reflection.")]
+#endif
+    internal sealed class OrderHubGeneratedProxy : global::IOrderHub
+    {
+        private readonly global::NATS.Client.Core.INatsConnection _connection;
+
+        public OrderHubGeneratedProxy(global::NATS.Client.Core.INatsConnection connection)
+        {
+            _connection = connection;
+        }
+
+    private global::System.IObservable<global::System.String>? _OrderEvents;
+    public global::System.IObservable<global::System.String> OrderEvents =>
+        _OrderEvents ??= global::Observables.Nats.Reactive.SystemReactiveNatsAdapter.FromSubscribe<global::System.String>(_connection, "orders.>");
+
+    }
+}
+#pragma warning restore

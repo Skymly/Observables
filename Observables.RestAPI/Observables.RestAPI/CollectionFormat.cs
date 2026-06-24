@@ -9,7 +9,7 @@ namespace Observables.RestAPI
         /// Values formatted with <see cref="RestApiSettings.UrlParameterFormatter"/> or
         /// <see cref="RestApiSettings.FormUrlEncodedParameterFormatter"/>.
         /// </summary>
-        RefitParameterFormatter,
+        Default,
 
         /// <summary>
         /// Comma-separated values

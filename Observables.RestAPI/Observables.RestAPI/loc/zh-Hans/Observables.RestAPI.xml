@@ -1039,7 +1039,7 @@
             在 https://swagger.io/docs/specification/2-0/describing-parameters/ 中定义的集合格式。
             </summary>
         </member>
-        <member name="F:Observables.RestAPI.CollectionFormat.RefitParameterFormatter">
+        <member name="F:Observables.RestAPI.CollectionFormat.Default">
             <summary>
             使用 <see cref="P:Observables.RestAPI.RestApiSettings.UrlParameterFormatter" /> 或
             <see cref="P:Observables.RestAPI.RestApiSettings.FormUrlEncodedParameterFormatter" /> 格式化的值。
@@ -1424,7 +1424,7 @@
         </member>
         <member name="P:Observables.RestAPI.RestApiSettings.CollectionFormat">
             <summary>
-            设置要使用的默认集合格式。（默认为 <see cref="F:Observables.RestAPI.CollectionFormat.RefitParameterFormatter" />）
+            设置要使用的默认集合格式。（默认为 <see cref="F:Observables.RestAPI.CollectionFormat.Default" />）
             </summary>
         </member>
         <member name="P:Observables.RestAPI.RestApiSettings.Buffered">
@@ -1711,7 +1711,7 @@
             <summary>
             注册源生成的 REST API 客户端实现工厂。
             </summary>
-            <param name="refitInterfaceType">REST API 接口类型。</param>
+            <param name="interfaceType">REST API 接口类型。</param>
             <param name="factory">生成的实现工厂。</param>
         </member><member name="T:Observables.RestAPI.RestService">
             <summary>
@@ -1756,35 +1756,35 @@
             <summary>
             生成指定接口的 REST API 客户端实现。
             </summary>
-            <param name="refitInterfaceType">要创建实现的接口。</param>
+            <param name="interfaceType">要创建实现的接口。</param>
             <param name="client">实现将用于发送请求的 <see cref="T:System.Net.Http.HttpClient" />。</param>
             <param name="settings">用于配置 HttpClient 的 <see cref="T:Observables.RestAPI.RestApiSettings" />。</param>
-            <returns>实现 <paramref name="refitInterfaceType" /> 的实例。</returns>
+            <returns>实现 <paramref name="interfaceType" /> 的实例。</returns>
         </member>
         <member name="M:Observables.RestAPI.RestService.For(System.Type,System.Net.Http.HttpClient)">
             <summary>
             生成指定接口的 REST API 客户端实现。
             </summary>
-            <param name="refitInterfaceType">要创建实现的接口。</param>
+            <param name="interfaceType">要创建实现的接口。</param>
             <param name="client">实现将用于发送请求的 <see cref="T:System.Net.Http.HttpClient" />。</param>
-            <returns>实现 <paramref name="refitInterfaceType" /> 的实例。</returns>
+            <returns>实现 <paramref name="interfaceType" /> 的实例。</returns>
         </member>
         <member name="M:Observables.RestAPI.RestService.For(System.Type,System.String,Observables.RestAPI.RestApiSettings)">
             <summary>
             生成指定接口的 REST API 客户端实现。
             </summary>
-            <param name="refitInterfaceType">要创建实现的接口。</param>
+            <param name="interfaceType">要创建实现的接口。</param>
             <param name="hostUrl">实现将使用的基础地址。</param>
             <param name="settings">用于配置 HttpClient 的 <see cref="T:Observables.RestAPI.RestApiSettings" />。</param>
-            <returns>实现 <paramref name="refitInterfaceType" /> 的实例。</returns>
+            <returns>实现 <paramref name="interfaceType" /> 的实例。</returns>
         </member>
         <member name="M:Observables.RestAPI.RestService.For(System.Type,System.String)">
             <summary>
             生成指定接口的 REST API 客户端实现。
             </summary>
-            <param name="refitInterfaceType">要创建实现的接口。</param>
+            <param name="interfaceType">要创建实现的接口。</param>
             <param name="hostUrl">实现将使用的基础地址。</param>
-            <returns>实现 <paramref name="refitInterfaceType" /> 的实例。</returns>
+            <returns>实现 <paramref name="interfaceType" /> 的实例。</returns>
         </member>
         <member name="M:Observables.RestAPI.RestService.CreateHttpClient(System.String,Observables.RestAPI.RestApiSettings)">
             <summary>
@@ -1995,6 +1995,16 @@
             <summary>
             委托给内部流的流。
             取自 System.Net.Http。
+            </summary>
+        </member>
+        <member name="T:Observables.RestAPI.RestApiDefaults">
+            <summary>
+            当 <see cref="T:Observables.RestAPI.MultipartAttribute"/> 未指定时使用的默认 multipart 边界。
+            </summary>
+        </member>
+        <member name="F:Observables.RestAPI.RestApiDefaults.MultipartBoundary">
+            <summary>
+            默认 multipart 边界字符串。
             </summary>
         </member>
         <member name="T:Observables.RestAPI.RestApiAttribute">

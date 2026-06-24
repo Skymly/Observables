@@ -14,7 +14,6 @@ internal static class Parser
         ContextGenerationModel contextGenerationSpec
     ) GenerateInterfaceStubs(
         CSharpCompilation compilation,
-        string? RestApiInternalNamespace,
         ImmutableArray<MethodDeclarationSyntax> candidateMethods,
         ImmutableArray<InterfaceDeclarationSyntax> candidateInterfaces,
         CancellationToken cancellationToken
@@ -25,9 +24,6 @@ internal static class Parser
 
         var wellKnownTypes = new WellKnownTypes(compilation);
 
-        RestApiInternalNamespace = $"{RestApiInternalNamespace ?? string.Empty}RestApiInternalGenerated";
-        RestApiInternalNamespace = RestApiInternalNamespace.Replace('-', '_').Replace('@', '_');
-
         var options = (CSharpParseOptions)compilation.SyntaxTrees[0].Options;
 
         var disposableInterfaceSymbol = wellKnownTypes.Get(typeof(IDisposable));
@@ -37,7 +33,7 @@ internal static class Parser
         if (httpMethodBaseAttributeSymbol == null)
         {
             diagnostics.Add(Diagnostic.Create(DiagnosticDescriptors.RestApiCoreNotReferenced, null));
-            return (diagnostics, new ContextGenerationModel(RestApiInternalNamespace, ImmutableEquatableArray.Empty<InterfaceModel>()));
+            return (diagnostics, new ContextGenerationModel(ImmutableEquatableArray.Empty<InterfaceModel>()));
         }
 
         var interfaceToNullableEnabledMap = new Dictionary<INamedTypeSymbol, bool>(SymbolEqualityComparer.Default);
@@ -87,7 +83,7 @@ internal static class Parser
         cancellationToken.ThrowIfCancellationRequested();
 
         if (interfaces.Count == 0)
-            return (diagnostics, new ContextGenerationModel(RestApiInternalNamespace, ImmutableEquatableArray.Empty<InterfaceModel>()));
+            return (diagnostics, new ContextGenerationModel(ImmutableEquatableArray.Empty<InterfaceModel>()));
 
         var supportsNullable = options.LanguageVersion >= LanguageVersion.CSharp8;
         var keyCount = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
@@ -110,7 +106,7 @@ internal static class Parser
                 supportsNullable, interfaceToNullableEnabledMap[group.Key], wellKnownTypes));
         }
 
-        return (diagnostics, new ContextGenerationModel(RestApiInternalNamespace, interfaceModels.ToImmutableEquatableArray()));
+        return (diagnostics, new ContextGenerationModel(interfaceModels.ToImmutableEquatableArray()));
     }
 
     static InterfaceModel ProcessInterface(
@@ -155,7 +151,6 @@ internal static class Parser
                     .Where(m => !explicitImpls.Contains(m.OriginalDefinition ?? m)).ToArray();
         }
 
-        var memberNames = interfaceSymbol.GetMembers().Select(x => x.Name).Distinct().ToImmutableEquatableArray();
         var httpMethodsArray = httpMethodSymbols
             .Select(m => ParseMethod(m, true, httpMethodBaseAttributeSymbol, wellKnownTypes, diagnostics))
             .ToImmutableEquatableArray();
@@ -185,7 +180,7 @@ internal static class Parser
             (true, false) => Nullability.Disabled,
         };
         return new InterfaceModel(fileName, className, ns, classDeclaration, interfaceDisplayName,
-            classSuffix, constraints, memberNames, nonHttpMethodModelList.ToImmutableEquatableArray(),
+            classSuffix, constraints, nonHttpMethodModelList.ToImmutableEquatableArray(),
             httpMethodsArray, derivedHttpMethodsArray, nullability, disposeMethod != null);
     }
 

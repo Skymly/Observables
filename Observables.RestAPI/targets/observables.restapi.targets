@@ -1,7 +1,6 @@
 <Project>
 
   <PropertyGroup>
-    <RestApiInternalNamespace Condition=" '$(RestApiInternalNamespace)' == '' ">$(RootNamespace)</RestApiInternalNamespace>
     <_RestApiMSBuildMinVersion>16.8.0</_RestApiMSBuildMinVersion>
   </PropertyGroup>
 

@@ -8,7 +8,6 @@ internal sealed record InterfaceModel(
     string InterfaceDisplayName,
     string ClassSuffix,
     ImmutableEquatableArray<TypeConstraint> Constraints,
-    ImmutableEquatableArray<string> MemberNames,
     ImmutableEquatableArray<MethodModel> NonHttpMethods,
     ImmutableEquatableArray<MethodModel> HttpMethods,
     ImmutableEquatableArray<MethodModel> DerivedHttpMethods,

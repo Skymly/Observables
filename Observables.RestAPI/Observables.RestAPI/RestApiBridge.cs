@@ -437,7 +437,7 @@ namespace Observables.RestAPI
                         return;
 
                     default:
-                        // RefitParameterFormatter: delegate to settings (Multi-like behavior)
+                        // Default: delegate to settings (Multi-like behavior)
                         foreach (var item in items)
                         {
                             var formatted = FormatValue(item);

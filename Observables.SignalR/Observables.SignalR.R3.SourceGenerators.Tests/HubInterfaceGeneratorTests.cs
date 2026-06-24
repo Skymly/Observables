@@ -1,9 +1,11 @@
+using VerifyXunit;
+
 namespace Observables.SignalR.R3.SourceGenerators.Tests;
 
 public sealed class HubInterfaceGeneratorTests
 {
     [Fact]
-    public void Hub_interface_generates_proxy_and_registration()
+    public Task Hub_interface_generates_proxy_and_registration()
     {
         const string userSource =
             """
@@ -24,13 +26,7 @@ public sealed class HubInterfaceGeneratorTests
             """;
 
         var output = GeneratorTestHarness.Run(userSource);
-        var snapshot = GeneratorTestHarness.ToSnapshot(output);
-
-        Assert.DoesNotContain("OBS4002", snapshot, StringComparison.Ordinal);
-        Assert.Contains("ChatHubGeneratedProxy", snapshot, StringComparison.Ordinal);
-        Assert.Contains("RegisterGeneratedFactory", snapshot, StringComparison.Ordinal);
-        Assert.Contains("FromInvoke", snapshot, StringComparison.Ordinal);
-        Assert.Contains("FromOn", snapshot, StringComparison.Ordinal);
+        return Verifier.Verify(GeneratorTestHarness.ToSnapshot(output));
     }
 
     [Fact]

@@ -1,0 +1,56 @@
+﻿Diagnostics:
+  <none>
+
+Generated Sources:
+--- ChatHubGeneratedProxy.SignalR.g.cs ---
+#nullable enable
+#pragma warning disable
+namespace Observables.SignalR.Generated
+{
+    [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+    [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
+#if NET8_0_OR_GREATER
+    [global::System.Diagnostics.CodeAnalysis.RequiresUnreferencedCode("SignalR hub proxy uses reflection for method invocation and serialization. Preserve required members when trimming.")]
+    [global::System.Diagnostics.CodeAnalysis.RequiresDynamicCode("SignalR hub proxy uses reflection for method invocation and serialization.")]
+#endif
+    internal sealed class ChatHubGeneratedProxy : global::IChatHub
+    {
+        private readonly global::Microsoft.AspNetCore.SignalR.Client.HubConnection _connection;
+
+        public ChatHubGeneratedProxy(global::Microsoft.AspNetCore.SignalR.Client.HubConnection connection)
+        {
+            _connection = connection;
+        }
+
+    public global::R3.Observable<global::System.Int32> GetUserCount() =>
+        global::Observables.SignalR.SignalRObservable.FromInvoke<global::System.Int32>(_connection, "GetUserCount", global::System.Array.Empty<object?>(), default);
+
+    private global::R3.Observable<global::ChatMessage>? _ReceiveMessage;
+    public global::R3.Observable<global::ChatMessage> ReceiveMessage =>
+        _ReceiveMessage ??= global::Observables.SignalR.SignalRObservable.FromOn<global::ChatMessage>(_connection, "ReceiveMessage");
+
+    }
+}
+#pragma warning restore
+
+--- HubProxyRegistration.g.cs ---
+
+#pragma warning disable
+namespace Observables.SignalR.Generated
+{
+    [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+    [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
+    internal static class HubProxyRegistration
+    {
+#if NET5_0_OR_GREATER
+                    [global::System.Diagnostics.CodeAnalysis.DynamicDependency(global::System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.PublicConstructors | global::System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.PublicMethods | global::System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.PublicProperties, typeof(Observables.SignalR.Generated.ChatHubGeneratedProxy))]
+        [System.Runtime.CompilerServices.ModuleInitializer]
+        [global::System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessage("ILLink", "IL2026", Justification = "Factory registration only; the proxy is invoked by user code that declares RequiresUnreferencedCode.")]
+        internal static void Initialize()
+        {
+            global::Observables.SignalR.HubService.RegisterGeneratedFactory(typeof(global::IChatHub), static c => new Observables.SignalR.Generated.ChatHubGeneratedProxy(c));
+        }
+#endif
+    }
+}
+#pragma warning restore

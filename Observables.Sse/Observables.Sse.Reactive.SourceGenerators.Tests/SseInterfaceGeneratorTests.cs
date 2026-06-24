@@ -1,9 +1,11 @@
+using VerifyXunit;
+
 namespace Observables.Sse.Reactive.SourceGenerators.Tests;
 
 public sealed class SseInterfaceGeneratorTests
 {
     [Fact]
-    public void Sse_interface_generates_proxy_and_registration()
+    public Task Sse_interface_generates_proxy_and_registration()
     {
         const string userSource =
             """
@@ -19,14 +21,7 @@ public sealed class SseInterfaceGeneratorTests
             """;
 
         var output = GeneratorTestHarness.Run(userSource);
-        var snapshot = GeneratorTestHarness.ToSnapshot(output);
-
-        Assert.DoesNotContain("OBS8", snapshot, StringComparison.Ordinal);
-        Assert.Contains("PriceFeedGeneratedProxy", snapshot, StringComparison.Ordinal);
-        Assert.Contains("RegisterGeneratedFactory", snapshot, StringComparison.Ordinal);
-        Assert.Contains("FromEvent", snapshot, StringComparison.Ordinal);
-        Assert.Contains("\"price\"", snapshot, StringComparison.Ordinal);
-        Assert.Contains("\"message\"", snapshot, StringComparison.Ordinal);
+        return Verifier.Verify(GeneratorTestHarness.ToSnapshot(output));
     }
 
     [Fact]

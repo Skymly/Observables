@@ -1,9 +1,11 @@
+using VerifyXunit;
+
 namespace Observables.WebSocket.Reactive.SourceGenerators.Tests;
 
 public sealed class WebSocketInterfaceGeneratorTests
 {
     [Fact]
-    public void WebSocket_interface_generates_proxy_and_registration()
+    public Task WebSocket_interface_generates_proxy_and_registration()
     {
         const string userSource =
             """
@@ -25,15 +27,7 @@ public sealed class WebSocketInterfaceGeneratorTests
             """;
 
         var output = GeneratorTestHarness.Run(userSource);
-        var snapshot = GeneratorTestHarness.ToSnapshot(output);
-
-        Assert.DoesNotContain("OBS6002", snapshot, StringComparison.Ordinal);
-        Assert.Contains("MyHubGeneratedProxy", snapshot, StringComparison.Ordinal);
-        Assert.Contains("RegisterGeneratedFactory", snapshot, StringComparison.Ordinal);
-        Assert.Contains("FromConnect", snapshot, StringComparison.Ordinal);
-        Assert.Contains("FromClose", snapshot, StringComparison.Ordinal);
-        Assert.Contains("FromSend", snapshot, StringComparison.Ordinal);
-        Assert.Contains("FromReceive", snapshot, StringComparison.Ordinal);
+        return Verifier.Verify(GeneratorTestHarness.ToSnapshot(output));
     }
 
     [Fact]

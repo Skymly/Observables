@@ -1,0 +1,56 @@
+﻿Diagnostics:
+  <none>
+
+Generated Sources:
+--- EchoServiceGeneratedProxy.Grpc.g.cs ---
+#nullable enable
+#pragma warning disable
+namespace Observables.Grpc.Reactive.Generated
+{
+    [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+    [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
+#if NET8_0_OR_GREATER
+    [global::System.Diagnostics.CodeAnalysis.RequiresUnreferencedCode("gRPC proxy uses reflection for message marshalling and method invocation. Preserve required members when trimming.")]
+    [global::System.Diagnostics.CodeAnalysis.RequiresDynamicCode("gRPC proxy uses reflection for message marshalling and method invocation.")]
+#endif
+    internal sealed class EchoServiceGeneratedProxy : global::IEchoService
+    {
+        private readonly global::Grpc.Core.CallInvoker _invoker;
+
+        public EchoServiceGeneratedProxy(global::Grpc.Core.CallInvoker invoker)
+        {
+            _invoker = invoker;
+        }
+
+        private static readonly global::Grpc.Core.Method<global::System.String, global::System.String> UnaryEchoMethod =
+            new(global::Grpc.Core.MethodType.Unary, "echo.Echo", "UnaryEcho", global::Observables.Grpc.GrpcMarshallers.String, global::Observables.Grpc.GrpcMarshallers.String);
+
+
+        public global::System.IObservable<global::System.String> UnaryEcho(global::System.String request, global::System.Threading.CancellationToken cancellationToken = default) =>
+            global::Observables.Grpc.Reactive.SystemReactiveGrpcAdapter.FromUnary(_invoker, UnaryEchoMethod, request, cancellationToken);
+
+    }
+}
+#pragma warning restore
+
+--- GrpcProxyRegistration.g.cs ---
+
+#pragma warning disable
+namespace Observables.Grpc.Reactive.Generated
+{
+    [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+    [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
+    internal static class GrpcProxyRegistration
+    {
+#if NET5_0_OR_GREATER
+                    [global::System.Diagnostics.CodeAnalysis.DynamicDependency(global::System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.PublicConstructors | global::System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.PublicMethods | global::System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.PublicProperties, typeof(Observables.Grpc.Reactive.Generated.EchoServiceGeneratedProxy))]
+        [System.Runtime.CompilerServices.ModuleInitializer]
+        [global::System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessage("ILLink", "IL2026", Justification = "Factory registration only; the proxy is invoked by user code that declares RequiresUnreferencedCode.")]
+        internal static void Initialize()
+        {
+            global::Observables.Grpc.GrpcService.RegisterGeneratedFactory(typeof(global::IEchoService), static c => new Observables.Grpc.Reactive.Generated.EchoServiceGeneratedProxy(c));
+        }
+#endif
+    }
+}
+#pragma warning restore

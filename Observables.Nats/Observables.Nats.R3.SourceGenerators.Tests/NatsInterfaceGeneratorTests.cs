@@ -1,9 +1,11 @@
+using VerifyXunit;
+
 namespace Observables.Nats.R3.SourceGenerators.Tests;
 
 public sealed class NatsInterfaceGeneratorTests
 {
     [Fact]
-    public void Nats_interface_generates_proxy_and_registration()
+    public Task Nats_interface_generates_proxy_and_registration()
     {
         const string userSource =
             """
@@ -27,15 +29,7 @@ public sealed class NatsInterfaceGeneratorTests
             """;
 
         var output = GeneratorTestHarness.Run(userSource);
-        var snapshot = GeneratorTestHarness.ToSnapshot(output);
-
-        Assert.DoesNotContain("OBS9002", snapshot, StringComparison.Ordinal);
-        Assert.Contains("OrderHubGeneratedProxy", snapshot, StringComparison.Ordinal);
-        Assert.Contains("RegisterGeneratedFactory", snapshot, StringComparison.Ordinal);
-        Assert.Contains("FromPublish", snapshot, StringComparison.Ordinal);
-        Assert.Contains("FromSubscribe", snapshot, StringComparison.Ordinal);
-        Assert.Contains("FromRequest", snapshot, StringComparison.Ordinal);
-        Assert.Contains("NatsSubject.Format", snapshot, StringComparison.Ordinal);
+        return Verifier.Verify(GeneratorTestHarness.ToSnapshot(output));
     }
 
     [Fact]

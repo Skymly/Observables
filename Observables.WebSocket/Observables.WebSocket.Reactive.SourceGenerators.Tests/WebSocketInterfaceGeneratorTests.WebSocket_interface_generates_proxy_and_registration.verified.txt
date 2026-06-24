@@ -1,0 +1,62 @@
+﻿Diagnostics:
+  <none>
+
+Generated Sources:
+--- MyHubGeneratedProxy.WebSocket.g.cs ---
+#nullable enable
+#pragma warning disable
+namespace Observables.WebSocket.Reactive.Generated
+{
+    [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+    [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
+#if NET8_0_OR_GREATER
+    [global::System.Diagnostics.CodeAnalysis.RequiresUnreferencedCode("WebSocket payload serialization uses System.Text.Json reflection. Preserve payload type members when trimming.")]
+    [global::System.Diagnostics.CodeAnalysis.RequiresDynamicCode("WebSocket payload serialization uses System.Text.Json reflection.")]
+#endif
+    internal sealed class MyHubGeneratedProxy : global::IMyHub
+    {
+        private readonly global::System.Net.WebSockets.ClientWebSocket _socket;
+
+        public MyHubGeneratedProxy(global::System.Net.WebSockets.ClientWebSocket socket)
+        {
+            _socket = socket;
+        }
+
+    public global::System.IObservable<global::System.Reactive.Unit> Connect(global::System.Uri uri, global::System.Threading.CancellationToken cancellationToken = default) =>
+        global::Observables.WebSocket.Reactive.SystemReactiveWebSocketAdapter.FromConnect(_socket, uri, cancellationToken);
+
+    public global::System.IObservable<global::System.Reactive.Unit> Close(global::System.Threading.CancellationToken cancellationToken = default) =>
+        global::Observables.WebSocket.Reactive.SystemReactiveWebSocketAdapter.FromClose(_socket, cancellationToken);
+
+    public global::System.IObservable<global::System.Reactive.Unit> Ping(global::System.Threading.CancellationToken cancellationToken = default) =>
+        global::Observables.WebSocket.Reactive.SystemReactiveWebSocketAdapter.FromSend(_socket, global::System.Array.Empty<byte>(), cancellationToken);
+
+    private global::System.IObservable<global::System.String>? _Messages;
+    public global::System.IObservable<global::System.String> Messages =>
+        _Messages ??= global::Observables.WebSocket.Reactive.SystemReactiveWebSocketAdapter.FromReceive<global::System.String>(_socket);
+
+    }
+}
+#pragma warning restore
+
+--- WebSocketProxyRegistration.g.cs ---
+
+#pragma warning disable
+namespace Observables.WebSocket.Reactive.Generated
+{
+    [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+    [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
+    internal static class WebSocketProxyRegistration
+    {
+#if NET5_0_OR_GREATER
+                    [global::System.Diagnostics.CodeAnalysis.DynamicDependency(global::System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.PublicConstructors | global::System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.PublicMethods | global::System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.PublicProperties, typeof(Observables.WebSocket.Reactive.Generated.MyHubGeneratedProxy))]
+        [System.Runtime.CompilerServices.ModuleInitializer]
+        [global::System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessage("ILLink", "IL2026", Justification = "Factory registration only; the proxy is invoked by user code that declares RequiresUnreferencedCode.")]
+        internal static void Initialize()
+        {
+            global::Observables.WebSocket.WebSocketService.RegisterGeneratedFactory(typeof(global::IMyHub), static c => new Observables.WebSocket.Reactive.Generated.MyHubGeneratedProxy(c));
+        }
+#endif
+    }
+}
+#pragma warning restore

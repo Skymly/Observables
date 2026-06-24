@@ -77,7 +77,7 @@ Observables.RestAPI.CollectionFormat
 Observables.RestAPI.CollectionFormat.Csv = 1 -> Observables.RestAPI.CollectionFormat
 Observables.RestAPI.CollectionFormat.Multi = 5 -> Observables.RestAPI.CollectionFormat
 Observables.RestAPI.CollectionFormat.Pipes = 4 -> Observables.RestAPI.CollectionFormat
-Observables.RestAPI.CollectionFormat.RefitParameterFormatter = 0 -> Observables.RestAPI.CollectionFormat
+Observables.RestAPI.CollectionFormat.Default = 0 -> Observables.RestAPI.CollectionFormat
 Observables.RestAPI.CollectionFormat.Ssv = 2 -> Observables.RestAPI.CollectionFormat
 Observables.RestAPI.CollectionFormat.Tsv = 3 -> Observables.RestAPI.CollectionFormat
 Observables.RestAPI.DefaultApiExceptionFactory
@@ -256,10 +256,10 @@ static Observables.RestAPI.ApiException.Create(string! exceptionMessage, System.
 static Observables.RestAPI.ApiException.Create(System.Net.Http.HttpRequestMessage! message, System.Net.Http.HttpMethod! httpMethod, System.Net.Http.HttpResponseMessage! response, Observables.RestAPI.RestApiSettings! RestApiSettings, System.Exception? innerException = null) -> System.Threading.Tasks.Task<Observables.RestAPI.ApiException!>!
 static Observables.RestAPI.HttpRequestMessageOptions.InterfaceType.get -> string!
 static Observables.RestAPI.RestService.CreateHttpClient(string! hostUrl, Observables.RestAPI.RestApiSettings? settings) -> System.Net.Http.HttpClient!
-static Observables.RestAPI.RestService.For(System.Type! refitInterfaceType, string! hostUrl, Observables.RestAPI.RestApiSettings? settings) -> object!
-static Observables.RestAPI.RestService.For(System.Type! refitInterfaceType, string! hostUrl) -> object!
-static Observables.RestAPI.RestService.For(System.Type! refitInterfaceType, System.Net.Http.HttpClient! client, Observables.RestAPI.RestApiSettings? settings) -> object!
-static Observables.RestAPI.RestService.For(System.Type! refitInterfaceType, System.Net.Http.HttpClient! client) -> object!
+static Observables.RestAPI.RestService.For(System.Type! interfaceType, string! hostUrl, Observables.RestAPI.RestApiSettings? settings) -> object!
+static Observables.RestAPI.RestService.For(System.Type! interfaceType, string! hostUrl) -> object!
+static Observables.RestAPI.RestService.For(System.Type! interfaceType, System.Net.Http.HttpClient! client, Observables.RestAPI.RestApiSettings? settings) -> object!
+static Observables.RestAPI.RestService.For(System.Type! interfaceType, System.Net.Http.HttpClient! client) -> object!
 static Observables.RestAPI.RestService.For<T>(string! hostUrl, Observables.RestAPI.RestApiSettings? settings) -> T
 static Observables.RestAPI.RestService.For<T>(string! hostUrl) -> T
 static Observables.RestAPI.RestService.For<T>(System.Net.Http.HttpClient! client, Observables.RestAPI.RestApiSettings? settings) -> T

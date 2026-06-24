@@ -16,26 +16,16 @@ public sealed class RestApiInterfaceStubGenerator : IIncrementalGenerator
             static (syntax, _) =>
                 syntax
                     is MethodDeclarationSyntax
-                    {
-                        Parent: InterfaceDeclarationSyntax,
-                        AttributeLists.Count: > 0
-                    },
+                {
+                    Parent: InterfaceDeclarationSyntax,
+                    AttributeLists.Count: > 0
+                },
             static (syntaxContext, _) => (MethodDeclarationSyntax)syntaxContext.Node
         );
 
         var candidateInterfacesProvider = context.SyntaxProvider.CreateSyntaxProvider(
             static (syntax, _) => syntax is InterfaceDeclarationSyntax { BaseList: not null },
             static (syntaxContext, _) => (InterfaceDeclarationSyntax)syntaxContext.Node
-        );
-
-        var restApiInternalNamespace = context.AnalyzerConfigOptionsProvider.Select(
-            static (analyzerConfigOptionsProvider, _) =>
-                analyzerConfigOptionsProvider.GlobalOptions.TryGetValue(
-                    "build_property.RestApiInternalNamespace",
-                    out var value
-                )
-                    ? value
-                    : null
         );
 
         var inputs = candidateMethodsProvider
@@ -45,14 +35,12 @@ public sealed class RestApiInterfaceStubGenerator : IIncrementalGenerator
                 static (combined, _) =>
                     (candidateMethods: combined.Left, candidateInterfaces: combined.Right)
             )
-            .Combine(restApiInternalNamespace)
             .Combine(context.CompilationProvider)
             .Select(
                 static (combined, _) =>
                     (
-                        combined.Left.Left.candidateMethods,
-                        combined.Left.Left.candidateInterfaces,
-                        RestApiInternalNamespace: combined.Left.Right,
+                        combined.Left.candidateMethods,
+                        combined.Left.candidateInterfaces,
                         compilation: combined.Right
                     )
             );
@@ -61,7 +49,6 @@ public sealed class RestApiInterfaceStubGenerator : IIncrementalGenerator
             static (collectedValues, cancellationToken) =>
                 Parser.GenerateInterfaceStubs(
                     (CSharpCompilation)collectedValues.compilation,
-                    collectedValues.RestApiInternalNamespace,
                     collectedValues.candidateMethods,
                     collectedValues.candidateInterfaces,
                     cancellationToken

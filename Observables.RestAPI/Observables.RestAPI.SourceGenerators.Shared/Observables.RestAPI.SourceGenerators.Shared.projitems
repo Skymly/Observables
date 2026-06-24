@@ -25,6 +25,5 @@
     <Compile Include="$(MSBuildThisFileDirectory)Models\WellKnownTypes.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Parser.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Polyfills\IndexRange.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)UniqueNameBuilder.cs" />
   </ItemGroup>
 </Project>

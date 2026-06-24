@@ -22,7 +22,7 @@ namespace Observables.RestAPI
         /// <summary>
         /// Registers a source-generated REST API client implementation factory.
         /// </summary>
-        /// <param name="refitInterfaceType">The REST API interface type.</param>
+        /// <param name="interfaceType">The REST API interface type.</param>
         /// <param name="factory">The generated implementation factory.</param>
         [EditorBrowsable(EditorBrowsableState.Never)]
 #if NET8_0_OR_GREATER
@@ -30,22 +30,22 @@ namespace Observables.RestAPI
             [DynamicallyAccessedMembers(
                 DynamicallyAccessedMemberTypes.PublicMethods |
                 DynamicallyAccessedMemberTypes.PublicProperties
-            )] Type refitInterfaceType,
+            )] Type interfaceType,
             Func<HttpClient, RestApiSettings?, object> factory
         )
 #else
         public static void RegisterGeneratedFactory(
-            Type refitInterfaceType,
+            Type interfaceType,
             Func<HttpClient, RestApiSettings?, object> factory
         )
 #endif
         {
-            if (refitInterfaceType is null)
-                throw new ArgumentNullException(nameof(refitInterfaceType));
+            if (interfaceType is null)
+                throw new ArgumentNullException(nameof(interfaceType));
             if (factory is null)
                 throw new ArgumentNullException(nameof(factory));
 
-            GeneratedFactories[refitInterfaceType] = factory;
+            GeneratedFactories[interfaceType] = factory;
         }
 
         /// <summary>
@@ -122,40 +122,40 @@ namespace Observables.RestAPI
         /// <summary>
         /// Generate a REST API client implementation of the specified interface.
         /// </summary>
-        /// <param name="refitInterfaceType">Interface to create the implementation for.</param>
+        /// <param name="interfaceType">Interface to create the implementation for.</param>
         /// <param name="client">The <see cref="HttpClient"/> the implementation will use to send requests.</param>
         /// <param name="settings"><see cref="RestApiSettings"/> to use to configure the HttpClient.</param>
-        /// <returns>An instance that implements <paramref name="refitInterfaceType"/>.</returns>
+        /// <returns>An instance that implements <paramref name="interfaceType"/>.</returns>
 #if NET8_0_OR_GREATER
         public static object For(
             [DynamicallyAccessedMembers(
                 DynamicallyAccessedMemberTypes.PublicMethods |
                 DynamicallyAccessedMemberTypes.PublicProperties
-            )] Type refitInterfaceType,
+            )] Type interfaceType,
             HttpClient client,
             RestApiSettings? settings
         )
 #else
         public static object For(
-            Type refitInterfaceType,
+            Type interfaceType,
             HttpClient client,
             RestApiSettings? settings
         )
 #endif
         {
-            if (GeneratedFactories.TryGetValue(refitInterfaceType, out var factory))
+            if (GeneratedFactories.TryGetValue(interfaceType, out var factory))
             {
                 return factory(client, settings);
             }
 
 #if NET8_0_OR_GREATER
             var generatedType = TypeMapping.GetOrAdd(
-                refitInterfaceType,
+                interfaceType,
                 static ([DynamicallyAccessedMembers(
                     DynamicallyAccessedMemberTypes.PublicMethods |
                     DynamicallyAccessedMemberTypes.PublicProperties)] Type type) => GetGeneratedType(type));
 #else
-            var generatedType = TypeMapping.GetOrAdd(refitInterfaceType, GetGeneratedType);
+            var generatedType = TypeMapping.GetOrAdd(interfaceType, GetGeneratedType);
 #endif
 
             return Activator.CreateInstance(generatedType, client, settings)!;
@@ -164,63 +164,63 @@ namespace Observables.RestAPI
         /// <summary>
         /// Generate a REST API client implementation of the specified interface.
         /// </summary>
-        /// <param name="refitInterfaceType">Interface to create the implementation for.</param>
+        /// <param name="interfaceType">Interface to create the implementation for.</param>
         /// <param name="client">The <see cref="HttpClient"/> the implementation will use to send requests.</param>
-        /// <returns>An instance that implements <paramref name="refitInterfaceType"/>.</returns>
+        /// <returns>An instance that implements <paramref name="interfaceType"/>.</returns>
 #if NET8_0_OR_GREATER
         public static object For(
             [DynamicallyAccessedMembers(
                 DynamicallyAccessedMemberTypes.PublicMethods |
                 DynamicallyAccessedMemberTypes.PublicProperties
-            )] Type refitInterfaceType,
+            )] Type interfaceType,
             HttpClient client
-        ) => For(refitInterfaceType, client, (RestApiSettings?)null);
+        ) => For(interfaceType, client, (RestApiSettings?)null);
 #else
-        public static object For(Type refitInterfaceType, HttpClient client) =>
-            For(refitInterfaceType, client, (RestApiSettings?)null);
+        public static object For(Type interfaceType, HttpClient client) =>
+            For(interfaceType, client, (RestApiSettings?)null);
 #endif
 
         /// <summary>
         /// Generate a REST API client implementation of the specified interface.
         /// </summary>
-        /// <param name="refitInterfaceType">Interface to create the implementation for.</param>
+        /// <param name="interfaceType">Interface to create the implementation for.</param>
         /// <param name="hostUrl">Base address the implementation will use.</param>
         /// <param name="settings"><see cref="RestApiSettings"/> to use to configure the HttpClient.</param>
-        /// <returns>An instance that implements <paramref name="refitInterfaceType"/>.</returns>
+        /// <returns>An instance that implements <paramref name="interfaceType"/>.</returns>
 #if NET8_0_OR_GREATER
         public static object For(
             [DynamicallyAccessedMembers(
                 DynamicallyAccessedMemberTypes.PublicMethods |
                 DynamicallyAccessedMemberTypes.PublicProperties
-            )] Type refitInterfaceType,
+            )] Type interfaceType,
             string hostUrl,
             RestApiSettings? settings
         )
 #else
-        public static object For(Type refitInterfaceType, string hostUrl, RestApiSettings? settings)
+        public static object For(Type interfaceType, string hostUrl, RestApiSettings? settings)
 #endif
         {
             var client = CreateHttpClient(hostUrl, settings);
-            return For(refitInterfaceType, client, settings);
+            return For(interfaceType, client, settings);
         }
 
         /// <summary>
         /// Generate a REST API client implementation of the specified interface.
         /// </summary>
-        /// <param name="refitInterfaceType">Interface to create the implementation for.</param>
+        /// <param name="interfaceType">Interface to create the implementation for.</param>
         /// <param name="hostUrl">Base address the implementation will use.</param>
-        /// <returns>An instance that implements <paramref name="refitInterfaceType"/>.</returns>
+        /// <returns>An instance that implements <paramref name="interfaceType"/>.</returns>
 #if NET8_0_OR_GREATER
         public static object For(
             [DynamicallyAccessedMembers(
                 DynamicallyAccessedMemberTypes.PublicMethods |
                 DynamicallyAccessedMemberTypes.PublicProperties
-            )] Type refitInterfaceType,
+            )] Type interfaceType,
             string hostUrl
-        ) => For(refitInterfaceType, hostUrl, null);
+        ) => For(interfaceType, hostUrl, null);
 #else
-        public static object For(Type refitInterfaceType, string hostUrl) =>
-            For(refitInterfaceType, hostUrl, null);
+        public static object For(Type interfaceType, string hostUrl) =>
+            For(interfaceType, hostUrl, null);
 #endif
 
         /// <summary>
@@ -269,20 +269,20 @@ namespace Observables.RestAPI
             [DynamicallyAccessedMembers(
                 DynamicallyAccessedMemberTypes.PublicMethods |
                 DynamicallyAccessedMemberTypes.PublicProperties
-            )] Type refitInterfaceType
+            )] Type interfaceType
         )
 #else
-        static Type GetGeneratedType(Type refitInterfaceType)
+        static Type GetGeneratedType(Type interfaceType)
 #endif
         {
-            var typeName = UniqueName.ForType(refitInterfaceType);
+            var typeName = UniqueName.ForType(interfaceType);
 
             var generatedType = GetGeneratedImplementationType(typeName);
 
             if (generatedType == null)
             {
                 var message =
-                    refitInterfaceType.Name
+                    interfaceType.Name
                     + " doesn't look like a Rest API interface. Make sure it has at least one "
                     + "method with a Rest API HTTP method attribute, the Observables.RestAPI source generator is installed in the project, "
                     + "and your build produced the generated client. For Native AOT or trimmed apps, prefer generated clients "

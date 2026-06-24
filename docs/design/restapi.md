@@ -82,12 +82,12 @@ public sealed class GetAttribute(string path) : HttpMethodAttribute(path);
 public static class RestService
 {
     // 生成器通过 ModuleInitializer 自动注册
-    public static void RegisterGeneratedFactory(Type refitInterfaceType, Func<HttpClient, RestApiSettings?, object> factory);
+    public static void RegisterGeneratedFactory(Type interfaceType, Func<HttpClient, RestApiSettings?, object> factory);
 
     public static T For<T>(HttpClient client, RestApiSettings? settings = null);
     public static T For<T>(string hostUrl, RestApiSettings? settings = null);
-    public static object For(Type refitInterfaceType, HttpClient client, RestApiSettings? settings = null);
-    public static object For(Type refitInterfaceType, string hostUrl, RestApiSettings? settings = null);
+    public static object For(Type interfaceType, HttpClient client, RestApiSettings? settings = null);
+    public static object For(Type interfaceType, string hostUrl, RestApiSettings? settings = null);
 }
 ```
 

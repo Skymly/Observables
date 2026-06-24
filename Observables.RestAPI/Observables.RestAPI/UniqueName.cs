@@ -12,14 +12,14 @@ namespace Observables.RestAPI
             return ForType(typeof(T), serviceKey);
         }
 
-        public static string ForType(Type refitInterfaceType, object? serviceKey)
+        public static string ForType(Type interfaceType, object? serviceKey)
         {
-            return ForType(refitInterfaceType) + GetServiceKeySuffix(serviceKey);
+            return ForType(interfaceType) + GetServiceKeySuffix(serviceKey);
         }
 
-        public static string ForType(Type refitInterfaceType)
+        public static string ForType(Type interfaceType)
         {
-            var interfaceTypeName = refitInterfaceType.FullName!;
+            var interfaceTypeName = interfaceType.FullName!;
 
             // remove namespace/nested, up to anything before a `
             var searchEnd = interfaceTypeName.IndexOf('`');
@@ -36,7 +36,7 @@ namespace Observables.RestAPI
             // Or Nested+IFrob
             var genericArgs = string.Empty;
             // if there's any generics, split that
-            if (refitInterfaceType.IsGenericType)
+            if (interfaceType.IsGenericType)
             {
                 genericArgs = interfaceTypeName.Substring(interfaceTypeName.IndexOf("["));
                 interfaceTypeName = interfaceTypeName.Substring(
@@ -49,13 +49,13 @@ namespace Observables.RestAPI
             interfaceTypeName = interfaceTypeName.Replace("+", "");
 
             // Get the namespace and remove the dots
-            var ns = refitInterfaceType.Namespace?.Replace(".", "");
+            var ns = interfaceType.Namespace?.Replace(".", "");
 
             // Generated clients live in Observables.RestAPI.Implementation.Generated
-            var refitTypeName =
+            var generatedTypeName =
                 $"Observables.RestAPI.Implementation.Generated+{ns}{interfaceTypeName}{genericArgs}";
 
-            var assmQualified = $"{refitTypeName}, {refitInterfaceType.Assembly.FullName}";
+            var assmQualified = $"{generatedTypeName}, {interfaceType.Assembly.FullName}";
 
             return assmQualified;
         }

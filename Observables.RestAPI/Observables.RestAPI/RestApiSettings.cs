@@ -128,10 +128,10 @@ namespace Observables.RestAPI
         public IFormUrlEncodedParameterFormatter FormUrlEncodedParameterFormatter { get; set; }
 
         /// <summary>
-        /// Sets the default collection format to use. (defaults to <see cref="CollectionFormat.RefitParameterFormatter"/>)
+        /// Sets the default collection format to use. (defaults to <see cref="CollectionFormat.Default"/>)
         /// </summary>
         public CollectionFormat CollectionFormat { get; set; } =
-            CollectionFormat.RefitParameterFormatter;
+            CollectionFormat.Default;
 
         /// <summary>
         /// Sets the default behavior when sending a request's body content. (defaults to false, request body is not streamed to the server)

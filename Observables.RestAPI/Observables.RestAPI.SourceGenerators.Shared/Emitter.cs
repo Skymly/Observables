@@ -109,14 +109,12 @@ internal static class Emitter
         );
 
         source.Indentation++;
-        var uniqueNames = new UniqueNameBuilder();
-        uniqueNames.Reserve(model.MemberNames);
 
         foreach (var method in model.HttpMethods)
-            WriteHttpMethod(source, method, true, uniqueNames);
+            WriteHttpMethod(source, method, true);
 
         foreach (var method in model.DerivedHttpMethods)
-            WriteHttpMethod(source, method, false, uniqueNames);
+            WriteHttpMethod(source, method, false);
 
         foreach (var method in model.NonHttpMethods)
             WriteNonHttpMethod(source, method);
@@ -143,8 +141,7 @@ internal static class Emitter
     static void WriteHttpMethod(
         SourceWriter source,
         MethodModel methodModel,
-        bool isTopLevel,
-        UniqueNameBuilder uniqueNames
+        bool isTopLevel
     )
     {
         var (isAsync, @return, configureAwait) = methodModel.ReturnTypeMetadata switch

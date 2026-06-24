@@ -3,6 +3,17 @@ using System.Net.Http;
 namespace Observables.RestAPI
 {
     /// <summary>
+    /// Default multipart boundary used when <see cref="MultipartAttribute"/> does not specify one.
+    /// </summary>
+    public static class RestApiDefaults
+    {
+        /// <summary>
+        /// Default multipart boundary string.
+        /// </summary>
+        public const string MultipartBoundary = "----MyGreatBoundary";
+    }
+
+    /// <summary>
     /// Optional interface-level marker that declares an interface as an Observables RestAPI proxy.
     /// </summary>
     /// <remarks>
@@ -194,7 +205,7 @@ namespace Observables.RestAPI
     /// </remarks>
     /// <param name="boundaryText">The boundary text.</param>
     [AttributeUsage(AttributeTargets.Method)]
-    public class MultipartAttribute(string boundaryText = "----MyGreatBoundary") : Attribute
+    public class MultipartAttribute(string boundaryText = RestApiDefaults.MultipartBoundary) : Attribute
     {
         /// <summary>
         /// Gets the boundary text.

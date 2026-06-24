@@ -1,34 +1,16 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-
-
   <Import Project="..\..\Observables.SourceGenerators.props" />
 
-
-
-
   <PropertyGroup>
-
     <Description>Source generator for gRPC proxies → System.Reactive IObservable.</Description>
-
     <DefineConstants>$(DefineConstants);ROSLYN_4;GRPC_REACTIVE</DefineConstants>
-
   </PropertyGroup>
 
-
-
   <ItemGroup>
-
     <PackageReference Include="System.Reactive" PrivateAssets="all" />
-
   </ItemGroup>
-
-
 
   <Import Project="..\Observables.Grpc.SourceGenerators.Shared\Observables.Grpc.SourceGenerators.Shared.projitems" Label="Shared" />
 
-
-
 </Project>
-
-

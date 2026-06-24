@@ -144,9 +144,7 @@ internal static class Emitter
         var parameterList = member.ParameterDeclarations.Count == 0
             ? string.Empty
             : string.Join(", ", member.ParameterDeclarations.AsArray());
-        var requestArg = member.BoundaryKind is GrpcBoundaryKind.ClientStream or GrpcBoundaryKind.Duplex
-            ? member.ParameterNames.AsArray()[0]
-            : member.ParameterNames.AsArray()[0];
+        var requestArg = member.ParameterNames.AsArray()[0];
 
         var bridgeMethod = member.BoundaryKind switch
         {

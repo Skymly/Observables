@@ -193,7 +193,7 @@ internal static class Parser
             return;
         }
 
-        var (declarations, names, hasCt) = BuildParameters(method);
+        var (declarations, hasCt) = BuildParameters(method);
         members.Add(
             new MqttMemberModel(
                 method.Name,
@@ -203,7 +203,6 @@ internal static class Parser
                 returnDisplay,
                 resultType,
                 declarations.ToImmutableEquatableArray(),
-                names.ToImmutableEquatableArray(),
                 topicParameterNames.ToImmutableEquatableArray(),
                 hasCt));
     }
@@ -287,7 +286,6 @@ internal static class Parser
                 true,
                 returnDisplay,
                 resultType,
-                ImmutableEquatableArray.Empty<string>(),
                 ImmutableEquatableArray.Empty<string>(),
                 ImmutableEquatableArray.Empty<string>(),
                 false));
@@ -453,11 +451,10 @@ internal static class Parser
             out resultTypeDisplay,
             out returnTypeDisplay);
 
-    static (List<string> declarations, List<string> names, bool hasCancellationToken) BuildParameters(
+    static (List<string> declarations, bool hasCancellationToken) BuildParameters(
         IMethodSymbol method)
     {
         var declarations = new List<string>();
-        var names = new List<string>();
         var hasCt = false;
 
         for (var i = 0; i < method.Parameters.Length; i++)
@@ -471,11 +468,10 @@ internal static class Parser
                 continue;
             }
 
-            names.Add(parameter.Name);
             declarations.Add($"{parameter.Type.ToDisplayString(DisplayFormat)} {parameter.Name}");
         }
 
-        return (declarations, names, hasCt);
+        return (declarations, hasCt);
     }
 
     static bool IsCancellationToken(ITypeSymbol type) =>

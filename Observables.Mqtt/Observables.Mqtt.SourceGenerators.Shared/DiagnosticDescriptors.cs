@@ -43,7 +43,7 @@ internal static class DiagnosticDescriptors
     public static readonly DiagnosticDescriptor SystemReactiveNotReferenced =
         new(
             "OBS5005",
-            "SystemReactive package required for IObservable",
+            "Observables.Mqtt.Reactive package required for IObservable",
             "Return type '{0}' requires PackageReference to Observables.Mqtt.Reactive",
             "Observables.Mqtt",
             DiagnosticSeverity.Error,

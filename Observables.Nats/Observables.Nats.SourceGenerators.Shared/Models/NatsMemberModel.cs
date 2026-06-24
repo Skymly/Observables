@@ -8,7 +8,6 @@ internal sealed record NatsMemberModel(
     string ReturnTypeDisplay,
     string ResultTypeDisplay,
     ImmutableEquatableArray<string> ParameterDeclarations,
-    ImmutableEquatableArray<string> ParameterNames,
     ImmutableEquatableArray<string> SubjectParameterNames,
     bool HasCancellationToken,
     string? PayloadParameterName,

@@ -150,12 +150,10 @@ internal static class Parser
         }
 
         WebSocketBoundaryKind? boundary = null;
-        string messageName = method.Name;
 
         if (sendAttribute is not null && HasAttribute(method, sendAttribute))
         {
             boundary = WebSocketBoundaryKind.Send;
-            messageName = GetMessageName(method, "WebSocketSendAttribute") ?? method.Name;
         }
         else if (connectAttribute is not null && HasAttribute(method, connectAttribute))
         {
@@ -231,7 +229,6 @@ internal static class Parser
         members.Add(
             new WebSocketMemberModel(
                 method.Name,
-                messageName,
                 boundary.Value,
                 false,
                 returnDisplay,
@@ -278,8 +275,6 @@ internal static class Parser
             return;
         }
 
-        var messageName = GetMessageNameFromProperty(property) ?? property.Name;
-
         if (!TryParseObservableReturn(
                 compilation,
                 property.Type,
@@ -297,7 +292,6 @@ internal static class Parser
         members.Add(
             new WebSocketMemberModel(
                 property.Name,
-                messageName,
                 WebSocketBoundaryKind.Receive,
                 true,
                 returnDisplay,
@@ -346,46 +340,6 @@ internal static class Parser
             diagnostics,
             out resultTypeDisplay,
             out returnTypeDisplay);
-
-    static string? GetMessageName(IMethodSymbol method, string attributeClassName)
-    {
-        foreach (var attr in method.GetAttributes())
-        {
-            if (attr.AttributeClass?.Name == attributeClassName)
-            {
-                if (attr.ConstructorArguments.Length > 0
-                    && attr.ConstructorArguments[0].Value is string s
-                    && !string.IsNullOrWhiteSpace(s))
-                {
-                    return s;
-                }
-
-                return null;
-            }
-        }
-
-        return null;
-    }
-
-    static string? GetMessageNameFromProperty(IPropertySymbol property)
-    {
-        foreach (var attr in property.GetAttributes())
-        {
-            if (attr.AttributeClass?.Name == "WebSocketReceiveAttribute")
-            {
-                if (attr.ConstructorArguments.Length > 0
-                    && attr.ConstructorArguments[0].Value is string s
-                    && !string.IsNullOrWhiteSpace(s))
-                {
-                    return s;
-                }
-
-                return null;
-            }
-        }
-
-        return null;
-    }
 
     static bool HasAttribute(ISymbol symbol, INamedTypeSymbol attributeType)
     {

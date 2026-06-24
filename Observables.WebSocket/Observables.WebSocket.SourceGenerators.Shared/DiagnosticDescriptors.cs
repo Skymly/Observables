@@ -43,7 +43,7 @@ internal static class DiagnosticDescriptors
     public static readonly DiagnosticDescriptor SystemReactiveNotReferenced =
         new(
             "OBS6005",
-            "SystemReactive package required for IObservable",
+            "Observables.WebSocket.Reactive package required for IObservable",
             "Return type '{0}' requires PackageReference to Observables.WebSocket.Reactive",
             "Observables.WebSocket",
             DiagnosticSeverity.Error,

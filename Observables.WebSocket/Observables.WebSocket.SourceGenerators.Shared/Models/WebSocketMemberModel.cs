@@ -2,7 +2,6 @@ namespace Observables.WebSocket.Generators;
 
 internal sealed record WebSocketMemberModel(
     string MemberName,
-    string MessageName,
     WebSocketBoundaryKind BoundaryKind,
     bool IsProperty,
     string ReturnTypeDisplay,

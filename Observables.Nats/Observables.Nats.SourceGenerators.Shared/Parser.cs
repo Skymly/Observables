@@ -85,8 +85,7 @@ internal static class Parser
                                 observableType,
                                 unitType,
                                 members,
-                                diagnostics,
-                                ifaceSyntax);
+                                diagnostics);
                             break;
                         case IPropertySymbol property:
                             TryAddProperty(
@@ -96,8 +95,7 @@ internal static class Parser
                                 subscribeAttribute,
                                 observableType,
                                 members,
-                                diagnostics,
-                                ifaceSyntax);
+                                diagnostics);
                             break;
                     }
                 }
@@ -136,8 +134,7 @@ internal static class Parser
         INamedTypeSymbol? observableType,
         INamedTypeSymbol? unitType,
         List<NatsMemberModel> members,
-        List<Diagnostic> diagnostics,
-        InterfaceDeclarationSyntax ifaceSyntax)
+        List<Diagnostic> diagnostics)
     {
         if (subscribeAttribute is not null && HasAttribute(method, subscribeAttribute))
         {
@@ -220,7 +217,7 @@ internal static class Parser
             return;
         }
 
-        var (declarations, names, hasCt) = BuildParameters(method);
+        var (declarations, hasCt) = BuildParameters(method);
         members.Add(
             new NatsMemberModel(
                 method.Name,
@@ -230,7 +227,6 @@ internal static class Parser
                 returnDisplay,
                 resultType,
                 declarations.ToImmutableEquatableArray(),
-                names.ToImmutableEquatableArray(),
                 subjectParameterNames.ToImmutableEquatableArray(),
                 hasCt,
                 payloadParameterName,
@@ -244,8 +240,7 @@ internal static class Parser
         INamedTypeSymbol? subscribeAttribute,
         INamedTypeSymbol? observableType,
         List<NatsMemberModel> members,
-        List<Diagnostic> diagnostics,
-        InterfaceDeclarationSyntax ifaceSyntax)
+        List<Diagnostic> diagnostics)
     {
         if (publishAttribute is not null && HasAttribute(property, publishAttribute))
         {
@@ -327,7 +322,6 @@ internal static class Parser
                 true,
                 returnDisplay,
                 resultType,
-                ImmutableEquatableArray.Empty<string>(),
                 ImmutableEquatableArray.Empty<string>(),
                 ImmutableEquatableArray.Empty<string>(),
                 false,
@@ -570,11 +564,10 @@ internal static class Parser
             out resultTypeDisplay,
             out returnTypeDisplay);
 
-    static (List<string> declarations, List<string> names, bool hasCancellationToken) BuildParameters(
+    static (List<string> declarations, bool hasCancellationToken) BuildParameters(
         IMethodSymbol method)
     {
         var declarations = new List<string>();
-        var names = new List<string>();
         var hasCt = false;
 
         for (var i = 0; i < method.Parameters.Length; i++)
@@ -588,11 +581,10 @@ internal static class Parser
                 continue;
             }
 
-            names.Add(parameter.Name);
             declarations.Add($"{parameter.Type.ToDisplayString(DisplayFormat)} {parameter.Name}");
         }
 
-        return (declarations, names, hasCt);
+        return (declarations, hasCt);
     }
 
     static bool IsCancellationToken(ITypeSymbol type) =>

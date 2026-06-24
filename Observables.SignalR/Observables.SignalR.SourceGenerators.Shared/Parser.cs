@@ -84,8 +84,7 @@ internal static class Parser
                                 observableType,
                                 unitType,
                                 members,
-                                diagnostics,
-                                ifaceSyntax);
+                                diagnostics);
                             break;
                         case IPropertySymbol property:
                             TryAddProperty(
@@ -97,8 +96,7 @@ internal static class Parser
                                 onAttribute,
                                 observableType,
                                 members,
-                                diagnostics,
-                                ifaceSyntax);
+                                diagnostics);
                             break;
                     }
                 }
@@ -138,8 +136,7 @@ internal static class Parser
         INamedTypeSymbol? observableType,
         INamedTypeSymbol? unitType,
         List<HubMemberModel> members,
-        List<Diagnostic> diagnostics,
-        InterfaceDeclarationSyntax ifaceSyntax)
+        List<Diagnostic> diagnostics)
     {
         if (onAttribute is not null && HasAttribute(method, onAttribute))
         {
@@ -225,8 +222,7 @@ internal static class Parser
         INamedTypeSymbol? onAttribute,
         INamedTypeSymbol? observableType,
         List<HubMemberModel> members,
-        List<Diagnostic> diagnostics,
-        InterfaceDeclarationSyntax ifaceSyntax)
+        List<Diagnostic> diagnostics)
     {
         if (HasMethodBoundaryOnProperty(property, invokeAttribute, sendAttribute, streamAttribute))
         {

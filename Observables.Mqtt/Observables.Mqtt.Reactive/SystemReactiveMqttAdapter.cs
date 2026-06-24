@@ -61,7 +61,7 @@ public static class SystemReactiveMqttAdapter
                 {
                     handler = async e =>
                     {
-                        if (!TopicMatches(topicFilter, e.ApplicationMessage.Topic))
+                        if (!Mqtt.MqttTopicMatcher.Matches(topicFilter, e.ApplicationMessage.Topic))
                         {
                             return;
                         }
@@ -96,35 +96,4 @@ public static class SystemReactiveMqttAdapter
                 }
             }
         });
-
-    static bool TopicMatches(string filter, string? topic)
-    {
-        if (topic is null)
-        {
-            return false;
-        }
-
-        var filterParts = filter.Split('/');
-        var topicParts = topic.Split('/');
-        for (var i = 0; i < filterParts.Length; i++)
-        {
-            if (i >= topicParts.Length)
-            {
-                return false;
-            }
-
-            var fp = filterParts[i];
-            if (fp == "#")
-            {
-                return true;
-            }
-
-            if (fp != "+" && fp != topicParts[i])
-            {
-                return false;
-            }
-        }
-
-        return filterParts.Length == topicParts.Length;
-    }
 }

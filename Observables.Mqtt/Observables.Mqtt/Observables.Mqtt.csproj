@@ -11,6 +11,10 @@
   <Import Project="..\..\eng\NetStandard20.props" Condition="Exists('..\..\eng\NetStandard20.props')" />
 
   <ItemGroup>
+    <InternalsVisibleTo Include="Observables.Mqtt.Reactive" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="MQTTnet" />
     <PackageReference Include="R3" />
   </ItemGroup>

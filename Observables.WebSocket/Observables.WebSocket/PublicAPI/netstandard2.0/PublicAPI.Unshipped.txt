@@ -1,3 +1,2 @@
 #nullable enable
-Observables.WebSocket.WebSocketAttribute.WebSocketAttribute(string? endpointName = null) -> void
-Observables.WebSocket.WebSocketAttribute.EndpointName.get -> string?
+Observables.WebSocket.WebSocketAttribute.WebSocketAttribute() -> void

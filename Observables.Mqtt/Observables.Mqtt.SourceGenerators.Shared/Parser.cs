@@ -83,8 +83,7 @@ internal static class Parser
                                 observableType,
                                 unitType,
                                 members,
-                                diagnostics,
-                                ifaceSyntax);
+                                diagnostics);
                             break;
                         case IPropertySymbol property:
                             TryAddProperty(
@@ -94,8 +93,7 @@ internal static class Parser
                                 subscribeAttribute,
                                 observableType,
                                 members,
-                                diagnostics,
-                                ifaceSyntax);
+                                diagnostics);
                             break;
                     }
                 }
@@ -133,8 +131,7 @@ internal static class Parser
         INamedTypeSymbol? observableType,
         INamedTypeSymbol? unitType,
         List<MqttMemberModel> members,
-        List<Diagnostic> diagnostics,
-        InterfaceDeclarationSyntax ifaceSyntax)
+        List<Diagnostic> diagnostics)
     {
         if (subscribeAttribute is not null && HasAttribute(method, subscribeAttribute))
         {
@@ -214,8 +211,7 @@ internal static class Parser
         INamedTypeSymbol? subscribeAttribute,
         INamedTypeSymbol? observableType,
         List<MqttMemberModel> members,
-        List<Diagnostic> diagnostics,
-        InterfaceDeclarationSyntax ifaceSyntax)
+        List<Diagnostic> diagnostics)
     {
         if (publishAttribute is not null && HasAttribute(property, publishAttribute))
         {

@@ -85,8 +85,7 @@ internal static class Parser
                                 observableType,
                                 unitType,
                                 members,
-                                diagnostics,
-                                ifaceSyntax);
+                                diagnostics);
                             break;
                         case IPropertySymbol property:
                             TryAddProperty(
@@ -135,8 +134,7 @@ internal static class Parser
         INamedTypeSymbol? observableType,
         INamedTypeSymbol? unitType,
         List<NatsMemberModel> members,
-        List<Diagnostic> diagnostics,
-        InterfaceDeclarationSyntax ifaceSyntax)
+        List<Diagnostic> diagnostics)
     {
         if (subscribeAttribute is not null && HasAttribute(method, subscribeAttribute))
         {

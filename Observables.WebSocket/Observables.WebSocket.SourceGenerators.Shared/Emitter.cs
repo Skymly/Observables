@@ -23,7 +23,7 @@ internal static class Emitter
         var dependencyAttributes = string.Join(
             "\n",
             model.Interfaces.AsArray().Select(static m =>
-                $"                    [global::System.Diagnostics.CodeAnalysis.DynamicDependency(global::System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.All, typeof({m.GeneratedNamespace}.{m.ClassName}))]"));
+                $"                    [global::System.Diagnostics.CodeAnalysis.DynamicDependency(global::System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.PublicConstructors | global::System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.PublicMethods | global::System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.PublicProperties, typeof({m.GeneratedNamespace}.{m.ClassName}))]"));
 
         var registrations = string.Join(
             "\n",

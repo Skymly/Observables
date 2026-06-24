@@ -7,9 +7,6 @@
         <member name="T:Observables.WebSocket.WebSocketAttribute">
             <summary>标记用于源生成的 WebSocket 代理接口。</summary>
         </member>
-        <member name="M:Observables.WebSocket.WebSocketAttribute.#ctor(System.String)">
-            <summary>标记用于源生成的 WebSocket 代理接口，可选指定端点名称。</summary>
-        </member>
         <member name="T:Observables.WebSocket.WebSocketSendAttribute">
             <summary>客户端到服务器的消息发送，映射为 WebSocket send。</summary>
         </member>

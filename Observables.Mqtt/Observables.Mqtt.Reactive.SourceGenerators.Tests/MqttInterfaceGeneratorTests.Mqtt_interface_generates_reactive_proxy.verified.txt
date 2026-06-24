@@ -1,0 +1,52 @@
+﻿Diagnostics:
+
+Generated Sources:
+--- MqttProxyRegistration.g.cs ---
+
+#pragma warning disable
+namespace Observables.Mqtt.Reactive.Generated
+{
+    [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+    [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
+    internal static class MqttProxyRegistration
+    {
+#if NET5_0_OR_GREATER
+                    [global::System.Diagnostics.CodeAnalysis.DynamicDependency(global::System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.PublicConstructors | global::System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.PublicMethods | global::System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.PublicProperties, typeof(Observables.Mqtt.Reactive.Generated.SensorTopicsGeneratedProxy))]
+        [System.Runtime.CompilerServices.ModuleInitializer]
+        [global::System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessage("ILLink", "IL2026", Justification = "Factory registration only; the proxy is invoked by user code that declares RequiresUnreferencedCode.")]
+        internal static void Initialize()
+        {
+            global::Observables.Mqtt.MqttService.RegisterGeneratedFactory(typeof(global::ISensorTopics), static c => new Observables.Mqtt.Reactive.Generated.SensorTopicsGeneratedProxy(c));
+        }
+#endif
+    }
+}
+#pragma warning restore
+
+--- SensorTopicsGeneratedProxy.Mqtt.g.cs ---
+#nullable enable
+#pragma warning disable
+namespace Observables.Mqtt.Reactive.Generated
+{
+    [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+    [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
+#if NET8_0_OR_GREATER
+    [global::System.Diagnostics.CodeAnalysis.RequiresUnreferencedCode("MQTT payload serialization uses reflection. Preserve payload type members when trimming.")]
+    [global::System.Diagnostics.CodeAnalysis.RequiresDynamicCode("MQTT payload serialization uses reflection.")]
+#endif
+    internal sealed class SensorTopicsGeneratedProxy : global::ISensorTopics
+    {
+        private readonly global::MQTTnet.Client.IMqttClient _client;
+
+        public SensorTopicsGeneratedProxy(global::MQTTnet.Client.IMqttClient client)
+        {
+            _client = client;
+        }
+
+    private global::System.IObservable<global::System.Int32>? _Temperature;
+    public global::System.IObservable<global::System.Int32> Temperature =>
+        _Temperature ??= global::Observables.Mqtt.Reactive.SystemReactiveMqttAdapter.FromSubscribe<global::System.Int32>(_client, "sensors/+/temperature");
+
+    }
+}
+#pragma warning restore

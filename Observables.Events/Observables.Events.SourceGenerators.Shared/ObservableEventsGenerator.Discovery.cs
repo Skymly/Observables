@@ -10,7 +10,7 @@ using Microsoft.CodeAnalysis.Text;
 using Observables.SourceGenerators.Shared.Diagnostics;
 using Observables.SourceGenerators.Shared.Extensions;
 
-namespace Observables.Events.Reactive.SourceGenerators;
+namespace Observables.Events.Generators;
 
 public sealed partial class ObservableEventsGenerator
 {
@@ -24,7 +24,7 @@ private static void RegisterObservableEventsStaticsShellPostInit(IncrementalGene
 
     context.RegisterPostInitializationOutput(static ctx =>
         ctx.AddSource(
-            "Observables.Events.Reactive.ObservableEventsStatics.g.cs",
+            $"{ObservableEventsConstants.GeneratedNamespace}.ObservableEventsStatics.g.cs",
             SourceText.From(
                 GeneratedSourceHeader.ToSource(
                     EventsBootstrapSyntaxFactory.CreateObservableEventsStaticsShellCompilationUnit()),

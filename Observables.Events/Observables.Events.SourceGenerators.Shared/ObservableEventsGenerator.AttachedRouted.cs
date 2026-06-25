@@ -10,7 +10,7 @@ using Microsoft.CodeAnalysis.Text;
 using Observables.SourceGenerators.Shared.Diagnostics;
 using Observables.SourceGenerators.Shared.Extensions;
 
-namespace Observables.Events.R3.SourceGenerators;
+namespace Observables.Events.Generators;
 
 public sealed partial class ObservableEventsGenerator
 {
@@ -23,8 +23,20 @@ private static string GenerateAttachedRoutedEventSourceForTarget(
         ? ObservableEventsConstants.AttachedRoutedEventEntryMethodName
         : ObservableEventsConstants.AttachedRoutedEventHandlerEntryMethodName;
     var returnType = entryKind == ObservableEventsEntryKind.AttachedRoutedEvent
-        ? SyntaxFactory.ParseTypeName("global::R3.Observable<TEventArgs>")
-        : SyntaxFactory.ParseTypeName("global::R3.Observable<(object? sender, TEventArgs e)>");
+        ? SyntaxFactory.ParseTypeName(
+#if EVENTS_R3
+            "global::R3.Observable<TEventArgs>"
+#else
+            "global::System.IObservable<TEventArgs>"
+#endif
+            )
+        : SyntaxFactory.ParseTypeName(
+#if EVENTS_R3
+            "global::R3.Observable<(object? sender, TEventArgs e)>"
+#else
+            "global::System.IObservable<(object? sender, TEventArgs e)>"
+#endif
+            );
 
     var routedEventParam = SyntaxFactory.IdentifierName("routedEvent");
     var addHandler = SyntaxFactory.InvocationExpression(
@@ -64,13 +76,13 @@ private static string GenerateAttachedRoutedEventSourceForTarget(
     var subscribeHandler = ObservableEventsSyntaxFactory.HandlerSubscriptionLambda(addHandler);
     var unsubscribeHandler = ObservableEventsSyntaxFactory.HandlerSubscriptionLambda(removeHandler);
     ExpressionSyntax body = entryKind == ObservableEventsEntryKind.AttachedRoutedEvent
-        ? ObservableEventsSyntaxFactory.RxFromEventInvocation(
+        ? ObservableEventsSyntaxFactory.FromEventInvocation(
             SyntaxFactory.ParseTypeName("global::System.EventHandler<TEventArgs>"),
             SyntaxFactory.IdentifierName("TEventArgs"),
             ObservableEventsSyntaxFactory.EventHandlerFactorySenderAndArgs(),
             subscribeHandler,
             unsubscribeHandler)
-        : ObservableEventsSyntaxFactory.RxFromEventHandlerInvocation(
+        : ObservableEventsSyntaxFactory.FromEventHandlerInvocation(
             SyntaxFactory.IdentifierName("TEventArgs"),
             subscribeHandler,
             unsubscribeHandler);
@@ -82,7 +94,9 @@ private static string GenerateAttachedRoutedEventSourceForTarget(
         body);
 
     var unit = SyntaxFactory.CompilationUnit()
+#if EVENTS_R3
         .AddUsings(SyntaxFactory.UsingDirective(SyntaxFactory.ParseName("R3")))
+#endif
         .AddMembers(
             SyntaxFactory.FileScopedNamespaceDeclaration(SyntaxFactory.ParseName(ObservableEventsConstants.GeneratedNamespace))
                 .AddMembers(

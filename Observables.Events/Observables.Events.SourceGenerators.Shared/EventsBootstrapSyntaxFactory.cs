@@ -3,12 +3,16 @@ using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 
-namespace Observables.Events.Reactive.SourceGenerators;
+namespace Observables.Events.Generators;
 
 /// <summary>Post-initialization bootstrap sources built with SyntaxFactory.</summary>
 internal static class EventsBootstrapSyntaxFactory
 {
+#if EVENTS_R3
+    private const string BootstrapNamespace = "Observables.Events.R3";
+#else
     private const string BootstrapNamespace = "Observables.Events.Reactive";
+#endif
     private static readonly NameSyntax BootstrapNamespaceName = ParseName(BootstrapNamespace);
     private static readonly TypeSyntax NullEventsType = QualifiedName(BootstrapNamespaceName, IdentifierName("NullEvents"));
 
@@ -32,6 +36,40 @@ internal static class EventsBootstrapSyntaxFactory
             .AddMembers(
                 NamespaceDeclaration(BootstrapNamespaceName)
                     .AddMembers(CreateRoutedBootstrapExtensionsClass()));
+
+#if EVENTS_R3
+    public static CompilationUnitSyntax CreateEventObservableBridgeCompilationUnit()
+    {
+        const string bridgeClass = """
+            internal static class EventObservable
+            {
+                public static global::R3.Observable<T> Event<TDelegate, T>(
+                    global::System.Func<global::System.Action<T>, TDelegate> conversion,
+                    global::System.Action<TDelegate> addHandler,
+                    global::System.Action<TDelegate> removeHandler,
+                    global::System.Threading.CancellationToken cancellationToken = default)
+                    => global::R3.Observable.FromEvent(conversion, addHandler, removeHandler, cancellationToken);
+
+                public static global::R3.Observable<(object? sender, global::System.EventArgs e)> EventHandler(
+                    global::System.Action<global::System.EventHandler> addHandler,
+                    global::System.Action<global::System.EventHandler> removeHandler,
+                    global::System.Threading.CancellationToken cancellationToken = default)
+                    => global::R3.Observable.FromEventHandler(addHandler, removeHandler, cancellationToken);
+
+                public static global::R3.Observable<(object? sender, TEventArgs e)> EventHandler<TEventArgs>(
+                    global::System.Action<global::System.EventHandler<TEventArgs>> addHandler,
+                    global::System.Action<global::System.EventHandler<TEventArgs>> removeHandler,
+                    global::System.Threading.CancellationToken cancellationToken = default)
+                    => global::R3.Observable.FromEventHandler(addHandler, removeHandler, cancellationToken);
+            }
+            """;
+
+        return CompilationUnit()
+            .AddMembers(
+                FileScopedNamespaceDeclaration(BootstrapNamespaceName)
+                    .AddMembers(ParseMemberDeclaration(bridgeClass)!));
+    }
+#endif
 
     public static CompilationUnitSyntax CreateObservableEventsStaticsShellCompilationUnit() =>
         CompilationUnit()

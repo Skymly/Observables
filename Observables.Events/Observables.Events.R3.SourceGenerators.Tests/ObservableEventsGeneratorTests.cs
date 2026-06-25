@@ -1,7 +1,7 @@
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
-using Observables.Events.R3.SourceGenerators;
+using Observables.Events.Generators;
 using VerifyXunit;
 using Xunit;
 

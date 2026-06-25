@@ -5,10 +5,13 @@
 
   <PropertyGroup>
     <Description>Source generators for classic .NET events → R3 Observable.</Description>
+    <DefineConstants>$(DefineConstants);EVENTS_R3</DefineConstants>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="R3" PrivateAssets="all" />
   </ItemGroup>
+
+  <Import Project="..\Observables.Events.SourceGenerators.Shared\Observables.Events.SourceGenerators.Shared.projitems" Label="Shared" />
 
 </Project>

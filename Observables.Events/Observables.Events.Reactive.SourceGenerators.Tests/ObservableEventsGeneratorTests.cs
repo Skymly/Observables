@@ -2,7 +2,7 @@ using System;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
-using Observables.Events.Reactive.SourceGenerators;
+using Observables.Events.Generators;
 using VerifyXunit;
 using Xunit;
 

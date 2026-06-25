@@ -8,7 +8,7 @@ using System.Threading;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Text;
-using Observables.Events.R3.SourceGenerators;
+using Observables.Events.Generators;
 
 namespace Observables.Events.R3.SourceGenerators.Tests;
 

@@ -5,10 +5,13 @@
 
   <PropertyGroup>
     <Description>Source generators for classic .NET events → System.Reactive (IObservable).</Description>
+    <DefineConstants>$(DefineConstants);EVENTS_REACTIVE</DefineConstants>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="System.Reactive" PrivateAssets="all" />
   </ItemGroup>
+
+  <Import Project="..\Observables.Events.SourceGenerators.Shared\Observables.Events.SourceGenerators.Shared.projitems" Label="Shared" />
 
 </Project>

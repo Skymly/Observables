@@ -10,7 +10,7 @@ using Microsoft.CodeAnalysis.Text;
 using Observables.SourceGenerators.Shared.Diagnostics;
 using Observables.SourceGenerators.Shared.Extensions;
 
-namespace Observables.Events.Reactive.SourceGenerators;
+namespace Observables.Events.Generators;
 
 public sealed partial class ObservableEventsGenerator
 {
@@ -19,7 +19,11 @@ public sealed partial class ObservableEventsGenerator
         Compilation compilation,
         ObservableEventsEntryKind entryKind)
     {
-        var unit = SyntaxFactory.CompilationUnit();
+        var unit = SyntaxFactory.CompilationUnit()
+#if EVENTS_R3
+            .AddUsings(SyntaxFactory.UsingDirective(SyntaxFactory.ParseName("R3")))
+#endif
+            ;
 
         var interfaces = new List<MemberDeclarationSyntax>();
         foreach (var desc in hierarchy.Values.OrderBy(static d => d.InterfaceName, System.StringComparer.Ordinal))
@@ -119,7 +123,11 @@ public sealed partial class ObservableEventsGenerator
         var implRef = $"{implName}{typeParamList}";
         var qualifiedSender = ObservableEventsConstants.QualifiedType(type);
 
-        var unit = SyntaxFactory.CompilationUnit();
+        var unit = SyntaxFactory.CompilationUnit()
+#if EVENTS_R3
+            .AddUsings(SyntaxFactory.UsingDirective(SyntaxFactory.ParseName("R3")))
+#endif
+            ;
 
         var methodName = entryKind switch
         {

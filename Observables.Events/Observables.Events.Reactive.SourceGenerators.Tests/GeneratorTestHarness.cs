@@ -6,7 +6,7 @@ using System.Linq;
 using System.Text;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
-using Observables.Events.Reactive.SourceGenerators;
+using Observables.Events.Generators;
 
 namespace Observables.Events.Reactive.SourceGenerators.Tests;
 

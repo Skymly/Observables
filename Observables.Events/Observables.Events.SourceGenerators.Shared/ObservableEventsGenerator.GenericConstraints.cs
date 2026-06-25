@@ -10,7 +10,7 @@ using Microsoft.CodeAnalysis.Text;
 using Observables.SourceGenerators.Shared.Diagnostics;
 using Observables.SourceGenerators.Shared.Extensions;
 
-namespace Observables.Events.R3.SourceGenerators;
+namespace Observables.Events.Generators;
 
 public sealed partial class ObservableEventsGenerator
 {
@@ -57,7 +57,10 @@ private static string GenerateGenericConstraintEventSource(
     }
 
     var unit = SyntaxFactory.CompilationUnit()
-        .AddUsings(SyntaxFactory.UsingDirective(SyntaxFactory.ParseName("R3")));
+#if EVENTS_R3
+        .AddUsings(SyntaxFactory.UsingDirective(SyntaxFactory.ParseName("R3")))
+#endif
+        ;
 
     var members = new List<MemberDeclarationSyntax>();
 

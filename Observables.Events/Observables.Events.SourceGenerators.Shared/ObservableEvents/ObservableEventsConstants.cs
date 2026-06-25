@@ -1,12 +1,18 @@
 using Microsoft.CodeAnalysis;
 
-namespace Observables.Events.R3.SourceGenerators;
+namespace Observables.Events.Generators;
 
 internal static class ObservableEventsConstants
 {
+#if EVENTS_R3
     internal const string BootstrapExtensionsMetadataName = "Observables.Events.R3.ObservableEventsBootstrapExtensions";
     internal const string GeneratedNamespace = "Observables.Events.R3";
     internal const string EventObservableMetadataName = "global::Observables.Events.R3.EventObservable";
+#else
+    internal const string BootstrapExtensionsMetadataName = "Observables.Events.Reactive.ObservableEventsBootstrapExtensions";
+    internal const string GeneratedNamespace = "Observables.Events.Reactive";
+    internal const string EventObservableMetadataName = "global::System.Reactive.Linq.Observable";
+#endif
 
     /// <summary>
     /// Entry name: instance <c>source.Events()</c> (extension method under <c>R3.SourceGenerators</c>); static <c>ObservableEventsStatics.OBS_* .Events</c> (property). Per-event streams are properties (ReactiveMarbles-style).

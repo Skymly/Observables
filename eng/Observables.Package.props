@@ -19,7 +19,6 @@
     <ObservablesCodeFixesOutputDir>$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)../Observables.Shared/Observables.CodeFixes/bin/$(Configuration)/netstandard2.0/'))</ObservablesCodeFixesOutputDir>
     <ObservablesAnalyzersProject>$(MSBuildThisFileDirectory)../Observables.Shared/Observables.Analyzers/Observables.Analyzers.csproj</ObservablesAnalyzersProject>
     <ObservablesAnalyzersOutputDir>$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)../Observables.Shared/Observables.Analyzers/bin/$(Configuration)/netstandard2.0/'))</ObservablesAnalyzersOutputDir>
-    <NoWarn>$(NoWarn);NU5128</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>

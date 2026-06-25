@@ -43,6 +43,13 @@
       <None Include="$(_ObservablesPackAnalyzersDll)" Pack="true" PackagePath="$(ObservablesAnalyzerRoslynFolder)" Visible="false" Condition="'$(ObservablesPackAnalyzersProject)' != '' and Exists('$(_ObservablesPackAnalyzersDll)')" />
       <None Include="$(ObservablesPackPackagePropsFile)" Pack="true" PackagePath="build/$(PackageId).props" Visible="false" Condition="'$(ObservablesPackPackagePropsFile)' != '' and Exists('$(ObservablesPackPackagePropsFile)')" />
       <None Include="$(ObservablesPackPackagePropsFile)" Pack="true" PackagePath="buildTransitive/$(PackageId).props" Visible="false" Condition="'$(ObservablesPackPackagePropsFile)' != '' and Exists('$(ObservablesPackPackagePropsFile)')" />
+      <!-- _._ placeholder: analyzer-only packages have no lib/ output (DLLs go to analyzers/),
+           but runtime deps (R3, System.Reactive) must flow to consumers via the
+           netstandard2.0 dependency group. The _._ file satisfies NU5128 by giving
+           the dependency group a matching lib/ entry. Only needed when the package
+           has no real lib/ content (ObservablesPackHasLibOutput is not set). -->
+      <None Include="$(MSBuildThisFileDirectory)_._" Pack="true" PackagePath="lib/netstandard2.0/" Visible="false"
+            Condition="'$(ObservablesPackHasLibOutput)' != 'true'" />
     </ItemGroup>
   </Target>
 

@@ -118,6 +118,7 @@ Observables/
 ├── Observables.Events/                               # 域文件夹 = Observables.<Feature>
 │   ├── Observables.Events/Observables.Events.csproj  # 运行时 + targets/（同名子夹，避免 SDK  glob 同级项目）
 │   ├── Observables.Events.Package/
+│   ├── Observables.Events.SourceGenerators.Shared/   # shproj（双路生成器共享，#if EVENTS_R3 切换）
 │   ├── Observables.Events.R3.SourceGenerators/
 │   └── …
 ├── Observables.RestAPI/
@@ -148,7 +149,7 @@ Observables/
 | 域 | 运行时 | R3 生成器 | Reactive 生成器 | 测试 |
 |----|--------|-----------|-----------------|------|
 | **RestAPI** | `Observables.RestAPI` | `RestAPI.R3.SourceGenerators` | `RestAPI.Reactive.SourceGenerators` | Core / Reactive / Generator / HCF |
-| **Events** | `Observables.Events`（props） | `Events.R3.SourceGenerators` | `Events.Reactive.SourceGenerators` | R3/Reactive 生成器测试（经典 + 路由；路由需 `ObservableRoutedEvents=true`） |
+| **Events** | `Observables.Events`（props） | `Events.R3.SourceGenerators` | `Events.Reactive.SourceGenerators` | R3/Reactive 生成器测试（经典 + 路由；路由需 `ObservableRoutedEvents=true`）；双路生成器共享 `Events.SourceGenerators.Shared` shproj（`#if EVENTS_R3` 切换后端） |
 | **SignalR** | `Observables.SignalR` | `SignalR.R3.SourceGenerators` | `SignalR.Reactive.SourceGenerators` | R3 + Reactive 生成器测试 |
 | **Mqtt** | `Observables.Mqtt` | `Mqtt.R3.SourceGenerators` | `Mqtt.Reactive.SourceGenerators` | R3 + Reactive 生成器测试；`Mqtt.Tests` / `Mqtt.Reactive.Tests`（进程内 MQTTnet broker E2E） |
 | **WebSocket** | `Observables.WebSocket` | `WebSocket.R3.SourceGenerators` | `WebSocket.Reactive.SourceGenerators` | Core / Reactive / R3 + Reactive 生成器测试；E2E（`WebSocket.Tests` / `WebSocket.Reactive.Tests`） |

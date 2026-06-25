@@ -9,7 +9,7 @@ using Microsoft.CodeAnalysis.Text;
 using Observables.SourceGenerators.Shared.Diagnostics;
 using Observables.SourceGenerators.Shared.Extensions;
 
-namespace Observables.Events.R3.SourceGenerators;
+namespace Observables.Events.Generators;
 
 public sealed partial class ObservableEventsGenerator
 {
@@ -84,11 +84,11 @@ private static bool TryCreateEventHandlerObservableProperty(
         var eventArgsType = genericEventArgs is null
             ? SyntaxFactory.ParseTypeName("global::System.EventArgs")
             : SyntaxFactory.ParseTypeName(ObservableEventsConstants.QualifiedType(genericEventArgs));
-        bodyExpression = ObservableEventsSyntaxFactory.RxFromEventHandlerInvocation(
+        bodyExpression = ObservableEventsSyntaxFactory.FromEventHandlerInvocation(
             genericEventArgs is null ? null : eventArgsType,
             add,
             remove);
-        returnType = ObservableEventsSyntaxFactory.R3ObservableSenderArgsTupleType(eventArgsType);
+        returnType = ObservableEventsSyntaxFactory.ObservableSenderArgsTupleType(eventArgsType);
     }
     else if (IsLegacySenderReceiverDelegate(delegateType, invoke, compilation))
     {
@@ -119,7 +119,7 @@ private static bool TryCreateEventHandlerObservableProperty(
 }
 
 /// <summary>
-/// Custom <c>void (object, TSecond)</c> delegate excluding <c>System.EventHandler</c> / <c>System.EventHandler&lt;T&gt;</c> (those use <c>Observable.FromEventHandler</c>), implemented with <c>R3.Observable.FromEvent</c>.
+/// Custom <c>void (object, TSecond)</c> delegate excluding <c>System.EventHandler</c> / <c>System.EventHandler&lt;T&gt;</c> (those use <c>Observable.FromEventHandler</c>), implemented with <c>Observable.FromEvent</c>.
 /// </summary>
 private static bool IsLegacySenderReceiverDelegate(INamedTypeSymbol delegateType, IMethodSymbol invoke, Compilation compilation)
 {

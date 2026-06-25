@@ -1,4 +1,4 @@
-namespace Observables.Events.R3.SourceGenerators;
+namespace Observables.Events.Generators;
 
 internal enum ObservableEventsEntryKind
 {

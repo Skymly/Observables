@@ -7,7 +7,7 @@ using Microsoft.CodeAnalysis.Text;
 using Observables.SourceGenerators.Shared;
 using Observables.SourceGenerators.Shared.Extensions;
 
-namespace Observables.Events.Reactive.SourceGenerators;
+namespace Observables.Events.Generators;
 
 [Generator(LanguageNames.CSharp)]
 public sealed partial class ObservableEventsGenerator : IIncrementalGenerator
@@ -17,17 +17,24 @@ public sealed partial class ObservableEventsGenerator : IIncrementalGenerator
         context.RegisterPostInitializationOutput(static ctx =>
         {
             ctx.AddSource(
-                "Observables.Events.Reactive.ObservableEventsBootstrapExtensions.g.cs",
+                $"{ObservableEventsConstants.GeneratedNamespace}.ObservableEventsBootstrapExtensions.g.cs",
                 SourceText.From(
                     GeneratedSourceHeader.ToSource(
                         EventsBootstrapSyntaxFactory.CreateClassicObservableEventsBootstrapExtensionsCompilationUnit(
                             ObservableEventsConstants.StaticObservableEventsGenerationEnabled)),
                     Encoding.UTF8));
             ctx.AddSource(
-                "Observables.Events.Reactive.NullEvents.g.cs",
+                $"{ObservableEventsConstants.GeneratedNamespace}.NullEvents.g.cs",
                 SourceText.From(
                     GeneratedSourceHeader.ToSource(EventsBootstrapSyntaxFactory.CreateNullEventsCompilationUnit()),
                     Encoding.UTF8));
+#if EVENTS_R3
+            ctx.AddSource(
+                $"{ObservableEventsConstants.GeneratedNamespace}.EventObservable.g.cs",
+                SourceText.From(
+                    GeneratedSourceHeader.ToSource(EventsBootstrapSyntaxFactory.CreateEventObservableBridgeCompilationUnit()),
+                    Encoding.UTF8));
+#endif
         });
         RegisterObservableEventsStaticsShellPostInit(context);
 
@@ -70,7 +77,7 @@ public sealed partial class ObservableEventsGenerator : IIncrementalGenerator
             if (input.ObservableRoutedEvents)
             {
                 spc.AddSource(
-                    "Observables.Events.Reactive.ObservableEventsBootstrapExtensions.Routed.g.cs",
+                    $"{ObservableEventsConstants.GeneratedNamespace}.ObservableEventsBootstrapExtensions.Routed.g.cs",
                     SourceText.From(
                         GeneratedSourceHeader.ToSource(
                             EventsBootstrapSyntaxFactory.CreateRoutedObservableEventsBootstrapExtensionsCompilationUnit()),

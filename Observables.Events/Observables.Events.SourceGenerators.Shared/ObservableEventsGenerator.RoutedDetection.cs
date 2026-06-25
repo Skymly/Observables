@@ -9,7 +9,7 @@ using Microsoft.CodeAnalysis.Text;
 using Observables.SourceGenerators.Shared.Diagnostics;
 using Observables.SourceGenerators.Shared.Extensions;
 
-namespace Observables.Events.R3.SourceGenerators;
+namespace Observables.Events.Generators;
 
 public sealed partial class ObservableEventsGenerator
 {

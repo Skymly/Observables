@@ -9,7 +9,7 @@ using Microsoft.CodeAnalysis.Text;
 using Observables.SourceGenerators.Shared.Diagnostics;
 using Observables.SourceGenerators.Shared.Extensions;
 
-namespace Observables.Events.Reactive.SourceGenerators;
+namespace Observables.Events.Generators;
 
 public sealed partial class ObservableEventsGenerator
 {
@@ -267,7 +267,7 @@ public sealed partial class ObservableEventsGenerator
         }
 
         if (IsLegacySenderReceiverDelegate(delegateType, invoke, compilation))
-            return ObservableEventsSyntaxFactory.GetFromEventHandlersSenderReceiverReturnTypeSyntax(invoke.Parameters);
+            return ObservableEventsSyntaxFactory.GetEventHandlersSenderReceiverReturnTypeSyntax(invoke.Parameters);
 
         return null;
     }

@@ -2,7 +2,7 @@ using System.Collections.Immutable;
 using System.Linq;
 using Microsoft.CodeAnalysis;
 
-namespace Observables.Events.Reactive.SourceGenerators;
+namespace Observables.Events.Generators;
 
 internal readonly struct ObservableEventTargetSets
 {

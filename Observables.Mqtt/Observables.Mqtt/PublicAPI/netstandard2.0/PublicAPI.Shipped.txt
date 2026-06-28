@@ -49,3 +49,5 @@ static Observables.Mqtt.MqttService.For<T>(MQTTnet.Client.IMqttClient! client) -
 static Observables.Mqtt.MqttService.RegisterGeneratedFactory(System.Type! mqttInterfaceType, System.Func<MQTTnet.Client.IMqttClient!, object!>! factory) -> void
 static Observables.Mqtt.MqttTopic.Format(string! template, params (string! Name, string? Value)[]! parameters) -> string!
 static Observables.Mqtt.PrimitiveMqttPayloadSerializer.Instance.get -> Observables.Mqtt.PrimitiveMqttPayloadSerializer!
+Observables.Mqtt.MqttAttribute.MqttAttribute(string? clientName = null) -> void
+Observables.Mqtt.MqttAttribute.ClientName.get -> string?

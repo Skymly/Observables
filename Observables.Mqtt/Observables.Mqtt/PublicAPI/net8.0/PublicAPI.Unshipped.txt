@@ -1,3 +1,1 @@
 #nullable enable
-Observables.Mqtt.MqttAttribute.MqttAttribute(string? clientName = null) -> void
-Observables.Mqtt.MqttAttribute.ClientName.get -> string?

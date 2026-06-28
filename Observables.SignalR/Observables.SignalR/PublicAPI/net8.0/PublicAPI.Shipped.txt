@@ -28,3 +28,5 @@ static Observables.SignalR.SignalRObservable.FromSend(Microsoft.AspNetCore.Signa
 static Observables.SignalR.SignalRObservable.FromSend(Microsoft.AspNetCore.SignalR.Client.HubConnection! connection, string! methodName, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> R3.Observable<R3.Unit>!
 static Observables.SignalR.SignalRObservable.FromStream<T>(Microsoft.AspNetCore.SignalR.Client.HubConnection! connection, string! methodName, object?[]! args, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> R3.Observable<T>!
 static Observables.SignalR.SignalRObservable.FromStream<T>(Microsoft.AspNetCore.SignalR.Client.HubConnection! connection, string! methodName, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> R3.Observable<T>!
+Observables.SignalR.HubAttribute.HubAttribute(string? hubName = null) -> void
+Observables.SignalR.HubAttribute.HubName.get -> string?

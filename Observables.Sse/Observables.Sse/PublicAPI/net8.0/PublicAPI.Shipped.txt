@@ -22,3 +22,5 @@ static Observables.Sse.SseProtocol.ReadEventAsync(System.IO.StreamReader! reader
 static Observables.Sse.SseService.For(System.Type! sseInterfaceType, Observables.Sse.SseConnection! connection) -> object!
 static Observables.Sse.SseService.For<T>(Observables.Sse.SseConnection! connection) -> T
 static Observables.Sse.SseService.RegisterGeneratedFactory(System.Type! sseInterfaceType, System.Func<Observables.Sse.SseConnection!, object!>! factory) -> void
+Observables.Sse.SseAttribute.SseAttribute(string? endpointName = null) -> void
+Observables.Sse.SseAttribute.EndpointName.get -> string?

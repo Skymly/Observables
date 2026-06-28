@@ -20,3 +20,4 @@ static Observables.WebSocket.WebSocketObservable.FromSendText(System.Net.WebSock
 static Observables.WebSocket.WebSocketService.For(System.Type! wsInterfaceType, System.Net.WebSockets.ClientWebSocket! socket) -> object!
 static Observables.WebSocket.WebSocketService.For<T>(System.Net.WebSockets.ClientWebSocket! socket) -> T
 static Observables.WebSocket.WebSocketService.RegisterGeneratedFactory(System.Type! wsInterfaceType, System.Func<System.Net.WebSockets.ClientWebSocket!, object!>! factory) -> void
+Observables.WebSocket.WebSocketAttribute.WebSocketAttribute() -> void

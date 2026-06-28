@@ -271,3 +271,19 @@ virtual Observables.RestAPI.DefaultUrlParameterFormatter.Format(object? paramete
 virtual Observables.RestAPI.DefaultUrlParameterKeyFormatter.Format(string! key) -> string!
 virtual Observables.RestAPI.HttpMethodAttribute.Path.get -> string!
 virtual Observables.RestAPI.HttpMethodAttribute.Path.set -> void
+Observables.RestAPI.RestApiBridge
+static Observables.RestAPI.RestApiBridge.AddMultipartItem(System.Net.Http.MultipartFormDataContent! multiPartContent, string! fileName, string! parameterName, object? itemValue, Observables.RestAPI.RestApiSettings! settings) -> void
+static Observables.RestAPI.RestApiBridge.AddQueryParameter(System.Collections.Generic.List<System.Collections.Generic.KeyValuePair<string!, string?>>! queryParams, string! key, object? value, Observables.RestAPI.RestApiSettings! settings, string? prefix = null, string! delimiter = ".", string? format = null, bool treatAsString = false, int collectionFormat = 0, bool isCollectionFormatSpecified = false) -> void
+static Observables.RestAPI.RestApiBridge.BuildQueryString(System.Collections.Generic.List<System.Collections.Generic.KeyValuePair<string!, string?>>? queryParams, System.UriFormat uriFormat = System.UriFormat.UriEscaped) -> string?
+static Observables.RestAPI.RestApiBridge.BuildRelativePath(string! path, System.Collections.Generic.List<System.Collections.Generic.KeyValuePair<string!, string?>>? queryParams, System.UriFormat uriFormat = System.UriFormat.UriEscaped) -> string!
+static Observables.RestAPI.RestApiBridge.CreateFormUrlEncodedContent(object! value, Observables.RestAPI.RestApiSettings! settings) -> System.Net.Http.HttpContent!
+static Observables.RestAPI.RestApiBridge.FormatPathParameter(object? value, Observables.RestAPI.RestApiSettings! settings) -> string!
+static Observables.RestAPI.RestApiBridge.FormatQueryValue(object? value, Observables.RestAPI.RestApiSettings! settings) -> string?
+static Observables.RestAPI.RestApiBridge.SendAsync<T, TBody>(System.Net.Http.HttpClient! client, System.Net.Http.HttpRequestMessage! request, Observables.RestAPI.RestApiSettings! settings, bool isApiResponse, bool bodyBuffered, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<T?>!
+static Observables.RestAPI.RestApiBridge.SendVoidAsync(System.Net.Http.HttpClient! client, System.Net.Http.HttpRequestMessage! request, Observables.RestAPI.RestApiSettings! settings, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task!
+static Observables.RestAPI.RestApiBridge.SerializeBody<T>(T value, Observables.RestAPI.RestApiSettings! settings, int bodySerializationMethod = 0) -> System.Net.Http.HttpContent!
+static Observables.RestAPI.RestService.RegisterGeneratedFactory(System.Type! interfaceType, System.Func<System.Net.Http.HttpClient!, Observables.RestAPI.RestApiSettings?, object!>! factory) -> void
+Observables.RestAPI.RestApiAttribute
+Observables.RestAPI.RestApiAttribute.RestApiAttribute() -> void
+Observables.RestAPI.RestApiDefaults
+const Observables.RestAPI.RestApiDefaults.MultipartBoundary = "----MyGreatBoundary" -> string!

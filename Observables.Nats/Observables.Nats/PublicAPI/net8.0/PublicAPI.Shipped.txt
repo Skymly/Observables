@@ -59,3 +59,5 @@ static Observables.Nats.NatsService.For<T>(NATS.Client.Core.INatsConnection! con
 static Observables.Nats.NatsService.RegisterGeneratedFactory(System.Type! natsInterfaceType, System.Func<NATS.Client.Core.INatsConnection!, object!>! factory) -> void
 static Observables.Nats.NatsSubject.Format(string! template, params (string! Name, string? Value)[]! parameters) -> string!
 static Observables.Nats.PrimitiveNatsPayloadSerializer.Instance.get -> Observables.Nats.PrimitiveNatsPayloadSerializer!
+Observables.Nats.NatsAttribute.NatsAttribute(string? connectionName = null) -> void
+Observables.Nats.NatsAttribute.ConnectionName.get -> string?

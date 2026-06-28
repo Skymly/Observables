@@ -1,3 +1,1 @@
 #nullable enable
-Observables.Nats.NatsAttribute.NatsAttribute(string? connectionName = null) -> void
-Observables.Nats.NatsAttribute.ConnectionName.get -> string?

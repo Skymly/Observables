@@ -1,6 +1,6 @@
 # Observables.Events.R3
 
-Roslyn source generators that turn classic .NET events into [R3](https://github.com/Cysharp/R3) `Observable<T>` streams.
+Roslyn source generator bridging classic .NET events to [R3](https://github.com/Cysharp/R3) `Observable<T>`. Call `.Events()` on any type with event members — declarative reactive programming, no boilerplate.
 
 ## Install
 

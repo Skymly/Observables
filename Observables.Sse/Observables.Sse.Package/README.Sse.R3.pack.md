@@ -1,6 +1,6 @@
 # Observables.Sse.R3
 
-Declarative Server-Sent Events (SSE) proxies for R3 `Observable<T>` (Roslyn-generated proxies).
+Declarative Server-Sent Events (SSE) client proxies with Roslyn source generators — annotate interfaces with `[SseEvent]` to generate [R3](https://github.com/Cysharp/R3) `Observable<T>` proxies for text/event-stream realtime feeds.
 
 ## Install
 

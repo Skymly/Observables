@@ -1,6 +1,6 @@
 # Observables.Events.Reactive
 
-Roslyn source generators that turn classic .NET events into `System.Reactive` `IObservable<T>` streams.
+Roslyn source generator bridging classic .NET events to [System.Reactive](https://github.com/dotnet/reactive) `IObservable<T>`. Call `.Events()` on any type with event members — declarative reactive programming, no boilerplate.
 
 ## Install
 

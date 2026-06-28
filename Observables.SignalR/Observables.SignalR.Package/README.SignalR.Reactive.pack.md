@@ -1,6 +1,6 @@
 # Observables.SignalR.Reactive
 
-Declarative SignalR hub client interfaces for [System.Reactive](https://github.com/dotnet/reactive) `IObservable<T>`.
+Declarative SignalR hub client proxies with Roslyn source generators — annotate interfaces with `[HubInvoke]`/`[HubOn]` to generate [System.Reactive](https://github.com/dotnet/reactive) `IObservable<T>` proxies for realtime ASP.NET Core SignalR.
 
 ## Install
 

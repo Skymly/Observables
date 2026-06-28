@@ -1,6 +1,6 @@
 # Observables.Nats.R3
 
-Declarative Core NATS subject interfaces for [R3](https://github.com/Cysharp/R3) `Observable<T>` (Roslyn-generated proxies).
+Declarative NATS subject proxies with Roslyn source generators — annotate interfaces with `[NatsSubscribe]`/`[NatsPublish]`/`[NatsRequest]` to generate [R3](https://github.com/Cysharp/R3) `Observable<T>` proxies for NATS core realtime messaging.
 
 ## Install
 

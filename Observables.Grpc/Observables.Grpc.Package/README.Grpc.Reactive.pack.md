@@ -1,6 +1,6 @@
 # Observables.Grpc.Reactive
 
-Declarative gRPC proxies for System.Reactive `IObservable<T>` (Roslyn-generated proxies).
+Declarative gRPC client proxies with Roslyn source generators — annotate interfaces with `[GrpcUnary]`/`[GrpcServerStream]` to generate [System.Reactive](https://github.com/dotnet/reactive) `IObservable<T>` proxies for gRPC/protobuf realtime RPC.
 
 ## Install
 

@@ -1,6 +1,6 @@
 # Observables.RestAPI.R3
 
-Declarative HTTP client interfaces for [R3](https://github.com/Cysharp/R3) `Observable<T>` (Refit-style attributes, Roslyn-generated implementations).
+Declarative type-safe HTTP client with Roslyn source generators — annotate interfaces with `[Get]`/`[Post]` attributes to generate [R3](https://github.com/Cysharp/R3) `Observable<T>` proxies. Refit-style reactive REST API client.
 
 ## Install
 

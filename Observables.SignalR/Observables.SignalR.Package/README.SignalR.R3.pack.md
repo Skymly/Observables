@@ -1,6 +1,6 @@
 # Observables.SignalR.R3
 
-Declarative SignalR hub client interfaces for [R3](https://github.com/Cysharp/R3) `Observable<T>` (Roslyn-generated proxies).
+Declarative SignalR hub client proxies with Roslyn source generators — annotate interfaces with `[HubInvoke]`/`[HubOn]` to generate [R3](https://github.com/Cysharp/R3) `Observable<T>` proxies for realtime ASP.NET Core SignalR.
 
 ## Install
 

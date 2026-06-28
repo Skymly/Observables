@@ -1,6 +1,6 @@
 # Observables.WebSocket.R3
 
-Declarative WebSocket proxies for R3 `Observable<T>` (Roslyn-generated proxies).
+Declarative WebSocket client proxies with Roslyn source generators — annotate interfaces with `[WebSocketReceive]`/`[WebSocketSend]` to generate [R3](https://github.com/Cysharp/R3) `Observable<T>` proxies for realtime WebSocket messaging.
 
 ## Install
 

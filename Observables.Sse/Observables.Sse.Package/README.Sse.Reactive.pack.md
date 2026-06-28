@@ -1,6 +1,6 @@
 # Observables.Sse.Reactive
 
-Declarative Server-Sent Events (SSE) proxies for System.Reactive `IObservable<T>` (Roslyn-generated proxies).
+Declarative Server-Sent Events (SSE) client proxies with Roslyn source generators — annotate interfaces with `[SseEvent]` to generate [System.Reactive](https://github.com/dotnet/reactive) `IObservable<T>` proxies for text/event-stream realtime feeds.
 
 ## Install
 

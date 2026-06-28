@@ -1,6 +1,6 @@
 # Observables.Mqtt.R3
 
-Declarative mqtt hub client interfaces for [R3](https://github.com/Cysharp/R3) `Observable<T>` (Roslyn-generated proxies).
+Declarative MQTT topic proxies with Roslyn source generators — annotate interfaces with `[MqttSubscribe]`/`[MqttPublish]` to generate [R3](https://github.com/Cysharp/R3) `Observable<T>` proxies for MQTTnet realtime messaging.
 
 ## Install
 

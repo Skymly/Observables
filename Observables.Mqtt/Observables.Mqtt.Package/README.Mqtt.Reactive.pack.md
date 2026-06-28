@@ -1,6 +1,6 @@
 # Observables.Mqtt.Reactive
 
-Declarative mqtt hub client interfaces for [System.Reactive](https://github.com/dotnet/reactive) `IObservable<T>`.
+Declarative MQTT topic proxies with Roslyn source generators — annotate interfaces with `[MqttSubscribe]`/`[MqttPublish]` to generate [System.Reactive](https://github.com/dotnet/reactive) `IObservable<T>` proxies for MQTTnet realtime messaging.
 
 ## Install
 

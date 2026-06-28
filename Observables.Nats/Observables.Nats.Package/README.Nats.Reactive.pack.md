@@ -1,6 +1,6 @@
 # Observables.Nats.Reactive
 
-Declarative Core NATS subject interfaces for [System.Reactive](https://github.com/dotnet/reactive) `IObservable<T>`.
+Declarative NATS subject proxies with Roslyn source generators — annotate interfaces with `[NatsSubscribe]`/`[NatsPublish]`/`[NatsRequest]` to generate [System.Reactive](https://github.com/dotnet/reactive) `IObservable<T>` proxies for NATS core realtime messaging.
 
 ## Install
 

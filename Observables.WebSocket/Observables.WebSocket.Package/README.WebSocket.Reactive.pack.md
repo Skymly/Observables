@@ -1,6 +1,6 @@
 # Observables.WebSocket.Reactive
 
-Declarative WebSocket proxies for System.Reactive `IObservable<T>` (Roslyn-generated proxies).
+Declarative WebSocket client proxies with Roslyn source generators — annotate interfaces with `[WebSocketReceive]`/`[WebSocketSend]` to generate [System.Reactive](https://github.com/dotnet/reactive) `IObservable<T>` proxies for realtime WebSocket messaging.
 
 ## Install
 

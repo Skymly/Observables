@@ -1,6 +1,6 @@
 # Observables.RestAPI.Reactive
 
-Declarative HTTP client interfaces for `System.Reactive` `IObservable<T>`.
+Declarative type-safe HTTP client with Roslyn source generators — annotate interfaces with `[Get]`/`[Post]` attributes to generate [System.Reactive](https://github.com/dotnet/reactive) `IObservable<T>` proxies. Refit-style reactive REST API client.
 
 ## Install
 

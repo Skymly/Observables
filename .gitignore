@@ -12,6 +12,7 @@ obj/
 TestResults/
 artifacts/
 .nuke/temp/
+BenchmarkDotNet.Artifacts/
 
 ## Local scratch (see ../../../AGENTS.md § `.Local`)
 .Local/

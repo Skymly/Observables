@@ -1,0 +1,28 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>Observables.Benchmarks</RootNamespace>
+    <!-- BenchmarkDotNet requires an optimized build to produce meaningful numbers. -->
+    <Optimize>true</Optimize>
+    <ServerGarbageCollection>true</ServerGarbageCollection>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="BenchmarkDotNet" />
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" />
+    <PackageReference Include="R3" />
+  </ItemGroup>
+
+  <!--
+    Reference the domain runtime + the R3 generator AS LIBRARIES (not analyzers):
+    the harness instantiates MqttInterfaceStubGenerator directly and drives it with
+    CSharpGeneratorDriver, exactly like the generator unit-test harness does.
+  -->
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\Observables.Mqtt\Observables.Mqtt\Observables.Mqtt.csproj" />
+    <ProjectReference Include="..\..\..\Observables.Mqtt\Observables.Mqtt.R3.SourceGenerators\Observables.Mqtt.R3.SourceGenerators.csproj"
+                      ReferenceOutputAssembly="true" />
+  </ItemGroup>
+
+</Project>

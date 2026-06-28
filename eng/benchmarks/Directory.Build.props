@@ -1,0 +1,15 @@
+<Project>
+  <!--
+    Self-contained benchmark harness (mirrors eng/nuget-smoke isolation).
+    Intentionally does NOT import the repo-root Directory.Build.props: benchmarks
+    are a developer tool, not a shipped product, and must not inherit packaging,
+    TreatWarningsAsErrors, or multi-TFM rules from the product tree.
+  -->
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <LangVersion>latest</LangVersion>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+</Project>

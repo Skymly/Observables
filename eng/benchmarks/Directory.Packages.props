@@ -1,0 +1,17 @@
+<Project>
+  <!--
+    Local package versions for the benchmark harness, kept separate from the
+    repo-root central package management on purpose (same pattern as
+    eng/nuget-smoke). Roslyn + R3 pinned to the repo's versions so the harness
+    exercises the generator under the same dependencies it ships against.
+  -->
+  <PropertyGroup>
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageVersion Include="BenchmarkDotNet" Version="0.14.0" />
+    <PackageVersion Include="Microsoft.CodeAnalysis.CSharp" Version="4.12.0" />
+    <PackageVersion Include="R3" Version="1.3.0" />
+  </ItemGroup>
+</Project>

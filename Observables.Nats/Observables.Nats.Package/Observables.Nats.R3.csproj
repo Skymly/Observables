@@ -11,8 +11,8 @@
     <DevelopmentDependency>false</DevelopmentDependency>
     <SuppressDependenciesWhenPacking>false</SuppressDependenciesWhenPacking>
     <PackageId>Observables.Nats.R3</PackageId>
-    <Description>Declarative NATS subject proxies for R3 Observable.</Description>
-    <PackageTags>observables;nats;r3;source-generator</PackageTags>
+    <Description>Declarative NATS subject proxies with Roslyn source generators — annotate interfaces with [NatsSubscribe]/[NatsPublish]/[NatsRequest] to generate R3 Observable&lt;T&gt; proxies for NATS core realtime messaging.</Description>
+    <PackageTags>observables;nats;messaging;realtime;pubsub;reactive;rx;reactive-extensions;iobservable;r3;declarative;roslyn;source-generator;csharp;dotnet</PackageTags>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <ObservablesPackGeneratorProject>..\Observables.Nats.R3.SourceGenerators\Observables.Nats.R3.SourceGenerators.csproj</ObservablesPackGeneratorProject>
     <ObservablesPackGeneratorAssemblyName>Observables.Nats.R3.SourceGenerators.dll</ObservablesPackGeneratorAssemblyName>

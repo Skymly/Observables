@@ -11,8 +11,8 @@
     <DevelopmentDependency>false</DevelopmentDependency>
     <SuppressDependenciesWhenPacking>false</SuppressDependenciesWhenPacking>
     <PackageId>Observables.SignalR.R3</PackageId>
-    <Description>Declarative SignalR hub client proxies for R3 Observable.</Description>
-    <PackageTags>observables;signalr;r3;source-generator</PackageTags>
+    <Description>Declarative SignalR hub client proxies with Roslyn source generators — annotate interfaces with [HubInvoke]/[HubOn] to generate R3 Observable&lt;T&gt; proxies for realtime ASP.NET Core SignalR.</Description>
+    <PackageTags>observables;signalr;realtime;aspnet;reactive;rx;reactive-extensions;iobservable;r3;declarative;roslyn;source-generator;csharp;dotnet</PackageTags>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <ObservablesPackGeneratorProject>..\Observables.SignalR.R3.SourceGenerators\Observables.SignalR.R3.SourceGenerators.csproj</ObservablesPackGeneratorProject>
     <ObservablesPackGeneratorAssemblyName>Observables.SignalR.R3.SourceGenerators.dll</ObservablesPackGeneratorAssemblyName>

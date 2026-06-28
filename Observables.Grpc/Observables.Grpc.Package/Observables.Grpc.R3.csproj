@@ -11,8 +11,8 @@
     <DevelopmentDependency>false</DevelopmentDependency>
     <SuppressDependenciesWhenPacking>false</SuppressDependenciesWhenPacking>
     <PackageId>Observables.Grpc.R3</PackageId>
-    <Description>Declarative gRPC proxies for R3 Observable.</Description>
-    <PackageTags>observables;grpc;r3;source-generator</PackageTags>
+    <Description>Declarative gRPC client proxies with Roslyn source generators — annotate interfaces with [GrpcUnary]/[GrpcServerStream] to generate R3 Observable&lt;T&gt; proxies for gRPC/protobuf realtime RPC.</Description>
+    <PackageTags>observables;grpc;protobuf;rpc;realtime;reactive;rx;reactive-extensions;iobservable;r3;declarative;roslyn;source-generator;csharp;dotnet</PackageTags>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <ObservablesPackGeneratorProject>..\Observables.Grpc.R3.SourceGenerators\Observables.Grpc.R3.SourceGenerators.csproj</ObservablesPackGeneratorProject>
     <ObservablesPackGeneratorAssemblyName>Observables.Grpc.R3.SourceGenerators.dll</ObservablesPackGeneratorAssemblyName>

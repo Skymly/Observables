@@ -11,8 +11,8 @@
     <DevelopmentDependency>false</DevelopmentDependency>
     <SuppressDependenciesWhenPacking>false</SuppressDependenciesWhenPacking>
     <PackageId>Observables.Mqtt.Reactive</PackageId>
-    <Description>Declarative MQTT topic proxies for System.Reactive IObservable.</Description>
-    <PackageTags>observables;mqtt;system.reactive;source-generator</PackageTags>
+    <Description>Declarative MQTT topic proxies with Roslyn source generators — annotate interfaces with [MqttSubscribe]/[MqttPublish] to generate System.Reactive IObservable&lt;T&gt; proxies for MQTTnet realtime messaging.</Description>
+    <PackageTags>observables;mqtt;mqttnet;realtime;messaging;reactive;rx;reactive-extensions;iobservable;system.reactive;declarative;roslyn;source-generator;csharp;dotnet</PackageTags>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <ObservablesPackGeneratorProject>..\Observables.Mqtt.Reactive.SourceGenerators\Observables.Mqtt.Reactive.SourceGenerators.csproj</ObservablesPackGeneratorProject>
     <ObservablesPackGeneratorAssemblyName>Observables.Mqtt.Reactive.SourceGenerators.dll</ObservablesPackGeneratorAssemblyName>

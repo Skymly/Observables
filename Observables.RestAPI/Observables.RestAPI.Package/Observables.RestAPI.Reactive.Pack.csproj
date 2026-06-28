@@ -11,8 +11,8 @@
     <DevelopmentDependency>false</DevelopmentDependency>
     <SuppressDependenciesWhenPacking>false</SuppressDependenciesWhenPacking>
     <PackageId>Observables.RestAPI.Reactive</PackageId>
-    <Description>Declarative type-safe HTTP client for System.Reactive IObservable.</Description>
-    <PackageTags>observables;restapi;system.reactive;http;source-generator</PackageTags>
+    <Description>Declarative type-safe HTTP client with Roslyn source generators — annotate interfaces with [Get]/[Post] attributes to generate System.Reactive IObservable&lt;T&gt; proxies. Refit-style reactive REST API client.</Description>
+    <PackageTags>observables;restapi;http;rest;api;reactive;rx;reactive-extensions;iobservable;system.reactive;declarative;roslyn;source-generator;csharp;dotnet</PackageTags>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <ObservablesPackGeneratorProject>..\Observables.RestAPI.Reactive.SourceGenerators\Observables.RestAPI.Reactive.SourceGenerators.csproj</ObservablesPackGeneratorProject>
     <ObservablesPackGeneratorAssemblyName>Observables.RestAPI.Reactive.SourceGenerators.dll</ObservablesPackGeneratorAssemblyName>

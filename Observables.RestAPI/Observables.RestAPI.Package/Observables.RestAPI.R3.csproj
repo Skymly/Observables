@@ -11,8 +11,8 @@
     <DevelopmentDependency>false</DevelopmentDependency>
     <SuppressDependenciesWhenPacking>false</SuppressDependenciesWhenPacking>
     <PackageId>Observables.RestAPI.R3</PackageId>
-    <Description>Declarative type-safe HTTP client for R3 Observable.</Description>
-    <PackageTags>observables;restapi;r3;http;source-generator</PackageTags>
+    <Description>Declarative type-safe HTTP client with Roslyn source generators — annotate interfaces with [Get]/[Post] attributes to generate R3 Observable&lt;T&gt; proxies. Refit-style reactive REST API client.</Description>
+    <PackageTags>observables;restapi;http;rest;api;reactive;rx;reactive-extensions;iobservable;r3;declarative;roslyn;source-generator;csharp;dotnet</PackageTags>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <ObservablesPackGeneratorProject>..\Observables.RestAPI.R3.SourceGenerators\Observables.RestAPI.R3.SourceGenerators.csproj</ObservablesPackGeneratorProject>
     <ObservablesPackGeneratorAssemblyName>Observables.RestAPI.R3.SourceGenerators.dll</ObservablesPackGeneratorAssemblyName>

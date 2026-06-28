@@ -11,8 +11,8 @@
     <DevelopmentDependency>false</DevelopmentDependency>
     <SuppressDependenciesWhenPacking>false</SuppressDependenciesWhenPacking>
     <PackageId>Observables.WebSocket.R3</PackageId>
-    <Description>Declarative WebSocket proxies for R3 Observable.</Description>
-    <PackageTags>observables;websocket;r3;source-generator</PackageTags>
+    <Description>Declarative WebSocket client proxies with Roslyn source generators — annotate interfaces with [WebSocketReceive]/[WebSocketSend] to generate R3 Observable&lt;T&gt; proxies for realtime WebSocket messaging.</Description>
+    <PackageTags>observables;websocket;realtime;messaging;reactive;rx;reactive-extensions;iobservable;r3;declarative;roslyn;source-generator;csharp;dotnet</PackageTags>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <ObservablesPackGeneratorProject>..\Observables.WebSocket.R3.SourceGenerators\Observables.WebSocket.R3.SourceGenerators.csproj</ObservablesPackGeneratorProject>
     <ObservablesPackGeneratorAssemblyName>Observables.WebSocket.R3.SourceGenerators.dll</ObservablesPackGeneratorAssemblyName>

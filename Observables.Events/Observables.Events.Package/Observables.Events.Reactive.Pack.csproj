@@ -10,8 +10,8 @@
     <DevelopmentDependency>true</DevelopmentDependency>
     <SuppressDependenciesWhenPacking>false</SuppressDependenciesWhenPacking>
     <PackageId>Observables.Events.Reactive</PackageId>
-    <Description>Roslyn source generators for classic .NET events to System.Reactive IObservable.</Description>
-    <PackageTags>observables;events;system.reactive;source-generator;roslyn</PackageTags>
+    <Description>Roslyn source generator bridging classic .NET events to System.Reactive IObservable&lt;T&gt;. Call .Events() on any type with event members — declarative reactive programming, no boilerplate.</Description>
+    <PackageTags>observables;events;reactive;rx;reactive-extensions;iobservable;system.reactive;declarative;roslyn;source-generator;csharp;dotnet</PackageTags>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <ObservablesPackGeneratorProject>..\Observables.Events.Reactive.SourceGenerators\Observables.Events.Reactive.SourceGenerators.csproj</ObservablesPackGeneratorProject>
     <ObservablesPackGeneratorAssemblyName>Observables.Events.Reactive.SourceGenerators.dll</ObservablesPackGeneratorAssemblyName>

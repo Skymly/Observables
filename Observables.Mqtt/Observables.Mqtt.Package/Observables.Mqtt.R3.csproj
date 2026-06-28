@@ -11,8 +11,8 @@
     <DevelopmentDependency>false</DevelopmentDependency>
     <SuppressDependenciesWhenPacking>false</SuppressDependenciesWhenPacking>
     <PackageId>Observables.Mqtt.R3</PackageId>
-    <Description>Declarative MQTT topic proxies for R3 Observable.</Description>
-    <PackageTags>observables;mqtt;r3;source-generator</PackageTags>
+    <Description>Declarative MQTT topic proxies with Roslyn source generators — annotate interfaces with [MqttSubscribe]/[MqttPublish] to generate R3 Observable&lt;T&gt; proxies for MQTTnet realtime messaging.</Description>
+    <PackageTags>observables;mqtt;mqttnet;realtime;messaging;reactive;rx;reactive-extensions;iobservable;r3;declarative;roslyn;source-generator;csharp;dotnet</PackageTags>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <ObservablesPackGeneratorProject>..\Observables.Mqtt.R3.SourceGenerators\Observables.Mqtt.R3.SourceGenerators.csproj</ObservablesPackGeneratorProject>
     <ObservablesPackGeneratorAssemblyName>Observables.Mqtt.R3.SourceGenerators.dll</ObservablesPackGeneratorAssemblyName>

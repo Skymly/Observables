@@ -11,8 +11,8 @@
     <DevelopmentDependency>false</DevelopmentDependency>
     <SuppressDependenciesWhenPacking>false</SuppressDependenciesWhenPacking>
     <PackageId>Observables.SignalR.Reactive</PackageId>
-    <Description>Declarative SignalR hub client proxies for System.Reactive IObservable.</Description>
-    <PackageTags>observables;signalr;system.reactive;source-generator</PackageTags>
+    <Description>Declarative SignalR hub client proxies with Roslyn source generators — annotate interfaces with [HubInvoke]/[HubOn] to generate System.Reactive IObservable&lt;T&gt; proxies for realtime ASP.NET Core SignalR.</Description>
+    <PackageTags>observables;signalr;realtime;aspnet;reactive;rx;reactive-extensions;iobservable;system.reactive;declarative;roslyn;source-generator;csharp;dotnet</PackageTags>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <ObservablesPackGeneratorProject>..\Observables.SignalR.Reactive.SourceGenerators\Observables.SignalR.Reactive.SourceGenerators.csproj</ObservablesPackGeneratorProject>
     <ObservablesPackGeneratorAssemblyName>Observables.SignalR.Reactive.SourceGenerators.dll</ObservablesPackGeneratorAssemblyName>

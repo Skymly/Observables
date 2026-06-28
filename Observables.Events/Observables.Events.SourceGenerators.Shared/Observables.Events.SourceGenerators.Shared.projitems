@@ -19,9 +19,11 @@
     <Compile Include="$(MSBuildThisFileDirectory)ObservableEventsGenerator.Helpers.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)ObservableEventsGenerator.InterfaceEmission.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)ObservableEventsGenerator.InterfacePipeline.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)ObservableEventsGenerator.Parse.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)ObservableEventsGenerator.RoutedDetection.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)ObservableEvents\ObservableEventsConstants.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)ObservableEvents\ObservableEventsEntryKind.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)ObservableEvents\ObservableEventsEmissionModels.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)ObservableEvents\ObservableEventsModels.cs" />
   </ItemGroup>
 </Project>

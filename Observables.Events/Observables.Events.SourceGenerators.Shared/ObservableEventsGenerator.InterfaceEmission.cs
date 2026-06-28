@@ -109,7 +109,7 @@ public sealed partial class ObservableEventsGenerator
         INamedTypeSymbol type,
         Dictionary<INamedTypeSymbol, EventInterfaceDescriptor> hierarchy,
         Compilation compilation,
-        SourceProductionContext context,
+        Action<string, Location?, string> reportDiagnostic,
         ObservableEventsEntryKind entryKind)
     {
         if (!hierarchy.TryGetValue(type, out var desc))
@@ -181,7 +181,7 @@ public sealed partial class ObservableEventsGenerator
         var extensionClass = ObservableEventsSyntaxFactory.BootstrapExtensionsClassDeclaration()
             .AddMembers(extensionMembers.ToArray());
 
-        var implClass = CreateEventImplClass(type, desc, implName, hierarchy, compilation, context, entryKind);
+        var implClass = CreateEventImplClass(type, desc, implName, hierarchy, compilation, reportDiagnostic, entryKind);
 
         var ns = SyntaxFactory.FileScopedNamespaceDeclaration(SyntaxFactory.ParseName(ObservableEventsConstants.GeneratedNamespace))
             .AddMembers(extensionClass, implClass);
@@ -195,7 +195,7 @@ public sealed partial class ObservableEventsGenerator
         string implName,
         Dictionary<INamedTypeSymbol, EventInterfaceDescriptor> hierarchy,
         Compilation compilation,
-        SourceProductionContext context,
+        Action<string, Location?, string> reportDiagnostic,
         ObservableEventsEntryKind entryKind)
     {
         var typeParamList = type.IsGenericType
@@ -293,11 +293,11 @@ public sealed partial class ObservableEventsGenerator
             switch (entryKind)
             {
                 case ObservableEventsEntryKind.Events:
-                    if (TryCreateEventObservableProperty(evt, accessor, context, entryKind, out var eventsProp, includeXmlDocumentation: false))
+                    if (TryCreateEventObservableProperty(evt, accessor, reportDiagnostic, entryKind, out var eventsProp, includeXmlDocumentation: false))
                         members.Add(eventsProp);
                     break;
                 case ObservableEventsEntryKind.EventHandlers:
-                    if (TryCreateEventHandlerObservableProperty(evt, accessor, compilation, context, entryKind, out var eventHandlersProp, includeXmlDocumentation: false))
+                    if (TryCreateEventHandlerObservableProperty(evt, accessor, compilation, reportDiagnostic, entryKind, out var eventHandlersProp, includeXmlDocumentation: false))
                         members.Add(eventHandlersProp);
                     break;
                 case ObservableEventsEntryKind.RoutedEvents:
@@ -312,7 +312,7 @@ public sealed partial class ObservableEventsGenerator
                                 ObservableEventsSyntaxFactory.CreateEventInheritDocTrivia(
                                     $"{ObservableEventsConstants.QualifiedType(evt.ContainingType)}.{evt.Name}")));
                     }
-                    else if (TryCreateEventObservableProperty(evt, accessor, context, entryKind, out var routedEventsProp, includeXmlDocumentation: false))
+                    else if (TryCreateEventObservableProperty(evt, accessor, reportDiagnostic, entryKind, out var routedEventsProp, includeXmlDocumentation: false))
                     {
                         members.Add(routedEventsProp);
                     }
@@ -330,7 +330,7 @@ public sealed partial class ObservableEventsGenerator
                                 ObservableEventsSyntaxFactory.CreateEventInheritDocTrivia(
                                     $"{ObservableEventsConstants.QualifiedType(evt.ContainingType)}.{evt.Name}")));
                     }
-                    else if (TryCreateEventHandlerObservableProperty(evt, accessor, compilation, context, entryKind, out var routedHandlersProp, includeXmlDocumentation: false))
+                    else if (TryCreateEventHandlerObservableProperty(evt, accessor, compilation, reportDiagnostic, entryKind, out var routedHandlersProp, includeXmlDocumentation: false))
                     {
                         members.Add(routedHandlersProp);
                     }

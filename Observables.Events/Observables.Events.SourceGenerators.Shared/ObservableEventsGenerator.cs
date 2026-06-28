@@ -72,9 +72,19 @@ public sealed partial class ObservableEventsGenerator : IIncrementalGenerator
                     ObservableRoutedEvents: observableRoutedEvents);
             });
 
-        context.RegisterSourceOutput(pipeline, (spc, input) =>
+        var parseStep = pipeline
+            .Select(static (input, _) =>
+            {
+                var model = ParseEvents(input.Compilation, input.Candidates, input.UseWpf, input.ObservableRoutedEvents);
+                return (input.ObservableRoutedEvents, Model: model);
+            })
+            .WithTrackingName(EventsGeneratorStepName);
+
+        context.RegisterSourceOutput(parseStep, (spc, tuple) =>
         {
-            if (input.ObservableRoutedEvents)
+            var (observableRoutedEvents, model) = tuple;
+
+            if (observableRoutedEvents)
             {
                 spc.AddSource(
                     $"{ObservableEventsConstants.GeneratedNamespace}.ObservableEventsBootstrapExtensions.Routed.g.cs",
@@ -84,64 +94,41 @@ public sealed partial class ObservableEventsGenerator : IIncrementalGenerator
                         Encoding.UTF8));
             }
 
-            var targets = CollectObservableEventTargets(
-                input.Compilation,
-                input.Candidates,
-                input.UseWpf,
-                input.ObservableRoutedEvents);
-
-            EmitInterfaceBasedSources(
-                targets.EventsTypes,
-                targets.EventsGenericConstraintTargets,
-                input.Compilation,
-                spc,
-                ObservableEventsEntryKind.Events);
-
-            EmitInterfaceBasedSources(
-                targets.EventHandlersTypes,
-                targets.EventHandlersGenericConstraintTargets,
-                input.Compilation,
-                spc,
-                ObservableEventsEntryKind.EventHandlers);
-
-            if (!input.ObservableRoutedEvents)
+            // Report captured diagnostics
+            foreach (var diag in model.Diagnostics)
             {
-                return;
-            }
-
-            EmitInterfaceBasedSources(
-                targets.RoutedEventsTypes,
-                ImmutableArray<GenericConstraintTarget>.Empty,
-                input.Compilation,
-                spc,
-                ObservableEventsEntryKind.RoutedEvents,
-                input.UseWpf);
-
-            EmitInterfaceBasedSources(
-                targets.RoutedEventHandlersTypes,
-                ImmutableArray<GenericConstraintTarget>.Empty,
-                input.Compilation,
-                spc,
-                ObservableEventsEntryKind.RoutedEventHandlers,
-                input.UseWpf);
-
-            foreach (var target in targets.AttachedRoutedEventsTypes)
-            {
-                var source = GenerateAttachedRoutedEventSourceForTarget(target, ObservableEventsEntryKind.AttachedRoutedEvent);
-                if (!string.IsNullOrWhiteSpace(source))
+                var descriptor = diag.DescriptorId switch
                 {
-                    spc.AddSource($"{target.ReceiverType.GetSafeHintName()}.AttachedRoutedEvent.g.cs", SourceText.From(source, Encoding.UTF8));
-                }
+                    "OBS2001" => ObservableEventsDiagnosticDescriptors.InvalidEventDelegate,
+                    "OBS2002" => ObservableEventsDiagnosticDescriptors.InvalidEventHandlersDelegate,
+                    "OBS2003" => ObservableEventsDiagnosticDescriptors.InvalidRoutedEventDelegate,
+                    "OBS2004" => ObservableEventsDiagnosticDescriptors.InvalidRoutedEventHandlersDelegate,
+                    _ => null,
+                };
+                if (descriptor is null) continue;
+
+                var location = diag.LocationFilePath is not null
+                    ? Microsoft.CodeAnalysis.Location.Create(
+                        diag.LocationFilePath,
+                        new Microsoft.CodeAnalysis.Text.TextSpan(0, 0),
+                        new Microsoft.CodeAnalysis.Text.LinePositionSpan(
+                            new(diag.LocationStartLine, diag.LocationStartColumn),
+                            new(diag.LocationStartLine, diag.LocationStartColumn)))
+                    : Microsoft.CodeAnalysis.Location.None;
+                spc.ReportDiagnostic(Diagnostic.Create(descriptor, location, diag.MessageArg));
             }
 
-            foreach (var target in targets.AttachedRoutedEventHandlersTypes)
-            {
-                var source = GenerateAttachedRoutedEventSourceForTarget(target, ObservableEventsEntryKind.AttachedRoutedEventHandler);
-                if (!string.IsNullOrWhiteSpace(source))
-                {
-                    spc.AddSource($"{target.ReceiverType.GetSafeHintName()}.AttachedRoutedEventHandler.g.cs", SourceText.From(source, Encoding.UTF8));
-                }
-            }
+            foreach (var iface in model.Interfaces)
+                spc.AddSource(iface.FileName, SourceText.From(iface.Source, Encoding.UTF8));
+
+            foreach (var impl in model.TypeImplementations)
+                spc.AddSource(impl.FileName, SourceText.From(impl.Source, Encoding.UTF8));
+
+            foreach (var gc in model.GenericConstraints)
+                spc.AddSource(gc.FileName, SourceText.From(gc.Source, Encoding.UTF8));
+
+            foreach (var ar in model.AttachedRoutedEvents)
+                spc.AddSource(ar.FileName, SourceText.From(ar.Source, Encoding.UTF8));
         });
     }
 

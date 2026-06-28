@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
@@ -13,171 +14,171 @@ namespace Observables.Events.Generators;
 
 public sealed partial class ObservableEventsGenerator
 {
-private static bool TryCreateEventObservableProperty(
-    IEventSymbol evt,
-    ExpressionSyntax eventAccessorExpression,
-    SourceProductionContext context,
-    ObservableEventsEntryKind entryKind,
-    out PropertyDeclarationSyntax property,
-    bool includeXmlDocumentation = true)
-{
-    property = null!;
-    if (evt.Type is not INamedTypeSymbol delegateType || delegateType.DelegateInvokeMethod is not IMethodSymbol invoke)
+    private static bool TryCreateEventObservableProperty(
+        IEventSymbol evt,
+        ExpressionSyntax eventAccessorExpression,
+        Action<string, Location?, string> reportDiagnostic,
+        ObservableEventsEntryKind entryKind,
+        out PropertyDeclarationSyntax property,
+        bool includeXmlDocumentation = true)
     {
-        ReportInvalidDelegate(evt, context, entryKind);
-        return false;
-    }
+        property = null!;
+        if (evt.Type is not INamedTypeSymbol delegateType || delegateType.DelegateInvokeMethod is not IMethodSymbol invoke)
+        {
+            ReportInvalidDelegate(evt, reportDiagnostic, entryKind);
+            return false;
+        }
 
-    if (!invoke.ReturnsVoid)
-    {
-        ReportInvalidDelegate(evt, context, entryKind);
-        return false;
-    }
+        if (!invoke.ReturnsVoid)
+        {
+            ReportInvalidDelegate(evt, reportDiagnostic, entryKind);
+            return false;
+        }
 
-    var returnType = ObservableEventsSyntaxFactory.GetObservableReturnTypeSyntax(invoke.Parameters);
-    var bodyExpression = ObservableEventsSyntaxFactory.BuildEventObservableExpression(
-        delegateType,
-        invoke.Parameters,
-        eventAccessorExpression);
-    property = SyntaxFactory.PropertyDeclaration(returnType, evt.Name)
-        .AddModifiers(SyntaxFactory.Token(SyntaxKind.PublicKeyword))
-        .WithExpressionBody(SyntaxFactory.ArrowExpressionClause(bodyExpression))
-        .WithSemicolonToken(SyntaxFactory.Token(SyntaxKind.SemicolonToken));
-    if (includeXmlDocumentation)
-    {
-        property = property.WithLeadingTrivia(ObservableEventsSyntaxFactory.CreateEventInheritDocTrivia(
-            $"{ObservableEventsConstants.QualifiedType(evt.ContainingType)}.{evt.Name}"));
-    }
-
-    return true;
-}
-
-private static bool TryCreateEventHandlerObservableProperty(
-    IEventSymbol evt,
-    ExpressionSyntax eventAccessorExpression,
-    Compilation compilation,
-    SourceProductionContext context,
-    ObservableEventsEntryKind entryKind,
-    out PropertyDeclarationSyntax property,
-    bool includeXmlDocumentation = true)
-{
-    property = null!;
-    if (evt.Type is not INamedTypeSymbol delegateType || delegateType.DelegateInvokeMethod is not IMethodSymbol invoke)
-    {
-        ReportInvalidEventHandlersDelegate(evt, context, entryKind);
-        return false;
-    }
-
-    if (!invoke.ReturnsVoid)
-    {
-        ReportInvalidEventHandlersDelegate(evt, context, entryKind);
-        return false;
-    }
-
-    TypeSyntax returnType;
-    ExpressionSyntax bodyExpression;
-
-    if (IsClassicSystemEventHandler(delegateType, compilation, out var genericEventArgs))
-    {
-        var add = ObservableEventsSyntaxFactory.EventSubscriptionAdd(eventAccessorExpression);
-        var remove = ObservableEventsSyntaxFactory.EventSubscriptionRemove(eventAccessorExpression);
-        var eventArgsType = genericEventArgs is null
-            ? SyntaxFactory.ParseTypeName("global::System.EventArgs")
-            : SyntaxFactory.ParseTypeName(ObservableEventsConstants.QualifiedType(genericEventArgs));
-        bodyExpression = ObservableEventsSyntaxFactory.FromEventHandlerInvocation(
-            genericEventArgs is null ? null : eventArgsType,
-            add,
-            remove);
-        returnType = ObservableEventsSyntaxFactory.ObservableSenderArgsTupleType(eventArgsType);
-    }
-    else if (IsLegacySenderReceiverDelegate(delegateType, invoke, compilation))
-    {
-        bodyExpression = ObservableEventsSyntaxFactory.BuildLegacySenderReceiverEventExpression(
+        var returnType = ObservableEventsSyntaxFactory.GetObservableReturnTypeSyntax(invoke.Parameters);
+        var bodyExpression = ObservableEventsSyntaxFactory.BuildEventObservableExpression(
             delegateType,
             invoke.Parameters,
             eventAccessorExpression);
-        returnType = ObservableEventsSyntaxFactory.GetEventHandlersSenderReceiverReturnTypeSyntax(invoke.Parameters);
-    }
-    else
-    {
-        ReportInvalidEventHandlersDelegate(evt, context, entryKind);
-        return false;
-    }
+        property = SyntaxFactory.PropertyDeclaration(returnType, evt.Name)
+            .AddModifiers(SyntaxFactory.Token(SyntaxKind.PublicKeyword))
+            .WithExpressionBody(SyntaxFactory.ArrowExpressionClause(bodyExpression))
+            .WithSemicolonToken(SyntaxFactory.Token(SyntaxKind.SemicolonToken));
+        if (includeXmlDocumentation)
+        {
+            property = property.WithLeadingTrivia(ObservableEventsSyntaxFactory.CreateEventInheritDocTrivia(
+                $"{ObservableEventsConstants.QualifiedType(evt.ContainingType)}.{evt.Name}"));
+        }
 
-    property = SyntaxFactory.PropertyDeclaration(returnType, evt.Name)
-        .AddModifiers(SyntaxFactory.Token(SyntaxKind.PublicKeyword))
-        .WithExpressionBody(
-            SyntaxFactory.ArrowExpressionClause(bodyExpression))
-        .WithSemicolonToken(SyntaxFactory.Token(SyntaxKind.SemicolonToken));
-    if (includeXmlDocumentation)
-    {
-        property = property.WithLeadingTrivia(ObservableEventsSyntaxFactory.CreateEventInheritDocTrivia(
-            $"{ObservableEventsConstants.QualifiedType(evt.ContainingType)}.{evt.Name}"));
-    }
-
-    return true;
-}
-
-/// <summary>
-/// Custom <c>void (object, TSecond)</c> delegate excluding <c>System.EventHandler</c> / <c>System.EventHandler&lt;T&gt;</c> (those use <c>Observable.FromEventHandler</c>), implemented with <c>Observable.FromEvent</c>.
-/// </summary>
-private static bool IsLegacySenderReceiverDelegate(INamedTypeSymbol delegateType, IMethodSymbol invoke, Compilation compilation)
-{
-    if (invoke.Parameters.Length != 2)
-    {
-        return false;
-    }
-
-    if (invoke.Parameters[0].RefKind != RefKind.None || invoke.Parameters[1].RefKind != RefKind.None)
-    {
-        return false;
-    }
-
-    if (!IsDeclaredObject(invoke.Parameters[0].Type, compilation))
-    {
-        return false;
-    }
-
-    if (IsClassicSystemEventHandler(delegateType, compilation, out _))
-    {
-        return false;
-    }
-
-    return true;
-}
-
-private static bool IsDeclaredObject(ITypeSymbol type, Compilation compilation)
-{
-    return SymbolEqualityComparer.Default.Equals(
-        type.WithNullableAnnotation(NullableAnnotation.None),
-        compilation.GetSpecialType(SpecialType.System_Object));
-}
-
-/// <returns><see langword="null"/> for non-generic <c>System.EventHandler</c>; otherwise the generic event-args type.</returns>
-private static bool IsClassicSystemEventHandler(INamedTypeSymbol delegateType, Compilation compilation, out INamedTypeSymbol? genericEventArgs)
-{
-    genericEventArgs = null;
-    var nonGeneric = compilation.GetTypeByMetadataName("System.EventHandler");
-    var genericDef = compilation.GetTypeByMetadataName("System.EventHandler`1");
-    if (nonGeneric is null || genericDef is null)
-    {
-        return false;
-    }
-
-    if (SymbolEqualityComparer.Default.Equals(delegateType.OriginalDefinition, nonGeneric))
-    {
         return true;
     }
 
-    if (SymbolEqualityComparer.Default.Equals(delegateType.OriginalDefinition, genericDef)
-        && delegateType.TypeArguments.Length == 1
-        && delegateType.TypeArguments[0] is INamedTypeSymbol tArg)
+    private static bool TryCreateEventHandlerObservableProperty(
+        IEventSymbol evt,
+        ExpressionSyntax eventAccessorExpression,
+        Compilation compilation,
+        Action<string, Location?, string> reportDiagnostic,
+        ObservableEventsEntryKind entryKind,
+        out PropertyDeclarationSyntax property,
+        bool includeXmlDocumentation = true)
     {
-        genericEventArgs = tArg;
+        property = null!;
+        if (evt.Type is not INamedTypeSymbol delegateType || delegateType.DelegateInvokeMethod is not IMethodSymbol invoke)
+        {
+            ReportInvalidEventHandlersDelegate(evt, reportDiagnostic, entryKind);
+            return false;
+        }
+
+        if (!invoke.ReturnsVoid)
+        {
+            ReportInvalidEventHandlersDelegate(evt, reportDiagnostic, entryKind);
+            return false;
+        }
+
+        TypeSyntax returnType;
+        ExpressionSyntax bodyExpression;
+
+        if (IsClassicSystemEventHandler(delegateType, compilation, out var genericEventArgs))
+        {
+            var add = ObservableEventsSyntaxFactory.EventSubscriptionAdd(eventAccessorExpression);
+            var remove = ObservableEventsSyntaxFactory.EventSubscriptionRemove(eventAccessorExpression);
+            var eventArgsType = genericEventArgs is null
+                ? SyntaxFactory.ParseTypeName("global::System.EventArgs")
+                : SyntaxFactory.ParseTypeName(ObservableEventsConstants.QualifiedType(genericEventArgs));
+            bodyExpression = ObservableEventsSyntaxFactory.FromEventHandlerInvocation(
+                genericEventArgs is null ? null : eventArgsType,
+                add,
+                remove);
+            returnType = ObservableEventsSyntaxFactory.ObservableSenderArgsTupleType(eventArgsType);
+        }
+        else if (IsLegacySenderReceiverDelegate(delegateType, invoke, compilation))
+        {
+            bodyExpression = ObservableEventsSyntaxFactory.BuildLegacySenderReceiverEventExpression(
+                delegateType,
+                invoke.Parameters,
+                eventAccessorExpression);
+            returnType = ObservableEventsSyntaxFactory.GetEventHandlersSenderReceiverReturnTypeSyntax(invoke.Parameters);
+        }
+        else
+        {
+            ReportInvalidEventHandlersDelegate(evt, reportDiagnostic, entryKind);
+            return false;
+        }
+
+        property = SyntaxFactory.PropertyDeclaration(returnType, evt.Name)
+            .AddModifiers(SyntaxFactory.Token(SyntaxKind.PublicKeyword))
+            .WithExpressionBody(
+                SyntaxFactory.ArrowExpressionClause(bodyExpression))
+            .WithSemicolonToken(SyntaxFactory.Token(SyntaxKind.SemicolonToken));
+        if (includeXmlDocumentation)
+        {
+            property = property.WithLeadingTrivia(ObservableEventsSyntaxFactory.CreateEventInheritDocTrivia(
+                $"{ObservableEventsConstants.QualifiedType(evt.ContainingType)}.{evt.Name}"));
+        }
+
         return true;
     }
 
-    return false;
-}
+    /// <summary>
+    /// Custom <c>void (object, TSecond)</c> delegate excluding <c>System.EventHandler</c> / <c>System.EventHandler&lt;T&gt;</c> (those use <c>Observable.FromEventHandler</c>), implemented with <c>Observable.FromEvent</c>.
+    /// </summary>
+    private static bool IsLegacySenderReceiverDelegate(INamedTypeSymbol delegateType, IMethodSymbol invoke, Compilation compilation)
+    {
+        if (invoke.Parameters.Length != 2)
+        {
+            return false;
+        }
+
+        if (invoke.Parameters[0].RefKind != RefKind.None || invoke.Parameters[1].RefKind != RefKind.None)
+        {
+            return false;
+        }
+
+        if (!IsDeclaredObject(invoke.Parameters[0].Type, compilation))
+        {
+            return false;
+        }
+
+        if (IsClassicSystemEventHandler(delegateType, compilation, out _))
+        {
+            return false;
+        }
+
+        return true;
+    }
+
+    private static bool IsDeclaredObject(ITypeSymbol type, Compilation compilation)
+    {
+        return SymbolEqualityComparer.Default.Equals(
+            type.WithNullableAnnotation(NullableAnnotation.None),
+            compilation.GetSpecialType(SpecialType.System_Object));
+    }
+
+    /// <returns><see langword="null"/> for non-generic <c>System.EventHandler</c>; otherwise the generic event-args type.</returns>
+    private static bool IsClassicSystemEventHandler(INamedTypeSymbol delegateType, Compilation compilation, out INamedTypeSymbol? genericEventArgs)
+    {
+        genericEventArgs = null;
+        var nonGeneric = compilation.GetTypeByMetadataName("System.EventHandler");
+        var genericDef = compilation.GetTypeByMetadataName("System.EventHandler`1");
+        if (nonGeneric is null || genericDef is null)
+        {
+            return false;
+        }
+
+        if (SymbolEqualityComparer.Default.Equals(delegateType.OriginalDefinition, nonGeneric))
+        {
+            return true;
+        }
+
+        if (SymbolEqualityComparer.Default.Equals(delegateType.OriginalDefinition, genericDef)
+            && delegateType.TypeArguments.Length == 1
+            && delegateType.TypeArguments[0] is INamedTypeSymbol tArg)
+        {
+            genericEventArgs = tArg;
+            return true;
+        }
+
+        return false;
+    }
 
 }

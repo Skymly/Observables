@@ -13,46 +13,6 @@ namespace Observables.Events.Generators;
 
 public sealed partial class ObservableEventsGenerator
 {
-    private static void EmitInterfaceBasedSources(
-        ImmutableArray<INamedTypeSymbol> callSiteTypes,
-        ImmutableArray<GenericConstraintTarget> genericConstraintTargets,
-        Compilation compilation,
-        SourceProductionContext context,
-        ObservableEventsEntryKind entryKind,
-        bool useWpf = false)
-    {
-        var allTypes = callSiteTypes.AddRange(
-            genericConstraintTargets.SelectMany(static t => t.ConstraintTypes)
-                .Select(static t => t.IsGenericType ? (INamedTypeSymbol)t.OriginalDefinition : t));
-
-        var hierarchy = BuildEventInterfaceHierarchy(allTypes, entryKind, compilation, useWpf);
-        if (hierarchy.Count == 0 && genericConstraintTargets.Length == 0)
-            return;
-
-        var kindTag = GetEntryKindSourceTag(entryKind);
-
-        if (hierarchy.Count > 0)
-        {
-            var interfacesSource = GenerateEventInterfacesSource(hierarchy, compilation, entryKind);
-            if (!string.IsNullOrWhiteSpace(interfacesSource))
-                context.AddSource($"EventInterfaces.{kindTag}.g.cs", SourceText.From(interfacesSource, Encoding.UTF8));
-        }
-
-        foreach (var type in callSiteTypes)
-        {
-            var source = GenerateEventImplAndExtensionSource(type, hierarchy, compilation, context, entryKind);
-            if (!string.IsNullOrWhiteSpace(source))
-                context.AddSource($"{type.GetSafeHintName()}.{kindTag}.g.cs", SourceText.From(source, Encoding.UTF8));
-        }
-
-        foreach (var target in genericConstraintTargets)
-        {
-            var source = GenerateGenericConstraintEventSource(target, hierarchy, compilation, context, entryKind);
-            if (!string.IsNullOrWhiteSpace(source))
-                context.AddSource($"{GetGenericConstraintTargetHintName(target)}.{kindTag}.g.cs", SourceText.From(source, Encoding.UTF8));
-        }
-    }
-
     // ── Hierarchy building ──────────────────────────────────────────
 
     private static Dictionary<INamedTypeSymbol, EventInterfaceDescriptor> BuildEventInterfaceHierarchy(

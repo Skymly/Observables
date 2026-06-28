@@ -10,9 +10,10 @@ public sealed class SseInterfaceStubGenerator : IIncrementalGenerator
 {
     public void Initialize(IncrementalGeneratorInitializationContext context)
     {
-        var candidateInterfaces = context.SyntaxProvider.CreateSyntaxProvider(
-            static (syntax, _) => syntax is InterfaceDeclarationSyntax { AttributeLists.Count: > 0 },
-            static (ctx, _) => (InterfaceDeclarationSyntax)ctx.Node);
+        var candidateInterfaces = context.SyntaxProvider.ForAttributeWithMetadataName(
+            "Observables.Sse.SseAttribute",
+            static (node, _) => node is InterfaceDeclarationSyntax,
+            static (ctx, _) => (InterfaceDeclarationSyntax)ctx.TargetNode);
 
         var pipeline = candidateInterfaces
             .Collect()

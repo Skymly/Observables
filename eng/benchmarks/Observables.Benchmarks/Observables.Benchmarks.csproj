@@ -16,12 +16,14 @@
 
   <!--
     Reference the domain runtime + the R3 generator AS LIBRARIES (not analyzers):
-    the harness instantiates MqttInterfaceStubGenerator directly and drives it with
+    the harness instantiates the generator directly and drives it with
     CSharpGeneratorDriver, exactly like the generator unit-test harness does.
   -->
   <ItemGroup>
     <ProjectReference Include="..\..\..\Observables.Mqtt\Observables.Mqtt\Observables.Mqtt.csproj" />
     <ProjectReference Include="..\..\..\Observables.Mqtt\Observables.Mqtt.R3.SourceGenerators\Observables.Mqtt.R3.SourceGenerators.csproj"
+                      ReferenceOutputAssembly="true" />
+    <ProjectReference Include="..\..\..\Observables.Events\Observables.Events.R3.SourceGenerators\Observables.Events.R3.SourceGenerators.csproj"
                       ReferenceOutputAssembly="true" />
   </ItemGroup>
 

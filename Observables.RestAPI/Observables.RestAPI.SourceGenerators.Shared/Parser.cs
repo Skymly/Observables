@@ -400,7 +400,7 @@ internal static class Parser
                     methodSymbol.Locations.FirstOrDefault(), returnType.ToDisplayString()));
                 return ReturnTypeInfo.Unsupported;
             }
-#elif RESTAPI_SYSTEM_REACTIVE
+#elif RESTAPI_REACTIVE
             if (metadata == "Observable`1" && def.ContainingNamespace?.ToDisplayString() == "R3")
             {
                 diagnostics.Add(Diagnostic.Create(DiagnosticDescriptors.UnsupportedReturnType,

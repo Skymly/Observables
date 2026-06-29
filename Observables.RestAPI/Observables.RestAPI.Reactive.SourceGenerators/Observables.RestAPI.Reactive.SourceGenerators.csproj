@@ -4,7 +4,7 @@
 
   <PropertyGroup>
     <Description>Source generator for declarative REST clients → System.Reactive IObservable.</Description>
-    <DefineConstants>$(DefineConstants);ROSLYN_4;RESTAPI_SYSTEM_REACTIVE</DefineConstants>
+    <DefineConstants>$(DefineConstants);ROSLYN_4;RESTAPI_REACTIVE</DefineConstants>
   </PropertyGroup>
 
 

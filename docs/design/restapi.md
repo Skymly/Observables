@@ -260,7 +260,7 @@ R3 与 System.Reactive 的切换通过 `#if` 编译指令实现：
 | 生成器项目 | `DefineConstants` | Parser 行为 | Emitter 行为 |
 |------------|-------------------|-------------|--------------|
 | `RestAPI.R3.SourceGenerators` | `RESTAPI_R3` | `Observable<T>` → `R3Observable`；`IObservable<T>` → OBS3005 | `R3.Observable.FromAsync(...)` |
-| `RestAPI.Reactive.SourceGenerators` | `RESTAPI_SYSTEM_REACTIVE` | `IObservable<T>` → `SystemReactiveObservable`；`Observable<T>` → OBS3003 | `SystemReactiveObservableAdapter.FromAsync(...)` |
+| `RestAPI.Reactive.SourceGenerators` | `RESTAPI_REACTIVE` | `IObservable<T>` → `SystemReactiveObservable`；`Observable<T>` → OBS3003 | `SystemReactiveObservableAdapter.FromAsync(...)` |
 
 两生成器共享同一份 `Parser.cs` / `Emitter.cs`（shproj），通过 `#if` 切换后端特定逻辑。
 
@@ -303,7 +303,7 @@ Observables.RestAPI/
 ├── Observables.RestAPI.Reactive/                     # System.Reactive 桥接（SystemReactiveObservableAdapter）
 ├── Observables.RestAPI.SourceGenerators.Shared/      # shproj（Parser、Emitter、Models、诊断）
 ├── Observables.RestAPI.R3.SourceGenerators/          # R3 生成器（RESTAPI_R3）
-├── Observables.RestAPI.Reactive.SourceGenerators/    # Reactive 生成器（RESTAPI_SYSTEM_REACTIVE）
+├── Observables.RestAPI.Reactive.SourceGenerators/    # Reactive 生成器（RESTAPI_REACTIVE）
 ├── Observables.RestAPI.HttpClientFactory/            # DI 扩展（独立包，不捆绑生成器）
 ├── Observables.RestAPI.Package/                      # Traversal 根，产出 2 个 NuGet 包
 │   ├── Observables.RestAPI.R3.csproj                 # PackageId = Observables.RestAPI.R3
@@ -323,7 +323,7 @@ Observables.RestAPI/
 | **`ModuleInitializer` 注册** | .NET 5+ 自动注册，AOT 友好；保留反射回退兼容旧框架 |
 | **`BodySerializationMethod` 镜像枚举** | 生成器（netstandard2.0）不引用运行时项目，用 internal 镜像枚举 + `int` 传递 |
 | **`#if NET6_0_OR_GREATER` 嵌入生成代码** | `HttpRequestMessage.Options` vs `Properties` 由消费者编译器选择 |
-| **`#if RESTAPI_R3` / `RESTAPI_SYSTEM_REACTIVE`** | shproj 共享一份 Parser/Emitter，编译期切换后端 |
+| **`#if RESTAPI_R3` / `RESTAPI_REACTIVE`** | shproj 共享一份 Parser/Emitter，编译期切换后端 |
 | **`PathFragmentModel` readonly record struct** | 路径模板编译期拆分，常量段直接拼接，参数段运行时格式化 |
 | **`IApiResponse<T>` 可选不抛异常** | 需要检查状态码/头的场景用 `IApiResponse<T>`；需要抛异常用 `Task<T>` |
 | **HttpClientFactory 独立包** | DI 集成可选，不强制依赖 `Microsoft.Extensions.Http` |

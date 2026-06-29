@@ -1,4 +1,5 @@
 using System.Net;
+using System.Net.Sockets;
 using System.Text;
 
 namespace Observables.Sse.Tests.Infrastructure;
@@ -38,11 +39,25 @@ public sealed class SseTestServer : IAsyncDisposable
 
     public static SseTestServer Start()
     {
-        var port = Random.Shared.Next(50_000, 60_000);
+        var port = ReserveFreeTcpPort();
         var listener = new HttpListener();
         listener.Prefixes.Add($"http://127.0.0.1:{port}/");
         listener.Start();
         return new SseTestServer(listener, port);
+    }
+
+    static int ReserveFreeTcpPort()
+    {
+        var listener = new TcpListener(IPAddress.Loopback, 0);
+        listener.Start();
+        try
+        {
+            return ((IPEndPoint)listener.LocalEndpoint).Port;
+        }
+        finally
+        {
+            listener.Stop();
+        }
     }
 
     async Task AcceptLoopAsync(CancellationToken cancellationToken)

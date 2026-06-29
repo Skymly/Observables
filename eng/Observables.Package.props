@@ -13,6 +13,8 @@
     <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
     <EmbedUntrackedSources>true</EmbedUntrackedSources>
     <Deterministic>true</Deterministic>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
     <ContinuousIntegrationBuild Condition="'$(CI)' == 'true'">true</ContinuousIntegrationBuild>
     <ObservablesAnalyzerRoslynFolder>analyzers/dotnet/roslyn4.12/cs</ObservablesAnalyzerRoslynFolder>
     <ObservablesCodeFixesProject>$(MSBuildThisFileDirectory)../Observables.Shared/Observables.CodeFixes/Observables.CodeFixes.csproj</ObservablesCodeFixesProject>

@@ -40,6 +40,7 @@ Stable packages are published to [nuget.org](https://www.nuget.org/profiles/Skym
 |---------|---------|
 | **0.1.0** | First stable release — eight feature domains, 16 packages (`.R3` + `.Reactive` per domain), public API baseline. |
 | **0.1.1** | Stable follow-up — localized **zh-Hans** IntelliSense for Reactive packages. |
+| **0.1.2** | Maintenance release — Events incremental generator caching, diagnostic descriptor consolidation, ADR-0001 primitives backend decision. |
 
 Preview builds (`0.1.0-preview*`, `0.1.1-preview*`) were published to NuGet with tags only (no GitHub Release). Details and milestone planning: [docs/ROADMAP.md](docs/ROADMAP.md).
 

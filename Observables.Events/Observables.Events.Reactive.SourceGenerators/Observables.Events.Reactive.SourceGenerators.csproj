@@ -4,7 +4,7 @@
 
   <PropertyGroup>
     <Description>Source generators for classic .NET events → System.Reactive (IObservable).</Description>
-    <DefineConstants>$(DefineConstants);EVENTS_REACTIVE</DefineConstants>
+    <DefineConstants>$(DefineConstants);ROSLYN_4;EVENTS_REACTIVE</DefineConstants>
   </PropertyGroup>
 
   <ItemGroup>

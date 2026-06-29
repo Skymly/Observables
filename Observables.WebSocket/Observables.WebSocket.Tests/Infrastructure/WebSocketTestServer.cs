@@ -1,5 +1,6 @@
 using System.IO;
 using System.Net;
+using System.Net.Sockets;
 using System.Net.WebSockets;
 using System.Text;
 
@@ -23,11 +24,25 @@ public sealed class WebSocketTestServer : IAsyncDisposable
 
     public static WebSocketTestServer Start()
     {
-        var port = Random.Shared.Next(50_000, 60_000);
+        var port = ReserveFreeTcpPort();
         var listener = new HttpListener();
         listener.Prefixes.Add($"http://127.0.0.1:{port}/");
         listener.Start();
         return new WebSocketTestServer(listener, port);
+    }
+
+    static int ReserveFreeTcpPort()
+    {
+        var listener = new TcpListener(IPAddress.Loopback, 0);
+        listener.Start();
+        try
+        {
+            return ((IPEndPoint)listener.LocalEndpoint).Port;
+        }
+        finally
+        {
+            listener.Stop();
+        }
     }
 
     public Uri Uri => new($"ws://127.0.0.1:{Port}/");

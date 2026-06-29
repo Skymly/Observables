@@ -1,6 +1,6 @@
 # Events 域 — 开发设计文档
 
-> 状态：**已实现**（`main`）；NuGet `Observables.Events.R3` / `Observables.Events.Reactive` 已发 nuget.org（`0.1.1`，16 包之一）。实现细节以代码为准。
+> 状态：**已实现**（`main`）；NuGet `Observables.Events.R3` / `Observables.Events.Reactive` 已发 nuget.org（`0.1.2`，16 包之一）。实现细节以代码为准。
 > 命名、打包、诊断分段等约定以仓库根 [`AGENTS.md`](../../AGENTS.md) 为权威，本文在其框架内细化 Events 域。
 
 ## 1. 目标与定位

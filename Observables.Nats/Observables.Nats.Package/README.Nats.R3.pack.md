@@ -5,7 +5,7 @@ Declarative NATS subject proxies with Roslyn source generators — annotate inte
 ## Install
 
 ```xml
-<PackageReference Include="Observables.Nats.R3" Version="0.1.1" />
+<PackageReference Include="Observables.Nats.R3" Version="0.1.2" />
 <PackageReference Include="NATS.Client.Core" Version="2.8.1" />
 <PackageReference Include="R3" Version="1.3.0" />
 ```

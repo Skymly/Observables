@@ -1,16 +1,16 @@
 # Observables 路线图
 
-本文件描述 Observables 从预览版走向 **`0.1.0` 稳定版** 的里程碑规划（M1–M7 已全部完成，当前稳定版 `0.1.1`）。它是规划层文档：每个里程碑的工程标准（中央包管理、警告策略、诊断治理等）以 [`AGENTS.md`](../AGENTS.md) 为权威，本文件只排序与拆解。
+本文件描述 Observables 从预览版走向 **`0.1.0` 稳定版** 的里程碑规划（M1–M7 已全部完成，当前稳定版 `0.1.2`）。它是规划层文档：每个里程碑的工程标准（中央包管理、警告策略、诊断治理等）以 [`AGENTS.md`](../AGENTS.md) 为权威，本文件只排序与拆解。
 
 > 版本号、tag、发版均须维护者明确批准；本文件中的版本号（如 `preview5`）为规划占位，不构成自动发版授权。
 
-## 现状基线（`0.1.1` 已发 nuget.org）
+## 现状基线（`0.1.2` 已发 nuget.org）
 
 | 维度 | 现状 |
 |------|------|
 | 已实现域 | **Events**、**RestAPI**、**SignalR**、**Mqtt**、**WebSocket**、**Grpc**、**Sse**、**Nats**（运行时 + 双路生成器 + 测试） |
 | 共享层 | `Observables.Core`、`Observables.SourceGenerators.Shared`、`Observables.CodeFixes`、`Observables.Analyzers` |
-| nuget.org 已发 | **`0.1.0-preview6`** — **12 包**；**`0.1.0-preview7`** — **14 包**（+ Sse）；**`0.1.0-preview8`** — **16 包**（+ Nats）；**`0.1.0`** — **16 包**（稳定版）；**`0.1.1-preview1`** — 本地化 IntelliSense 预览；**`0.1.1`** — **16 包**（稳定版，`v0.1.1` tag + GitHub Release） |
+| nuget.org 已发 | **`0.1.0-preview6`** — **12 包**；**`0.1.0-preview7`** — **14 包**（+ Sse）；**`0.1.0-preview8`** — **16 包**（+ Nats）；**`0.1.0`** — **16 包**（稳定版）；**`0.1.1-preview1`** — 本地化 IntelliSense 预览；**`0.1.1`** — **16 包**（稳定版，`v0.1.1` tag + GitHub Release）；**`0.1.2`** — **16 包**（稳定版，`v0.1.2` tag + GitHub Release，含 Events 增量缓存 + 诊断描述符收敛） |
 | 构建 | 主仓 Nuke `Ci` / `CiPack` / `Publish`；`PackVerify` + `eng/nuget-smoke`（**16** 消费者） |
 | 示例仓 CI | `Observables.Samples` Nuke `Ci`（NuGet `0.1.1`，已同步） |
 
@@ -22,7 +22,7 @@
 | 2 | TFM / 公共属性收口（`eng/Observables.ProjectDefaults.props`） | ✅ M2 已落地 |
 | 3 | `TreatWarningsAsErrors`；CS860x、IL trim、xUnit 告警 | ✅ M2/M7 已落地（域运行时 net8/9 通过 Requires* 传播与生成代理保留收敛 IL 告警） |
 | 4 | Nuke 清单 / 版本双真相源 | ✅ M2 已落地（`Observables.BuildManifest.json` + `PackageVersionReader`） |
-| 5 | 诊断 release 跟踪（`AnalyzerReleases.*.md`、移除 RS2008） | ✅ M2 已落地；描述符文件结构仍分散 |
+| 5 | 诊断 release 跟踪（`AnalyzerReleases.*.md`、移除 RS2008） | ✅ M2 已落地；描述符结构已收敛（Events OBS2xxx 移入域 shproj，OBS*007 保留集中式分析器） |
 | 6 | Grpc 骨架命名（`Observables.Grpc.R3`）违反约定 | ✅ M3 已重命名为 `*.R3.SourceGenerators` |
 | 7 | 文档滞后：README / Docs / Samples | ✅ M4 已补齐（含 Grpc 用户文档与 Samples） |
 | 8 | Samples `RestAPI.Reactive` 显式 `R3` 触发 OBS0001 | ✅ `R3` 改为 runtime-only（`ExcludeAssets=compile`） |
@@ -155,3 +155,4 @@ Grpc 两包已于 **`0.1.0`**（`v0.1.0-preview6` tag）发布至 nuget.org 与 
 | `0.1.0` | M7（八域 API 冻结，**16 包**稳定版） |
 | `0.1.1-preview1` | 八域 + Reactive **zh-Hans IntelliSense** 预览 |
 | `0.1.1` | 本地化文档稳定版（**16 包**） |
+| `0.1.2` | 维护版：Events 增量缓存 + 诊断描述符收敛 + ADR-0001（**16 包**） |

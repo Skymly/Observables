@@ -5,7 +5,7 @@ Declarative SignalR hub client proxies with Roslyn source generators — annotat
 ## Install
 
 ```xml
-<PackageReference Include="Observables.SignalR.Reactive" Version="0.1.1" />
+<PackageReference Include="Observables.SignalR.Reactive" Version="0.1.2" />
 <PackageReference Include="System.Reactive" Version="6.0.1" />
 ```
 

@@ -5,7 +5,7 @@ Declarative type-safe HTTP client with Roslyn source generators — annotate int
 ## Install
 
 ```xml
-<PackageReference Include="Observables.RestAPI.Reactive" Version="0.1.1" />
+<PackageReference Include="Observables.RestAPI.Reactive" Version="0.1.2" />
 <PackageReference Include="System.Reactive" Version="6.0.1" />
 ```
 

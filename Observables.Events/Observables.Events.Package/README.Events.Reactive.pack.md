@@ -5,7 +5,7 @@ Roslyn source generator bridging classic .NET events to [System.Reactive](https:
 ## Install
 
 ```xml
-<PackageReference Include="Observables.Events.Reactive" Version="0.1.1" />
+<PackageReference Include="Observables.Events.Reactive" Version="0.1.2" />
 <PackageReference Include="System.Reactive" Version="6.0.1" />
 ```
 

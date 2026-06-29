@@ -5,7 +5,7 @@ Declarative MQTT topic proxies with Roslyn source generators — annotate interf
 ## Install
 
 ```xml
-<PackageReference Include="Observables.Mqtt.Reactive" Version="0.1.1" />
+<PackageReference Include="Observables.Mqtt.Reactive" Version="0.1.2" />
 <PackageReference Include="System.Reactive" Version="6.0.1" />
 ```
 

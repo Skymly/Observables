@@ -5,7 +5,7 @@ Declarative gRPC client proxies with Roslyn source generators — annotate inter
 ## Install
 
 ```xml
-<PackageReference Include="Observables.Grpc.Reactive" Version="0.1.1" />
+<PackageReference Include="Observables.Grpc.Reactive" Version="0.1.2" />
 <PackageReference Include="System.Reactive" Version="6.0.1" />
 <PackageReference Include="Grpc.Net.Client" Version="2.67.0" />
 ```

@@ -9,6 +9,9 @@
     <Import_RootNamespace>Observables.Events.Generators</Import_RootNamespace>
   </PropertyGroup>
   <ItemGroup>
+    <AdditionalFiles Include="$(MSBuildThisFileDirectory)AnalyzerReleases.Shipped.md" />
+    <AdditionalFiles Include="$(MSBuildThisFileDirectory)AnalyzerReleases.Unshipped.md" />
+    <Compile Include="$(MSBuildThisFileDirectory)DiagnosticDescriptors.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)EventsBootstrapSyntaxFactory.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)ObservableEventsSyntaxFactory.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)ObservableEventsGenerator.cs" />

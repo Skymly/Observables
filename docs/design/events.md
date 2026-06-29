@@ -152,7 +152,7 @@ public static Observable<TEventArgs> AttachedRoutedEvent<TEventArgs>(
 
 ## 5. 诊断（OBS2xxx）
 
-归属：`Observables.Shared/Observables.SourceGenerators.Shared/Diagnostics/ObservableEventsDiagnosticDescriptors.cs`（共享层，因 Events 域无独立 shproj）。
+归属：`Observables.Events/Observables.Events.SourceGenerators.Shared/DiagnosticDescriptors.cs`（域内 shproj，与其他域一致）。
 
 | ID | 严重性 | 触发 |
 |----|--------|------|
@@ -163,7 +163,7 @@ public static Observable<TEventArgs> AttachedRoutedEvent<TEventArgs>(
 
 全部 `Warning`：生成器跳过该事件但继续处理其他事件，不阻塞编译。
 
-Release 跟踪：`Observables.SourceGenerators.Shared/AnalyzerReleases.Shipped.md`（v1.0 已发）。
+Release 跟踪：`Observables.Events/Observables.Events.SourceGenerators.Shared/AnalyzerReleases.Shipped.md`（v1.0 已发）。
 
 ## 6. 项目组成
 

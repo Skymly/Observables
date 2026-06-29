@@ -99,10 +99,10 @@ public sealed partial class ObservableEventsGenerator : IIncrementalGenerator
             {
                 var descriptor = diag.DescriptorId switch
                 {
-                    "OBS2001" => ObservableEventsDiagnosticDescriptors.InvalidEventDelegate,
-                    "OBS2002" => ObservableEventsDiagnosticDescriptors.InvalidEventHandlersDelegate,
-                    "OBS2003" => ObservableEventsDiagnosticDescriptors.InvalidRoutedEventDelegate,
-                    "OBS2004" => ObservableEventsDiagnosticDescriptors.InvalidRoutedEventHandlersDelegate,
+                    "OBS2001" => DiagnosticDescriptors.InvalidEventDelegate,
+                    "OBS2002" => DiagnosticDescriptors.InvalidEventHandlersDelegate,
+                    "OBS2003" => DiagnosticDescriptors.InvalidRoutedEventDelegate,
+                    "OBS2004" => DiagnosticDescriptors.InvalidRoutedEventHandlersDelegate,
                     _ => null,
                 };
                 if (descriptor is null) continue;

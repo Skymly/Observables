@@ -1,8 +1,8 @@
 using Microsoft.CodeAnalysis;
 
-namespace Observables.SourceGenerators.Shared;
+namespace Observables.Events.Generators;
 
-internal static class ObservableEventsDiagnosticDescriptors
+internal static class DiagnosticDescriptors
 {
     private const string Category = "Observables.Events";
 

@@ -59,8 +59,8 @@ public sealed partial class ObservableEventsGenerator
     {
         var descriptorId = entryKind is ObservableEventsEntryKind.RoutedEvents or ObservableEventsEntryKind.RoutedEventHandlers
             or ObservableEventsEntryKind.AttachedRoutedEvent or ObservableEventsEntryKind.AttachedRoutedEventHandler
-            ? ObservableEventsDiagnosticDescriptors.InvalidRoutedEventDelegate.Id
-            : ObservableEventsDiagnosticDescriptors.InvalidEventDelegate.Id;
+            ? DiagnosticDescriptors.InvalidRoutedEventDelegate.Id
+            : DiagnosticDescriptors.InvalidEventDelegate.Id;
         reportDiagnostic(descriptorId, evt.Locations.FirstOrDefault(), evt.Name);
     }
 
@@ -71,8 +71,8 @@ public sealed partial class ObservableEventsGenerator
     {
         var descriptorId = entryKind is ObservableEventsEntryKind.RoutedEvents or ObservableEventsEntryKind.RoutedEventHandlers
             or ObservableEventsEntryKind.AttachedRoutedEvent or ObservableEventsEntryKind.AttachedRoutedEventHandler
-            ? ObservableEventsDiagnosticDescriptors.InvalidRoutedEventHandlersDelegate.Id
-            : ObservableEventsDiagnosticDescriptors.InvalidEventHandlersDelegate.Id;
+            ? DiagnosticDescriptors.InvalidRoutedEventHandlersDelegate.Id
+            : DiagnosticDescriptors.InvalidEventHandlersDelegate.Id;
         reportDiagnostic(descriptorId, evt.Locations.FirstOrDefault(), evt.Name);
     }
 }

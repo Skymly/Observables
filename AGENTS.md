@@ -204,8 +204,7 @@ Observables/
 ### 3. 诊断治理
 
 - 已落地（release 跟踪）：各诊断宿主项目旁维护 `AnalyzerReleases.Shipped.md` / `AnalyzerReleases.Unshipped.md`；已移除 `#pragma warning disable RS2008`。
-- 现状（结构）：描述符仍分散——每域 `…SourceGenerators.Shared/DiagnosticDescriptors.cs`（OBS3xxx–6xxx）、Events 在 `Observables.SourceGenerators.Shared/Diagnostics/`（OBS2xxx）、`Observables.Analyzers/DiagnosticDescriptors.cs`（OBS0001 + 各域空接口 `OBS*007`）。
-- 问题：单域诊断分散多文件、易撞 ID。
+- 现状（结构）：每域 `…SourceGenerators.Shared/DiagnosticDescriptors.cs`（OBS2xxx–9xxx 域内诊断）；`Observables.Analyzers/DiagnosticDescriptors.cs`（OBS0001 包冲突 + 各域空接口 `OBS*007`，由集中式 `EmptyProxyInterfaceAnalyzer` 使用）。
 - 标准：
   - **段分配（权威）**：
 
@@ -218,6 +217,8 @@ Observables/
     | `OBS5xxx` | Mqtt |
     | `OBS6xxx` | WebSocket |
     | `OBS7xxx` | Grpc |
+    | `OBS8xxx` | Sse |
+    | `OBS9xxx` | Nats |
 
   - 新增诊断落入对应段，**不复用、不跨段**。
   - 新增诊断写入对应项目的 `AnalyzerReleases.Unshipped.md`；发版时移入 `Shipped.md`（**已启用**，勿再 `#pragma warning disable RS2008`）。

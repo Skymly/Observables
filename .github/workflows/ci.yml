@@ -246,6 +246,46 @@ jobs:
           path: artifacts/package/*.nupkg
           if-no-files-found: warn
 
+  smoke:
+    name: NuGet consumer smoke (Local)
+    needs: [changes, pack-domain]
+    runs-on: windows-latest
+    if: |
+      needs.changes.outputs.any == 'true'
+      && (github.event_name == 'push' || github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'pack')))
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET SDKs
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: |
+            8.0.x
+            9.0.x
+            10.0.300
+
+      - name: Cache NuGet packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('**/Directory.Packages.props', '**/global.json') }}
+          restore-keys: |
+            ${{ runner.os }}-nuget-
+
+      - name: Run NuGet consumer smoke via Nuke (Local, skip Test)
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          dotnet run --project build/_build.csproj -- --target NuGetConsumerSmoke --configuration Release --consumer-feed Local --skip Test 2>&1 | Tee-Object -FilePath smoke.log
+
+      - name: Upload smoke log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: smoke-log
+          path: smoke.log
+          if-no-files-found: warn
+
   doc-loc:
     name: Doc localization parity
     needs: changes

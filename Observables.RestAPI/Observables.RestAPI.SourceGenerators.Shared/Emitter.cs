@@ -216,7 +216,7 @@ internal static class Emitter
     {
 #if RESTAPI_R3
         source.WriteLine($"return global::R3.Observable.FromAsync(async ______ct =>");
-#elif RESTAPI_SYSTEM_REACTIVE
+#elif RESTAPI_REACTIVE
         source.WriteLine($"return global::Observables.RestAPI.Reactive.SystemReactiveObservableAdapter.FromAsync(async ______ct =>");
 #else
         source.WriteLine($"return global::R3.Observable.FromAsync(async ______ct =>");

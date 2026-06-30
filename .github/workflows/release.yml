@@ -50,6 +50,13 @@ jobs:
             exit 1
           fi
 
+          # Validate tag version matches eng/Observables.Package.props
+          PROPS_VERSION=$(grep -oP '<Version>\K[^<]+' eng/Observables.Package.props || true)
+          if [[ -n "${PROPS_VERSION}" && "${PROPS_VERSION}" != "${VERSION}" ]]; then
+            echo "Error: tag version (${VERSION}) does not match eng/Observables.Package.props Version (${PROPS_VERSION})"
+            exit 1
+          fi
+
           echo "Publishing version: ${VERSION}"
           echo "VERSION=${VERSION}" >> "$GITHUB_ENV"
 

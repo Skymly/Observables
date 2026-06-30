@@ -1,8 +1,8 @@
 <Project>
 
   <PropertyGroup>
-    <Version>0.1.3</Version>
-    <PackageVersion>0.1.3</PackageVersion>
+    <Version>0.1.4</Version>
+    <PackageVersion>0.1.4</PackageVersion>
     <Authors>Skymly</Authors>
     <Copyright>Copyright (c) Skymly. All rights reserved.</Copyright>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>

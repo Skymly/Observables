@@ -1,16 +1,16 @@
 # Observables 路线图
 
-本文件描述 Observables 从预览版走向 **`0.1.0` 稳定版** 的里程碑规划（M1–M7 已全部完成，当前稳定版 `0.1.2`）。它是规划层文档：每个里程碑的工程标准（中央包管理、警告策略、诊断治理等）以 [`AGENTS.md`](../AGENTS.md) 为权威，本文件只排序与拆解。
+本文件描述 Observables 从预览版走向 **`0.1.0` 稳定版** 的里程碑规划（M1–M7 已全部完成，当前稳定版 `0.1.4`）。它是规划层文档：每个里程碑的工程标准（中央包管理、警告策略、诊断治理等）以 [`AGENTS.md`](../AGENTS.md) 为权威，本文件只排序与拆解。
 
 > 版本号、tag、发版均须维护者明确批准；本文件中的版本号（如 `preview5`）为规划占位，不构成自动发版授权。
 
-## 现状基线（`0.1.2` 已发 nuget.org）
+## 现状基线（`0.1.4` 已发 nuget.org）
 
 | 维度 | 现状 |
 |------|------|
 | 已实现域 | **Events**、**RestAPI**、**SignalR**、**Mqtt**、**WebSocket**、**Grpc**、**Sse**、**Nats**（运行时 + 双路生成器 + 测试） |
 | 共享层 | `Observables.Core`、`Observables.SourceGenerators.Shared`、`Observables.CodeFixes`、`Observables.Analyzers` |
-| nuget.org 已发 | **`0.1.0-preview6`** — **12 包**；**`0.1.0-preview7`** — **14 包**（+ Sse）；**`0.1.0-preview8`** — **16 包**（+ Nats）；**`0.1.0`** — **16 包**（稳定版）；**`0.1.1-preview1`** — 本地化 IntelliSense 预览；**`0.1.1`** — **16 包**（稳定版，`v0.1.1` tag + GitHub Release）；**`0.1.2`** — **16 包**（稳定版，`v0.1.2` tag + GitHub Release，含 Events 增量缓存 + 诊断描述符收敛） |
+| nuget.org 已发 | **`0.1.0-preview6`** — **12 包**；**`0.1.0-preview7`** — **14 包**（+ Sse）；**`0.1.0-preview8`** — **16 包**（+ Nats）；**`0.1.0`** — **16 包**（稳定版）；**`0.1.1-preview1`** — 本地化 IntelliSense 预览；**`0.1.1`** — **16 包**（稳定版，`v0.1.1` tag + GitHub Release）；**`0.1.2`** — **16 包**（稳定版，`v0.1.2` tag + GitHub Release，含 Events 增量缓存 + 诊断描述符收敛）；**`0.1.3`** — 未发布（空 snupkg 被 nuget.org 拒绝）；**`0.1.4`** — **16 包** + **16 snupkg**（稳定版，`v0.1.4` tag，含符号包修复 + CI smoke job + RestAPI 常量统一 + E2E 端口修复 + RestAPI.Reactive 对齐 + Events Reactive 前缀统一） |
 | 构建 | 主仓 Nuke `Ci` / `CiPack` / `Publish`；`PackVerify` + `eng/nuget-smoke`（**16** 消费者） |
 | 示例仓 CI | `Observables.Samples` Nuke `Ci`（NuGet `0.1.1`，已同步） |
 
@@ -156,3 +156,31 @@ Grpc 两包已于 **`0.1.0`**（`v0.1.0-preview6` tag）发布至 nuget.org 与 
 | `0.1.1-preview1` | 八域 + Reactive **zh-Hans IntelliSense** 预览 |
 | `0.1.1` | 本地化文档稳定版（**16 包**） |
 | `0.1.2` | 维护版：Events 增量缓存 + 诊断描述符收敛 + ADR-0001（**16 包**） |
+| `0.1.3` | CI 加固：NuGet consumer smoke job + RestAPI 常量统一 + E2E 端口修复 + 符号包配置（未发布，snupkg 空 PDB 被拒） |
+| `0.1.4` | 符号包修复：PDB 打入 snupkg（DebugType portable + pack PDBs）（**16 包** + **16 snupkg**） |
+
+## Post-1.0 Follow-up（按需，不绑定版本）
+
+以下为 0.1.0 稳定版后的工程改进项，按优先级分组。不阻断发版，维护者有精力时按需处理。
+
+### P2 — 中期处理
+
+| # | 行动项 | 工作量 | 说明 |
+|---|--------|--------|------|
+| C1 | RestAPI Parser 改用共享 `ObservableReturnTypeParser` | M | 消除 ~25 行重复，统一诊断行为 |
+| C2 | RestAPI 粗过滤改 `ForAttributeWithMetadataName` | S | 性能优化，与其他 6 域一致 |
+| C3 | 新建 CHANGELOG.md（Keep a Changelog 格式） | S | 三版草案已就绪 |
+| C4 | WebSocket/Grpc 设计文档语言对齐为中文 | S | 主仓文档语言一致性 |
+| C6 | `release.yml` 验证 tag 与 `eng/Observables.Package.props` 版本一致性 | S | 防止版本漂移 |
+
+### 搁置（等用户反馈或维护者有额外精力）
+
+| # | 行动项 | 搁置理由 |
+|---|--------|----------|
+| D1 | `Observables.Core` 实现共享类型 | 当前无迫切复用需求，避免预先抽象 |
+| D2 | 代码签名 | EV 证书成本高，个人项目收益低 |
+| D3 | 增量生成器缓存命中测试 | L 工作量，防御性测试，当前生成器模式正确 |
+| D4 | 异常处理统一（非 RestAPI 域补自定义异常） | 各域策略可能有意为之，强行统一风险高 |
+| D5 | CI 添加 `dotnet format --verify` | 本地 editorconfig 已控制，CI 增加价值有限 |
+| D6 | SignalR/Nats/Mqtt 桥接释放/竞态细节修复 | 低风险，等用户反馈 |
+| D7 | NuGet 徽章更新、Events 硬编码 AssemblyName | 功能正确，重构风险 > 收益 |

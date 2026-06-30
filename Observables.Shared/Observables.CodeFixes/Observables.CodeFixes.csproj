@@ -4,6 +4,7 @@
     <RootNamespace>Observables.CodeFixes</RootNamespace>
     <Description>Roslyn code fixes for Observables source-generator diagnostics.</Description>
     <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
+    <DebugType>portable</DebugType>
     <NoWarn>$(NoWarn);RS2001;RS2002;RS1035</NoWarn>
   </PropertyGroup>
 

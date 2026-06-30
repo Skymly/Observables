@@ -28,8 +28,11 @@
           BeforeTargets="_GetPackageFiles">
     <PropertyGroup>
       <_ObservablesPackGeneratorDll>$(ObservablesPackGeneratorOutputDir)$(ObservablesPackGeneratorAssemblyName)</_ObservablesPackGeneratorDll>
+      <_ObservablesPackGeneratorPdb>$(_ObservablesPackGeneratorDll.Replace('.dll', '.pdb'))</_ObservablesPackGeneratorPdb>
       <_ObservablesPackCodeFixesDll>$(ObservablesPackCodeFixesOutputDir)Observables.CodeFixes.dll</_ObservablesPackCodeFixesDll>
+      <_ObservablesPackCodeFixesPdb>$(_ObservablesPackCodeFixesDll.Replace('.dll', '.pdb'))</_ObservablesPackCodeFixesPdb>
       <_ObservablesPackAnalyzersDll>$(ObservablesPackAnalyzersOutputDir)Observables.Analyzers.dll</_ObservablesPackAnalyzersDll>
+      <_ObservablesPackAnalyzersPdb>$(_ObservablesPackAnalyzersDll.Replace('.dll', '.pdb'))</_ObservablesPackAnalyzersPdb>
     </PropertyGroup>
     <Error Condition="!Exists('$(_ObservablesPackGeneratorDll)')"
            Text="Observables pack: missing generator assembly '$(_ObservablesPackGeneratorDll)'." />
@@ -39,8 +42,11 @@
            Text="Observables pack: missing analyzer assembly '$(_ObservablesPackAnalyzersDll)'." />
     <ItemGroup>
       <None Include="$(_ObservablesPackGeneratorDll)" Pack="true" PackagePath="$(ObservablesAnalyzerRoslynFolder)" Visible="false" />
+      <None Include="$(_ObservablesPackGeneratorPdb)" Pack="true" PackagePath="$(ObservablesAnalyzerRoslynFolder)" Visible="false" Condition="Exists('$(_ObservablesPackGeneratorPdb)')" />
       <None Include="$(_ObservablesPackCodeFixesDll)" Pack="true" PackagePath="$(ObservablesAnalyzerRoslynFolder)" Visible="false" Condition="'$(ObservablesPackCodeFixesProject)' != '' and Exists('$(_ObservablesPackCodeFixesDll)')" />
+      <None Include="$(_ObservablesPackCodeFixesPdb)" Pack="true" PackagePath="$(ObservablesAnalyzerRoslynFolder)" Visible="false" Condition="'$(ObservablesPackCodeFixesProject)' != '' and Exists('$(_ObservablesPackCodeFixesPdb)')" />
       <None Include="$(_ObservablesPackAnalyzersDll)" Pack="true" PackagePath="$(ObservablesAnalyzerRoslynFolder)" Visible="false" Condition="'$(ObservablesPackAnalyzersProject)' != '' and Exists('$(_ObservablesPackAnalyzersDll)')" />
+      <None Include="$(_ObservablesPackAnalyzersPdb)" Pack="true" PackagePath="$(ObservablesAnalyzerRoslynFolder)" Visible="false" Condition="'$(ObservablesPackAnalyzersProject)' != '' and Exists('$(_ObservablesPackAnalyzersPdb)')" />
       <None Include="$(ObservablesPackPackagePropsFile)" Pack="true" PackagePath="build/$(PackageId).props" Visible="false" Condition="'$(ObservablesPackPackagePropsFile)' != '' and Exists('$(ObservablesPackPackagePropsFile)')" />
       <None Include="$(ObservablesPackPackagePropsFile)" Pack="true" PackagePath="buildTransitive/$(PackageId).props" Visible="false" Condition="'$(ObservablesPackPackagePropsFile)' != '' and Exists('$(ObservablesPackPackagePropsFile)')" />
       <!-- _._ placeholder: analyzer-only packages have no lib/ output (DLLs go to analyzers/),

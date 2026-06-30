@@ -4,6 +4,7 @@
     <RootNamespace>Observables.Analyzers</RootNamespace>
     <Description>Standalone Roslyn analyzers and completion providers for Observables.</Description>
     <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
+    <DebugType>portable</DebugType>
     <NoWarn>$(NoWarn);RS2001;RS2002;RS1038</NoWarn>
   </PropertyGroup>
 

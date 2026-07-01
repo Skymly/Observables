@@ -1,8 +1,8 @@
 <Project>
 
   <PropertyGroup>
-    <Version>0.1.5</Version>
-    <PackageVersion>0.1.5</PackageVersion>
+    <Version>0.1.6-preview1</Version>
+    <PackageVersion>0.1.6-preview1</PackageVersion>
     <Authors>Skymly</Authors>
     <Copyright>Copyright (c) Skymly. All rights reserved.</Copyright>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
@@ -11,6 +11,7 @@
     <RepositoryType>git</RepositoryType>
     <PublishRepositoryUrl>true</PublishRepositoryUrl>
     <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
+    <PackageIcon>logo.png</PackageIcon>
     <EmbedUntrackedSources>true</EmbedUntrackedSources>
     <Deterministic>true</Deterministic>
     <IncludeSymbols>true</IncludeSymbols>
@@ -25,6 +26,7 @@
 
   <ItemGroup>
     <None Include="$(MSBuildThisFileDirectory)../LICENSE" Pack="true" PackagePath="\" Visible="false" Condition="Exists('$(MSBuildThisFileDirectory)../LICENSE')" />
+    <None Include="$(MSBuildThisFileDirectory)../assets/logo-128.png" Pack="true" PackagePath="\logo.png" Visible="false" />
     <PackageReference Include="Microsoft.SourceLink.GitHub" PrivateAssets="all" />
   </ItemGroup>
 

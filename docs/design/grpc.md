@@ -1,76 +1,79 @@
-# gRPC Domain Design
+# gRPC 域 — 开发设计文档
 
-## Overview
+> 状态：**已实现**；NuGet `Observables.Grpc.R3` / `Observables.Grpc.Reactive` 已发 nuget.org。实现细节以代码为准。
+> 命名、打包、诊断分段等约定以仓库根 [`AGENTS.md`](../../AGENTS.md) 为权威，本文在其框架内细化 gRPC 域。
 
-`Observables.Grpc` bridges `Grpc.Core.CallInvoker` (from `GrpcChannel.CreateCallInvoker()` or any gRPC client) to reactive streams.
-Users declare a `[Grpc]` interface with boundary attributes; Roslyn source generators emit a proxy that maps RPC shapes to `Observable<T>` / `IObservable<T>`.
+## 1. 概述
 
-Integration wraps the existing gRPC stack — **no protoc / `Grpc.Tools` at consumer runtime**. Message types are typically `Google.Protobuf.IMessage<T>`; the runtime provides marshallers via `GrpcMarshallers`.
+`Observables.Grpc` 将 `Grpc.Core.CallInvoker`（来自 `GrpcChannel.CreateCallInvoker()` 或任意 gRPC 客户端）桥接到反应式流。
+用户声明带边界特性的 `[Grpc]` 接口；Roslyn 源生成器生成代理，将 RPC 形态映射为 `Observable<T>` / `IObservable<T>`。
 
-## Packages
+集成包装现有 gRPC 栈 —— **消费者运行时无需 protoc / `Grpc.Tools`**。消息类型通常为 `Google.Protobuf.IMessage<T>`；运行时通过 `GrpcMarshallers` 提供 marshaller。
 
-| NuGet Package | Reactive Backend |
+## 2. 包
+
+| NuGet 包 | 反应式后端 |
 |---|---|
 | `Observables.Grpc.R3` | R3 `Observable<T>` |
 | `Observables.Grpc.Reactive` | System.Reactive `IObservable<T>` |
 
-Both packages include the runtime (`Observables.Grpc`), the adapter layer, and the corresponding Roslyn source generator.
+两个包均包含运行时（`Observables.Grpc`）、适配器层及对应的 Roslyn 源生成器。
 
-## Boundary Attributes
+## 3. 边界特性
 
-| Attribute | Applied To | gRPC Shape | Reactive Mapping |
+| 特性 | 应用目标 | gRPC 形态 | 反应式映射 |
 |---|---|---|---|
-| `[GrpcUnary(name?)]` | Method | Unary RPC | `Observable<TResp>` single value |
-| `[GrpcServerStream(name?)]` | Method | Server streaming | `Observable<TResp>` multiple values |
-| `[GrpcClientStream(name?)]` | Method | Client streaming | `Observable<TReq>` in → `Observable<TResp>` single value |
-| `[GrpcDuplex(name?)]` | Method | Duplex streaming | `Observable<TReq>` in → `Observable<TResp>` stream |
+| `[GrpcUnary(name?)]` | 方法 | 一元 RPC | `Observable<TResp>` 单值 |
+| `[GrpcServerStream(name?)]` | 方法 | 服务端流 | `Observable<TResp>` 多值 |
+| `[GrpcClientStream(name?)]` | 方法 | 客户端流 | `Observable<TReq>` 输入 → `Observable<TResp>` 单值 |
+| `[GrpcDuplex(name?)]` | 方法 | 双向流 | `Observable<TReq>` 输入 → `Observable<TResp>` 流 |
 
-`[Grpc(serviceName?)]` on the interface selects the gRPC service name (defaults to interface name without leading `I`).
+接口上的 `[Grpc(serviceName?)]` 选择 gRPC 服务名（默认为去掉前导 `I` 的接口名）。
 
-## Member Shapes
+## 4. 成员形态
 
-### Unary
+### 4.1 一元
 
 ```csharp
 [GrpcUnary("SayHello")]
 Observable<EchoReply> SayHello(EchoRequest request, CancellationToken cancellationToken = default);
 ```
 
-- One request parameter (plus optional trailing `CancellationToken`).
-- Returns `Observable<TResponse>` (R3) or `IObservable<TResponse>` (Reactive).
+- 一个请求参数（外加可选的尾随 `CancellationToken`）。
+- 返回 `Observable<TResponse>`（R3）或 `IObservable<TResponse>`（Reactive）。
 
-### Server streaming
+### 4.2 服务端流
 
 ```csharp
 [GrpcServerStream("StreamEcho")]
 Observable<EchoReply> StreamEcho(EchoRequest request, CancellationToken cancellationToken = default);
 ```
 
-- Same parameter shape as unary.
-- Each `ResponseStream` item becomes `OnNext`; completes when the stream ends.
+- 参数形态与一元相同。
+- 每个 `ResponseStream` 项触发 `OnNext`；流结束时完成。
 
-### Client streaming
+### 4.3 客户端流
 
 ```csharp
 [GrpcClientStream("Collect")]
 Observable<EchoReply> Collect(Observable<EchoRequest> requests, CancellationToken cancellationToken = default);
 ```
 
-- First parameter is `Observable<TRequest>` (R3) or `IObservable<TRequest>` (Reactive).
-- Request stream is completed when the input observable completes.
-- Single response is emitted once `ResponseAsync` completes.
+- 第一个参数为 `Observable<TRequest>`（R3）或 `IObservable<TRequest>`（Reactive）。
+- 输入 observable 完成时请求流完成。
+- `ResponseAsync` 完成后发出单次响应。
 
-### Duplex streaming
+### 4.4 双向流
 
 ```csharp
 [GrpcDuplex("Chat")]
 Observable<EchoReply> Chat(Observable<EchoRequest> requests, CancellationToken cancellationToken = default);
 ```
 
-- First parameter is the outbound request stream.
-- Each inbound `ResponseStream` item is emitted to the returned observable.
+- 第一个参数为出站请求流。
+- 每个入站 `ResponseStream` 项发往返回的 observable。
 
-## CallInvoker Bridge
+## 5. CallInvoker 桥接
 
 ```
 User code
@@ -85,42 +88,42 @@ GrpcObservable / SystemReactiveGrpcAdapter
 CallInvoker → remote gRPC service
 ```
 
-`GrpcService` mirrors other domains: module initializers register `RegisterGeneratedFactory` entries at build time.
+`GrpcService` 与其他域一致：模块初始化器在构建期注册 `RegisterGeneratedFactory` 条目。
 
-## Serialization (Marshaller) Boundary
+## 6. 序列化（Marshaller）边界
 
-- **Protobuf messages**: `GrpcMarshallers.ForMessage<T>()` where `T : IMessage<T>, new()`.
-- **String payloads**: `GrpcMarshallers.String` (UTF-8) for simple scenarios and tests.
-- Unsupported types fail at marshaller creation with `NotSupportedException`.
+- **Protobuf 消息**：`GrpcMarshallers.ForMessage<T>()`，其中 `T : IMessage<T>, new()`。
+- **字符串载荷**：`GrpcMarshallers.String`（UTF-8），用于简单场景与测试。
+- 不支持的类型在 marshaller 创建时以 `NotSupportedException` 失败。
 
-Generated proxies resolve marshallers from request/response type symbols at compile time.
+生成的代理在编译期从请求/响应类型符号解析 marshaller。
 
-## Design Decisions
+## 7. 设计决策
 
-### Why wrap `CallInvoker` instead of generating from `.proto`?
+### 7.1 为何包装 `CallInvoker` 而非从 `.proto` 生成？
 
-1. **Consistent declarative model** across Observables domains (RestAPI, SignalR, Mqtt, WebSocket).
-2. **Reactive-first API** — users think in streams, not callback-style gRPC clients.
-3. **No code-gen toolchain coupling** in the consumer project; proto/codegen remains optional on the server side.
-4. **`Grpc.Core.Api`** supports `netstandard2.0`, matching the library TFM matrix.
+1. **一致的声明式模型**，跨 Observables 各域（RestAPI、SignalR、Mqtt、WebSocket）。
+2. **反应式优先 API** —— 用户以流思考，而非回调式 gRPC 客户端。
+3. **消费者项目无代码生成工具链耦合**；proto/codegen 在服务端仍为可选。
+4. **`Grpc.Core.Api`** 支持 `netstandard2.0`，与库 TFM 矩阵匹配。
 
-### Why not embed `Grpc.Net.Client` in the runtime?
+### 7.2 为何不在运行时内嵌 `Grpc.Net.Client`？
 
-Consumers choose channel creation (`GrpcChannel.ForAddress`, DI, test hosts). The runtime only needs `CallInvoker`, keeping dependencies minimal.
+消费者自行选择 channel 创建方式（`GrpcChannel.ForAddress`、DI、测试宿主）。运行时仅需 `CallInvoker`，保持依赖最小化。
 
-## Diagnostic IDs (OBS7xxx)
+## 8. 诊断 ID（OBS7xxx）
 
-| ID | Severity | Description |
+| ID | Severity | 描述 |
 |---|---|---|
-| OBS7001 | Warning | Member has no gRPC boundary attribute |
-| OBS7002 | Error | `Observables.Grpc` runtime not referenced |
-| OBS7003 | Error | Unsupported return type |
-| OBS7004 | Error | Member shape does not match boundary attribute |
-| OBS7005 | Error | `IObservable<T>` without `Observables.Grpc.Reactive` |
-| OBS7006 | Error | Unsupported parameter combination |
-| OBS7007 | Warning | Empty `[Grpc]` interface (`Observables.Analyzers`) |
+| OBS7001 | Warning | 成员无 gRPC 边界特性 |
+| OBS7002 | Error | 未引用 `Observables.Grpc` 运行时 |
+| OBS7003 | Error | 不支持的返回类型 |
+| OBS7004 | Error | 成员形态与边界特性不匹配 |
+| OBS7005 | Error | `IObservable<T>` 但未引用 `Observables.Grpc.Reactive` |
+| OBS7006 | Error | 不支持的参数组合 |
+| OBS7007 | Warning | 空 `[Grpc]` 接口（`Observables.Analyzers`） |
 
-## Entry Point
+## 9. 入口
 
 ```csharp
 var channel = GrpcChannel.ForAddress("https://localhost:5001");

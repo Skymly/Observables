@@ -167,10 +167,10 @@ Grpc 两包已于 **`0.1.0`**（`v0.1.0-preview6` tag）发布至 nuget.org 与 
 
 | # | 行动项 | 工作量 | 说明 |
 |---|--------|--------|------|
-| C1 | RestAPI Parser 改用共享 `ObservableReturnTypeParser` | M | 消除 ~25 行重复，统一诊断行为 |
+| C1 | RestAPI Parser 改用共享 `ObservableReturnTypeParser` | M | **推迟**：RestAPI 返回类型解析有领域特异性（Task/ValueTask/IApiResponse/普通返回），共享 parser 仅处理 Observable/IObservable；~25 行反映领域复杂度非真重复；测试覆盖不足（OBS3003/OBS3005 零覆盖），无测试保障下重构风险中高 |
 | ~~C2~~ | ~~RestAPI 粗过滤改 `ForAttributeWithMetadataName`~~ | ~~S~~ | **已评估，决定不实施**：RestAPI 方法级属性模型（`[Get]`/`[Post]` 等）是领域语义决定的，与其他域接口级属性有本质差异；方案 A（6-7 次调用 + merge）复杂度 > 收益，方案 B（强制 `[RestApi]`）破坏性；当前 `CreateSyntaxProvider` 已够用 |
-| C3 | 新建 CHANGELOG.md（Keep a Changelog 格式） | S | 三版草案已就绪 |
-| C4 | WebSocket/Grpc 设计文档语言对齐为中文 | S | 主仓文档语言一致性 |
+| ~~C3~~ | ~~新建 CHANGELOG.md（Keep a Changelog 格式）~~ | ~~S~~ | **已评估，决定不实施**：已有 GitHub Releases（用户可见）+ CONTRIBUTING.md 版本历史（de facto changelog）+ ROADMAP 版本表；新增 CHANGELOG.md = 第四同步点，每次发版维护负担增加；个人项目 post-1.0 维护期无用户需求 |
+| ~~C4~~ | ~~WebSocket/Grpc 设计文档语言对齐为中文~~ | ~~S~~ | **已完成**：websocket.md 与 grpc.md 翻译为中文，对齐 restapi.md/events.md/sse.md/mqtt.md 风格 |
 | ~~C6~~ | ~~`release.yml` 验证 tag 与 `eng/Observables.Package.props` 版本一致性~~ | ~~S~~ | **已完成**（0.1.4，`release.yml` 加版本一致性校验步骤） |
 
 ### 搁置（等用户反馈或维护者有额外精力）

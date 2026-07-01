@@ -126,6 +126,54 @@ internal static class GeneratorTestHarness
         return sb.ToString().TrimEnd();
     }
 
+    /// <summary>
+    /// Runs the generator with incremental step tracking enabled, returning the driver
+    /// for a second run. The returned <see cref="CacheTrackingDriver"/> exposes both the
+    /// initial driver and the compilation so tests can perform a second run and inspect
+    /// <see cref="GeneratorRunResult.TrackedSteps"/>.
+    /// </summary>
+    internal static CacheTrackingDriver RunWithCacheTracking(string userSource)
+    {
+        (CSharpCompilation compilation, _) =
+            CreateHarnessCompilation(userSource, LanguageVersion.Preview);
+
+        CSharpParseOptions parseOptions = CSharpParseOptions.Default.WithLanguageVersion(LanguageVersion.Preview);
+
+        GeneratorDriver driver = CSharpGeneratorDriver.Create(
+            generators: [new ObservableEventsGenerator().AsSourceGenerator()],
+            parseOptions: parseOptions,
+            driverOptions: new GeneratorDriverOptions(
+                IncrementalGeneratorOutputKind.None,
+                trackIncrementalGeneratorSteps: true));
+
+        driver = driver.RunGenerators(compilation);
+
+        GeneratorDriverRunResult runResult = driver.GetRunResult();
+        foreach (GeneratorRunResult gr in runResult.Results)
+        {
+            if (gr.Exception is not null)
+            {
+                throw gr.Exception;
+            }
+        }
+
+        return new CacheTrackingDriver(driver, compilation, parseOptions);
+    }
+
+    /// <summary>
+    /// Gets the <see cref="IncrementalStepRunReason"/> for a tracked step from the most recent run.
+    /// TrackedSteps accumulates entries across runs; this returns the last (most recent) entry.
+    /// </summary>
+    internal static IncrementalStepRunReason GetStepReason(GeneratorRunResult result, string stepName)
+    {
+        if (!result.TrackedSteps.TryGetValue(stepName, out var steps))
+            throw new InvalidOperationException($"Tracked step '{stepName}' not found. Available: [{string.Join(", ", result.TrackedSteps.Keys)}]");
+
+        // TrackedSteps accumulates across runs; take the last entry for the most recent run.
+        var step = steps[^1];
+        return step.Outputs[^1].Reason;
+    }
+
     internal static IEnumerable<MetadataReference> GetMetadataReferences()
     {
         string? trustedPlatformAssemblies = AppContext.GetData("TRUSTED_PLATFORM_ASSEMBLIES") as string;
@@ -153,3 +201,43 @@ internal sealed record GeneratorRunOutput(
     ImmutableArray<Diagnostic> Diagnostics);
 
 internal sealed record GeneratedSource(string HintName, string Source);
+
+/// <summary>
+/// Holds the driver and compilation after the first run with cache tracking enabled.
+/// Tests call <see cref="RunSecond"/> to perform a second run and inspect tracked steps.
+/// </summary>
+internal sealed record CacheTrackingDriver(
+    GeneratorDriver Driver,
+    CSharpCompilation Compilation,
+    CSharpParseOptions ParseOptions)
+{
+    /// <summary>
+    /// Runs the generator a second time on the same driver (testing cache hits/misses).
+    /// </summary>
+    public GeneratorRunResult RunSecond(CSharpCompilation? editedCompilation = null)
+    {
+        var driver = Driver.RunGenerators(editedCompilation ?? Compilation);
+        return driver.GetRunResult().Results[0];
+    }
+
+    /// <summary>
+    /// Adds an unrelated syntax tree (no .Events() invocations) to the compilation for cache testing.
+    /// </summary>
+    public CSharpCompilation WithUnrelatedTree(string source = "class Dummy {}")
+    {
+        var tree = CSharpSyntaxTree.ParseText(source, ParseOptions);
+        return Compilation.AddSyntaxTrees(tree);
+    }
+
+    /// <summary>
+    /// Adds a new syntax tree with the given user source (wrapped in harness boilerplate)
+    /// to the compilation for cache testing.
+    /// </summary>
+    public CSharpCompilation WithAdditionalSource(string userSource)
+    {
+        var tree = CSharpSyntaxTree.ParseText(
+            GeneratorTestHarness.BuildHarnessDocument(userSource),
+            ParseOptions);
+        return Compilation.AddSyntaxTrees(tree);
+    }
+};

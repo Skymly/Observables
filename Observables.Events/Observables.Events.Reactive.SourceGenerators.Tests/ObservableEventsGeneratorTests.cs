@@ -503,6 +503,77 @@ public sealed class ObservableEventsGeneratorTests
 
         """;
 
+    // ── Incremental cache hit tests ──
+
+    const string CacheTestSource =
+        """
+        namespace Demo;
+
+        public class ClickSource
+        {
+            public event System.Action? Click;
+        }
+
+        public static class Usage
+        {
+            public static void Run(ClickSource s) => s.Events();
+        }
+        """;
+
+    [Fact]
+    public void Cache_unchanged_compilation_reuses_parse_step()
+    {
+        // Run once with tracking enabled, then re-run on the same compilation.
+        // The ObservableEventsGenerator.Parse step should report a cache hit (Cached or Unchanged).
+        var harness = GeneratorTestHarness.RunWithCacheTracking(CacheTestSource);
+        var result = harness.RunSecond();
+        var reason = GeneratorTestHarness.GetStepReason(result, "ObservableEventsGenerator.Parse");
+        Assert.True(
+            reason is IncrementalStepRunReason.Cached or IncrementalStepRunReason.Unchanged,
+            $"Expected cache hit (Cached/Unchanged), got {reason}");
+    }
+
+    [Fact]
+    public void Cache_unrelated_edit_preserves_parse_step()
+    {
+        // Add an unrelated syntax tree (no .Events() invocations).
+        // CreateSyntaxProvider scans all syntax trees for .Events() calls, so an
+        // unrelated tree may invalidate the candidate set; accept Modified as well.
+        var harness = GeneratorTestHarness.RunWithCacheTracking(CacheTestSource);
+        var edited = harness.WithUnrelatedTree();
+        var result = harness.RunSecond(edited);
+        var reason = GeneratorTestHarness.GetStepReason(result, "ObservableEventsGenerator.Parse");
+        Assert.True(
+            reason is IncrementalStepRunReason.Cached or IncrementalStepRunReason.Unchanged or IncrementalStepRunReason.Modified,
+            $"Expected cache hit or modified (Cached/Unchanged/Modified), got {reason}");
+    }
+
+    [Fact]
+    public void Cache_events_edit_invalidates_parse_step()
+    {
+        // Add a new .Events() invocation → candidate set changes → cache miss.
+        var harness = GeneratorTestHarness.RunWithCacheTracking(CacheTestSource);
+        var edited = harness.WithAdditionalSource(
+            """
+            namespace Demo2;
+
+            public class AnotherSource
+            {
+                public event System.Action? Changed;
+            }
+
+            public static class Usage2
+            {
+                public static void Run(AnotherSource s) => s.Events();
+            }
+            """);
+        var result = harness.RunSecond(edited);
+        var reason = GeneratorTestHarness.GetStepReason(result, "ObservableEventsGenerator.Parse");
+        Assert.True(
+            reason is IncrementalStepRunReason.Modified or IncrementalStepRunReason.New,
+            $"Expected cache miss (Modified/New), got {reason}");
+    }
+
     private const string WpfStubs = """
         namespace System.Windows
         {

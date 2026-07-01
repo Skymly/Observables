@@ -1,5 +1,6 @@
 using System.IO.Compression;
 using System.Linq;
+using Microsoft.CodeAnalysis;
 
 namespace Observables.RestAPI.GeneratorTests;
 
@@ -90,5 +91,75 @@ public class CoreGeneratorTests
 
         Assert.Contains("OBS3004", GeneratorTestHarness.ToSnapshot(output), StringComparison.Ordinal);
         return Task.CompletedTask;
+    }
+
+    // ── Incremental cache hit tests ──
+
+    const string CacheTestSource =
+        """
+        public interface IUserApi
+        {
+            [Get("/users/{id}")]
+            Task<User> GetUser(int id);
+        }
+
+        public sealed class User
+        {
+            public int Id { get; set; }
+            public string Name { get; set; } = "";
+        }
+        """;
+
+    [Fact]
+    public void Cache_unchanged_compilation_reuses_build_step()
+    {
+        // Run once with tracking enabled, then re-run on the same compilation.
+        // The BuildRestApi step should report a cache hit (Cached or Unchanged).
+        var harness = GeneratorTestHarness.RunWithCacheTracking(CacheTestSource);
+        var result = harness.RunSecond();
+        var reason = GeneratorTestHarness.GetStepReason(result, "BuildRestApi");
+        Assert.True(
+            reason is IncrementalStepRunReason.Cached or IncrementalStepRunReason.Unchanged,
+            $"Expected cache hit (Cached/Unchanged), got {reason}");
+    }
+
+    [Fact]
+    public void Cache_unrelated_edit_preserves_build_step()
+    {
+        // Add an unrelated syntax tree (no RestAPI interfaces with [Get]/[Post] methods).
+        // RestAPI uses CreateSyntaxProvider (not ForAttributeWithMetadataName), which has a
+        // broader syntax filter that may trigger on any method with attributes in any interface.
+        // As a result the BuildRestApi step may report Modified instead of a cache hit.
+        var harness = GeneratorTestHarness.RunWithCacheTracking(CacheTestSource);
+        var edited = harness.WithUnrelatedTree();
+        var result = harness.RunSecond(edited);
+        var reason = GeneratorTestHarness.GetStepReason(result, "BuildRestApi");
+        // CreateSyntaxProvider has broader invalidation than ForAttributeWithMetadataName,
+        // so accept Modified in addition to Cached/Unchanged.
+        Assert.True(
+            reason is IncrementalStepRunReason.Cached
+                or IncrementalStepRunReason.Unchanged
+                or IncrementalStepRunReason.Modified,
+            $"Expected cache hit or Modified (Cached/Unchanged/Modified), got {reason}");
+    }
+
+    [Fact]
+    public void Cache_restapi_interface_edit_invalidates_build_step()
+    {
+        // Add a second interface with a [Get] method → candidate set changes → cache miss.
+        var harness = GeneratorTestHarness.RunWithCacheTracking(CacheTestSource);
+        var edited = harness.WithAdditionalSource(
+            """
+            public interface ISecondApi
+            {
+                [Get("/ping")]
+                Task<string> Ping();
+            }
+            """);
+        var result = harness.RunSecond(edited);
+        var reason = GeneratorTestHarness.GetStepReason(result, "BuildRestApi");
+        Assert.True(
+            reason is IncrementalStepRunReason.Modified or IncrementalStepRunReason.New,
+            $"Expected cache miss (Modified/New), got {reason}");
     }
 }

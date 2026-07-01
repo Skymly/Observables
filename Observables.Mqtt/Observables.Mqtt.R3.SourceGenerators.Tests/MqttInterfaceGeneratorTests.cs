@@ -1,3 +1,4 @@
+using Microsoft.CodeAnalysis;
 using VerifyXunit;
 
 namespace Observables.Mqtt.R3.SourceGenerators.Tests;
@@ -65,5 +66,74 @@ public sealed class MqttInterfaceGeneratorTests
         var snapshot = GeneratorTestHarness.ToSnapshot(output);
 
         Assert.Contains("OBS5005", snapshot, StringComparison.Ordinal);
+    }
+
+    // ── Incremental cache hit tests ──
+
+    const string CacheTestSource =
+        """
+        public sealed class TemperatureReading
+        {
+            public double Celsius { get; set; }
+        }
+
+        [Mqtt]
+        public interface ISensorTopics
+        {
+            [MqttPublish("commands/{deviceId}/restart")]
+            Observable<Unit> Restart(string deviceId);
+
+            [MqttSubscribe("sensors/+/temperature")]
+            Observable<TemperatureReading> Temperature { get; }
+        }
+        """;
+
+    [Fact]
+    public void Cache_unchanged_compilation_reuses_build_step()
+    {
+        // Run once with tracking enabled, then re-run on the same compilation.
+        // The BuildMqtt step should report a cache hit (Cached or Unchanged).
+        var harness = GeneratorTestHarness.RunWithCacheTracking(CacheTestSource);
+        var result = harness.RunSecond();
+        var reason = GeneratorTestHarness.GetStepReason(result, "BuildMqtt");
+        Assert.True(
+            reason is IncrementalStepRunReason.Cached or IncrementalStepRunReason.Unchanged,
+            $"Expected cache hit (Cached/Unchanged), got {reason}");
+    }
+
+    [Fact]
+    public void Cache_unrelated_edit_preserves_build_step()
+    {
+        // Add an unrelated syntax tree (no [Mqtt] interfaces).
+        // ForAttributeWithMetadataName filters at the syntax level, so the
+        // candidate set is unchanged → BuildMqtt should cache hit.
+        var harness = GeneratorTestHarness.RunWithCacheTracking(CacheTestSource);
+        var edited = harness.WithUnrelatedTree();
+        var result = harness.RunSecond(edited);
+        var reason = GeneratorTestHarness.GetStepReason(result, "BuildMqtt");
+        Assert.True(
+            reason is IncrementalStepRunReason.Cached or IncrementalStepRunReason.Unchanged,
+            $"Expected cache hit (Cached/Unchanged), got {reason}");
+    }
+
+    [Fact]
+    public void Cache_mqtt_interface_edit_invalidates_build_step()
+    {
+        // Add a second [Mqtt] interface → candidate set changes → cache miss.
+        var harness = GeneratorTestHarness.RunWithCacheTracking(CacheTestSource);
+        var edited = harness.WithAdditionalSource(
+            """
+            [Mqtt]
+            public interface ISecondTopics
+            {
+                [MqttSubscribe("status/online")]
+                Observable<Unit> Online { get; }
+            }
+            """);
+        var result = harness.RunSecond(edited);
+        var reason = GeneratorTestHarness.GetStepReason(result, "BuildMqtt");
+        Assert.True(
+            reason is IncrementalStepRunReason.Modified or IncrementalStepRunReason.New,
+            $"Expected cache miss (Modified/New), got {reason}");
     }
 }

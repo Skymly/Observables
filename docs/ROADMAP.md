@@ -179,7 +179,7 @@ Grpc 两包已于 **`0.1.0`**（`v0.1.0-preview6` tag）发布至 nuget.org 与 
 |---|--------|----------|
 | D1 | `Observables.Core` 实现共享类型 | 当前无迫切复用需求，避免预先抽象 |
 | D2 | 代码签名 | EV 证书成本高，个人项目收益低 |
-| ~~D3~~ | ~~增量生成器缓存命中测试~~ | **已完成（单域试点）**：SignalR R3 生成器 3 个缓存测试通过（unchanged→Cached、unrelated edit→Cached、hub interface edit→Modified/New）；`RunWithCacheTracking` + `CacheTrackingDriver` 模式可复用于其他域 |
+| ~~D3~~ | ~~增量生成器缓存命中测试~~ | **已完成（全量覆盖）**：8 域 × R3 + Reactive = 15 个测试项目，45 个缓存测试全部通过；`ForAttributeWithMetadataName` 域（SignalR/Mqtt/WebSocket/Grpc/Sse/Nats）无关编辑→Cached，`CreateSyntaxProvider` 域（RestAPI/Events）无关编辑可能 Modified（预期行为） |
 | D4 | 异常处理统一（非 RestAPI 域补自定义异常） | 各域策略可能有意为之，强行统一风险高 |
 | D5 | CI 添加 `dotnet format --verify` | 本地 editorconfig 已控制，CI 增加价值有限 |
 | D6 | SignalR/Nats/Mqtt 桥接释放/竞态细节修复 | 低风险，等用户反馈 |

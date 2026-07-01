@@ -1,3 +1,4 @@
+using Microsoft.CodeAnalysis;
 using VerifyXunit;
 
 namespace Observables.WebSocket.R3.SourceGenerators.Tests;
@@ -131,5 +132,75 @@ public sealed class WebSocketInterfaceGeneratorTests
         var snapshot = GeneratorTestHarness.ToSnapshot(output);
 
         Assert.Contains("OBS6005", snapshot, StringComparison.Ordinal);
+    }
+
+    // ── Incremental cache hit tests ──
+
+    const string CacheTestSource =
+        """
+        [WebSocket]
+        public interface IMyHub
+        {
+            [WebSocketConnect]
+            Observable<Unit> Connect(Uri uri, CancellationToken cancellationToken = default);
+
+            [WebSocketClose]
+            Observable<Unit> Close(CancellationToken cancellationToken = default);
+
+            [WebSocketSend("ping")]
+            Observable<Unit> Ping(CancellationToken cancellationToken = default);
+
+            [WebSocketReceive("message")]
+            Observable<string> Messages { get; }
+        }
+        """;
+
+    [Fact]
+    public void Cache_unchanged_compilation_reuses_build_step()
+    {
+        // Run once with tracking enabled, then re-run on the same compilation.
+        // The BuildWebSocket step should report a cache hit (Cached or Unchanged).
+        var harness = GeneratorTestHarness.RunWithCacheTracking(CacheTestSource);
+        var result = harness.RunSecond();
+        var reason = GeneratorTestHarness.GetStepReason(result, "BuildWebSocket");
+        Assert.True(
+            reason is IncrementalStepRunReason.Cached or IncrementalStepRunReason.Unchanged,
+            $"Expected cache hit (Cached/Unchanged), got {reason}");
+    }
+
+    [Fact]
+    public void Cache_unrelated_edit_preserves_build_step()
+    {
+        // Add an unrelated syntax tree (no [WebSocket] interfaces).
+        // ForAttributeWithMetadataName filters at the syntax level, so the
+        // candidate set is unchanged → BuildWebSocket should cache hit.
+        var harness = GeneratorTestHarness.RunWithCacheTracking(CacheTestSource);
+        var edited = harness.WithUnrelatedTree();
+        var result = harness.RunSecond(edited);
+        var reason = GeneratorTestHarness.GetStepReason(result, "BuildWebSocket");
+        Assert.True(
+            reason is IncrementalStepRunReason.Cached or IncrementalStepRunReason.Unchanged,
+            $"Expected cache hit (Cached/Unchanged), got {reason}");
+    }
+
+    [Fact]
+    public void Cache_websocket_interface_edit_invalidates_build_step()
+    {
+        // Add a second [WebSocket] interface → candidate set changes → cache miss.
+        var harness = GeneratorTestHarness.RunWithCacheTracking(CacheTestSource);
+        var edited = harness.WithAdditionalSource(
+            """
+            [WebSocket]
+            public interface ISecondHub
+            {
+                [WebSocketSend]
+                Observable<Unit> Ping(CancellationToken cancellationToken = default);
+            }
+            """);
+        var result = harness.RunSecond(edited);
+        var reason = GeneratorTestHarness.GetStepReason(result, "BuildWebSocket");
+        Assert.True(
+            reason is IncrementalStepRunReason.Modified or IncrementalStepRunReason.New,
+            $"Expected cache miss (Modified/New), got {reason}");
     }
 }

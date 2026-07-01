@@ -43,6 +43,7 @@ Stable packages are published to [nuget.org](https://www.nuget.org/profiles/Skym
 | **0.1.2** | Maintenance release — Events incremental generator caching, diagnostic descriptor consolidation, ADR-0001 primitives backend decision. |
 | **0.1.3** | CI hardening — NuGet consumer smoke job in CI; RestAPI reactive constant unified; E2E port allocation fixed; symbol packages enabled; RestAPI.Reactive project reference aligned; Events Reactive generator constant prefixed. |
 | **0.1.4** | Symbol package fix — PDB files included in snupkg (DebugType portable + pack PDBs to lib/ and analyzers/). |
+| **0.1.5** | Maintenance release — RestAPI OBS3004 fix (path + [Body]/[Query] parameters no longer falsely rejected); incremental generator cache hit tests across all 8 domains (45 tests). |
 
 Preview builds (`0.1.0-preview*`, `0.1.1-preview*`) were published to NuGet with tags only (no GitHub Release). Details and milestone planning: [docs/ROADMAP.md](docs/ROADMAP.md).
 

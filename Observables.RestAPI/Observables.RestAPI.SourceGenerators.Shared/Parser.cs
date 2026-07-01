@@ -227,21 +227,22 @@ internal static class Parser
     static bool IsHttpMethodAttribute(IMethodSymbol? methodSymbol, INamedTypeSymbol httpMethodAttribute) =>
         methodSymbol?.GetAttributes().Any(ad => ad.AttributeClass?.InheritsFromOrEquals(httpMethodAttribute) == true) == true;
 
-    static void ValidatePathTemplate(IMethodSymbol methodSymbol, INamedTypeSymbol httpMethodBaseAttributeSymbol, List<Diagnostic> diagnostics)
+    /// <summary>
+    /// Validates that path template placeholders match exactly the parameters classified as
+    /// <see cref="ParameterKind.Path"/> by <see cref="ParseHttpSemantics"/>. Must be called
+    /// AFTER classification so that [Body]/[Query]/[Header] etc. parameters are excluded.
+    /// </summary>
+    static void ValidatePathTemplate(IMethodSymbol methodSymbol, HttpSemantics httpSemantics, List<Diagnostic> diagnostics)
     {
-        AttributeData? httpAttr = null;
-        foreach (var attr in methodSymbol.GetAttributes())
-        {
-            if (attr.AttributeClass?.InheritsFromOrEquals(httpMethodBaseAttributeSymbol) == true) { httpAttr = attr; break; }
-        }
-        if (httpAttr?.ConstructorArguments is not { Length: 1 } args || args[0].Value is not string path) return;
+        if (string.IsNullOrEmpty(httpSemantics.RawPath)) return;
 
-        var placeholders = ExtractPathPlaceholders(path);
-        var paramNames = new HashSet<string>(StringComparer.Ordinal);
-        foreach (var parameter in methodSymbol.Parameters)
-            if (!IsCancellationTokenParameter(parameter)) paramNames.Add(parameter.Name);
+        var placeholders = ExtractPathPlaceholders(httpSemantics.RawPath);
+        var pathParamNames = new HashSet<string>(StringComparer.Ordinal);
+        foreach (var classification in httpSemantics.ParameterClassifications)
+            if (classification.Kind == ParameterKind.Path)
+                pathParamNames.Add(methodSymbol.Parameters[classification.Index].Name);
 
-        if (!placeholders.SetEquals(paramNames))
+        if (!placeholders.SetEquals(pathParamNames))
             diagnostics.Add(Diagnostic.Create(DiagnosticDescriptors.PathParameterMismatch,
                 methodSymbol.Locations.FirstOrDefault(), methodSymbol.Name));
     }
@@ -323,9 +324,10 @@ internal static class Parser
         }
 
         var returnTypeInfo = ClassifyReturnType(methodSymbol.ReturnType, methodSymbol, wellKnownTypes, diagnostics);
-        ValidatePathTemplate(methodSymbol, httpMethodBaseAttributeSymbol, diagnostics);
 
         var httpSemantics = ParseHttpSemantics(methodSymbol, httpMethodBaseAttributeSymbol);
+        ValidatePathTemplate(methodSymbol, httpSemantics, diagnostics);
+
         var parameters = methodSymbol.Parameters
             .Select((p, i) => ParseParameterWithKind(p, i, httpSemantics))
             .ToImmutableEquatableArray();
@@ -425,6 +427,7 @@ internal static class Parser
     class HttpSemantics
     {
         public string HttpMethod { get; set; } = "";
+        public string RawPath { get; set; } = "";
         public ImmutableEquatableArray<PathFragmentModel> PathFragments { get; set; } = ImmutableEquatableArray<PathFragmentModel>.Empty;
         public List<ParameterClassification> ParameterClassifications { get; set; } = new();
         public int? CancellationTokenIndex { get; set; }
@@ -468,6 +471,7 @@ internal static class Parser
         if (httpAttr != null && httpAttr.ConstructorArguments is { Length: >= 1 } args && args[0].Value is string path)
         {
             semantics.HttpMethod = ExtractHttpMethodName(httpAttr.AttributeClass!);
+            semantics.RawPath = path;
             semantics.PathFragments = ParsePathFragments(path, methodSymbol).ToImmutableEquatableArray();
         }
 

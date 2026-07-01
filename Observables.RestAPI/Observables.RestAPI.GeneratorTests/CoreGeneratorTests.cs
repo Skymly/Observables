@@ -75,12 +75,14 @@ public class CoreGeneratorTests
     [Fact]
     public Task GetUser_path_parameter_mismatch_reports_OBS3004()
     {
+        // Path placeholder {id} does not match any parameter name → OBS3004.
+        // (Unattributed extra parameters default to Query and do NOT trigger OBS3004.)
         GeneratorRunOutput output = GeneratorTestHarness.Run(
             """
             public interface IUserApi
             {
                 [Get("/users/{id}")]
-                Observable<User> GetUser(int id, int page);
+                Observable<User> GetUser(int userId);
             }
 
             public sealed class User
@@ -90,6 +92,66 @@ public class CoreGeneratorTests
             """);
 
         Assert.Contains("OBS3004", GeneratorTestHarness.ToSnapshot(output), StringComparison.Ordinal);
+        return Task.CompletedTask;
+    }
+
+    // ── Path + [Body]/[Query] regression tests (issue #111) ──
+
+    [Fact]
+    public Task Path_with_body_parameter_does_not_report_OBS3004()
+    {
+        GeneratorRunOutput output = GeneratorTestHarness.Run(
+            """
+            public interface IGitHubApi
+            {
+                [Post("/repos/{owner}/{repo}/issues/{number}/comments")]
+                Task<Comment> CreateComment(string owner, string repo, int number, [Body] CommentBody body);
+            }
+
+            public sealed class Comment { public int Id { get; set; } }
+            public sealed class CommentBody { public string Text { get; set; } = ""; }
+            """);
+
+        var snapshot = GeneratorTestHarness.ToSnapshot(output);
+        Assert.DoesNotContain("OBS3004", snapshot, StringComparison.Ordinal);
+        return Task.CompletedTask;
+    }
+
+    [Fact]
+    public Task Path_with_query_parameter_does_not_report_OBS3004()
+    {
+        GeneratorRunOutput output = GeneratorTestHarness.Run(
+            """
+            public interface IGitHubApi
+            {
+                [Get("/repos/{owner}/{repo}/issues")]
+                Task<Issue[]> ListIssues(string owner, string repo, [Query] string state);
+            }
+
+            public sealed class Issue { public int Number { get; set; } }
+            """);
+
+        var snapshot = GeneratorTestHarness.ToSnapshot(output);
+        Assert.DoesNotContain("OBS3004", snapshot, StringComparison.Ordinal);
+        return Task.CompletedTask;
+    }
+
+    [Fact]
+    public Task Path_with_header_parameter_does_not_report_OBS3004()
+    {
+        GeneratorRunOutput output = GeneratorTestHarness.Run(
+            """
+            public interface IUserApi
+            {
+                [Get("/users/{id}")]
+                Task<User> GetUser(int id, [Header("X-Api-Key")] string apiKey);
+            }
+
+            public sealed class User { public int Id { get; set; } }
+            """);
+
+        var snapshot = GeneratorTestHarness.ToSnapshot(output);
+        Assert.DoesNotContain("OBS3004", snapshot, StringComparison.Ordinal);
         return Task.CompletedTask;
     }
 

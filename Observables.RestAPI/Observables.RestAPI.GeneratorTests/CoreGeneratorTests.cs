@@ -155,6 +155,63 @@ public class CoreGeneratorTests
         return Task.CompletedTask;
     }
 
+    [Fact]
+    public Task Path_with_authorize_parameter_does_not_report_OBS3004()
+    {
+        GeneratorRunOutput output = GeneratorTestHarness.Run(
+            """
+            public interface IUserApi
+            {
+                [Get("/users/{id}")]
+                Task<User> GetUser(int id, [Authorize("Bearer")] string token);
+            }
+
+            public sealed class User { public int Id { get; set; } }
+            """);
+
+        var snapshot = GeneratorTestHarness.ToSnapshot(output);
+        Assert.DoesNotContain("OBS3004", snapshot, StringComparison.Ordinal);
+        return Task.CompletedTask;
+    }
+
+    [Fact]
+    public Task Path_with_property_parameter_does_not_report_OBS3004()
+    {
+        GeneratorRunOutput output = GeneratorTestHarness.Run(
+            """
+            public interface IUserApi
+            {
+                [Get("/users/{id}")]
+                Task<User> GetUser(int id, [Property("RequestId")] string requestId);
+            }
+
+            public sealed class User { public int Id { get; set; } }
+            """);
+
+        var snapshot = GeneratorTestHarness.ToSnapshot(output);
+        Assert.DoesNotContain("OBS3004", snapshot, StringComparison.Ordinal);
+        return Task.CompletedTask;
+    }
+
+    [Fact]
+    public Task Path_with_header_collection_parameter_does_not_report_OBS3004()
+    {
+        GeneratorRunOutput output = GeneratorTestHarness.Run(
+            """
+            public interface IUserApi
+            {
+                [Get("/users/{id}")]
+                Task<User> GetUser(int id, [HeaderCollection] System.Collections.Generic.Dictionary<string, string> headers);
+            }
+
+            public sealed class User { public int Id { get; set; } }
+            """);
+
+        var snapshot = GeneratorTestHarness.ToSnapshot(output);
+        Assert.DoesNotContain("OBS3004", snapshot, StringComparison.Ordinal);
+        return Task.CompletedTask;
+    }
+
     // ── Incremental cache hit tests ──
 
     const string CacheTestSource =

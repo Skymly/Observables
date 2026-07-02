@@ -1,0 +1,52 @@
+﻿Diagnostics:
+  OBS9006: Member 'IKeywordHub.Query' uses an unsupported subject template, extra parameters, or subscribe placeholder syntax
+
+Generated Sources:
+--- KeywordHubGeneratedProxy.Nats.g.cs ---
+#nullable enable
+#pragma warning disable
+namespace Observables.Nats.Generated
+{
+    [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+    [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
+#if NET8_0_OR_GREATER
+    [global::System.Diagnostics.CodeAnalysis.RequiresUnreferencedCode("NATS payload serialization uses reflection. Preserve payload type members when trimming.")]
+    [global::System.Diagnostics.CodeAnalysis.RequiresDynamicCode("NATS payload serialization uses reflection.")]
+#endif
+    internal sealed class KeywordHubGeneratedProxy : global::IKeywordHub
+    {
+        private readonly global::NATS.Client.Core.INatsConnection _connection;
+
+        public KeywordHubGeneratedProxy(global::NATS.Client.Core.INatsConnection connection)
+        {
+            _connection = connection;
+        }
+
+    public global::R3.Observable<global::R3.Unit> Cancel(global::System.String @class) =>
+        global::Observables.Nats.NatsObservable.FromPublish(_connection, global::Observables.Nats.NatsSubject.Format("orders.{class}.cancel", "class", @class), default);
+
+    }
+}
+#pragma warning restore
+
+--- NatsProxyRegistration.g.cs ---
+
+#pragma warning disable
+namespace Observables.Nats.Generated
+{
+    [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+    [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
+    internal static class NatsProxyRegistration
+    {
+#if NET5_0_OR_GREATER
+                    [global::System.Diagnostics.CodeAnalysis.DynamicDependency(global::System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.PublicConstructors | global::System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.PublicMethods | global::System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.PublicProperties, typeof(Observables.Nats.Generated.KeywordHubGeneratedProxy))]
+        [System.Runtime.CompilerServices.ModuleInitializer]
+        [global::System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessage("ILLink", "IL2026", Justification = "Factory registration only; the proxy is invoked by user code that declares RequiresUnreferencedCode.")]
+        internal static void Initialize()
+        {
+            global::Observables.Nats.NatsService.RegisterGeneratedFactory(typeof(global::IKeywordHub), static c => new Observables.Nats.Generated.KeywordHubGeneratedProxy(c));
+        }
+#endif
+    }
+}
+#pragma warning restore

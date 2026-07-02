@@ -170,7 +170,7 @@ internal static class Parser
 
         members.Add(
             new SseMemberModel(
-                property.Name,
+                IdentifierHelper.Escape(property.Name),
                 eventName,
                 SseBoundaryKind.Event,
                 returnDisplay,

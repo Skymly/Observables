@@ -162,4 +162,20 @@ public sealed class SseInterfaceGeneratorTests
             reason is IncrementalStepRunReason.Modified or IncrementalStepRunReason.New,
             $"Expected cache miss (Modified/New), got {reason}");
     }
+
+    [Fact]
+    public Task Sse_interface_with_keyword_property_name_generates_valid_code()
+    {
+        const string userSource =
+            """
+            [Sse]
+            public interface IKeywordFeed
+            {
+                [SseEvent("update")]
+                Observable<string> @event { get; }
+            }
+            """;
+        var output = GeneratorTestHarness.Run(userSource);
+        return Verifier.Verify(GeneratorTestHarness.ToSnapshot(output));
+    }
 }

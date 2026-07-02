@@ -1,0 +1,53 @@
+﻿Diagnostics:
+  <none>
+
+Generated Sources:
+--- KeywordFeedGeneratedProxy.Sse.g.cs ---
+#nullable enable
+#pragma warning disable
+namespace Observables.Sse.Generated
+{
+    [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+    [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
+#if NET8_0_OR_GREATER
+    [global::System.Diagnostics.CodeAnalysis.RequiresUnreferencedCode("SSE payload deserialization uses System.Text.Json reflection. Preserve payload type members when trimming.")]
+    [global::System.Diagnostics.CodeAnalysis.RequiresDynamicCode("SSE payload deserialization uses System.Text.Json reflection.")]
+#endif
+    internal sealed class KeywordFeedGeneratedProxy : global::IKeywordFeed
+    {
+        private readonly global::Observables.Sse.SseConnection _connection;
+
+        public KeywordFeedGeneratedProxy(global::Observables.Sse.SseConnection connection)
+        {
+            _connection = connection;
+        }
+
+    private global::R3.Observable<global::System.String>? _@event;
+    public global::R3.Observable<global::System.String> @event =>
+        _@event ??= global::Observables.Sse.SseObservable.FromEvent<global::System.String>(_connection, "update");
+
+    }
+}
+#pragma warning restore
+
+--- SseProxyRegistration.g.cs ---
+
+#pragma warning disable
+namespace Observables.Sse.Generated
+{
+    [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+    [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
+    internal static class SseProxyRegistration
+    {
+#if NET5_0_OR_GREATER
+                    [global::System.Diagnostics.CodeAnalysis.DynamicDependency(global::System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.PublicConstructors | global::System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.PublicMethods | global::System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.PublicProperties, typeof(Observables.Sse.Generated.KeywordFeedGeneratedProxy))]
+        [System.Runtime.CompilerServices.ModuleInitializer]
+        [global::System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessage("ILLink", "IL2026", Justification = "Factory registration only; the proxy is invoked by user code that declares RequiresUnreferencedCode.")]
+        internal static void Initialize()
+        {
+            global::Observables.Sse.SseService.RegisterGeneratedFactory(typeof(global::IKeywordFeed), static c => new Observables.Sse.Generated.KeywordFeedGeneratedProxy(c));
+        }
+#endif
+    }
+}
+#pragma warning restore

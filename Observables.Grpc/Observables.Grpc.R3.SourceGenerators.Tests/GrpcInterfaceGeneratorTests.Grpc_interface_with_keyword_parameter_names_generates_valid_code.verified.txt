@@ -1,0 +1,56 @@
+﻿Diagnostics:
+  <none>
+
+Generated Sources:
+--- GrpcProxyRegistration.g.cs ---
+
+#pragma warning disable
+namespace Observables.Grpc.Generated
+{
+    [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+    [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
+    internal static class GrpcProxyRegistration
+    {
+#if NET5_0_OR_GREATER
+                    [global::System.Diagnostics.CodeAnalysis.DynamicDependency(global::System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.PublicConstructors | global::System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.PublicMethods | global::System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.PublicProperties, typeof(Observables.Grpc.Generated.KeywordServiceGeneratedProxy))]
+        [System.Runtime.CompilerServices.ModuleInitializer]
+        [global::System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessage("ILLink", "IL2026", Justification = "Factory registration only; the proxy is invoked by user code that declares RequiresUnreferencedCode.")]
+        internal static void Initialize()
+        {
+            global::Observables.Grpc.GrpcService.RegisterGeneratedFactory(typeof(global::IKeywordService), static c => new Observables.Grpc.Generated.KeywordServiceGeneratedProxy(c));
+        }
+#endif
+    }
+}
+#pragma warning restore
+
+--- KeywordServiceGeneratedProxy.Grpc.g.cs ---
+#nullable enable
+#pragma warning disable
+namespace Observables.Grpc.Generated
+{
+    [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+    [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
+#if NET8_0_OR_GREATER
+    [global::System.Diagnostics.CodeAnalysis.RequiresUnreferencedCode("gRPC proxy uses reflection for message marshalling and method invocation. Preserve required members when trimming.")]
+    [global::System.Diagnostics.CodeAnalysis.RequiresDynamicCode("gRPC proxy uses reflection for message marshalling and method invocation.")]
+#endif
+    internal sealed class KeywordServiceGeneratedProxy : global::IKeywordService
+    {
+        private readonly global::Grpc.Core.CallInvoker _invoker;
+
+        public KeywordServiceGeneratedProxy(global::Grpc.Core.CallInvoker invoker)
+        {
+            _invoker = invoker;
+        }
+
+        private static readonly global::Grpc.Core.Method<global::System.String, global::System.String> UnaryEchoMethod =
+            new(global::Grpc.Core.MethodType.Unary, "echo.Echo", "UnaryEcho", global::Observables.Grpc.GrpcMarshallers.String, global::Observables.Grpc.GrpcMarshallers.String);
+
+
+        public global::R3.Observable<global::System.String> UnaryEcho(global::System.String @event, global::System.Threading.CancellationToken cancellationToken = default) =>
+            global::Observables.Grpc.GrpcObservable.FromUnary(_invoker, UnaryEchoMethod, @event, cancellationToken);
+
+    }
+}
+#pragma warning restore

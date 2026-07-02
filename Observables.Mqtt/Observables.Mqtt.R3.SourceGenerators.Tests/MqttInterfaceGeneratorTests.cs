@@ -136,4 +136,20 @@ public sealed class MqttInterfaceGeneratorTests
             reason is IncrementalStepRunReason.Modified or IncrementalStepRunReason.New,
             $"Expected cache miss (Modified/New), got {reason}");
     }
+
+    [Fact]
+    public Task Mqtt_interface_with_keyword_parameter_names_generates_valid_code()
+    {
+        const string userSource =
+            """
+            [Mqtt]
+            public interface IKeywordTopics
+            {
+                [MqttPublish("commands/{class}/restart")]
+                Observable<Unit> Restart(string @class);
+            }
+            """;
+        var output = GeneratorTestHarness.Run(userSource);
+        return Verifier.Verify(GeneratorTestHarness.ToSnapshot(output));
+    }
 }

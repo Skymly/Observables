@@ -193,7 +193,7 @@ internal static class Parser
         var (declarations, hasCt) = BuildParameters(method);
         members.Add(
             new MqttMemberModel(
-                method.Name,
+                IdentifierHelper.Escape(method.Name),
                 topicTemplate,
                 MqttBoundaryKind.Publish,
                 false,
@@ -276,7 +276,7 @@ internal static class Parser
 
         members.Add(
             new MqttMemberModel(
-                property.Name,
+                IdentifierHelper.Escape(property.Name),
                 topicTemplate,
                 MqttBoundaryKind.Subscribe,
                 true,
@@ -460,11 +460,11 @@ internal static class Parser
             {
                 hasCt = true;
                 declarations.Add(
-                    $"{parameter.Type.ToDisplayString(DisplayFormat)} {parameter.Name} = default");
+                    $"{parameter.Type.ToDisplayString(DisplayFormat)} {IdentifierHelper.Escape(parameter.Name)} = default");
                 continue;
             }
 
-            declarations.Add($"{parameter.Type.ToDisplayString(DisplayFormat)} {parameter.Name}");
+            declarations.Add($"{parameter.Type.ToDisplayString(DisplayFormat)} {IdentifierHelper.Escape(parameter.Name)}");
         }
 
         return (declarations, hasCt);

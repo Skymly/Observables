@@ -202,7 +202,7 @@ internal static class Parser
         var (declarations, names, hasCt) = BuildParameters(method);
         members.Add(
             new HubMemberModel(
-                method.Name,
+                IdentifierHelper.Escape(method.Name),
                 hubMethodName,
                 boundary.Value,
                 false,
@@ -276,7 +276,7 @@ internal static class Parser
 
         members.Add(
             new HubMemberModel(
-                property.Name,
+                IdentifierHelper.Escape(property.Name),
                 hubMethodName,
                 HubBoundaryKind.On,
                 true,
@@ -464,12 +464,12 @@ internal static class Parser
             {
                 hasCt = true;
                 declarations.Add(
-                    $"{parameter.Type.ToDisplayString(DisplayFormat)} {parameter.Name} = default");
+                    $"{parameter.Type.ToDisplayString(DisplayFormat)} {IdentifierHelper.Escape(parameter.Name)} = default");
                 continue;
             }
 
-            names.Add(parameter.Name);
-            declarations.Add($"{parameter.Type.ToDisplayString(DisplayFormat)} {parameter.Name}");
+            names.Add(IdentifierHelper.Escape(parameter.Name));
+            declarations.Add($"{parameter.Type.ToDisplayString(DisplayFormat)} {IdentifierHelper.Escape(parameter.Name)}");
         }
 
         return (declarations, names, hasCt);

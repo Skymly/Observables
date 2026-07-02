@@ -1,0 +1,52 @@
+﻿Diagnostics:
+  <none>
+
+Generated Sources:
+--- KeywordHubGeneratedProxy.WebSocket.g.cs ---
+#nullable enable
+#pragma warning disable
+namespace Observables.WebSocket.Generated
+{
+    [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+    [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
+#if NET8_0_OR_GREATER
+    [global::System.Diagnostics.CodeAnalysis.RequiresUnreferencedCode("WebSocket payload serialization uses System.Text.Json reflection. Preserve payload type members when trimming.")]
+    [global::System.Diagnostics.CodeAnalysis.RequiresDynamicCode("WebSocket payload serialization uses System.Text.Json reflection.")]
+#endif
+    internal sealed class KeywordHubGeneratedProxy : global::IKeywordHub
+    {
+        private readonly global::System.Net.WebSockets.ClientWebSocket _socket;
+
+        public KeywordHubGeneratedProxy(global::System.Net.WebSockets.ClientWebSocket socket)
+        {
+            _socket = socket;
+        }
+
+    public global::R3.Observable<global::R3.Unit> Send(global::System.String @event, global::System.Threading.CancellationToken cancellationToken = default) =>
+        global::Observables.WebSocket.WebSocketObservable.FromSendText(_socket, @event, cancellationToken);
+
+    }
+}
+#pragma warning restore
+
+--- WebSocketProxyRegistration.g.cs ---
+
+#pragma warning disable
+namespace Observables.WebSocket.Generated
+{
+    [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+    [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
+    internal static class WebSocketProxyRegistration
+    {
+#if NET5_0_OR_GREATER
+                    [global::System.Diagnostics.CodeAnalysis.DynamicDependency(global::System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.PublicConstructors | global::System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.PublicMethods | global::System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.PublicProperties, typeof(Observables.WebSocket.Generated.KeywordHubGeneratedProxy))]
+        [System.Runtime.CompilerServices.ModuleInitializer]
+        [global::System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessage("ILLink", "IL2026", Justification = "Factory registration only; the proxy is invoked by user code that declares RequiresUnreferencedCode.")]
+        internal static void Initialize()
+        {
+            global::Observables.WebSocket.WebSocketService.RegisterGeneratedFactory(typeof(global::IKeywordHub), static c => new Observables.WebSocket.Generated.KeywordHubGeneratedProxy(c));
+        }
+#endif
+    }
+}
+#pragma warning restore

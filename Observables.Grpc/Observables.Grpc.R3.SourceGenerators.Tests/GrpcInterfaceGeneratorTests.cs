@@ -112,4 +112,20 @@ public sealed class GrpcInterfaceGeneratorTests
             reason is IncrementalStepRunReason.Modified or IncrementalStepRunReason.New,
             $"Expected cache miss (Modified/New), got {reason}");
     }
+
+    [Fact]
+    public Task Grpc_interface_with_keyword_parameter_names_generates_valid_code()
+    {
+        const string userSource =
+            """
+            [Grpc("echo.Echo")]
+            public interface IKeywordService
+            {
+                [GrpcUnary("UnaryEcho")]
+                Observable<string> UnaryEcho(string @event, CancellationToken cancellationToken = default);
+            }
+            """;
+        var output = GeneratorTestHarness.Run(userSource);
+        return Verifier.Verify(GeneratorTestHarness.ToSnapshot(output));
+    }
 }

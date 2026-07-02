@@ -203,4 +203,20 @@ public sealed class WebSocketInterfaceGeneratorTests
             reason is IncrementalStepRunReason.Modified or IncrementalStepRunReason.New,
             $"Expected cache miss (Modified/New), got {reason}");
     }
+
+    [Fact]
+    public Task WebSocket_interface_with_keyword_parameter_names_generates_valid_code()
+    {
+        const string userSource =
+            """
+            [WebSocket]
+            public interface IKeywordHub
+            {
+                [WebSocketSend("ping")]
+                Observable<Unit> Send(string @event, CancellationToken cancellationToken = default);
+            }
+            """;
+        var output = GeneratorTestHarness.Run(userSource);
+        return Verifier.Verify(GeneratorTestHarness.ToSnapshot(output));
+    }
 }

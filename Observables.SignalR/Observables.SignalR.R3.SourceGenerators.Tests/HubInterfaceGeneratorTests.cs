@@ -136,4 +136,20 @@ public sealed class HubInterfaceGeneratorTests
             reason is IncrementalStepRunReason.Modified or IncrementalStepRunReason.New,
             $"Expected cache miss (Modified/New), got {reason}");
     }
+
+    [Fact]
+    public Task Hub_interface_with_keyword_parameter_names_generates_valid_code()
+    {
+        const string userSource =
+            """
+            [Hub]
+            public interface IKeywordHub
+            {
+                [HubInvoke]
+                Observable<int> GetCount(int @class, string @event);
+            }
+            """;
+        var output = GeneratorTestHarness.Run(userSource);
+        return Verifier.Verify(GeneratorTestHarness.ToSnapshot(output));
+    }
 }

@@ -142,4 +142,23 @@ public sealed class NatsInterfaceGeneratorTests
             reason is IncrementalStepRunReason.Modified or IncrementalStepRunReason.New,
             $"Expected cache miss (Modified/New), got {reason}");
     }
+
+    [Fact]
+    public Task Nats_interface_with_keyword_parameter_names_generates_valid_code()
+    {
+        const string userSource =
+            """
+            [Nats]
+            public interface IKeywordHub
+            {
+                [NatsPublish("orders.{class}.cancel")]
+                Observable<Unit> Cancel(string @class);
+
+                [NatsRequest("query.{event}")]
+                Observable<string> Query(string @event);
+            }
+            """;
+        var output = GeneratorTestHarness.Run(userSource);
+        return Verifier.Verify(GeneratorTestHarness.ToSnapshot(output));
+    }
 }

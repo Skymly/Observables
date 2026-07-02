@@ -1,0 +1,52 @@
+﻿Diagnostics:
+  <none>
+
+Generated Sources:
+--- HubProxyRegistration.g.cs ---
+
+#pragma warning disable
+namespace Observables.SignalR.Generated
+{
+    [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+    [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
+    internal static class HubProxyRegistration
+    {
+#if NET5_0_OR_GREATER
+                    [global::System.Diagnostics.CodeAnalysis.DynamicDependency(global::System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.PublicConstructors | global::System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.PublicMethods | global::System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.PublicProperties, typeof(Observables.SignalR.Generated.KeywordHubGeneratedProxy))]
+        [System.Runtime.CompilerServices.ModuleInitializer]
+        [global::System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessage("ILLink", "IL2026", Justification = "Factory registration only; the proxy is invoked by user code that declares RequiresUnreferencedCode.")]
+        internal static void Initialize()
+        {
+            global::Observables.SignalR.HubService.RegisterGeneratedFactory(typeof(global::IKeywordHub), static c => new Observables.SignalR.Generated.KeywordHubGeneratedProxy(c));
+        }
+#endif
+    }
+}
+#pragma warning restore
+
+--- KeywordHubGeneratedProxy.SignalR.g.cs ---
+#nullable enable
+#pragma warning disable
+namespace Observables.SignalR.Generated
+{
+    [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+    [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
+#if NET8_0_OR_GREATER
+    [global::System.Diagnostics.CodeAnalysis.RequiresUnreferencedCode("SignalR hub proxy uses reflection for method invocation and serialization. Preserve required members when trimming.")]
+    [global::System.Diagnostics.CodeAnalysis.RequiresDynamicCode("SignalR hub proxy uses reflection for method invocation and serialization.")]
+#endif
+    internal sealed class KeywordHubGeneratedProxy : global::IKeywordHub
+    {
+        private readonly global::Microsoft.AspNetCore.SignalR.Client.HubConnection _connection;
+
+        public KeywordHubGeneratedProxy(global::Microsoft.AspNetCore.SignalR.Client.HubConnection connection)
+        {
+            _connection = connection;
+        }
+
+    public global::R3.Observable<global::System.Int32> GetCount(global::System.Int32 @class, global::System.String @event) =>
+        global::Observables.SignalR.SignalRObservable.FromInvoke<global::System.Int32>(_connection, "GetCount", new object?[] { @class, @event }, default);
+
+    }
+}
+#pragma warning restore

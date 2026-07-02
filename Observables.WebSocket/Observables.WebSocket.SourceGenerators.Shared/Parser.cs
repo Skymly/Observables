@@ -228,7 +228,7 @@ internal static class Parser
         var (declarations, names, hasCt) = BuildParameters(method);
         members.Add(
             new WebSocketMemberModel(
-                method.Name,
+                IdentifierHelper.Escape(method.Name),
                 boundary.Value,
                 false,
                 returnDisplay,
@@ -291,7 +291,7 @@ internal static class Parser
 
         members.Add(
             new WebSocketMemberModel(
-                property.Name,
+                IdentifierHelper.Escape(property.Name),
                 WebSocketBoundaryKind.Receive,
                 true,
                 returnDisplay,
@@ -368,12 +368,12 @@ internal static class Parser
             {
                 hasCt = true;
                 declarations.Add(
-                    $"{parameter.Type.ToDisplayString(DisplayFormat)} {parameter.Name} = default");
+                    $"{parameter.Type.ToDisplayString(DisplayFormat)} {IdentifierHelper.Escape(parameter.Name)} = default");
                 continue;
             }
 
-            names.Add(parameter.Name);
-            declarations.Add($"{parameter.Type.ToDisplayString(DisplayFormat)} {parameter.Name}");
+            names.Add(IdentifierHelper.Escape(parameter.Name));
+            declarations.Add($"{parameter.Type.ToDisplayString(DisplayFormat)} {IdentifierHelper.Escape(parameter.Name)}");
         }
 
         return (declarations, names, hasCt);

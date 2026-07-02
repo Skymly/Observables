@@ -146,7 +146,7 @@ internal static class Emitter
 
         var args = string.Join(
             ", ",
-            member.TopicParameterNames.AsArray().Select(static n => $"\"{n}\", {n}"));
+            member.TopicParameterNames.AsArray().Select(static n => $"\"{n}\", {IdentifierHelper.Escape(n)}"));
         return $"global::Observables.Mqtt.MqttTopic.Format(\"{member.TopicTemplate}\", {args})";
     }
 }

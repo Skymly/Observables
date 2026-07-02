@@ -220,7 +220,7 @@ internal static class Parser
         var (declarations, hasCt) = BuildParameters(method);
         members.Add(
             new NatsMemberModel(
-                method.Name,
+                IdentifierHelper.Escape(method.Name),
                 subjectTemplate,
                 boundary,
                 false,
@@ -316,7 +316,7 @@ internal static class Parser
 
         members.Add(
             new NatsMemberModel(
-                property.Name,
+                IdentifierHelper.Escape(property.Name),
                 subjectTemplate,
                 NatsBoundaryKind.Subscribe,
                 true,
@@ -397,7 +397,7 @@ internal static class Parser
 
         if (payloadCandidates.Count == 1)
         {
-            payloadParameterName = payloadCandidates[0].Name;
+            payloadParameterName = IdentifierHelper.Escape(payloadCandidates[0].Name);
             payloadTypeDisplay = payloadCandidates[0].Type.ToDisplayString(DisplayFormat);
         }
 
@@ -577,11 +577,11 @@ internal static class Parser
             {
                 hasCt = true;
                 declarations.Add(
-                    $"{parameter.Type.ToDisplayString(DisplayFormat)} {parameter.Name} = default");
+                    $"{parameter.Type.ToDisplayString(DisplayFormat)} {IdentifierHelper.Escape(parameter.Name)} = default");
                 continue;
             }
 
-            declarations.Add($"{parameter.Type.ToDisplayString(DisplayFormat)} {parameter.Name}");
+            declarations.Add($"{parameter.Type.ToDisplayString(DisplayFormat)} {IdentifierHelper.Escape(parameter.Name)}");
         }
 
         return (declarations, hasCt);

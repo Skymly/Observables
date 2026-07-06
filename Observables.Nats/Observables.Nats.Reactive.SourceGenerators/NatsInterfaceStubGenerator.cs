@@ -2,6 +2,7 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Observables.Nats.Generators;
+using Observables.SourceGenerators.Shared;
 
 namespace Observables.Nats.Reactive.SourceGenerators;
 
@@ -22,7 +23,10 @@ public sealed class NatsInterfaceStubGenerator : IIncrementalGenerator
 
         var parseStep = pipeline.Select(
             static (input, ct) =>
-                Parser.GenerateNatsStubs((CSharpCompilation)input.Right, input.Left, ct));
+                GeneratorFailSafe.ExecuteParse(
+                    () => Parser.GenerateNatsStubs((CSharpCompilation)input.Right, input.Left, ct),
+                    DiagnosticDescriptors.InternalGeneratorError,
+                    () => new ContextGenerationModel(ImmutableEquatableArray.Empty<NatsInterfaceModel>())));
 
         var diagnostics = parseStep
             .Select(static (x, _) => x.diagnostics.ToImmutableEquatableArray())
@@ -34,9 +38,6 @@ public sealed class NatsInterfaceStubGenerator : IIncrementalGenerator
             .SelectMany(static (x, _) => x.Interfaces)
             .WithTrackingName(NatsGeneratorStepName.BuildNats);
         context.EmitSource(interfaceModels);
-
-        context.RegisterImplementationSourceOutput(
-            contextModel,
-            static (spc, model) => Emitter.EmitModuleInitializers(model, (name, code) => spc.AddSource(name, code)));
+        context.EmitModuleInitializers(contextModel);
     }
 }

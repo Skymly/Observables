@@ -57,6 +57,15 @@ internal static class DiagnosticDescriptors
             "Observables.Nats",
             DiagnosticSeverity.Error,
             true);
+
+    public static readonly DiagnosticDescriptor InternalGeneratorError =
+        new(
+            "OBS9008",
+            "Internal source generator error",
+            "An internal error occurred in the Nats source generator: {0}: {1}",
+            "Observables.Nats",
+            DiagnosticSeverity.Error,
+            true);
 }
 
 internal static class NatsGeneratorStepName

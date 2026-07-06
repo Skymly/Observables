@@ -2,6 +2,7 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Observables.SignalR.Generators;
+using Observables.SourceGenerators.Shared;
 
 namespace Observables.SignalR.R3.SourceGenerators;
 
@@ -22,7 +23,10 @@ public sealed class HubInterfaceStubGenerator : IIncrementalGenerator
 
         var parseStep = pipeline.Select(
             static (input, ct) =>
-                Parser.GenerateHubStubs((CSharpCompilation)input.Right, input.Left, ct));
+                GeneratorFailSafe.ExecuteParse(
+                    () => Parser.GenerateHubStubs((CSharpCompilation)input.Right, input.Left, ct),
+                    DiagnosticDescriptors.InternalGeneratorError,
+                    () => new ContextGenerationModel(ImmutableEquatableArray.Empty<HubInterfaceModel>())));
 
         var diagnostics = parseStep
             .Select(static (x, _) => x.diagnostics.ToImmutableEquatableArray())
@@ -34,9 +38,6 @@ public sealed class HubInterfaceStubGenerator : IIncrementalGenerator
             .SelectMany(static (x, _) => x.Interfaces)
             .WithTrackingName(SignalRGeneratorStepName.BuildSignalR);
         context.EmitSource(interfaceModels);
-
-        context.RegisterImplementationSourceOutput(
-            contextModel,
-            static (spc, model) => Emitter.EmitModuleInitializers(model, (name, code) => spc.AddSource(name, code)));
+        context.EmitModuleInitializers(contextModel);
     }
 }

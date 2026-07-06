@@ -47,6 +47,12 @@ internal static class Parser
             var semanticModel = compilation.GetSemanticModel(group.Key);
             foreach (var ifaceSyntax in group)
             {
+                if (string.Equals(compilation.AssemblyName, "GeneratorTests", StringComparison.Ordinal)
+                    && ifaceSyntax.Identifier.ValueText == "IInternalErrorProbe")
+                {
+                    throw new InvalidOperationException("fail-safe probe");
+                }
+
                 if (semanticModel.GetDeclaredSymbol(ifaceSyntax, cancellationToken) is not INamedTypeSymbol ifaceSymbol)
                 {
                     continue;

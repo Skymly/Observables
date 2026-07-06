@@ -4,6 +4,7 @@ using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Text;
 using Observables.RestAPI.Generators;
+using Observables.SourceGenerators.Shared;
 
 namespace Observables.RestAPI.Reactive.SourceGenerators;
 
@@ -47,13 +48,14 @@ public sealed class RestApiInterfaceStubGenerator : IIncrementalGenerator
 
         var parseStep = inputs.Select(
             static (collectedValues, cancellationToken) =>
-                Parser.GenerateInterfaceStubs(
-                    (CSharpCompilation)collectedValues.compilation,
-                    collectedValues.candidateMethods,
-                    collectedValues.candidateInterfaces,
-                    cancellationToken
-                )
-        );
+                GeneratorFailSafe.ExecuteParse(
+                    () => Parser.GenerateInterfaceStubs(
+                        (CSharpCompilation)collectedValues.compilation,
+                        collectedValues.candidateMethods,
+                        collectedValues.candidateInterfaces,
+                        cancellationToken),
+                    DiagnosticDescriptors.InternalGeneratorError,
+                    () => new ContextGenerationModel(ImmutableEquatableArray.Empty<InterfaceModel>())));
 
         var diagnostics = parseStep
             .Select(static (x, _) => x.diagnostics.ToImmutableEquatableArray())
@@ -65,13 +67,6 @@ public sealed class RestApiInterfaceStubGenerator : IIncrementalGenerator
             .SelectMany(static (x, _) => x.Interfaces)
             .WithTrackingName(RestApiGeneratorStepName.BuildRestApi);
         context.EmitSource(interfaceModels);
-
-        context.RegisterImplementationSourceOutput(
-            contextModel,
-            static (spc, model) =>
-            {
-                Emitter.EmitSharedCode(model, (name, code) => spc.AddSource(name, code));
-            }
-        );
+        context.EmitSharedCode(contextModel);
     }
 }

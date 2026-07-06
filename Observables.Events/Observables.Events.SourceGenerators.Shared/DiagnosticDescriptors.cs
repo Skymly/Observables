@@ -37,4 +37,12 @@ internal static class DiagnosticDescriptors
         category: Category,
         defaultSeverity: DiagnosticSeverity.Warning,
         isEnabledByDefault: true);
+
+    public static readonly DiagnosticDescriptor InternalGeneratorError = new(
+        id: "OBS2005",
+        title: "Internal source generator error",
+        messageFormat: "An internal error occurred in the Events source generator: {0}: {1}",
+        category: Category,
+        defaultSeverity: DiagnosticSeverity.Error,
+        isEnabledByDefault: true);
 }

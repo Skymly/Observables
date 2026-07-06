@@ -57,6 +57,15 @@ internal static class DiagnosticDescriptors
             "Observables.Mqtt",
             DiagnosticSeverity.Error,
             true);
+
+    public static readonly DiagnosticDescriptor InternalGeneratorError =
+        new(
+            "OBS5008",
+            "Internal source generator error",
+            "An internal error occurred in the Mqtt source generator: {0}: {1}",
+            "Observables.Mqtt",
+            DiagnosticSeverity.Error,
+            true);
 }
 
 internal static class MqttGeneratorStepName

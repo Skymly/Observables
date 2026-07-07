@@ -45,6 +45,7 @@ Stable packages are published to [nuget.org](https://www.nuget.org/profiles/Skym
 | **0.1.4** | Symbol package fix — PDB files included in snupkg (DebugType portable + pack PDBs to lib/ and analyzers/). |
 | **0.1.5** | Maintenance release — RestAPI OBS3004 fix (path + [Body]/[Query] parameters no longer falsely rejected); incremental generator cache hit tests across all 8 domains (45 tests). |
 | **0.1.6-preview1** | Preview release — NuGet package icon added (hexagon purple→magenta gradient + Rx shape, `PackageIcon` wired into all 16 packages). |
+| **0.1.6** | Stable release — package icon; C# keyword identifier escaping in six domain source generators; source generator fail-safe with per-domain internal error diagnostics (OBS2005–OBS9008). |
 
 Preview builds (`0.1.0-preview*`, `0.1.1-preview*`) were published to NuGet with tags only (no GitHub Release). Details and milestone planning: [docs/ROADMAP.md](docs/ROADMAP.md).
 

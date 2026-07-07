@@ -10,3 +10,11 @@ OBS6003 | Observables.WebSocket | Error | Unsupported return type
 OBS6004 | Observables.WebSocket | Error | Member shape mismatch
 OBS6005 | Observables.WebSocket | Error | System.Reactive package required
 OBS6006 | Observables.WebSocket | Error | Unsupported WebSocket option
+
+## Release 1.1
+
+### New Rules
+
+Rule ID | Category | Severity | Notes
+--------|----------|----------|-------
+OBS6008 | Observables.WebSocket | Error | Internal source generator error

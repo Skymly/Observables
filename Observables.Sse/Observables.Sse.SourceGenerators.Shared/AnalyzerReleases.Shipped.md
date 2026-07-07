@@ -12,3 +12,11 @@ OBS8002 | Observables.Sse | Error | Observables.Sse not referenced
 OBS8003 | Observables.Sse | Error | Unsupported return type
 OBS8004 | Observables.Sse | Error | [SseEvent] member shape mismatch
 OBS8005 | Observables.Sse | Error | Observables.Sse.Reactive required for IObservable
+
+## Release 1.1
+
+### New Rules
+
+Rule ID | Category | Severity | Notes
+--------|----------|----------|-------
+OBS8006 | Observables.Sse | Error | Internal source generator error

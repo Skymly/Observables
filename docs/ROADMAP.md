@@ -1,10 +1,10 @@
 # Observables 路线图
 
-本文件描述 Observables 从预览版走向 **`0.1.0` 稳定版** 的里程碑规划（M1–M7 已全部完成，当前预览版 `0.1.6-preview1`）。它是规划层文档：每个里程碑的工程标准（中央包管理、警告策略、诊断治理等）以 [`AGENTS.md`](../AGENTS.md) 为权威，本文件只排序与拆解。
+本文件描述 Observables 从预览版走向 **`0.1.0` 稳定版** 的里程碑规划（M1–M7 已全部完成，当前稳定版 **`0.1.6`**）。它是规划层文档：每个里程碑的工程标准（中央包管理、警告策略、诊断治理等）以 [`AGENTS.md`](../AGENTS.md) 为权威，本文件只排序与拆解。
 
 > 版本号、tag、发版均须维护者明确批准；本文件中的版本号（如 `preview5`）为规划占位，不构成自动发版授权。
 
-## 现状基线（`0.1.6-preview1` 已发 nuget.org）
+## 现状基线（`0.1.6` 已发 nuget.org）
 
 | 维度 | 现状 |
 |------|------|
@@ -162,6 +162,7 @@ Grpc 两包已于 **`0.1.0`**（`v0.1.0-preview6` tag）发布至 nuget.org 与 
 | `0.1.4` | 符号包修复：PDB 打入 snupkg（DebugType portable + pack PDBs）（**16 包** + **16 snupkg**） |
 | `0.1.5` | 维护版：RestAPI OBS3004 修复（path + [Body]/[Query] 不再误报）+ 全域增量缓存测试（45 测试，8 域 × R3 + Reactive）（**16 包** + **16 snupkg**） |
 | `0.1.6-preview1` | 预览版：NuGet 包图标（六边形紫→品红渐变 + Rx 造型，`PackageIcon` 接入）（**16 包** + **16 snupkg**） |
+| `0.1.6` | 稳定版：包图标 + C# 关键字标识符转义（6 域）+ 源生成器 fail-safe（E2，OBS* 内部错误诊断）（**16 包** + **16 snupkg**，`v0.1.6` tag + GitHub Release） |
 
 ## Post-1.0 Follow-up（按需，不绑定版本）
 

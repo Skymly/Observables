@@ -10,3 +10,11 @@ OBS9003 | Observables.Nats | Error | Unsupported return type
 OBS9004 | Observables.Nats | Error | Member shape mismatch
 OBS9005 | Observables.Nats | Error | System.Reactive package required
 OBS9006 | Observables.Nats | Error | Unsupported NATS option
+
+## Release 1.1
+
+### New Rules
+
+Rule ID | Category | Severity | Notes
+--------|----------|----------|-------
+OBS9008 | Observables.Nats | Error | Internal source generator error

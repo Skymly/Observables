@@ -10,3 +10,11 @@ OBS5003 | Observables.Mqtt | Error | Unsupported return type
 OBS5004 | Observables.Mqtt | Error | Member shape mismatch
 OBS5005 | Observables.Mqtt | Error | System.Reactive package required
 OBS5006 | Observables.Mqtt | Error | Unsupported MQTT option
+
+## Release 1.1
+
+### New Rules
+
+Rule ID | Category | Severity | Notes
+--------|----------|----------|-------
+OBS5008 | Observables.Mqtt | Error | Internal source generator error

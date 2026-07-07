@@ -1,7 +1,2 @@
 ; Unshipped analyzer releases
-
-### New Rules
-
-Rule ID | Category | Severity | Notes
---------|----------|----------|-------
-OBS9008 | Observables.Nats | Error | Internal source generator error
+; https://github.com/dotnet/roslyn-analyzers/blob/main/src/Microsoft.CodeAnalysis.Analyzers/ReleaseTrackingAnalyzers.Help.md

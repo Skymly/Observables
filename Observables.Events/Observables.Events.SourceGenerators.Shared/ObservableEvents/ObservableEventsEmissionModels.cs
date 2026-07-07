@@ -37,4 +37,5 @@ internal sealed record EventsDiagnosticModel(
     string? LocationFilePath,
     int LocationStartLine,
     int LocationStartColumn,
-    string MessageArg);
+    string MessageArg,
+    string? MessageArg2 = null);

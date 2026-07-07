@@ -11,6 +11,10 @@
     <PackageReference Include="R3" PrivateAssets="all" />
   </ItemGroup>
 
+  <ItemGroup>
+    <InternalsVisibleTo Include="Observables.SignalR.R3.SourceGenerators.Tests" />
+  </ItemGroup>
+
   <Import Project="..\Observables.SignalR.SourceGenerators.Shared\Observables.SignalR.SourceGenerators.Shared.projitems" Label="Shared" />
 
 </Project>

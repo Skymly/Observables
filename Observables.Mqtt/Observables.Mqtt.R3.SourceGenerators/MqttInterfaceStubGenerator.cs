@@ -2,6 +2,7 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Observables.Mqtt.Generators;
+using Observables.SourceGenerators.Shared;
 
 namespace Observables.Mqtt.R3.SourceGenerators;
 
@@ -22,7 +23,10 @@ public sealed class MqttInterfaceStubGenerator : IIncrementalGenerator
 
         var parseStep = pipeline.Select(
             static (input, ct) =>
-                Parser.GenerateMqttStubs((CSharpCompilation)input.Right, input.Left, ct));
+                GeneratorFailSafe.ExecuteParse(
+                    () => Parser.GenerateMqttStubs((CSharpCompilation)input.Right, input.Left, ct),
+                    DiagnosticDescriptors.InternalGeneratorError,
+                    () => new ContextGenerationModel(ImmutableEquatableArray.Empty<MqttInterfaceModel>())));
 
         var diagnostics = parseStep
             .Select(static (x, _) => x.diagnostics.ToImmutableEquatableArray())
@@ -34,9 +38,6 @@ public sealed class MqttInterfaceStubGenerator : IIncrementalGenerator
             .SelectMany(static (x, _) => x.Interfaces)
             .WithTrackingName(MqttGeneratorStepName.BuildMqtt);
         context.EmitSource(interfaceModels);
-
-        context.RegisterImplementationSourceOutput(
-            contextModel,
-            static (spc, model) => Emitter.EmitModuleInitializers(model, (name, code) => spc.AddSource(name, code)));
+        context.EmitModuleInitializers(contextModel);
     }
 }

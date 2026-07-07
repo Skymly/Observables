@@ -57,6 +57,15 @@ internal static class DiagnosticDescriptors
             "Observables.SignalR",
             DiagnosticSeverity.Error,
             true);
+
+    public static readonly DiagnosticDescriptor InternalGeneratorError =
+        new(
+            "OBS4008",
+            "Internal source generator error",
+            "An internal error occurred in the SignalR source generator: {0}: {1}",
+            "Observables.SignalR",
+            DiagnosticSeverity.Error,
+            true);
 }
 
 internal static class SignalRGeneratorStepName

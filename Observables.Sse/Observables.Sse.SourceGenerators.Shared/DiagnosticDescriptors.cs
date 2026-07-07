@@ -48,6 +48,15 @@ internal static class DiagnosticDescriptors
             "Observables.Sse",
             DiagnosticSeverity.Error,
             true);
+
+    public static readonly DiagnosticDescriptor InternalGeneratorError =
+        new(
+            "OBS8006",
+            "Internal source generator error",
+            "An internal error occurred in the Sse source generator: {0}: {1}",
+            "Observables.Sse",
+            DiagnosticSeverity.Error,
+            true);
 }
 
 internal static class SseGeneratorStepName

@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Immutable;
 using System.Linq;
 using System.Text;
@@ -75,62 +76,102 @@ public sealed partial class ObservableEventsGenerator : IIncrementalGenerator
         var parseStep = pipeline
             .Select(static (input, _) =>
             {
-                var model = ParseEvents(input.Compilation, input.Candidates, input.UseWpf, input.ObservableRoutedEvents);
-                return (input.ObservableRoutedEvents, Model: model);
+                try
+                {
+                    var model = ParseEvents(input.Compilation, input.Candidates, input.UseWpf, input.ObservableRoutedEvents);
+                    return (input.ObservableRoutedEvents, Model: model);
+                }
+                catch (OperationCanceledException)
+                {
+                    throw;
+                }
+                catch (Exception exception)
+                {
+                    return (input.ObservableRoutedEvents, Model: CreateInternalErrorModel(exception));
+                }
             })
             .WithTrackingName(EventsGeneratorStepName);
 
-        context.RegisterSourceOutput(parseStep, (spc, tuple) =>
+        context.RegisterSourceOutput(parseStep, static (spc, tuple) =>
         {
-            var (observableRoutedEvents, model) = tuple;
-
-            if (observableRoutedEvents)
-            {
-                spc.AddSource(
-                    $"{ObservableEventsConstants.GeneratedNamespace}.ObservableEventsBootstrapExtensions.Routed.g.cs",
-                    SourceText.From(
-                        GeneratedSourceHeader.ToSource(
-                            EventsBootstrapSyntaxFactory.CreateRoutedObservableEventsBootstrapExtensionsCompilationUnit()),
-                        Encoding.UTF8));
-            }
-
-            // Report captured diagnostics
-            foreach (var diag in model.Diagnostics)
-            {
-                var descriptor = diag.DescriptorId switch
-                {
-                    "OBS2001" => DiagnosticDescriptors.InvalidEventDelegate,
-                    "OBS2002" => DiagnosticDescriptors.InvalidEventHandlersDelegate,
-                    "OBS2003" => DiagnosticDescriptors.InvalidRoutedEventDelegate,
-                    "OBS2004" => DiagnosticDescriptors.InvalidRoutedEventHandlersDelegate,
-                    _ => null,
-                };
-                if (descriptor is null) continue;
-
-                var location = diag.LocationFilePath is not null
-                    ? Microsoft.CodeAnalysis.Location.Create(
-                        diag.LocationFilePath,
-                        new Microsoft.CodeAnalysis.Text.TextSpan(0, 0),
-                        new Microsoft.CodeAnalysis.Text.LinePositionSpan(
-                            new(diag.LocationStartLine, diag.LocationStartColumn),
-                            new(diag.LocationStartLine, diag.LocationStartColumn)))
-                    : Microsoft.CodeAnalysis.Location.None;
-                spc.ReportDiagnostic(Diagnostic.Create(descriptor, location, diag.MessageArg));
-            }
-
-            foreach (var iface in model.Interfaces)
-                spc.AddSource(iface.FileName, SourceText.From(iface.Source, Encoding.UTF8));
-
-            foreach (var impl in model.TypeImplementations)
-                spc.AddSource(impl.FileName, SourceText.From(impl.Source, Encoding.UTF8));
-
-            foreach (var gc in model.GenericConstraints)
-                spc.AddSource(gc.FileName, SourceText.From(gc.Source, Encoding.UTF8));
-
-            foreach (var ar in model.AttachedRoutedEvents)
-                spc.AddSource(ar.FileName, SourceText.From(ar.Source, Encoding.UTF8));
+            GeneratorFailSafe.TryEmit(
+                () => EmitParsedModel(spc, tuple),
+                spc.ReportDiagnostic,
+                DiagnosticDescriptors.InternalGeneratorError);
         });
     }
+
+    private static void EmitParsedModel(SourceProductionContext spc, (bool ObservableRoutedEvents, EventsEmissionModel Model) tuple)
+    {
+        var (observableRoutedEvents, model) = tuple;
+
+        if (observableRoutedEvents)
+        {
+            spc.AddSource(
+                $"{ObservableEventsConstants.GeneratedNamespace}.ObservableEventsBootstrapExtensions.Routed.g.cs",
+                SourceText.From(
+                    GeneratedSourceHeader.ToSource(
+                        EventsBootstrapSyntaxFactory.CreateRoutedObservableEventsBootstrapExtensionsCompilationUnit()),
+                    Encoding.UTF8));
+        }
+
+        // Report captured diagnostics
+        foreach (var diag in model.Diagnostics)
+        {
+            var descriptor = diag.DescriptorId switch
+            {
+                "OBS2001" => DiagnosticDescriptors.InvalidEventDelegate,
+                "OBS2002" => DiagnosticDescriptors.InvalidEventHandlersDelegate,
+                "OBS2003" => DiagnosticDescriptors.InvalidRoutedEventDelegate,
+                "OBS2004" => DiagnosticDescriptors.InvalidRoutedEventHandlersDelegate,
+                "OBS2005" => DiagnosticDescriptors.InternalGeneratorError,
+                _ => null,
+            };
+            if (descriptor is null) continue;
+
+            var location = diag.LocationFilePath is not null
+                ? Microsoft.CodeAnalysis.Location.Create(
+                    diag.LocationFilePath,
+                    new Microsoft.CodeAnalysis.Text.TextSpan(0, 0),
+                    new Microsoft.CodeAnalysis.Text.LinePositionSpan(
+                        new(diag.LocationStartLine, diag.LocationStartColumn),
+                        new(diag.LocationStartLine, diag.LocationStartColumn)))
+                : Microsoft.CodeAnalysis.Location.None;
+            spc.ReportDiagnostic(
+                diag.MessageArg2 is null
+                    ? Diagnostic.Create(descriptor, location, diag.MessageArg)
+                    : Diagnostic.Create(descriptor, location, diag.MessageArg, diag.MessageArg2));
+        }
+
+        foreach (var iface in model.Interfaces)
+            spc.AddSource(iface.FileName, SourceText.From(iface.Source, Encoding.UTF8));
+
+        foreach (var impl in model.TypeImplementations)
+            spc.AddSource(impl.FileName, SourceText.From(impl.Source, Encoding.UTF8));
+
+        foreach (var gc in model.GenericConstraints)
+            spc.AddSource(gc.FileName, SourceText.From(gc.Source, Encoding.UTF8));
+
+        foreach (var ar in model.AttachedRoutedEvents)
+            spc.AddSource(ar.FileName, SourceText.From(ar.Source, Encoding.UTF8));
+    }
+
+    private static EventsEmissionModel CreateInternalErrorModel(Exception exception) =>
+        new(
+            ImmutableEquatableArray.Empty<EventInterfaceEmissionModel>(),
+            ImmutableEquatableArray.Empty<TypeImplEmissionModel>(),
+            ImmutableEquatableArray.Empty<GenericConstraintEmissionModel>(),
+            ImmutableEquatableArray.Empty<AttachedRoutedEmissionModel>(),
+            new[]
+            {
+                new EventsDiagnosticModel(
+                    "OBS2005",
+                    null,
+                    0,
+                    0,
+                    exception.GetType().Name,
+                    exception.Message),
+            }.ToImmutableEquatableArray());
 
     private static bool IsGeneratorTestRoutedGeneration(Compilation compilation, ImmutableArray<SyntaxNode> candidates)
     {

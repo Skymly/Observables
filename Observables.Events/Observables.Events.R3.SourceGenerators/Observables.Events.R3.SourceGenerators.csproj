@@ -4,7 +4,7 @@
 
   <PropertyGroup>
     <Description>Source generators for classic .NET events → R3 Observable.</Description>
-    <DefineConstants>$(DefineConstants);EVENTS_R3</DefineConstants>
+    <DefineConstants>$(DefineConstants);ROSLYN_4;EVENTS_R3</DefineConstants>
   </PropertyGroup>
 
   <ItemGroup>

@@ -53,6 +53,16 @@ internal static class DiagnosticDescriptors
             DiagnosticSeverity.Error,
             true
         );
+
+    public static readonly DiagnosticDescriptor InternalGeneratorError =
+        new(
+            "OBS3006",
+            "Internal source generator error",
+            "An internal error occurred in the RestAPI source generator: {0}: {1}",
+            "Observables.RestAPI",
+            DiagnosticSeverity.Error,
+            true
+        );
 }
 
 internal static class RestApiGeneratorStepName

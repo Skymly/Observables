@@ -1,7 +1,7 @@
 #if ROSLYN_4
-using System.Text;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Text;
+using Observables.SourceGenerators.Shared;
 
 namespace Observables.RestAPI.Generators;
 
@@ -36,11 +36,23 @@ internal static class IncrementalValuesProviderExtensions
         context.RegisterImplementationSourceOutput(
             model,
             static (spc, model) =>
-            {
-                var mapperText = Emitter.EmitInterface(model);
-                spc.AddSource(model.FileName, mapperText);
-            }
-        );
+                GeneratorFailSafe.TryEmit(
+                    () => spc.AddSource(model.FileName, Emitter.EmitInterface(model)),
+                    spc.ReportDiagnostic,
+                    DiagnosticDescriptors.InternalGeneratorError));
+    }
+
+    public static void EmitSharedCode(
+        this IncrementalGeneratorInitializationContext context,
+        IncrementalValueProvider<ContextGenerationModel> contextModel)
+    {
+        context.RegisterImplementationSourceOutput(
+            contextModel,
+            static (spc, model) =>
+                GeneratorFailSafe.TryEmit(
+                    () => Emitter.EmitSharedCode(model, (name, code) => spc.AddSource(name, code)),
+                    spc.ReportDiagnostic,
+                    DiagnosticDescriptors.InternalGeneratorError));
     }
 }
 #endif

@@ -57,6 +57,15 @@ internal static class DiagnosticDescriptors
             "Observables.Grpc",
             DiagnosticSeverity.Error,
             true);
+
+    public static readonly DiagnosticDescriptor InternalGeneratorError =
+        new(
+            "OBS7008",
+            "Internal source generator error",
+            "An internal error occurred in the Grpc source generator: {0}: {1}",
+            "Observables.Grpc",
+            DiagnosticSeverity.Error,
+            true);
 }
 
 internal static class GrpcGeneratorStepName

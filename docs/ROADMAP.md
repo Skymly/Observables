@@ -186,7 +186,7 @@ Grpc 两包已于 **`0.1.0`**（`v0.1.0-preview6` tag）发布至 nuget.org 与 
 | # | 行动项 | 工作量 | 说明 |
 |---|--------|--------|------|
 | ~~E1~~ | ~~C# 关键字冲突处理（7/8 域）~~ | ~~M~~ | **已完成**：共享层新增 `IdentifierHelper.Escape(string)`（基于 `SyntaxFacts.IsKeywordKind`）；SignalR/Mqtt/WebSocket/Grpc/Sse/Nats 6 域 Parser 的 `MemberName`/`ParameterNames`/`ParameterDeclarations` 及 Nats `PayloadParameterName` 统一转义；Mqtt/Nats Emitter 的 Topic/SubjectParameterNames 标识符引用转义；6 域各 1 个关键字快照测试通过 |
-| E2 | 生成器内部异常 fail-safe | M | Parser 中 `throw`（RestAPI `ArgumentNullException`、SignalR `ArgumentOutOfRangeException` 等）会崩溃整个编译。建议捕获并转为 `OBSxxxx` "internal generator error" 诊断，`RegisterSourceOutput` 回调内 try-catch 包裹 Emitter |
+| ~~E2~~ | ~~生成器内部异常 fail-safe~~ | ~~M~~ | **已完成**：共享 `GeneratorFailSafe`（`ExecuteParse` / `TryEmit`）；8 域 `OBS*00x/008` 内部错误诊断；SignalR 回归测试（单元 + `IInternalErrorProbe` 集成探针） |
 
 #### P3-B — 影响开发体验与 IDE 集成
 

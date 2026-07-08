@@ -25,48 +25,40 @@ internal static class Emitter
                 )
         );
 
-        var generatedClassText = $$"""
-
-            #pragma warning disable
-            namespace Observables.RestAPI.Implementation
-            {
-
-                /// <inheritdoc />
-                [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
-                [global::System.Diagnostics.DebuggerNonUserCode]
-                [global::System.Reflection.Obfuscation(Exclude=true)]
-                [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-                internal static partial class Generated
+        addSource(
+            "Generated.g.cs",
+            GeneratedSourceHeader.ToSourceText(
+                $$"""
+                namespace Observables.RestAPI.Implementation
                 {
-            #if NET5_0_OR_GREATER
-                    [System.Runtime.CompilerServices.ModuleInitializer]
-                    [global::System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessage("ILLink", "IL2026", Justification = "Factory registration only; the proxy is invoked by user code that declares RequiresUnreferencedCode.")]
-                    public static void Initialize()
+
+                    /// <inheritdoc />
+                    [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+                    [global::System.Diagnostics.DebuggerNonUserCode]
+                    [global::System.Reflection.Obfuscation(Exclude=true)]
+                    [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
+                    internal static partial class Generated
                     {
-            {{generatedFactoryRegistrations}}
+                #if NET5_0_OR_GREATER
+                        [System.Runtime.CompilerServices.ModuleInitializer]
+                        [global::System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessage("ILLink", "IL2026", Justification = "Factory registration only; the proxy is invoked by user code that declares RequiresUnreferencedCode.")]
+                        public static void Initialize()
+                        {
+                {{generatedFactoryRegistrations}}
+                        }
+                #endif
                     }
-            #endif
                 }
-            }
-            #pragma warning restore
-
-            """;
-
-        addSource("Generated.g.cs", SourceText.From(generatedClassText, Encoding.UTF8));
+                """));
     }
 
     public static SourceText EmitInterface(InterfaceModel model)
     {
         var source = new SourceWriter();
-
-        if (model.Nullability != Nullability.None)
-        {
-            source.WriteLine("#nullable " + (model.Nullability == Nullability.Enabled ? "enable" : "disable"));
-        }
+        GeneratedSourceHeader.WritePrefix(source, model.Nullability);
 
         source.WriteLine(
             $$"""
-            #pragma warning disable
             namespace Observables.RestAPI.Implementation
             {
 

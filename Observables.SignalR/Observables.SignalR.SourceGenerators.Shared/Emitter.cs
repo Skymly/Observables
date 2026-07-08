@@ -31,46 +31,37 @@ internal static class Emitter
                 $"            global::Observables.SignalR.HubService.RegisterGeneratedFactory(typeof({m.InterfaceDisplayName}), static c => new {m.GeneratedNamespace}.{m.ClassName}(c));"));
 
         var ns = model.Interfaces[0].GeneratedNamespace;
-        var source = $$"""
-
-            #pragma warning disable
-            namespace {{ns}}
-            {
-                [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
-                [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-                internal static class HubProxyRegistration
+        addSource(
+            "HubProxyRegistration.g.cs",
+            GeneratedSourceHeader.ToSourceText(
+                $$"""
+                namespace {{ns}}
                 {
-            #if NET5_0_OR_GREATER
-            {{dependencyAttributes}}
-                    [System.Runtime.CompilerServices.ModuleInitializer]
-                    [global::System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessage("ILLink", "IL2026", Justification = "Factory registration only; the proxy is invoked by user code that declares RequiresUnreferencedCode.")]
-                    internal static void Initialize()
+                    [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+                    [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
+                    internal static class HubProxyRegistration
                     {
-            {{registrations}}
+                #if NET5_0_OR_GREATER
+                {{dependencyAttributes}}
+                        [System.Runtime.CompilerServices.ModuleInitializer]
+                        [global::System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessage("ILLink", "IL2026", Justification = "Factory registration only; the proxy is invoked by user code that declares RequiresUnreferencedCode.")]
+                        internal static void Initialize()
+                        {
+                {{registrations}}
+                        }
+                #endif
                     }
-            #endif
                 }
-            }
-            #pragma warning restore
-
-            """;
-
-        addSource("HubProxyRegistration.g.cs", SourceText.From(source, Encoding.UTF8));
+                """));
     }
 
     public static SourceText EmitInterface(HubInterfaceModel model)
     {
         var writer = new SourceWriter();
-
-        if (model.Nullability != Nullability.None)
-        {
-            writer.WriteLine(
-                "#nullable " + (model.Nullability == Nullability.Enabled ? "enable" : "disable"));
-        }
+        GeneratedSourceHeader.WritePrefix(writer, model.Nullability);
 
         writer.WriteLine(
             $$"""
-            #pragma warning disable
             namespace {{model.GeneratedNamespace}}
             {
                 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]

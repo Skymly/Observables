@@ -1,4 +1,5 @@
 using Microsoft.CodeAnalysis;
+using Observables.SourceGenerators.Shared;
 
 namespace Observables.Grpc.Generators;
 
@@ -11,7 +12,9 @@ internal static class DiagnosticDescriptors
             "Member {0}.{1} has no GrpcUnary, GrpcServerStream, GrpcClientStream, or GrpcDuplex attribute",
             "Observables.Grpc",
             DiagnosticSeverity.Warning,
-            true);
+            isEnabledByDefault: true,
+            description: "gRPC member missing boundary attribute.",
+            helpLinkUri: DiagnosticHelpLink.For("OBS7001"));
 
     public static readonly DiagnosticDescriptor GrpcCoreNotReferenced =
         new(
@@ -20,7 +23,9 @@ internal static class DiagnosticDescriptors
             "Observables.Grpc is not referenced. Add a PackageReference to Observables.Grpc.",
             "Observables.Grpc",
             DiagnosticSeverity.Error,
-            true);
+            isEnabledByDefault: true,
+            description: "Observables.Grpc runtime package is not referenced.",
+            helpLinkUri: DiagnosticHelpLink.For("OBS7002"));
 
     public static readonly DiagnosticDescriptor UnsupportedReturnType =
         new(
@@ -29,7 +34,9 @@ internal static class DiagnosticDescriptors
             "Return type '{0}' is not supported by Observables.Grpc",
             "Observables.Grpc",
             DiagnosticSeverity.Error,
-            true);
+            isEnabledByDefault: true,
+            description: "Return type is not supported on a gRPC member.",
+            helpLinkUri: DiagnosticHelpLink.For("OBS7003"));
 
     public static readonly DiagnosticDescriptor MemberShapeMismatch =
         new(
@@ -38,7 +45,9 @@ internal static class DiagnosticDescriptors
             "Member '{0}' does not match its Grpc boundary attribute",
             "Observables.Grpc",
             DiagnosticSeverity.Error,
-            true);
+            isEnabledByDefault: true,
+            description: "Member shape does not match the gRPC boundary attribute (for example, wrong parameters for unary).",
+            helpLinkUri: DiagnosticHelpLink.For("OBS7004"));
 
     public static readonly DiagnosticDescriptor SystemReactiveNotReferenced =
         new(
@@ -47,7 +56,9 @@ internal static class DiagnosticDescriptors
             "Return type '{0}' requires PackageReference to Observables.Grpc.Reactive",
             "Observables.Grpc",
             DiagnosticSeverity.Error,
-            true);
+            isEnabledByDefault: true,
+            description: "IObservable<T> return type requires the Observables.Grpc.Reactive package.",
+            helpLinkUri: DiagnosticHelpLink.For("OBS7005"));
 
     public static readonly DiagnosticDescriptor UnsupportedGrpcOption =
         new(
@@ -56,7 +67,9 @@ internal static class DiagnosticDescriptors
             "Member '{0}.{1}' uses an unsupported shape or parameter combination",
             "Observables.Grpc",
             DiagnosticSeverity.Error,
-            true);
+            isEnabledByDefault: true,
+            description: "Unsupported parameter combination or option on a gRPC member.",
+            helpLinkUri: DiagnosticHelpLink.For("OBS7006"));
 
     public static readonly DiagnosticDescriptor InternalGeneratorError =
         new(
@@ -65,7 +78,9 @@ internal static class DiagnosticDescriptors
             "An internal error occurred in the Grpc source generator: {0}: {1}",
             "Observables.Grpc",
             DiagnosticSeverity.Error,
-            true);
+            isEnabledByDefault: true,
+            description: "Unexpected internal failure in the gRPC source generator.",
+            helpLinkUri: DiagnosticHelpLink.For("OBS7008"));
 }
 
 internal static class GrpcGeneratorStepName

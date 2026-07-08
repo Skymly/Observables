@@ -24,6 +24,12 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Compile Include="..\..\Observables.Shared\Observables.SourceGenerators.Shared\DiagnosticHelpLink.cs">
+      <Link>Shared/DiagnosticHelpLink.cs</Link>
+    </Compile>
+  </ItemGroup>
+
+  <ItemGroup>
     <InternalsVisibleTo Include="Observables.Analyzers.Tests" />
   </ItemGroup>
 

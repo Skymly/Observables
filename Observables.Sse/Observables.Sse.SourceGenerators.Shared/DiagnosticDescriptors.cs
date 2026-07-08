@@ -1,4 +1,5 @@
 using Microsoft.CodeAnalysis;
+using Observables.SourceGenerators.Shared;
 
 namespace Observables.Sse.Generators;
 
@@ -11,7 +12,9 @@ internal static class DiagnosticDescriptors
             "Member {0}.{1} has no SseEvent attribute",
             "Observables.Sse",
             DiagnosticSeverity.Warning,
-            true);
+            isEnabledByDefault: true,
+            description: "SSE member missing [SseEvent] boundary attribute.",
+            helpLinkUri: DiagnosticHelpLink.For("OBS8001"));
 
     public static readonly DiagnosticDescriptor SseCoreNotReferenced =
         new(
@@ -20,7 +23,9 @@ internal static class DiagnosticDescriptors
             "Observables.Sse is not referenced. Add a PackageReference to Observables.Sse.",
             "Observables.Sse",
             DiagnosticSeverity.Error,
-            true);
+            isEnabledByDefault: true,
+            description: "Observables.Sse runtime package is not referenced.",
+            helpLinkUri: DiagnosticHelpLink.For("OBS8002"));
 
     public static readonly DiagnosticDescriptor UnsupportedReturnType =
         new(
@@ -29,7 +34,9 @@ internal static class DiagnosticDescriptors
             "Return type '{0}' is not supported by Observables.Sse",
             "Observables.Sse",
             DiagnosticSeverity.Error,
-            true);
+            isEnabledByDefault: true,
+            description: "Return type is not supported on an SSE member.",
+            helpLinkUri: DiagnosticHelpLink.For("OBS8003"));
 
     public static readonly DiagnosticDescriptor MemberShapeMismatch =
         new(
@@ -38,7 +45,9 @@ internal static class DiagnosticDescriptors
             "Member '{0}' does not match its SSE boundary attribute; [SseEvent] must be applied to a property",
             "Observables.Sse",
             DiagnosticSeverity.Error,
-            true);
+            isEnabledByDefault: true,
+            description: "[SseEvent] must be applied to a property.",
+            helpLinkUri: DiagnosticHelpLink.For("OBS8004"));
 
     public static readonly DiagnosticDescriptor SystemReactiveNotReferenced =
         new(
@@ -47,7 +56,9 @@ internal static class DiagnosticDescriptors
             "Return type '{0}' requires PackageReference to Observables.Sse.Reactive",
             "Observables.Sse",
             DiagnosticSeverity.Error,
-            true);
+            isEnabledByDefault: true,
+            description: "IObservable<T> return type requires the Observables.Sse.Reactive package.",
+            helpLinkUri: DiagnosticHelpLink.For("OBS8005"));
 
     public static readonly DiagnosticDescriptor InternalGeneratorError =
         new(
@@ -56,7 +67,9 @@ internal static class DiagnosticDescriptors
             "An internal error occurred in the Sse source generator: {0}: {1}",
             "Observables.Sse",
             DiagnosticSeverity.Error,
-            true);
+            isEnabledByDefault: true,
+            description: "Unexpected internal failure in the Sse source generator.",
+            helpLinkUri: DiagnosticHelpLink.For("OBS8006"));
 }
 
 internal static class SseGeneratorStepName

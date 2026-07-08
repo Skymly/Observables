@@ -1,4 +1,5 @@
 using Microsoft.CodeAnalysis;
+using Observables.SourceGenerators.Shared;
 
 namespace Observables.Analyzers;
 
@@ -12,6 +13,8 @@ internal static class DiagnosticDescriptors
             "Observables",
             DiagnosticSeverity.Error,
             isEnabledByDefault: true,
+            description: "Both .R3 and .Reactive Observables packages are referenced for the same feature.",
+            helpLinkUri: DiagnosticHelpLink.For("OBS0001"),
             customTags: [WellKnownDiagnosticTags.CompilationEnd]);
 
     public static readonly DiagnosticDescriptor EmptyHubInterface =
@@ -21,7 +24,9 @@ internal static class DiagnosticDescriptors
             "Interface '{0}' is marked with [Hub] but declares no members. Add hub boundary members or remove [Hub].",
             "Observables.SignalR",
             DiagnosticSeverity.Warning,
-            isEnabledByDefault: true);
+            isEnabledByDefault: true,
+            description: "Empty [Hub] interface (SignalR).",
+            helpLinkUri: DiagnosticHelpLink.For("OBS4007"));
 
     public static readonly DiagnosticDescriptor EmptyMqttInterface =
         new(
@@ -30,7 +35,9 @@ internal static class DiagnosticDescriptors
             "Interface '{0}' is marked with [Mqtt] but declares no members. Add MQTT boundary members or remove [Mqtt].",
             "Observables.Mqtt",
             DiagnosticSeverity.Warning,
-            isEnabledByDefault: true);
+            isEnabledByDefault: true,
+            description: "Empty [Mqtt] interface.",
+            helpLinkUri: DiagnosticHelpLink.For("OBS5007"));
 
     public static readonly DiagnosticDescriptor EmptyWebSocketInterface =
         new(
@@ -39,7 +46,9 @@ internal static class DiagnosticDescriptors
             "Interface '{0}' is marked with [WebSocket] but declares no members. Add WebSocket boundary members or remove [WebSocket].",
             "Observables.WebSocket",
             DiagnosticSeverity.Warning,
-            isEnabledByDefault: true);
+            isEnabledByDefault: true,
+            description: "Empty [WebSocket] interface.",
+            helpLinkUri: DiagnosticHelpLink.For("OBS6007"));
 
     public static readonly DiagnosticDescriptor EmptyGrpcInterface =
         new(
@@ -48,7 +57,9 @@ internal static class DiagnosticDescriptors
             "Interface '{0}' is marked with [Grpc] but declares no members. Add gRPC boundary members or remove [Grpc].",
             "Observables.Grpc",
             DiagnosticSeverity.Warning,
-            isEnabledByDefault: true);
+            isEnabledByDefault: true,
+            description: "Empty [Grpc] interface.",
+            helpLinkUri: DiagnosticHelpLink.For("OBS7007"));
 
     public static readonly DiagnosticDescriptor EmptySseInterface =
         new(
@@ -57,7 +68,9 @@ internal static class DiagnosticDescriptors
             "Interface '{0}' is marked with [Sse] but declares no members. Add SSE boundary members or remove [Sse].",
             "Observables.Sse",
             DiagnosticSeverity.Warning,
-            isEnabledByDefault: true);
+            isEnabledByDefault: true,
+            description: "Empty [Sse] interface.",
+            helpLinkUri: DiagnosticHelpLink.For("OBS8007"));
 
     public static readonly DiagnosticDescriptor EmptyNatsInterface =
         new(
@@ -66,7 +79,9 @@ internal static class DiagnosticDescriptors
             "Interface '{0}' is marked with [Nats] but declares no members. Add NATS boundary members or remove [Nats].",
             "Observables.Nats",
             DiagnosticSeverity.Warning,
-            isEnabledByDefault: true);
+            isEnabledByDefault: true,
+            description: "Empty [Nats] interface.",
+            helpLinkUri: DiagnosticHelpLink.For("OBS9007"));
 
     public static readonly DiagnosticDescriptor EmptyRestApiInterface =
         new(
@@ -75,5 +90,7 @@ internal static class DiagnosticDescriptors
             "Interface '{0}' is marked with HTTP method attributes but declares no valid members. Add HTTP boundary members or remove the attributes.",
             "Observables.RestAPI",
             DiagnosticSeverity.Warning,
-            isEnabledByDefault: true);
+            isEnabledByDefault: true,
+            description: "Empty [RestApi] interface (RestAPI).",
+            helpLinkUri: DiagnosticHelpLink.For("OBS3007"));
 }

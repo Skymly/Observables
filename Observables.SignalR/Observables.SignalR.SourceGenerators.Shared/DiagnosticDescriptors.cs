@@ -1,4 +1,5 @@
 using Microsoft.CodeAnalysis;
+using Observables.SourceGenerators.Shared;
 
 namespace Observables.SignalR.Generators;
 
@@ -11,7 +12,9 @@ internal static class DiagnosticDescriptors
             "Member {0}.{1} has no HubInvoke, HubSend, HubStream, or HubOn attribute, or uses a non-literal method name",
             "Observables.SignalR",
             DiagnosticSeverity.Warning,
-            true);
+            isEnabledByDefault: true,
+            description: "Hub member missing boundary attribute or non-literal hub method name.",
+            helpLinkUri: DiagnosticHelpLink.For("OBS4001"));
 
     public static readonly DiagnosticDescriptor SignalRCoreNotReferenced =
         new(
@@ -20,7 +23,9 @@ internal static class DiagnosticDescriptors
             "Observables.SignalR is not referenced. Add a PackageReference to Observables.SignalR.",
             "Observables.SignalR",
             DiagnosticSeverity.Error,
-            true);
+            isEnabledByDefault: true,
+            description: "Observables.SignalR runtime package is not referenced.",
+            helpLinkUri: DiagnosticHelpLink.For("OBS4002"));
 
     public static readonly DiagnosticDescriptor UnsupportedReturnType =
         new(
@@ -29,7 +34,9 @@ internal static class DiagnosticDescriptors
             "Return type '{0}' is not supported by Observables.SignalR",
             "Observables.SignalR",
             DiagnosticSeverity.Error,
-            true);
+            isEnabledByDefault: true,
+            description: "Return type must be Observable<T> or IObservable<T>; HubSend requires Unit.",
+            helpLinkUri: DiagnosticHelpLink.For("OBS4003"));
 
     public static readonly DiagnosticDescriptor MemberShapeMismatch =
         new(
@@ -38,7 +45,9 @@ internal static class DiagnosticDescriptors
             "Member '{0}' does not match its Hub boundary attribute (methods vs properties)",
             "Observables.SignalR",
             DiagnosticSeverity.Error,
-            true);
+            isEnabledByDefault: true,
+            description: "Member shape does not match the Hub boundary attribute (for example, [HubOn] on a method).",
+            helpLinkUri: DiagnosticHelpLink.For("OBS4004"));
 
     public static readonly DiagnosticDescriptor SystemReactiveNotReferenced =
         new(
@@ -47,7 +56,9 @@ internal static class DiagnosticDescriptors
             "Return type '{0}' requires PackageReference to Observables.SignalR.Reactive",
             "Observables.SignalR",
             DiagnosticSeverity.Error,
-            true);
+            isEnabledByDefault: true,
+            description: "IObservable<T> return type requires the Observables.SignalR.Reactive package.",
+            helpLinkUri: DiagnosticHelpLink.For("OBS4005"));
 
     public static readonly DiagnosticDescriptor UnsupportedStreamingParameter =
         new(
@@ -56,7 +67,9 @@ internal static class DiagnosticDescriptors
             "Parameter '{0}' on method '{1}' uses client-to-server streaming, which is not supported in this release",
             "Observables.SignalR",
             DiagnosticSeverity.Error,
-            true);
+            isEnabledByDefault: true,
+            description: "Client-to-server streaming parameters are not supported in this release.",
+            helpLinkUri: DiagnosticHelpLink.For("OBS4006"));
 
     public static readonly DiagnosticDescriptor InternalGeneratorError =
         new(
@@ -65,7 +78,9 @@ internal static class DiagnosticDescriptors
             "An internal error occurred in the SignalR source generator: {0}: {1}",
             "Observables.SignalR",
             DiagnosticSeverity.Error,
-            true);
+            isEnabledByDefault: true,
+            description: "Unexpected internal failure in the SignalR source generator.",
+            helpLinkUri: DiagnosticHelpLink.For("OBS4008"));
 }
 
 internal static class SignalRGeneratorStepName

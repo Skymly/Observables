@@ -40,6 +40,9 @@
     <Compile Include="$(MSBuildThisFileDirectory)Observables.Shared/Observables.SourceGenerators.Shared/GeneratorFailSafe.cs">
       <Link>Shared/GeneratorFailSafe.cs</Link>
     </Compile>
+    <Compile Include="$(MSBuildThisFileDirectory)Observables.Shared/Observables.SourceGenerators.Shared/DiagnosticHelpLink.cs">
+      <Link>Shared/DiagnosticHelpLink.cs</Link>
+    </Compile>
   </ItemGroup>
 
   <!-- Global using to avoid qualifying shared types -->

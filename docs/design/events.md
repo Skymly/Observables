@@ -1,53 +1,16 @@
-# Events 域 — 开发设计文档
+# Events 域 — 设计文档（实现）
 
-> 状态：**已实现**（`main`）；NuGet `Observables.Events.R3` / `Observables.Events.Reactive` 已发 nuget.org（`0.1.2`，16 包之一）。实现细节以代码为准。
-> 命名、打包、诊断分段等约定以仓库根 [`AGENTS.md`](../../AGENTS.md) 为权威，本文在其框架内细化 Events 域。
+> **稳定契约**见 [docs/spec/Events.md](../spec/Events.md)（API、诊断 ID、不变量）。
+> 状态：**已实现**（`main`）；NuGet `Observables.Events.R3` / `Observables.Events.Reactive`（`0.1.6`）。
+> 命名、打包、诊断分段以 [`AGENTS.md`](../../AGENTS.md) 为权威。
 
-## 1. 目标与定位
+## 1. 目标与定位（摘要）
 
-将 **.NET 事件**（经典 `event` 成员、`EventHandler` 系、WPF/Avalonia 路由事件）通过 Roslyn 源生成器桥接为反应式流：
+将 .NET 事件（经典 `event`、`EventHandler`、WPF/Avalonia 路由事件）桥接为反应式流。Events 是八域中**唯一的纯生成域**：`Observables.Events` 仅含 MSBuild props，桥接类型由生成器 `internal` 产出。入口方法表见 Spec。
 
-| 入口方法 | 返回形状 | 适用场景 |
-|----------|----------|----------|
-| `.Events()` | `Observable<T>` / `IObservable<T>`（按委托签名推断 `T`） | 只关心事件载荷，去掉 `sender` |
-| `.EventHandlers()` | `Observable<(object? sender, TEventArgs e)>` | 需要 `sender` 与原始 `EventArgs` |
-| `.RoutedEvents()` | `Observable<T>`（路由事件载荷） | WPF/Avalonia 路由事件，默认关闭 |
-| `.RoutedEventHandlers()` | `Observable<(object? sender, TEventArgs e)>` | 路由事件保留 sender |
-| `.AttachedRoutedEvent<T>()` / `.AttachedRoutedEventHandler<T>()` | 单次订阅附加路由事件 | 静态路由事件字段（WPF/Avalonia） |
+## 2. 生成映射
 
-Events 是 Observables 八域中**唯一的纯生成域**：无运行时类型，`Observables.Events` 项目仅含 MSBuild props（`ObservableRoutedEvents` 默认 `false`）。所有桥接类型（`EventObservable`、`NullEvents`、生成的接口与实现类）均由生成器在编译期产出，标记为 `internal`。
-
-## 2. 公共面
-
-### 入口扩展方法（生成器产出，按使用即生成）
-
-```csharp
-// 任何含 event 成员的类型都可调用
-var btn = new Button();
-using var d1 = btn.Events().Clicked.Subscribe(_ => Console.WriteLine("Clicked!"));
-
-// EventHandler 系保留 (sender, e)
-using var d2 = obj.EventHandlers().PropertyChanged.Subscribe(t => Console.WriteLine(t.e.PropertyName));
-```
-
-### 路由事件开关
-
-```xml
-<!-- 消费者项目 -->
-<ObservableRoutedEvents>true</ObservableRoutedEvents>
-```
-
-由 `Observables.Events/Observables.Events/targets/observables.events.props` 定义并默认 `false`。开启后生成器才识别 `.RoutedEvents()` / `.RoutedEventHandlers()` / `.AttachedRoutedEvent<T>()` 调用并产出对应扩展方法。
-
-### 检测规则
-
-- **经典事件**：类型上任何 `event` 成员（含基类与接口继承）。
-- **路由事件**：CLR 实例事件背后存在静态字段 `{EventName}Event`，类型为 `System.Windows.RoutedEvent` / `System.Windows.RoutedEvent<T>`（WPF）或 `Avalonia.Interactivity.RoutedEvent` / `Avalonia.Interactivity.RoutedEvent<T>`（Avalonia）。
-- **附加路由事件**：通过 `.AttachedRoutedEvent<TEventArgs>(routedEvent, routes?, handledEventsToo?)` 显式传入静态路由事件字段。
-
-## 3. 生成映射
-
-### 3.1 经典事件 → `Observable<T>`
+### 2.1 经典事件 → `Observable<T>`
 
 对每个被 `.Events()` 触达的类型，生成器产出：
 
@@ -81,7 +44,7 @@ internal static class ObservableEventsBootstrapExtensions
 
 `EventObservable.Event<TDelegate, T>` 内部调用 `R3.Observable.FromEvent(...)`；Reactive 包对应桥接为 `System.Reactive.Observable.FromEventPattern(...)`。
 
-### 3.2 EventHandler 系 → `Observable<(object?, T)>`
+### 2.2 EventHandler 系 → `Observable<(object?, T)>`
 
 ```csharp
 public Observable<(object? sender, PropertyChangedEventArgs e)> PropertyChanged =>
@@ -92,7 +55,7 @@ public Observable<(object? sender, PropertyChangedEventArgs e)> PropertyChanged 
 
 非泛型 `EventHandler` 退化为 `Observable<(object?, EventArgs)>`。
 
-### 3.3 路由事件（Avalonia 示例）
+### 2.3 路由事件（Avalonia 示例）
 
 ```csharp
 internal sealed class RoutedEventsImpl_Control : IRoutedEventsInterface_Control>
@@ -116,7 +79,7 @@ internal sealed class RoutedEventsImpl_Control : IRoutedEventsInterface_Control>
 
 `routes` 对应 `RoutingStrategies`，`handledEventsToo` 控制是否接收已处理事件。
 
-### 3.4 附加路由事件
+### 2.4 附加路由事件
 
 ```csharp
 public static Observable<TEventArgs> AttachedRoutedEvent<TEventArgs>(
@@ -127,15 +90,15 @@ public static Observable<TEventArgs> AttachedRoutedEvent<TEventArgs>(
         removeHandler: h => source.RemoveHandler<TEventArgs>(routedEvent, h));
 ```
 
-### 3.5 空回退
+### 2.5 空回退
 
 `NullEvents`（`internal struct`）作为未发现任何事件时的回退返回值，使 `.Events().SomeEvent` 在无事件时仍可编译（取值为 `null`/默认），避免破坏性失败。Bootstrap 扩展方法在未生成对应类型时返回 `NullEvents` 实例。
 
-### 3.6 泛型约束目标
+### 2.6 泛型约束目标
 
 当 `.Events()` 的接收者是泛型参数（如 `where T : INotifyPropertyChanged`）时，生成器走 `GenericConstraintTarget` 路径，按约束类型生成对应接口与实现。
 
-## 4. 生成器管道
+## 3. 生成器管道
 
 `ObservableEventsGenerator : IIncrementalGenerator`（R3 与 Reactive 各一份，结构一致）：
 
@@ -150,22 +113,7 @@ public static Observable<TEventArgs> AttachedRoutedEvent<TEventArgs>(
 
 `StaticObservableEventsGenerationEnabled` 当前为 `false`（编译期常量），静态事件支持延后。
 
-## 5. 诊断（OBS2xxx）
-
-归属：`Observables.Events/Observables.Events.SourceGenerators.Shared/DiagnosticDescriptors.cs`（域内 shproj，与其他域一致）。
-
-| ID | 严重性 | 触发 |
-|----|--------|------|
-| OBS2001 | Warning | `.Events()` — 事件委托签名不受支持 |
-| OBS2002 | Warning | `.EventHandlers()` — 非 `EventHandler` / `(object, T)` 形态 |
-| OBS2003 | Warning | `.RoutedEvents()` — 路由事件委托签名不受支持 |
-| OBS2004 | Warning | `.RoutedEventHandlers()` — 路由事件非 EventHandler 形态 |
-
-全部 `Warning`：生成器跳过该事件但继续处理其他事件，不阻塞编译。
-
-Release 跟踪：`Observables.Events/Observables.Events.SourceGenerators.Shared/AnalyzerReleases.Shipped.md`（v1.0 已发）。
-
-## 6. 项目组成
+## 4. 项目组成
 
 ```
 Observables.Events/
@@ -192,9 +140,9 @@ Observables.Events/
 └── Observables.Events.Reactive.SourceGenerators.Tests/
 ```
 
-**无双后端 shproj**：Events 域不建 `*.SourceGenerators.Shared` shproj；共享诊断位于全库 `Observables.SourceGenerators.Shared`（OBS2xxx 段）。
+**无双后端 shproj**：Events 域不建 `*.SourceGenerators.Shared` shproj；诊断定义在 `Observables.Events.*.SourceGenerators` 内 `DiagnosticDescriptors.cs`（OBS2xxx）。完整诊断表见 [spec/Events.md](../spec/Events.md)。
 
-## 7. 关键设计决策
+## 5. 关键设计决策
 
 | 决策 | 理由 |
 |------|------|
@@ -206,9 +154,9 @@ Observables.Events/
 | **附加路由事件独立入口** | 处理「事件定义在外国类型」场景（如 `Button.ClickEvent` 在 WPF） |
 | **`NullEvents` 空回退** | 未发现事件时仍可编译，避免破坏性失败 |
 | **静态事件支持延后** | `StaticObservableEventsGenerationEnabled = false`，留待后续 |
-| **诊断全 Warning** | 跳过不支持的事件但继续生成其他，不阻塞编译 |
+| **诊断** | OBS2001–2004 为 Warning；OBS2005 为内部错误 fail-safe（见 Spec） |
 
-## 8. 后续（v1 之外）
+## 6. 后续（v1 之外）
 
 - 静态事件支持（`StaticObservableEventsGenerationEnabled` 翻为 `true`）。
 - 路由事件的 `RoutingStrategies` 强类型枚举（当前以 `object` 传递以避免 WPF/Avalonia 编译期依赖）。

@@ -13,11 +13,32 @@ Thank you for your interest in Observables. This document covers contribution wo
    ```
 
 2. If you change user-facing behavior, sync documentation in all three places:
-   - This repository (`README.md`, `docs/design/` as needed)
+   - This repository (`README.md`, `docs/` per [docs/DOCUMENTATION.md](docs/DOCUMENTATION.md))
    - [Observables.Docs](https://github.com/Skymly/Observables.Docs) (English `docs/` and 简体中文 `docs/zh/` together)
    - [Observables.Samples](https://github.com/Skymly/Observables.Samples) when a new domain or sample is involved
 
 3. Follow existing naming and project layout (see [AGENTS.md](./AGENTS.md) for the authoritative structure, diagnostic ID ranges, and engineering standards).
+
+### Documentation workflow
+
+See [docs/DOCUMENTATION.md](docs/DOCUMENTATION.md) for the full standard. Summary:
+
+| Change | RFC | ADR | Docs to update |
+|--------|-----|-----|----------------|
+| New domain / diagnostic ID / breaking API | Required (Accepted) | Required | Spec + Design + Observables.Docs |
+| Non-breaking API (single domain) | — | — | Design Doc + Docs if user-visible |
+| Bug fix | — | — | Docs if user-visible |
+
+| Directory | Purpose |
+|-----------|---------|
+| [docs/rfc/](docs/rfc/README.md) | Design proposals |
+| [docs/adr/](docs/adr/README.md) | Architecture decisions |
+| [docs/spec/](docs/spec/README.md) | Stable contracts (API, `OBSxxxx`) |
+| [docs/design/](docs/design/README.md) | Implementation details |
+| [docs/plans/](docs/plans/README.md) | Large multi-PR tasks |
+| [docs/review/](docs/review/README.md) | Milestone reviews |
+
+Release notes: update the version table in this file and [docs/ROADMAP.md](docs/ROADMAP.md) — there is no root `CHANGELOG.md` (see ROADMAP C3).
 
 ### PR conventions
 
@@ -40,7 +61,7 @@ Stable packages are published to [nuget.org](https://www.nuget.org/profiles/Skym
 |---------|---------|
 | **0.1.0** | First stable release — eight feature domains, 16 packages (`.R3` + `.Reactive` per domain), public API baseline. |
 | **0.1.1** | Stable follow-up — localized **zh-Hans** IntelliSense for Reactive packages. |
-| **0.1.2** | Maintenance release — Events incremental generator caching, diagnostic descriptor consolidation, ADR-0001 primitives backend decision. |
+| **0.1.2** | Maintenance release — Events incremental generator caching, diagnostic descriptor consolidation, ADR-001 primitives backend decision. |
 | **0.1.3** | CI hardening — NuGet consumer smoke job in CI; RestAPI reactive constant unified; E2E port allocation fixed; symbol packages enabled; RestAPI.Reactive project reference aligned; Events Reactive generator constant prefixed. |
 | **0.1.4** | Symbol package fix — PDB files included in snupkg (DebugType portable + pack PDBs to lib/ and analyzers/). |
 | **0.1.5** | Maintenance release — RestAPI OBS3004 fix (path + [Body]/[Query] parameters no longer falsely rejected); incremental generator cache hit tests across all 8 domains (45 tests). |

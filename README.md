@@ -55,7 +55,7 @@ System.Reactive 路径将 `Observables.Events.R3` 换为 `Observables.Events.Rea
 | **Sse** | `text/event-stream` 事件流 |
 | **Nats** | Core NATS subject 代理（v1 不含 JetStream） |
 
-设计稿见 `docs/design/`。路由事件生成默认关闭；在消费者项目中设置 `<ObservableRoutedEvents>true</ObservableRoutedEvents>`（见 `Observables.Events/Observables.Events/targets/observables.events.props`）。
+设计稿见 [`docs/`](docs/README.md)（文档体系见 [`docs/DOCUMENTATION.md`](docs/DOCUMENTATION.md)）。路由事件生成默认关闭；在消费者项目中设置 `<ObservableRoutedEvents>true</ObservableRoutedEvents>`（见 `Observables.Events/Observables.Events/targets/observables.events.props`）。
 
 ### 仓库结构（摘要）
 

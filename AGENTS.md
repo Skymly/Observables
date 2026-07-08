@@ -1,12 +1,14 @@
 # Observables — AI 代理说明
 
+本文件为在本仓库工作的 AI 编码助手提供上下文。修改代码前请先阅读本文档与 [docs/DOCUMENTATION.md](docs/DOCUMENTATION.md)。
+
 ## 项目状态
 
 - **类型**：个人项目（Skymly 工作区）
 - **远端**：https://github.com/Skymly/Observables（私有）；文件夹名 `Observables` = 仓库名；同步状态以 `git status` 为准
-- **阶段**：**Events**、**RestAPI**、**SignalR**、**Mqtt**、**WebSocket**、**Grpc**、**Sse**、**Nats** 已实现（运行时 + 双路生成器 + 测试）；共享层另含 `Observables.CodeFixes` 与 `Observables.Analyzers`；**nuget.org 已发** `0.1.2`（**16 包**）；Nuke `PackVerify` + `eng/nuget-smoke` 覆盖 16 包
-- **下一里程碑**：post-1.0 维护期（M1–M7 全部完成，0.1.2 已发 nuget.org）；待定项见 [`docs/ROADMAP.md`](docs/ROADMAP.md) 末尾
-- **路线图**：里程碑与发版顺序见 [`docs/ROADMAP.md`](docs/ROADMAP.md)（M1 ✅ … M7 ✅，0.1.2 稳定版已发）
+- **阶段**：**Events**、**RestAPI**、**SignalR**、**Mqtt**、**WebSocket**、**Grpc**、**Sse**、**Nats** 已实现（运行时 + 双路生成器 + 测试）；共享层另含 `Observables.CodeFixes` 与 `Observables.Analyzers`；**nuget.org 已发** `0.1.6`（**16 包**）；Nuke `PackVerify` + `eng/nuget-smoke` 覆盖 16 包
+- **下一里程碑**：post-1.0 维护期（M1–M7 全部完成，0.1.6 稳定版已发）；待定项见 [`docs/ROADMAP.md`](docs/ROADMAP.md) 末尾
+- **路线图**：里程碑与发版顺序见 [`docs/ROADMAP.md`](docs/ROADMAP.md)（M1 ✅ … M7 ✅，0.1.6 稳定版已发）
 - **结构约定**：下文「仓库结构」与命名约定为权威；**工程治理**（包管理、警告、诊断、版本来源）见下文同名章节
 
 ## 目标
@@ -256,8 +258,56 @@ Observables/
   1. 主仓 [`README.md`](README.md) 功能域说明；版本与包清单见 [`CONTRIBUTING.md`](CONTRIBUTING.md)。
   2. Observables.Docs（中英；新域加对应页，更新 `diagnostics.md`、`reference.md`）。
   3. Observables.Samples（新域加 `Observables.Samples.<Feature>`）。
-- 设计稿放主仓 `docs/design/<feature>.md`；面向用户的使用文档放 Observables.Docs。
+- 维护者设计文档在 `docs/`（见 [`docs/DOCUMENTATION.md`](docs/DOCUMENTATION.md)）；面向用户的使用文档在 Observables.Docs。
 - 此项是发版门槛之一（见 ROADMAP「发版门槛清单」）。
+
+---
+
+## 文档体系（文档驱动开发）
+
+本仓库实行**文档驱动开发**：先文档后代码，任何非琐碎变更先满足文档前置条件（决策表见 [docs/DOCUMENTATION.md §11](docs/DOCUMENTATION.md#11-文档驱动开发流程)）再进入实现。文档分为 7 种类型，完整规范见 [docs/DOCUMENTATION.md](docs/DOCUMENTATION.md)。Agent 与人类开发者均须遵守。
+
+| 类型 | 目录 | 用途 | 关键规则 |
+|------|------|------|----------|
+| **RFC** | `docs/rfc/` | 设计提案与讨论 | 新增功能域/诊断 ID/破坏性 API 必须 RFC；模板 `docs/rfc/_template.md`；已实现移入 `archive/` |
+| **ADR** | `docs/adr/` | 架构决策记录（不可变） | RFC Accepted → 产出 ADR；编号不复用；正文不修改，仅 Supersede |
+| **Spec** | `docs/spec/` | 稳定契约（API 面、`OBSxxxx` 诊断、不变量） | 变更需 RFC + ADR；随代码 PR 同步更新 |
+| **Design Doc** | `docs/design/` | 实现细节、设计权衡、已知局限 | 随代码 PR 同步更新 |
+| **Plan** | `docs/plans/` | 大型任务计划（跨多 PR） | 里程碑对齐单模块 PR 边界；Done/Cancelled 移入 `archive/`；小任务用 Issue 即可 |
+| **Review** | `docs/review/` | 评审记录（设计/实现/发版/回顾） | Final 后正文不可变；行动项全部关闭移入 `archive/` |
+| **Roadmap** | `docs/ROADMAP.md` | 功能与技术 backlog | 完成项移入「已完成（归档）」章节 |
+
+**横切文档**：[`docs/design/architecture.md`](docs/design/architecture.md)（架构）、[`docs/design/contributor.md`](docs/design/contributor.md)（人类贡献者）。
+
+**无 `CHANGELOG.md`**（ROADMAP C3）：发版记录写在 [`CONTRIBUTING.md`](CONTRIBUTING.md) 版本表 + GitHub Releases，**不得**新建根级 CHANGELOG 作为第四同步点。
+
+**归档统一规则**：归档 = 移动文件 + 更新状态字段 + 更新 README 索引，同一 PR 完成；归档后正文不再修改（仅修失效链接）；归档不删除。
+
+**三仓同步**（用户可见变更）：主仓 `docs/` + [Observables.Docs](https://github.com/Skymly/Observables.Docs)（英/中）+ [Observables.Samples](https://github.com/Skymly/Observables.Samples)；见上文「文档同步纪律」。
+
+### Agent 文档工作流约定
+
+| 场景 | Agent 行为 |
+|------|-----------|
+| 新增诊断 ID | 确认是否有对应 RFC；无则提示需创建 RFC |
+| 修改公共 API | 确认是否有对应 RFC + ADR；无则提示需创建 RFC |
+| 跨多 PR 的大型任务 | 确认 `docs/plans/` 是否有对应 Plan；无则先建 Plan（经用户确认）再实现 |
+| 创建 RFC | 使用 `docs/rfc/_template.md`；frontmatter 从 `Draft` 开始 |
+| 创建 ADR | 编号取 `docs/adr/README.md` 中下一个可用编号 |
+| 创建 Plan / Review | 使用对应 `_template.md`；Review 评审人注明为 Agent |
+| RFC / Plan / Review 状态变更 | 更新 frontmatter `状态` + 日期；归档时移动到对应 `archive/` 并更新 README 索引 |
+| Spec 变更 | 确认 RFC 已 Accepted；同步更新 Spec 版本号（对齐 `eng/Observables.Package.props`） |
+| 诊断文案与链接 | 同步各域 `DiagnosticDescriptors.cs`、`AnalyzerReleases.Unshipped.md`、`DiagnosticHelpLink` 与 Observables.Docs `diagnostics.md`（含 `#obsxxxx` 锚点） |
+| 发版记录 | 更新 `CONTRIBUTING.md` 版本表 + `ROADMAP.md`（**不**维护 `CHANGELOG.md`） |
+| 文档目录 | 不在 `docs/` 之外创建维护者设计文档（`.Local/` 除外） |
+
+### 功能域文档结构
+
+8 个功能域文档正从合一式 `docs/design/<feature>.md`（小写）**逐步拆分**为 Spec（`docs/spec/<Domain>.md`）+ Design Doc（`docs/design/<Domain>.md`，PascalCase）。**迁移完成前**：以现有 design 文档 + Observables.Docs 为用户向真相源；新增诊断仍须同步代码登记表与用户文档。
+
+横切工程文档（如 [`docs/design/public-api.md`](docs/design/public-api.md)）保留在 `docs/design/` 根下，不归入 Spec。
+
+索引见 [docs/spec/README.md](docs/spec/README.md) 和 [docs/design/README.md](docs/design/README.md)。**Events 已完成试点拆分**（[`spec/Events.md`](docs/spec/Events.md) + [`design/events.md`](docs/design/events.md)）；其余域待逐步迁移。
 
 ---
 
@@ -323,11 +373,10 @@ dotnet run --project build/_build.csproj -- --target Ci --configuration Release
 
 ## 工作约定
 
-- 仅修改本仓库，除非用户明确要求跨仓库改动。
+- 仅修改本仓库，除非用户明确要求跨仓库改动（Observables.Docs / Observables.Samples 须单独 PR，见「三仓同步」）。
 - 用户沟通默认 **简体中文**；公开 API 与诊断消息可用英文。
 - 新增 Feature 时遵循上文检查清单；**文件夹名 = 项目名 = 程序集名**（含 `.SourceGenerators` 等后缀）。
 - 重命名项目或公共 API 前须与用户确认。
-- **Git / Issue / PR / Commit**：Issue / PR / Commit **一律英语**；禁止在 Commit / PR 中提及 AI / Agent 工具；未经用户明确要求不得 `commit` / `push` / 发版。
 
 ### 本仓库跨模块 PR 的模块边界
 
@@ -335,8 +384,40 @@ dotnet run --project build/_build.csproj -- --target Ci --configuration Release
 
 | 模块 | 范围 |
 |------|------|
-| **Shared** | `Observables.Core`、`Observables.SourceGenerators.Shared` |
-| **Events** | `/Events/`（含 `Observables.Events/targets`、Shared 诊断 `OBS2001`–`OBS2004`） |
+| **Shared** | `Observables.Core`、`Observables.SourceGenerators.Shared`、`Observables.Analyzers`、`Observables.CodeFixes` |
+| **Events** | `/Events/`（含 `Observables.Events/targets`、Shared 诊断 `OBS2001`–`OBS2005`） |
 | **RestAPI** | `/RestAPI/`（含 `SourceGenerators.Shared`、Tests） |
-| **SignalR** / **WebSocket** / **Mqtt** / **Grpc** | 各对应文件夹 |
-| **Solution Items** | 根 `AGENTS.md`、`README.md`、`docs/`、`Observables.slnx`、`Directory.Build.props`、`Directory.Packages.props`（CPM）、公共 props、`eng/`、`build/`（Nuke）、`.github/`；按变更归入 **Shared** 或相关 Feature 的 Issue |
+| **SignalR** / **WebSocket** / **Mqtt** / **Grpc** / **Sse** / **Nats** | 各对应文件夹 |
+| **Docs** | 本仓 `docs/`（维护者/中文）；用户文档站 [Observables.Docs](https://github.com/Skymly/Observables.Docs)（VitePress，**分 PR**） |
+| **Repository (root README)** | 根 `README.md`、`CONTRIBUTING.md` |
+| **Solution Items** | 根 `AGENTS.md`、`Observables.slnx`、`Directory.Build.props`、`Directory.Packages.props`（CPM）、公共 props、`eng/`、`build/`（Nuke）、`.github/` |
+
+跨域且跨模块时拆多个 Issue → PR；勿在同一 PR 混合 Shared 与多域改动。
+
+---
+
+## Git / Issue / PR / Commit
+
+- **语言（权威）**：Issue / PR / Commit **一律英语**；与用户对话默认**简体中文**。本条为权威表述，**覆盖** `CONTRIBUTING.md` 中任何「中英文均可」的旧措辞。
+- 分支：功能 `feature/<short-description>`、修复 `fix/<short-description>`、文档 `docs/<short-description>`；提交信息祈使句、说明 **why**。
+- **每个 PR 只改一个模块**（边界见上文「跨模块 PR / Issue 边界」）。
+- Issue 模板：[`.github/ISSUE_TEMPLATE/`](.github/ISSUE_TEMPLATE/)（Bug / Feature / Generator）。
+- PR 模板：[`.github/pull_request_template.md`](.github/pull_request_template.md)（含 Documentation checklist）。
+- **禁止**在 Commit / PR 中提及 AI / Agent 工具。
+- 未经用户明确要求不得 `commit` / `push` / 发版。
+
+---
+
+## 澄清与规范
+
+Agent 行为准则——与「与用户沟通」并行生效：
+
+1. **用户表述不清楚时，立刻询问**：不要基于猜测继续工作。用聚焦的问题（而非开放式提问）澄清意图，提供 2–4 个具体选项供用户选择。
+2. **用户表述不合理时，立刻指出并给出建议**：包括但不限于——违反已有 ADR（如 [ADR-001](docs/adr/ADR-001-primitives-backend-skip.md) 引入第三反应式后端、R3 包引用 System.Reactive 或 Reactive 包引用 R3、单域产出第三个 NuGet 消费者包）、复用或改变已发布 `OBSxxxx` 诊断 ID 的语义、未走 RFC/ADR 流程变更 Spec 契约、跳过测试（生成器 Verify 快照 / 域 E2E / `eng/nuget-smoke`）、单 PR 混合多个模块、破坏兼容基线（TFM / Roslyn 版本）、未同步三仓用户文档、新建根级 `CHANGELOG.md`（ROADMAP C3 已否决）、在生成器项目中混用 R3 与 Reactive 后端逻辑。指出问题时必须说明**为什么不合理**，并给出合理替代方案。
+3. **不要盲目执行**：即使能「做到」用户要求的事，如果认为方向有误，应先提出异议，等待用户确认后再动手。
+4. **发现矛盾时主动报告**：如果用户的新要求与已有 ADR / RFC / `AGENTS.md` 规则冲突，指出冲突点，由用户决定是否更新规则或调整需求（ADR 变更须走 Supersede 流程，见 [docs/DOCUMENTATION.md](docs/DOCUMENTATION.md)）。
+
+## 与用户沟通
+
+- **最小 diff**、匹配现有风格；**不主动** `commit` / `push` / 发版，除非用户明确要求。
+- 中文解释权衡；代码标识符与对外文档默认英语。

@@ -48,3 +48,19 @@ Closes #
 - [ ] Commit messages are in **English** (no AI/agent tooling mentions in commits)
 - [ ] No version bumps, tags, releases, or NuGet publish steps included unless explicitly requested
 - [ ] Public API / diagnostic changes are documented if user-visible
+
+## Documentation checklist
+
+<!-- See docs/DOCUMENTATION.md for the full documentation standard. -->
+
+- [ ] New/changed public API → Spec updated (`docs/spec/`) or Design Doc (`docs/design/`) during migration
+- [ ] New/changed diagnostic ID → Spec/Design + `AnalyzerReleases.Unshipped.md` + Observables.Docs `diagnostics.md`
+- [ ] Implementation detail changed → Design Doc updated
+- [ ] New RFC → used `docs/rfc/_template.md`
+- [ ] RFC status changed → frontmatter updated + archived to `docs/rfc/archive/` if Implemented/Rejected
+- [ ] New ADR → numbered from `docs/adr/README.md` next available
+- [ ] New Plan / Review → used `docs/plans/_template.md` / `docs/review/_template.md`
+- [ ] Plan / Review archived + index README updated when done
+- [ ] `CONTRIBUTING.md` version table updated (if releasing; no root CHANGELOG)
+- [ ] Observables.Docs / Samples synced if user-visible (separate PRs)
+- [ ] No documentation changes needed

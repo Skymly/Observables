@@ -1,12 +1,15 @@
 # Design Doc: <DomainName>
 
-> **关联 Spec**：[docs/spec/<DomainName>.md](../spec/<DomainName>.md)（迁移完成后）
-> **关联 RFC**：[docs/rfc/XXX.md](../rfc/XXX.md)（如有）
 > **关联 ADR**：ADR-XXX（如有）
+> **关联 Issue**：#XXX（如有）
 
 ## 概述
 
-## 设计目标
+## API 面
+
+## 诊断 ID
+
+## 不变量
 
 ## 实现概览
 
@@ -17,8 +20,6 @@
 ### 诊断检测逻辑
 
 ## 设计权衡
-
-## 与生态的边界
 
 ## 已知局限
 

@@ -107,5 +107,5 @@ flowchart LR
 
 - [contributor.md](contributor.md) — 新增域步骤（人类向）
 - [public-api.md](public-api.md) — Public API 分析器
-- [spec/Events.md](../spec/Events.md) — Events 契约示例（Spec 试点）
+- [events.md](events.md) — Events 域设计文档（含 API 面、诊断表、生成器管道）
 - [ROADMAP.md](../ROADMAP.md) — 里程碑与 backlog

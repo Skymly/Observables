@@ -51,17 +51,17 @@ Skymly/Observables/
 
 用户向文档变更在 **Observables.Docs** 单独 PR；示例在 **Observables.Samples** 单独 PR。
 
-## 3. 文档驱动开发（摘要）
+## 3. 文档约定
 
-**先文档后代码**。按变更类型准备文档（完整决策表见 [DOCUMENTATION.md §11](../DOCUMENTATION.md#11-文档驱动开发流程)）：
+按变更类型准备文档（约定见 [DOCUMENTATION.md](../DOCUMENTATION.md)）：
 
 | 变更 | 通常需要 |
 |------|----------|
-| 新功能域 / 新诊断 ID / 破坏性 API | RFC（Accepted）→ ADR → Spec + Design |
+| 新功能域 / 破坏性 API | ADR + Design Doc + Observables.Docs |
+| 新诊断 ID | Design Doc + `AnalyzerReleases.Unshipped.md` + Observables.Docs |
 | 单域小功能 / bug fix | Issue + PR；更新 Design Doc / Docs（若用户可见） |
-| 跨多 PR 大任务 | `docs/plans/` 计划文档 |
 
-模板：`docs/rfc/_template.md`、`docs/adr/_template.md`、`docs/spec/_template.md`、`docs/design/_template.md`。
+模板：`docs/adr/_template.md`、`docs/design/_template.md`。
 
 **无根级 CHANGELOG** — 发版时更新 [`CONTRIBUTING.md`](../../CONTRIBUTING.md) 版本表。
 
@@ -75,10 +75,10 @@ Skymly/Observables/
 4. [ ] 建立 `*.R3.SourceGenerators` 与 `*.Reactive.SourceGenerators`
 5. [ ] 建立 `*.Package`，产出两个 NuGet 包
 6. [ ] 在 `eng/Observables.BuildManifest.json` 登记 pack / test / smoke
-7. [ ] 分配诊断段（如 `OBS10xxx` 须先扩展 `AGENTS.md` 段表并走 RFC）
+7. [ ] 分配诊断段（如 `OBS10xxx` 须先扩展 `AGENTS.md` 段表并记 ADR）
 8. [ ] 各域 `AnalyzerReleases.Unshipped.md` 登记新诊断
 9. [ ] 生成器测试（Verify）+ 运行时 E2E + `eng/nuget-smoke` 消费者
-10. [ ] 三仓文档：主仓 `docs/spec/` + `docs/design/`、Observables.Docs 域页 + `diagnostics.md`、Samples 示例项目
+10. [ ] 三仓文档：主仓 `docs/design/`、Observables.Docs 域页 + `diagnostics.md`、Samples 示例项目
 11. [ ] `Observables.slnx` 增加 `/Feature/` 文件夹
 
 参考实现：**SignalR**（Hub 代理 + shproj + 双 Emitter 路径）或 **RestAPI**（HTTP 客户端）。

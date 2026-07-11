@@ -21,22 +21,19 @@ Thank you for your interest in Observables. This document covers contribution wo
 
 ### Documentation workflow
 
-See [docs/DOCUMENTATION.md](docs/DOCUMENTATION.md) for the full standard. Summary:
+See [docs/DOCUMENTATION.md](docs/DOCUMENTATION.md) for conventions.
 
-| Change | RFC | ADR | Docs to update |
-|--------|-----|-----|----------------|
-| New domain / diagnostic ID / breaking API | Required (Accepted) | Required | Spec + Design + Observables.Docs |
-| Non-breaking API (single domain) | — | — | Design Doc + Docs if user-visible |
-| Bug fix | — | — | Docs if user-visible |
+| Change | Docs to update |
+|--------|----------------|
+| New domain / breaking API | ADR + Design Doc + Observables.Docs |
+| New diagnostic ID | Design Doc + `AnalyzerReleases.Unshipped.md` + Observables.Docs |
+| Non-breaking API (single domain) | Design Doc + Docs if user-visible |
+| Bug fix | Docs if user-visible |
 
 | Directory | Purpose |
 |-----------|---------|
-| [docs/rfc/](docs/rfc/README.md) | Design proposals |
-| [docs/adr/](docs/adr/README.md) | Architecture decisions |
-| [docs/spec/](docs/spec/README.md) | Stable contracts (API, `OBSxxxx`) |
-| [docs/design/](docs/design/README.md) | Implementation details |
-| [docs/plans/](docs/plans/README.md) | Large multi-PR tasks |
-| [docs/review/](docs/review/README.md) | Milestone reviews |
+| [docs/adr/](docs/adr/README.md) | Architecture decisions (immutable) |
+| [docs/design/](docs/design/README.md) | Implementation details per domain |
 
 Release notes: update the version table in this file and [docs/ROADMAP.md](docs/ROADMAP.md) — there is no root `CHANGELOG.md` (see ROADMAP C3).
 

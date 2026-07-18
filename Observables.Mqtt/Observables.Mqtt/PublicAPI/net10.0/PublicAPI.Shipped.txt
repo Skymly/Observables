@@ -1,0 +1,58 @@
+#nullable enable
+Observables.Mqtt.DefaultMqttPayloadSerializer
+Observables.Mqtt.DefaultMqttPayloadSerializer.Deserialize(System.Type! payloadType, System.ReadOnlySpan<byte> payload) -> object!
+Observables.Mqtt.DefaultMqttPayloadSerializer.Serialize(System.Type! payloadType, object? value) -> byte[]!
+Observables.Mqtt.IMqttPayloadSerializer
+Observables.Mqtt.IMqttPayloadSerializer.Deserialize(System.Type! payloadType, System.ReadOnlySpan<byte> payload) -> object!
+Observables.Mqtt.IMqttPayloadSerializer.Serialize(System.Type! payloadType, object? value) -> byte[]!
+Observables.Mqtt.IMqttPayloadSerializer<T>
+Observables.Mqtt.IMqttPayloadSerializer<T>.Deserialize(System.ReadOnlySpan<byte> payload) -> T
+Observables.Mqtt.IMqttPayloadSerializer<T>.Serialize(T value) -> byte[]!
+Observables.Mqtt.JsonMqttPayloadSerializer
+Observables.Mqtt.JsonMqttPayloadSerializer.Deserialize(System.Type! payloadType, System.ReadOnlySpan<byte> payload) -> object!
+Observables.Mqtt.JsonMqttPayloadSerializer.Serialize(System.Type! payloadType, object? value) -> byte[]!
+Observables.Mqtt.MqttAttribute
+Observables.Mqtt.MqttObservable
+Observables.Mqtt.MqttPayloadSerializerExtensions
+Observables.Mqtt.MqttPayloadSerializers
+Observables.Mqtt.MqttPublishAttribute
+Observables.Mqtt.MqttPublishAttribute.MqttPublishAttribute(string? topicTemplate = null) -> void
+Observables.Mqtt.MqttPublishAttribute.TopicTemplate.get -> string?
+Observables.Mqtt.MqttService
+Observables.Mqtt.MqttSubscribeAttribute
+Observables.Mqtt.MqttSubscribeAttribute.MqttSubscribeAttribute(string? topicFilter = null) -> void
+Observables.Mqtt.MqttSubscribeAttribute.TopicFilter.get -> string?
+Observables.Mqtt.MqttTopic
+Observables.Mqtt.PrimitiveMqttPayloadSerializer
+Observables.Mqtt.PrimitiveMqttPayloadSerializer.Deserialize(System.Type! payloadType, System.ReadOnlySpan<byte> payload) -> object!
+Observables.Mqtt.PrimitiveMqttPayloadSerializer.Serialize(System.Type! payloadType, object? value) -> byte[]!
+static Observables.Mqtt.DefaultMqttPayloadSerializer.Instance.get -> Observables.Mqtt.DefaultMqttPayloadSerializer!
+static Observables.Mqtt.JsonMqttPayloadSerializer.DefaultOptions.get -> System.Text.Json.JsonSerializerOptions!
+static Observables.Mqtt.JsonMqttPayloadSerializer.Instance.get -> Observables.Mqtt.JsonMqttPayloadSerializer!
+static Observables.Mqtt.MqttObservable.FromPublish(MQTTnet.Client.IMqttClient! client, string! topic, byte[]! payload, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> R3.Observable<R3.Unit>!
+static Observables.Mqtt.MqttObservable.FromPublish(MQTTnet.Client.IMqttClient! client, string! topic, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> R3.Observable<R3.Unit>!
+static Observables.Mqtt.MqttObservable.FromSubscribe<T>(MQTTnet.Client.IMqttClient! client, string! topicFilter) -> R3.Observable<T>!
+static Observables.Mqtt.MqttPayloadSerializerExtensions.Deserialize(this Observables.Mqtt.IMqttPayloadSerializer! serializer, System.Type! payloadType, byte[]! payload) -> object!
+static Observables.Mqtt.MqttPayloadSerializerExtensions.Deserialize<T>(this Observables.Mqtt.IMqttPayloadSerializer! serializer, byte[]! payload) -> T
+static Observables.Mqtt.MqttPayloadSerializerExtensions.Deserialize<T>(this Observables.Mqtt.IMqttPayloadSerializer! serializer, System.ReadOnlySpan<byte> payload) -> T
+static Observables.Mqtt.MqttPayloadSerializerExtensions.Deserialize<T>(this Observables.Mqtt.IMqttPayloadSerializer<T>! serializer, byte[]! payload) -> T
+static Observables.Mqtt.MqttPayloadSerializerExtensions.Serialize<T>(this Observables.Mqtt.IMqttPayloadSerializer! serializer, T value) -> byte[]!
+static Observables.Mqtt.MqttPayloadSerializers.Current.get -> Observables.Mqtt.IMqttPayloadSerializer!
+static Observables.Mqtt.MqttPayloadSerializers.Current.set -> void
+static Observables.Mqtt.MqttPayloadSerializers.Deserialize(System.Type! payloadType, byte[]! payload) -> object!
+static Observables.Mqtt.MqttPayloadSerializers.Deserialize(System.Type! payloadType, System.ReadOnlySpan<byte> payload) -> object!
+static Observables.Mqtt.MqttPayloadSerializers.Deserialize<T>(byte[]! payload) -> T
+static Observables.Mqtt.MqttPayloadSerializers.Deserialize<T>(System.ReadOnlySpan<byte> payload) -> T
+static Observables.Mqtt.MqttPayloadSerializers.Register<T>(Observables.Mqtt.IMqttPayloadSerializer! serializer) -> void
+static Observables.Mqtt.MqttPayloadSerializers.Register<T>(Observables.Mqtt.IMqttPayloadSerializer<T>! serializer) -> void
+static Observables.Mqtt.MqttPayloadSerializers.Register<T>(System.Func<byte[]!, T>! deserialize, System.Func<T, byte[]!>! serialize) -> void
+static Observables.Mqtt.MqttPayloadSerializers.Serialize(System.Type! payloadType, object? value) -> byte[]!
+static Observables.Mqtt.MqttPayloadSerializers.Serialize<T>(T value) -> byte[]!
+static Observables.Mqtt.MqttPayloadSerializers.Unregister<T>() -> bool
+static Observables.Mqtt.MqttService.For(System.Type! mqttInterfaceType, MQTTnet.Client.IMqttClient! client) -> object!
+static Observables.Mqtt.MqttService.For<T>(MQTTnet.Client.IMqttClient! client) -> T
+static Observables.Mqtt.MqttService.RegisterGeneratedFactory(System.Type! mqttInterfaceType, System.Func<MQTTnet.Client.IMqttClient!, object!>! factory) -> void
+static Observables.Mqtt.MqttTopic.Format(string! template, params (string! Name, string? Value)[]! parameters) -> string!
+static Observables.Mqtt.PrimitiveMqttPayloadSerializer.Instance.get -> Observables.Mqtt.PrimitiveMqttPayloadSerializer!
+Observables.Mqtt.MqttAttribute.MqttAttribute(string? clientName = null) -> void
+Observables.Mqtt.MqttAttribute.ClientName.get -> string?

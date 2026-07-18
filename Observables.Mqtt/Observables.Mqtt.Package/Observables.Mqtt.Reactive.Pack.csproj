@@ -28,11 +28,11 @@
     <None Include="README.Mqtt.Reactive.pack.md" Pack="true" PackagePath="README.md" Visible="false" />
     <None Include="..\Observables.Mqtt\loc\zh-Hans\Observables.Mqtt.xml"
           Pack="true"
-          PackagePath="lib\netstandard2.0\zh-Hans\;lib\net8.0\zh-Hans\;lib\net9.0\zh-Hans\"
+          PackagePath="lib\netstandard2.0\zh-Hans\;lib\net8.0\zh-Hans\;lib\net9.0\zh-Hans\;lib\net10.0\zh-Hans\"
           Visible="false" />
     <None Include="..\Observables.Mqtt.Reactive\loc\zh-Hans\Observables.Mqtt.Reactive.xml"
           Pack="true"
-          PackagePath="lib\netstandard2.0\zh-Hans\;lib\net8.0\zh-Hans\;lib\net9.0\zh-Hans\"
+          PackagePath="lib\netstandard2.0\zh-Hans\;lib\net8.0\zh-Hans\;lib\net9.0\zh-Hans\;lib\net10.0\zh-Hans\"
           Visible="false" />
   </ItemGroup>
 

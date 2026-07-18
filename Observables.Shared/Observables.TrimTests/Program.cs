@@ -32,6 +32,13 @@ using R3;
 internal static class TrimProgram
 {
     /// <summary>
+    /// Entry point for the trim-analysis smoke program.
+    /// </summary>
+    [UnconditionalSuppressMessage("TrimAnalysis", "IL2026", Justification = "The entry point intentionally invokes the annotated trim smoke method.")]
+    [UnconditionalSuppressMessage("AOT", "IL3050", Justification = "The entry point intentionally invokes the annotated trim smoke method.")]
+    public static void Main() => RunTrimSmoke();
+
+    /// <summary>
     /// Exercises every domain's <c>XxxService.For&lt;T&gt;()</c> factory.
     /// Annotated with <see cref="RequiresUnreferencedCodeAttribute"/> and
     /// <see cref="RequiresDynamicCodeAttribute"/> because RestAPI's
@@ -43,7 +50,7 @@ internal static class TrimProgram
     /// </summary>
     [RequiresUnreferencedCode("Calls RestService which uses reflection on interface methods and DTO types.")]
     [RequiresDynamicCode("Calls RestService which dynamically creates generated client types.")]
-    public static void Main()
+    private static void RunTrimSmoke()
     {
         // RestAPI — most Requires* annotations (JSON serialisation + reflection).
         var userApi = RestService.For<Observables.TrimTests.RestAPI.ITrimUserApi>(

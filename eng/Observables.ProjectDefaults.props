@@ -53,20 +53,20 @@
     <_ObsIsDomainRuntimeProject>false</_ObsIsDomainRuntimeProject>
     <_ObsIsDomainRuntimeProject Condition="'$(_ObsIsDomainFolder)' == 'true' and '$(_ObsIsGeneratorProject)' != 'true' and '$(_ObsIsTestProject)' != 'true' and '$(_ObsIsHttpClientFactoryProject)' != 'true'">true</_ObsIsDomainRuntimeProject>
     <_ObsIsNetStandard20Project>false</_ObsIsNetStandard20Project>
-    <_ObsIsNetStandard20Project Condition="'$(_ObsIsSharedProject)' == 'true' and '$(_ObsIsTestProject)' != 'true'">true</_ObsIsNetStandard20Project>
+    <_ObsIsNetStandard20Project Condition="'$(_ObsIsSharedProject)' == 'true' and '$(_ObsIsTestProject)' != 'true' and '$(MSBuildProjectName)' != 'Observables.TrimTests'">true</_ObsIsNetStandard20Project>
     <_ObsIsNetStandard20Project Condition="'$(_ObsIsEventsPropsProject)' == 'true'">true</_ObsIsNetStandard20Project>
     <_ObsIsNetStandard20Project Condition="'$(_ObsIsEventsPackProject)' == 'true'">true</_ObsIsNetStandard20Project>
   </PropertyGroup>
 
   <!-- Domain runtime + pack (RestAPI / SignalR / Mqtt / WebSocket) -->
   <PropertyGroup Condition="'$(ObservablesSkipProjectDefaults)' != 'true' and '$(_ObsIsDomainRuntimeProject)' == 'true'">
-    <TargetFrameworks>netstandard2.0;net8.0;net9.0</TargetFrameworks>
+    <TargetFrameworks>netstandard2.0;net8.0;net9.0;net10.0</TargetFrameworks>
     <IsPackable Condition="'$(IsPackable)' == ''">false</IsPackable>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <NoWarn>$(NoWarn);CS1591</NoWarn>
   </PropertyGroup>
 
-  <PropertyGroup Condition="'$(ObservablesSkipProjectDefaults)' != 'true' and '$(_ObsIsDomainRuntimeProject)' == 'true' and ($(TargetFramework.StartsWith('net8.0')) or $(TargetFramework.StartsWith('net9.0')))">
+  <PropertyGroup Condition="'$(ObservablesSkipProjectDefaults)' != 'true' and '$(_ObsIsDomainRuntimeProject)' == 'true' and ($(TargetFramework.StartsWith('net8.0')) or $(TargetFramework.StartsWith('net9.0')) or $(TargetFramework.StartsWith('net10.0')))">
     <IsAotCompatible>true</IsAotCompatible>
     <PublishAotSupported>true</PublishAotSupported>
     <IsTrimmable>true</IsTrimmable>
@@ -74,7 +74,7 @@
 
   <!-- HttpClientFactory extension -->
   <PropertyGroup Condition="'$(ObservablesSkipProjectDefaults)' != 'true' and '$(_ObsIsHttpClientFactoryProject)' == 'true'">
-    <TargetFrameworks>net8.0;net9.0</TargetFrameworks>
+    <TargetFrameworks>net8.0;net9.0;net10.0</TargetFrameworks>
     <IsPackable Condition="'$(IsPackable)' == ''">false</IsPackable>
   </PropertyGroup>
 
@@ -92,7 +92,7 @@
 
   <!-- Runtime E2E tests -->
   <PropertyGroup Condition="'$(ObservablesSkipProjectDefaults)' != 'true' and '$(_ObsIsMultiTfmTestProject)' == 'true'">
-    <TargetFrameworks>net8.0;net9.0</TargetFrameworks>
+    <TargetFrameworks>net8.0;net9.0;net10.0</TargetFrameworks>
     <IsPackable>false</IsPackable>
     <TestTfmsInParallel>false</TestTfmsInParallel>
   </PropertyGroup>

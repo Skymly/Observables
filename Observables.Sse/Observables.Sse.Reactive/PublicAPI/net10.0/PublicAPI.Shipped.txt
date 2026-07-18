@@ -1,0 +1,3 @@
+#nullable enable
+Observables.Sse.Reactive.SystemReactiveSseAdapter
+static Observables.Sse.Reactive.SystemReactiveSseAdapter.FromEvent<T>(Observables.Sse.SseConnection! connection, string! eventName) -> System.IObservable<T>!

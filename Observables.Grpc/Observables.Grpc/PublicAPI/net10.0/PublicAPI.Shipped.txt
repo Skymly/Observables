@@ -1,0 +1,28 @@
+#nullable enable
+Observables.Grpc.GrpcAttribute
+Observables.Grpc.GrpcAttribute.GrpcAttribute(string? serviceName = null) -> void
+Observables.Grpc.GrpcAttribute.ServiceName.get -> string?
+Observables.Grpc.GrpcClientStreamAttribute
+Observables.Grpc.GrpcClientStreamAttribute.GrpcClientStreamAttribute(string? methodName = null) -> void
+Observables.Grpc.GrpcClientStreamAttribute.MethodName.get -> string?
+Observables.Grpc.GrpcDuplexAttribute
+Observables.Grpc.GrpcDuplexAttribute.GrpcDuplexAttribute(string? methodName = null) -> void
+Observables.Grpc.GrpcDuplexAttribute.MethodName.get -> string?
+Observables.Grpc.GrpcMarshallers
+Observables.Grpc.GrpcObservable
+Observables.Grpc.GrpcServerStreamAttribute
+Observables.Grpc.GrpcServerStreamAttribute.GrpcServerStreamAttribute(string? methodName = null) -> void
+Observables.Grpc.GrpcServerStreamAttribute.MethodName.get -> string?
+Observables.Grpc.GrpcService
+Observables.Grpc.GrpcUnaryAttribute
+Observables.Grpc.GrpcUnaryAttribute.GrpcUnaryAttribute(string? methodName = null) -> void
+Observables.Grpc.GrpcUnaryAttribute.MethodName.get -> string?
+static Observables.Grpc.GrpcMarshallers.ForMessage<T>() -> Grpc.Core.Marshaller<T!>!
+static Observables.Grpc.GrpcObservable.FromClientStreaming<TRequest, TResponse>(Grpc.Core.CallInvoker! invoker, Grpc.Core.Method<TRequest!, TResponse!>! method, R3.Observable<TRequest!>! requests, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> R3.Observable<TResponse!>!
+static Observables.Grpc.GrpcObservable.FromDuplexStreaming<TRequest, TResponse>(Grpc.Core.CallInvoker! invoker, Grpc.Core.Method<TRequest!, TResponse!>! method, R3.Observable<TRequest!>! requests, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> R3.Observable<TResponse!>!
+static Observables.Grpc.GrpcObservable.FromServerStreaming<TRequest, TResponse>(Grpc.Core.CallInvoker! invoker, Grpc.Core.Method<TRequest!, TResponse!>! method, TRequest! request, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> R3.Observable<TResponse!>!
+static Observables.Grpc.GrpcObservable.FromUnary<TRequest, TResponse>(Grpc.Core.CallInvoker! invoker, Grpc.Core.Method<TRequest!, TResponse!>! method, TRequest! request, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> R3.Observable<TResponse!>!
+static Observables.Grpc.GrpcService.For(System.Type! grpcInterfaceType, Grpc.Core.CallInvoker! invoker) -> object!
+static Observables.Grpc.GrpcService.For<T>(Grpc.Core.CallInvoker! invoker) -> T
+static Observables.Grpc.GrpcService.RegisterGeneratedFactory(System.Type! grpcInterfaceType, System.Func<Grpc.Core.CallInvoker!, object!>! factory) -> void
+static readonly Observables.Grpc.GrpcMarshallers.String -> Grpc.Core.Marshaller<string!>!

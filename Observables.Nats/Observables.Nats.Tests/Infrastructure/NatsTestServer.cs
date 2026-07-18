@@ -75,30 +75,57 @@ public sealed class NatsTestServer : IAsyncDisposable
         var exePath = Path.Combine(root, exeName);
         if (File.Exists(exePath))
         {
+            EnsureExecutable(exePath);
             return exePath;
         }
 
         Directory.CreateDirectory(root);
-        var asset = OperatingSystem.IsWindows()
+        var archive = OperatingSystem.IsWindows()
             ? $"nats-server-{NatsServerVersion}-windows-amd64.zip"
             : OperatingSystem.IsLinux()
-                ? $"nats-server-{NatsServerVersion}-linux-amd64.zip"
+                ? $"nats-server-{NatsServerVersion}-linux-amd64.tar.gz"
                 : throw new PlatformNotSupportedException("E2E NATS tests require Windows or Linux CI agents.");
 
-        var zipPath = Path.Combine(root, asset);
-        if (!File.Exists(zipPath))
+        var archivePath = Path.Combine(root, archive);
+        if (!File.Exists(archivePath))
         {
             var downloadUrl =
-                $"https://github.com/nats-io/nats-server/releases/download/{NatsServerVersion}/{asset}";
+                $"https://github.com/nats-io/nats-server/releases/download/{NatsServerVersion}/{archive}";
             using var client = new HttpClient();
             await using var stream = await client
                 .GetStreamAsync(downloadUrl, cancellationToken)
                 .ConfigureAwait(false);
-            await using var file = File.Create(zipPath);
+            await using var file = File.Create(archivePath);
             await stream.CopyToAsync(file, cancellationToken).ConfigureAwait(false);
         }
 
-        ZipFile.ExtractToDirectory(zipPath, root, overwriteFiles: true);
+        if (OperatingSystem.IsWindows())
+        {
+            ZipFile.ExtractToDirectory(archivePath, root, overwriteFiles: true);
+        }
+        else
+        {
+            using var extraction = Process.Start(
+                new ProcessStartInfo
+                {
+                    FileName = "tar",
+                    UseShellExecute = false,
+                    ArgumentList =
+                    {
+                        "-xzf",
+                        archivePath,
+                        "-C",
+                        root,
+                    },
+                }) ?? throw new InvalidOperationException("Failed to start tar for NATS server extraction.");
+            await extraction.WaitForExitAsync(cancellationToken).ConfigureAwait(false);
+            if (extraction.ExitCode != 0)
+            {
+                throw new InvalidOperationException(
+                    $"tar failed to extract NATS server archive with exit code {extraction.ExitCode}.");
+            }
+        }
+
         var extracted = Directory.GetFiles(root, exeName, SearchOption.AllDirectories).FirstOrDefault();
         if (extracted is not null && !string.Equals(extracted, exePath, StringComparison.OrdinalIgnoreCase))
         {
@@ -110,7 +137,21 @@ public sealed class NatsTestServer : IAsyncDisposable
             throw new FileNotFoundException("nats-server executable not found after extract.", exePath);
         }
 
+        EnsureExecutable(exePath);
         return exePath;
+    }
+
+    static void EnsureExecutable(string path)
+    {
+        if (!OperatingSystem.IsLinux())
+        {
+            return;
+        }
+
+        var mode = File.GetUnixFileMode(path);
+        File.SetUnixFileMode(
+            path,
+            mode | UnixFileMode.UserExecute | UnixFileMode.GroupExecute | UnixFileMode.OtherExecute);
     }
 
     static int ReserveFreeTcpPort()

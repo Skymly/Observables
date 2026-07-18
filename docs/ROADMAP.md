@@ -204,8 +204,8 @@ Grpc 两包已于 **`0.1.0`**（`v0.1.0-preview6` tag）发布至 nuget.org 与 
 |---|--------|--------|------|
 | ~~E6~~ | ~~补未测试诊断用例~~ | ~~L~~ | **已完成**：审计 **60** 个描述符；**51/51** 个实际可触发的用户可行动诊断均有负面测试，RestAPI OBS3004 等误报风险分支保留正向回归；8 个内部 fail-safe 仅通过 shared/focused 测试验证。OBS7004 当前无任何报告分支，未伪造生产触发器，留待删除或补语义后再覆盖 |
 | ~~E7~~ | ~~测试基础设施去重（15 份 GeneratorTestHarness）~~ | ~~M~~ | **已完成**：在 `Observables.TestSupport` 增加配置驱动的 `GeneratorHarness`、`HarnessDocumentBuilder`、`MetadataReferenceBuilder` 与 Snapshot preset；15 个域测试 Harness 保留域特化配置，同时共享执行、文档和引用组装逻辑 |
-| E8 | 边界场景测试（ref struct / 嵌套类型 / ref 返回） | M | 无测试覆盖 ref struct 参数/返回值、嵌套类型、ref 返回类型；泛型测试仅 Events 域。至少在 RestAPI 和一个 IO 域验证 |
-| E9 | CI 多 OS 矩阵 | S | `.github/workflows/ci.yml` 所有 job 均 `windows-latest`。扩展为 `[windows-latest, ubuntu-latest]`，至少跑 `Ci` 目标 |
+| ~~E8~~ | ~~边界场景测试（ref struct / 嵌套类型 / ref 返回）~~ | ~~M~~ | **已完成**：RestAPI（PR #123）与 WebSocket R3/Reactive（PR #125）覆盖嵌套接口、`ref struct` 参数及 `ref` 返回值边界；测试锁定当前生成器行为并验证生成代码编译结果 |
+| ~~E9~~ | ~~CI 多 OS 矩阵~~ | ~~S~~ | **已完成**：PR #127 增加 Windows/Ubuntu `Ci` 矩阵、Ubuntu actionlint 校验，并修复 CI 矩阵门控与 workflow 变更过滤 |
 | E10 | 评估 net10.0 TFM 覆盖 | S | CI 已装 10.0.300 SDK，但域运行时仅 `netstandard2.0;net8.0;net9.0`。评估加入 `net10.0` 及 AOT/trim 标记条件 |
 
 #### P3-D — 长期改进（按需）

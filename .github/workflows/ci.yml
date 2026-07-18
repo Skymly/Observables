@@ -18,6 +18,72 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  ci-full:
+    name: Full CI (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, ubuntu-latest]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET SDKs
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: |
+            8.0.x
+            9.0.x
+            10.0.300
+
+      - name: Cache NuGet packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('**/Directory.Packages.props', '**/global.json') }}
+          restore-keys: |
+            ${{ runner.os }}-nuget-
+
+      - name: Run full CI via Nuke
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          dotnet run --project build/_build.csproj -- --target Ci --configuration Release 2>&1 | Tee-Object -FilePath ci-${{ matrix.os }}.log
+
+      - name: Upload CI log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ci-log-${{ matrix.os }}
+          path: ci-${{ matrix.os }}.log
+          if-no-files-found: warn
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-${{ matrix.os }}
+          path: TestResults/
+          if-no-files-found: warn
+
+  actionlint:
+    name: Lint GitHub Actions
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install actionlint
+        shell: bash
+        run: |
+          version=1.7.12
+          curl --fail --silent --show-error --location \
+            "https://github.com/rhysd/actionlint/releases/download/v${version}/actionlint_${version}_linux_amd64.tar.gz" \
+            | tar -xz -C "$RUNNER_TEMP"
+          echo "$RUNNER_TEMP" >> "$GITHUB_PATH"
+
+      - name: Lint workflows
+        run: actionlint .github/workflows/*.yml
+
   changes:
     name: Detect changed domains
     runs-on: windows-latest
@@ -140,9 +206,9 @@ jobs:
     steps:
       - name: Skip if domain not changed and not shared
         if: |
-          (needs.changes.outputs.${{ matrix.domain }} == 'true'
+          (needs.changes.outputs[matrix.domain] == 'true'
            || needs.changes.outputs.shared == 'true')
-          && needs.changes.outputs.${{ matrix.domain }} != 'false'
+          && needs.changes.outputs[matrix.domain] != 'false'
         id: gate
         run: echo "Proceeding with ${{ matrix.domain }}"
 
@@ -199,7 +265,7 @@ jobs:
     steps:
       - name: Skip if domain not changed, push event skipped, or PR missing pack label
         if: |
-          needs.changes.outputs.${{ matrix.domain }} == 'true'
+          needs.changes.outputs[matrix.domain] == 'true'
           && (github.event_name == 'push' || github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'pack')))
         id: gate
         run: echo "Proceeding with pack ${{ matrix.domain }}"

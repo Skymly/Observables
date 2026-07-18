@@ -33,6 +33,8 @@
 
     <Project Path="Observables.Shared/Observables.Analyzers.Tests/Observables.Analyzers.Tests.csproj" />
 
+    <Project Path="Observables.Shared/Observables.TestSupport/Observables.TestSupport.csproj" />
+
     <Project Path="Observables.Shared/Observables.TrimTests/Observables.TrimTests.csproj" />
 
   </Folder>

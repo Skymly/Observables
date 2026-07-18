@@ -19,6 +19,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\Observables.Shared\Observables.TestSupport\Observables.TestSupport.csproj" />
     <ProjectReference Include="..\Observables.RestAPI\Observables.RestAPI.csproj" />
     <ProjectReference Include="..\Observables.RestAPI.R3.SourceGenerators\Observables.RestAPI.R3.SourceGenerators.csproj" />
     <ProjectReference Include="..\Observables.RestAPI.Reactive.SourceGenerators\Observables.RestAPI.Reactive.SourceGenerators.csproj" />

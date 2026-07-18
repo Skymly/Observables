@@ -18,6 +18,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\Observables.Shared\Observables.TestSupport\Observables.TestSupport.csproj" />
     <ProjectReference Include="..\Observables.Sse\Observables.Sse.csproj" />
     <ProjectReference Include="..\Observables.Sse.R3.SourceGenerators\Observables.Sse.R3.SourceGenerators.csproj" />
   </ItemGroup>

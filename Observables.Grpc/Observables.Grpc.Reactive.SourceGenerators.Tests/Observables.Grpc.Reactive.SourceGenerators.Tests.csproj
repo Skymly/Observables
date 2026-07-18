@@ -18,6 +18,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\Observables.Shared\Observables.TestSupport\Observables.TestSupport.csproj" />
     <ProjectReference Include="..\Observables.Grpc\Observables.Grpc.csproj" />
     <ProjectReference Include="..\Observables.Grpc.Reactive\Observables.Grpc.Reactive.csproj" />
     <ProjectReference Include="..\Observables.Grpc.Reactive.SourceGenerators\Observables.Grpc.Reactive.SourceGenerators.csproj" />

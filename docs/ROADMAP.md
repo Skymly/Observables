@@ -206,7 +206,7 @@ Grpc 两包已于 **`0.1.0`**（`v0.1.0-preview6` tag）发布至 nuget.org 与 
 | ~~E7~~ | ~~测试基础设施去重（15 份 GeneratorTestHarness）~~ | ~~M~~ | **已完成**：在 `Observables.TestSupport` 增加配置驱动的 `GeneratorHarness`、`HarnessDocumentBuilder`、`MetadataReferenceBuilder` 与 Snapshot preset；15 个域测试 Harness 保留域特化配置，同时共享执行、文档和引用组装逻辑 |
 | ~~E8~~ | ~~边界场景测试（ref struct / 嵌套类型 / ref 返回）~~ | ~~M~~ | **已完成**：RestAPI（PR #123）与 WebSocket R3/Reactive（PR #125）覆盖嵌套接口、`ref struct` 参数及 `ref` 返回值边界；测试锁定当前生成器行为并验证生成代码编译结果 |
 | ~~E9~~ | ~~CI 多 OS 矩阵~~ | ~~S~~ | **已完成**：PR #127 增加 Windows/Ubuntu `Ci` 矩阵、Ubuntu actionlint 校验，并修复 CI 矩阵门控与 workflow 变更过滤 |
-| E10 | 评估 net10.0 TFM 覆盖 | S | CI 已装 10.0.300 SDK，但域运行时仅 `netstandard2.0;net8.0;net9.0`。评估加入 `net10.0` 及 AOT/trim 标记条件 |
+| ~~E10~~ | ~~评估 net10.0 TFM 覆盖~~ | ~~S~~ | **已完成**：域运行时与 HttpClientFactory 扩展增加 `net10.0`，AOT/trim 标记覆盖 net8/net9/net10；补齐 14 个运行时项目的 net10 Public API 基线、包内本地化 XML 路径，并将 E2E/TrimTests 纳入 net10。全解决方案构建 0 警告，net8/net10 trim publish 均通过 |
 
 #### P3-D — 长期改进（按需）
 

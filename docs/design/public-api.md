@@ -22,7 +22,7 @@ Both files start with `#nullable enable` so nullable annotations appear in the b
 
 ## Multi-targeting
 
-Domain runtimes target `netstandard2.0;net8.0;net9.0`.
+Domain runtimes target `netstandard2.0;net8.0;net9.0;net10.0`.
 
 PublicApiAnalyzers **3.3.x** expects a **complete** public API list **per TFM** (it does not merge a root file with TFM-specific supplements). Each runtime project therefore keeps:
 
@@ -32,9 +32,10 @@ PublicAPI/
   netstandard2.0/PublicAPI.Unshipped.txt
   net8.0/...
   net9.0/...
+  net10.0/...
 ```
 
-Some members exist only on newer TFMs (for example `JsonNatsPayloadSerializer`, RestAPI `HttpVersionPolicy` settings). Those lines appear only in the `net8.0` / `net9.0` files.
+Some members exist only on newer TFMs (for example `JsonNatsPayloadSerializer`, RestAPI `HttpVersionPolicy` settings). Those lines appear only in the `net8.0` / `net9.0` / `net10.0` files.
 
 ## Regenerating a baseline (maintainers)
 

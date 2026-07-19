@@ -45,5 +45,6 @@
 |------|------|
 | 库使用者 | `Observables.Docs` |
 | 维护者 / 深度 API | 本目录 `docs/` |
+| 真实应用 Showcase | [GitPulse](https://github.com/Skymly/GitPulse) |
 | 可运行示例 | `Observables.Samples` |
 | AI 约束 | 根 `AGENTS.md` |

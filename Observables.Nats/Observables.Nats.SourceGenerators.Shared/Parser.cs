@@ -15,14 +15,6 @@ internal static class Parser
 
     static readonly Regex PlaceholderRegex = new(@"\{([^}/]+)\}", RegexOptions.Compiled);
 
-#if NATS_R3
-    const string ObservableMetadataName = "R3.Observable`1";
-    const string UnitMetadataName = "R3.Unit";
-#else
-    const string ObservableMetadataName = "System.IObservable`1";
-    const string UnitMetadataName = "System.Reactive.Unit";
-#endif
-
     public static (List<Diagnostic> diagnostics, ContextGenerationModel model) GenerateNatsStubs(
         CSharpCompilation compilation,
         ImmutableArray<InterfaceDeclarationSyntax> candidateInterfaces,
@@ -39,8 +31,8 @@ internal static class Parser
         var publishAttribute = compilation.GetTypeByMetadataName("Observables.Nats.NatsPublishAttribute");
         var requestAttribute = compilation.GetTypeByMetadataName("Observables.Nats.NatsRequestAttribute");
         var subscribeAttribute = compilation.GetTypeByMetadataName("Observables.Nats.NatsSubscribeAttribute");
-        var observableType = compilation.GetTypeByMetadataName(ObservableMetadataName);
-        var unitType = compilation.GetTypeByMetadataName(UnitMetadataName);
+        var observableType = compilation.GetTypeByMetadataName(BackendTokens.ObservableMetadataName);
+        var unitType = compilation.GetTypeByMetadataName(BackendTokens.UnitMetadataName);
 
         var interfaces = new List<NatsInterfaceModel>();
 
@@ -111,11 +103,7 @@ internal static class Parser
                         $"{className}.Nats.g.cs",
                         className,
                         ifaceSymbol.ToDisplayString(DisplayFormat),
-#if NATS_R3
-                        "Observables.Nats.Generated",
-#else
-                        "Observables.Nats.Reactive.Generated",
-#endif
+                        BackendTokens.QualifyGeneratedNamespace("Observables.Nats"),
                         members.ToImmutableEquatableArray(),
                         nullable));
             }
@@ -548,11 +536,7 @@ internal static class Parser
         ObservableReturnTypeParser.TryParse(
             returnType,
             compilation,
-#if NATS_R3
-            isR3Generator: true,
-#else
-            isR3Generator: false,
-#endif
+            isR3Generator: BackendTokens.IsR3,
             reactiveAdapterMetadataName: "Observables.Nats.Reactive.SystemReactiveNatsAdapter",
             observableType,
             unitType,

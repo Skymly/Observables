@@ -12,14 +12,6 @@ internal static class Parser
         SymbolDisplayFormat.FullyQualifiedFormat.WithMiscellaneousOptions(
             SymbolDisplayMiscellaneousOptions.IncludeNullableReferenceTypeModifier);
 
-#if WEBSOCKET_R3
-    const string ObservableMetadataName = "R3.Observable`1";
-    const string UnitMetadataName = "R3.Unit";
-#else
-    const string ObservableMetadataName = "System.IObservable`1";
-    const string UnitMetadataName = "System.Reactive.Unit";
-#endif
-
     public static (List<Diagnostic> diagnostics, ContextGenerationModel model) GenerateWebSocketStubs(
         CSharpCompilation compilation,
         ImmutableArray<InterfaceDeclarationSyntax> candidateInterfaces,
@@ -37,8 +29,8 @@ internal static class Parser
         var receiveAttribute = compilation.GetTypeByMetadataName("Observables.WebSocket.WebSocketReceiveAttribute");
         var connectAttribute = compilation.GetTypeByMetadataName("Observables.WebSocket.WebSocketConnectAttribute");
         var closeAttribute = compilation.GetTypeByMetadataName("Observables.WebSocket.WebSocketCloseAttribute");
-        var observableType = compilation.GetTypeByMetadataName(ObservableMetadataName);
-        var unitType = compilation.GetTypeByMetadataName(UnitMetadataName);
+        var observableType = compilation.GetTypeByMetadataName(BackendTokens.ObservableMetadataName);
+        var unitType = compilation.GetTypeByMetadataName(BackendTokens.UnitMetadataName);
 
         var interfaces = new List<WebSocketInterfaceModel>();
 
@@ -113,11 +105,7 @@ internal static class Parser
                         $"{className}.WebSocket.g.cs",
                         className,
                         ifaceSymbol.ToDisplayString(DisplayFormat),
-#if WEBSOCKET_R3
-                        "Observables.WebSocket.Generated",
-#else
-                        "Observables.WebSocket.Reactive.Generated",
-#endif
+                        BackendTokens.QualifyGeneratedNamespace("Observables.WebSocket"),
                         members.ToImmutableEquatableArray(),
                         nullable));
             }
@@ -323,11 +311,7 @@ internal static class Parser
         ObservableReturnTypeParser.TryParse(
             returnType,
             compilation,
-#if WEBSOCKET_R3
-            isR3Generator: true,
-#else
-            isR3Generator: false,
-#endif
+            isR3Generator: BackendTokens.IsR3,
             reactiveAdapterMetadataName: "Observables.WebSocket.Reactive.SystemReactiveWebSocketAdapter",
             observableType,
             unitType,

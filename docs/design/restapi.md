@@ -322,7 +322,7 @@ Observables.RestAPI/
 | **`ModuleInitializer` 注册** | .NET 5+ 自动注册，AOT 友好；保留反射回退兼容旧框架 |
 | **`BodySerializationMethod` 镜像枚举** | 生成器（netstandard2.0）不引用运行时项目，用 internal 镜像枚举 + `int` 传递 |
 | **`#if NET6_0_OR_GREATER` 嵌入生成代码** | `HttpRequestMessage.Options` vs `Properties` 由消费者编译器选择 |
-| **`#if RESTAPI_R3` / `RESTAPI_REACTIVE`** | shproj 共享一份 Parser/Emitter，编译期切换后端 |
+| **`BackendTokens.IsR3` + `#if RESTAPI_R3`（Emitter）** | 返回类型分类与 IO 域共用 compile-time backend seam；Emitter 仍用域级 `#if` 切换发射文本 |
 | **`PathFragmentModel` readonly record struct** | 路径模板编译期拆分，常量段直接拼接，参数段运行时格式化 |
 | **`IApiResponse<T>` 可选不抛异常** | 需要检查状态码/头的场景用 `IApiResponse<T>`；需要抛异常用 `Task<T>` |
 | **HttpClientFactory 独立包** | DI 集成可选，不强制依赖 `Microsoft.Extensions.Http` |

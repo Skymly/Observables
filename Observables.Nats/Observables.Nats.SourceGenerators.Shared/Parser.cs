@@ -191,12 +191,15 @@ internal static class Parser
             return;
         }
 
-        if (!TryParseObservableReturn(
-                compilation,
+        if (!ObservableReturnTypeParser.TryParse(
                 method.ReturnType,
+                compilation,
+                "Observables.Nats.Reactive.SystemReactiveNatsAdapter",
                 observableType,
                 unitType,
-                boundary,
+                requiresUnitPayload: boundary == NatsBoundaryKind.Publish,
+                DiagnosticDescriptors.UnsupportedReturnType,
+                DiagnosticDescriptors.SystemReactiveNotReferenced,
                 method.Locations.FirstOrDefault(),
                 diagnostics,
                 out var resultType,
@@ -288,12 +291,15 @@ internal static class Parser
             return;
         }
 
-        if (!TryParseObservableReturn(
-                compilation,
+        if (!ObservableReturnTypeParser.TryParse(
                 property.Type,
+                compilation,
+                "Observables.Nats.Reactive.SystemReactiveNatsAdapter",
                 observableType,
                 unitType: null,
-                NatsBoundaryKind.Subscribe,
+                requiresUnitPayload: false,
+                DiagnosticDescriptors.UnsupportedReturnType,
+                DiagnosticDescriptors.SystemReactiveNotReferenced,
                 property.Locations.FirstOrDefault(),
                 diagnostics,
                 out var resultType,
@@ -522,31 +528,6 @@ internal static class Parser
         badLocation = attribute.ApplicationSyntaxReference?.GetSyntax().GetLocation();
         return false;
     }
-
-    static bool TryParseObservableReturn(
-        CSharpCompilation compilation,
-        ITypeSymbol returnType,
-        INamedTypeSymbol? observableType,
-        INamedTypeSymbol? unitType,
-        NatsBoundaryKind boundary,
-        Location? location,
-        List<Diagnostic> diagnostics,
-        out string resultTypeDisplay,
-        out string returnTypeDisplay) =>
-        ObservableReturnTypeParser.TryParse(
-            returnType,
-            compilation,
-            isR3Generator: BackendTokens.IsR3,
-            reactiveAdapterMetadataName: "Observables.Nats.Reactive.SystemReactiveNatsAdapter",
-            observableType,
-            unitType,
-            requiresUnitPayload: boundary == NatsBoundaryKind.Publish,
-            DiagnosticDescriptors.UnsupportedReturnType,
-            DiagnosticDescriptors.SystemReactiveNotReferenced,
-            location,
-            diagnostics,
-            out resultTypeDisplay,
-            out returnTypeDisplay);
 
     static (List<string> declarations, bool hasCancellationToken) BuildParameters(
         IMethodSymbol method)

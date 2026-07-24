@@ -146,10 +146,15 @@ internal static class Parser
 
         var eventName = GetEventName(property) ?? "message";
 
-        if (!TryParseObservableReturn(
-                compilation,
+        if (!ObservableReturnTypeParser.TryParse(
                 property.Type,
+                compilation,
+                "Observables.Sse.Reactive.SystemReactiveSseAdapter",
                 observableType,
+                unitType: null,
+                requiresUnitPayload: false,
+                DiagnosticDescriptors.UnsupportedReturnType,
+                DiagnosticDescriptors.SystemReactiveNotReferenced,
                 property.Locations.FirstOrDefault(),
                 diagnostics,
                 out var resultType,
@@ -166,29 +171,6 @@ internal static class Parser
                 returnDisplay,
                 resultType));
     }
-
-    static bool TryParseObservableReturn(
-        CSharpCompilation compilation,
-        ITypeSymbol returnType,
-        INamedTypeSymbol? observableType,
-        Location? location,
-        List<Diagnostic> diagnostics,
-        out string resultTypeDisplay,
-        out string returnTypeDisplay) =>
-        ObservableReturnTypeParser.TryParse(
-            returnType,
-            compilation,
-            isR3Generator: BackendTokens.IsR3,
-            reactiveAdapterMetadataName: "Observables.Sse.Reactive.SystemReactiveSseAdapter",
-            observableType,
-            unitType: null,
-            requiresUnitPayload: false,
-            DiagnosticDescriptors.UnsupportedReturnType,
-            DiagnosticDescriptors.SystemReactiveNotReferenced,
-            location,
-            diagnostics,
-            out resultTypeDisplay,
-            out returnTypeDisplay);
 
     static string? GetEventName(IPropertySymbol property)
     {

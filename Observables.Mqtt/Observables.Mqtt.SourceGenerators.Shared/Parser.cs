@@ -164,12 +164,15 @@ internal static class Parser
             return;
         }
 
-        if (!TryParseObservableReturn(
-                compilation,
+        if (!ObservableReturnTypeParser.TryParse(
                 method.ReturnType,
+                compilation,
+                "Observables.Mqtt.Reactive.SystemReactiveMqttAdapter",
                 observableType,
                 unitType,
-                MqttBoundaryKind.Publish,
+                requiresUnitPayload: true,
+                DiagnosticDescriptors.UnsupportedReturnType,
+                DiagnosticDescriptors.SystemReactiveNotReferenced,
                 method.Locations.FirstOrDefault(),
                 diagnostics,
                 out var resultType,
@@ -248,12 +251,15 @@ internal static class Parser
             return;
         }
 
-        if (!TryParseObservableReturn(
-                compilation,
+        if (!ObservableReturnTypeParser.TryParse(
                 property.Type,
+                compilation,
+                "Observables.Mqtt.Reactive.SystemReactiveMqttAdapter",
                 observableType,
                 unitType: null,
-                MqttBoundaryKind.Subscribe,
+                requiresUnitPayload: false,
+                DiagnosticDescriptors.UnsupportedReturnType,
+                DiagnosticDescriptors.SystemReactiveNotReferenced,
                 property.Locations.FirstOrDefault(),
                 diagnostics,
                 out var resultType,
@@ -405,31 +411,6 @@ internal static class Parser
         badLocation = attribute.ApplicationSyntaxReference?.GetSyntax().GetLocation();
         return false;
     }
-
-    static bool TryParseObservableReturn(
-        CSharpCompilation compilation,
-        ITypeSymbol returnType,
-        INamedTypeSymbol? observableType,
-        INamedTypeSymbol? unitType,
-        MqttBoundaryKind boundary,
-        Location? location,
-        List<Diagnostic> diagnostics,
-        out string resultTypeDisplay,
-        out string returnTypeDisplay) =>
-        ObservableReturnTypeParser.TryParse(
-            returnType,
-            compilation,
-            isR3Generator: BackendTokens.IsR3,
-            reactiveAdapterMetadataName: "Observables.Mqtt.Reactive.SystemReactiveMqttAdapter",
-            observableType,
-            unitType,
-            requiresUnitPayload: boundary == MqttBoundaryKind.Publish,
-            DiagnosticDescriptors.UnsupportedReturnType,
-            DiagnosticDescriptors.SystemReactiveNotReferenced,
-            location,
-            diagnostics,
-            out resultTypeDisplay,
-            out returnTypeDisplay);
 
     static (List<string> declarations, bool hasCancellationToken) BuildParameters(
         IMethodSymbol method)

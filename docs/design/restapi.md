@@ -33,6 +33,7 @@ RestAPI 域的运行时部分包含由 [Refit](https://github.com/reactiveui/ref
 ### 2.2 新模型（Path B）
 
 - **Parser** 在编译期从接口方法符号提取全部 HTTP 语义（HTTP 方法、路径模板、参数绑定、序列化方式、静态头、multipart 设置等）。
+- **返回类型**：HTTP 方法经域内 `RestApiReturnTypeClassifier`（`Classify` → `RestApiReturnClassification`）分类；Observable / `IObservable` 分支读 `BackendTokens.IsR3`（不并入共享 `ObservableReturnTypeParser`，见 ROADMAP C1）。
 - **Emitter** 直接生成 `HttpRequestMessage` 构建代码与 `RestApiBridge` 调用，生成代码是直观的命令式方法体。
 - **运行时**不再反射接口元数据；`RestApiBridge` 仅提供静态助手（路径/查询格式化、请求发送、序列化）。
 - **代理注册**通过 `ModuleInitializer` + `RestService.RegisterGeneratedFactory` 自动注册（.NET 5+）；旧路径 `Type.GetType` + `Activator.CreateInstance` 保留为回退。
@@ -255,14 +256,12 @@ public static class RestApiBridge
 
 ## 6. 双后端条件编译
 
-R3 与 System.Reactive 的切换通过 `#if` 编译指令实现：
+| 生成器项目 | `DefineConstants` | 返回类型分类（`RestApiReturnTypeClassifier`） | Emitter 行为 |
+|------------|-------------------|-----------------------------------------------|--------------|
+| `RestAPI.R3.SourceGenerators` | `RESTAPI_R3`（+ `OBSERVABLES_R3` via R3.props） | `BackendTokens.IsR3`：`Observable<T>` → `R3Observable`；`IObservable<T>` → OBS3005 | `#if RESTAPI_R3` → `R3.Observable.FromAsync(...)` |
+| `RestAPI.Reactive.SourceGenerators` | `RESTAPI_REACTIVE` | `BackendTokens.IsR3 == false`：`IObservable<T>` → `SystemReactiveObservable`；`Observable<T>` → OBS3003 | `#else` → `SystemReactiveObservableAdapter.FromAsync(...)` |
 
-| 生成器项目 | `DefineConstants` | Parser 行为 | Emitter 行为 |
-|------------|-------------------|-------------|--------------|
-| `RestAPI.R3.SourceGenerators` | `RESTAPI_R3` | `Observable<T>` → `R3Observable`；`IObservable<T>` → OBS3005 | `R3.Observable.FromAsync(...)` |
-| `RestAPI.Reactive.SourceGenerators` | `RESTAPI_REACTIVE` | `IObservable<T>` → `SystemReactiveObservable`；`Observable<T>` → OBS3003 | `SystemReactiveObservableAdapter.FromAsync(...)` |
-
-两生成器共享同一份 `Parser.cs` / `Emitter.cs`（shproj），通过 `#if` 切换后端特定逻辑。
+两生成器共享同一份 shproj：返回类型分类走 `BackendTokens.IsR3`；Emitter 仍用 `#if RESTAPI_R3` 切换发射文本。
 
 ## 7. 诊断（OBS3xxx）
 

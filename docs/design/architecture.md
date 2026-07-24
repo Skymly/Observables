@@ -67,7 +67,7 @@ flowchart LR
 | 运行时依赖 | `R3` 包 | `System.Reactive` + 域 `.Reactive` 桥接 |
 | 禁止 | R3 包引用 System.Reactive | Reactive 包引用 R3 |
 
-共享生成逻辑放在 `*.SourceGenerators.Shared`（`.projitems`），由两路生成器项目 Import；全库基础设施在 `Observables.Shared/Observables.SourceGenerators.Shared`（`BackendTokens`、`GeneratedSourceHeader`、`GeneratorFailSafe`、`DiagnosticHelpLink` 等），经 `Observables.SourceGenerators.SharedSource.props` 链接编译。IO 代理域 Parser 经 `BackendTokens` 读编译期后端；域特定 BridgeType / adapter 元数据仍留在各域 Emitter/Parser。
+共享生成逻辑放在 `*.SourceGenerators.Shared`（`.projitems`），由两路生成器项目 Import；全库基础设施在 `Observables.Shared/Observables.SourceGenerators.Shared`（`BackendTokens`、`GeneratedSourceHeader`、`GeneratorFailSafe`、`DiagnosticHelpLink` 等），经 `Observables.SourceGenerators.SharedSource.props` 链接编译。IO 代理域 Parser 经 `BackendTokens` 读编译期后端；返回类型校验经 `ObservableReturnTypeParser`（内部使用 `BackendTokens.IsR3`）；域特定 BridgeType / adapter 元数据仍留在各域 Emitter/Parser。
 
 ## 4. 源生成器管道（IO 域典型）
 

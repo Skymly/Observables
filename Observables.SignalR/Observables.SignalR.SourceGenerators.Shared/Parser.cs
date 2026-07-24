@@ -12,14 +12,6 @@ internal static class Parser
         SymbolDisplayFormat.FullyQualifiedFormat.WithMiscellaneousOptions(
             SymbolDisplayMiscellaneousOptions.IncludeNullableReferenceTypeModifier);
 
-#if SIGNALR_R3
-    const string ObservableMetadataName = "R3.Observable`1";
-    const string UnitMetadataName = "R3.Unit";
-#else
-    const string ObservableMetadataName = "System.IObservable`1";
-    const string UnitMetadataName = "System.Reactive.Unit";
-#endif
-
     public static (List<Diagnostic> diagnostics, ContextGenerationModel model) GenerateHubStubs(
         CSharpCompilation compilation,
         ImmutableArray<InterfaceDeclarationSyntax> candidateInterfaces,
@@ -37,8 +29,8 @@ internal static class Parser
         var sendAttribute = compilation.GetTypeByMetadataName("Observables.SignalR.HubSendAttribute");
         var streamAttribute = compilation.GetTypeByMetadataName("Observables.SignalR.HubStreamAttribute");
         var onAttribute = compilation.GetTypeByMetadataName("Observables.SignalR.HubOnAttribute");
-        var observableType = compilation.GetTypeByMetadataName(ObservableMetadataName);
-        var unitType = compilation.GetTypeByMetadataName(UnitMetadataName);
+        var observableType = compilation.GetTypeByMetadataName(BackendTokens.ObservableMetadataName);
+        var unitType = compilation.GetTypeByMetadataName(BackendTokens.UnitMetadataName);
 
         var interfaces = new List<HubInterfaceModel>();
 
@@ -118,11 +110,7 @@ internal static class Parser
                         $"{className}.SignalR.g.cs",
                         className,
                         ifaceSymbol.ToDisplayString(DisplayFormat),
-#if SIGNALR_R3
-                        "Observables.SignalR.Generated",
-#else
-                        "Observables.SignalR.Reactive.Generated",
-#endif
+                        BackendTokens.QualifyGeneratedNamespace("Observables.SignalR"),
                         members.ToImmutableEquatableArray(),
                         nullable));
             }
@@ -440,11 +428,7 @@ internal static class Parser
         ObservableReturnTypeParser.TryParse(
             returnType,
             compilation,
-#if SIGNALR_R3
-            isR3Generator: true,
-#else
-            isR3Generator: false,
-#endif
+            isR3Generator: BackendTokens.IsR3,
             reactiveAdapterMetadataName: "Observables.SignalR.Reactive.SystemReactiveSignalRAdapter",
             observableType,
             unitType,

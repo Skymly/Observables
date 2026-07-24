@@ -21,7 +21,13 @@ public sealed class NatsClientR3E2ETests(NatsTestServerFixture fixture)
 
         using var cts = new CancellationTokenSource(DefaultTimeout);
         var receive = hub.Ping.FirstAsync(cts.Token);
-        await connection.PublishAsync("e2e.ping", "hello", cancellationToken: cts.Token);
+        await NatsE2EHelpers.PublishUntilReceivedAsync(
+            async ct =>
+            {
+                await connection.PublishAsync("e2e.ping", "hello", cancellationToken: ct);
+            },
+            receive,
+            cts.Token);
 
         Assert.Equal("hello", await receive);
     }
@@ -36,8 +42,13 @@ public sealed class NatsClientR3E2ETests(NatsTestServerFixture fixture)
 
         using var cts = new CancellationTokenSource(DefaultTimeout);
         var receive = subHub.Ping.FirstAsync(cts.Token);
-        await Task.Delay(200, cts.Token);
-        await pubHub.PublishPing().FirstAsync(cts.Token);
+        await NatsE2EHelpers.PublishUntilReceivedAsync(
+            async ct =>
+            {
+                await pubHub.PublishPing().FirstAsync(ct);
+            },
+            receive,
+            cts.Token);
 
         var result = await receive;
         Assert.True(string.IsNullOrEmpty(result));

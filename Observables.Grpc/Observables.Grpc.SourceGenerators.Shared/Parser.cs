@@ -12,12 +12,6 @@ internal static class Parser
         SymbolDisplayFormat.FullyQualifiedFormat.WithMiscellaneousOptions(
             SymbolDisplayMiscellaneousOptions.IncludeNullableReferenceTypeModifier);
 
-#if GRPC_R3
-    const string ObservableMetadataName = "R3.Observable`1";
-#else
-    const string ObservableMetadataName = "System.IObservable`1";
-#endif
-
     public static (List<Diagnostic> diagnostics, ContextGenerationModel model) GenerateGrpcStubs(
         CSharpCompilation compilation,
         ImmutableArray<InterfaceDeclarationSyntax> candidateInterfaces,
@@ -35,7 +29,7 @@ internal static class Parser
         var serverStreamAttribute = compilation.GetTypeByMetadataName("Observables.Grpc.GrpcServerStreamAttribute");
         var clientStreamAttribute = compilation.GetTypeByMetadataName("Observables.Grpc.GrpcClientStreamAttribute");
         var duplexAttribute = compilation.GetTypeByMetadataName("Observables.Grpc.GrpcDuplexAttribute");
-        var observableType = compilation.GetTypeByMetadataName(ObservableMetadataName);
+        var observableType = compilation.GetTypeByMetadataName(BackendTokens.ObservableMetadataName);
 
         var interfaces = new List<GrpcInterfaceModel>();
 
@@ -110,11 +104,7 @@ internal static class Parser
                         $"{className}.Grpc.g.cs",
                         className,
                         ifaceSymbol.ToDisplayString(DisplayFormat),
-#if GRPC_R3
-                        "Observables.Grpc.Generated",
-#else
-                        "Observables.Grpc.Reactive.Generated",
-#endif
+                        BackendTokens.QualifyGeneratedNamespace("Observables.Grpc"),
                         serviceName,
                         members.ToImmutableEquatableArray(),
                         nullable));
@@ -248,11 +238,7 @@ internal static class Parser
         ObservableReturnTypeParser.TryParse(
             returnType,
             compilation,
-#if GRPC_R3
-            isR3Generator: true,
-#else
-            isR3Generator: false,
-#endif
+            isR3Generator: BackendTokens.IsR3,
             reactiveAdapterMetadataName: "Observables.Grpc.Reactive.SystemReactiveGrpcAdapter",
             observableType,
             unitType: null,

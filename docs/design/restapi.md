@@ -309,7 +309,7 @@ Observables.RestAPI/
 │   └── Observables.RestAPI.Reactive.Pack.csproj      # PackageId = Observables.RestAPI.Reactive
 ├── Observables.RestAPI.Tests/                        # 运行时测试
 ├── Observables.RestAPI.Reactive.Tests/               # Reactive 运行时测试
-├── Observables.RestAPI.GeneratorTests/               # 生成器快照测试（VerifyXunit）
+├── Observables.RestAPI.GeneratorTests/               # 生成器快照测试（VerifyXunit；R3 + Reactive 双 harness）
 └── Observables.RestAPI.HttpClientFactory.Tests/      # DI 扩展测试
 ```
 

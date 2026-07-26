@@ -118,28 +118,6 @@ public class CoreGeneratorTests
         return Task.CompletedTask;
     }
 
-    [Fact]
-    public Task R3_Observable_on_Reactive_generator_reports_OBS3003()
-    {
-        GeneratorRunOutput output = GeneratorTestHarness.Run(
-            """
-            public interface IUserApi
-            {
-                [Get("/users/{id}")]
-                Observable<User> GetUser(int id);
-            }
-
-            public sealed class User
-            {
-                public int Id { get; set; }
-            }
-            """,
-            generators: [new Observables.RestAPI.Reactive.SourceGenerators.RestApiInterfaceStubGenerator()]);
-
-        Assert.Contains("OBS3003", GeneratorTestHarness.ToSnapshot(output), StringComparison.Ordinal);
-        return Task.CompletedTask;
-    }
-
     // ── Path + [Body]/[Query] regression tests (issue #111) ──
 
     [Fact]

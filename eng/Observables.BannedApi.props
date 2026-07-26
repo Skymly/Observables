@@ -1,0 +1,13 @@
+<Project>
+
+  <!--
+    BannedApiAnalyzers for Roslyn components (generators / analyzers / code fixes).
+    Imported from Observables.SourceGenerators.props and Directory.Build.props (shared analyzers).
+  -->
+
+  <ItemGroup Condition="'$(ObservablesEnableBannedApiAnalyzers)' == 'true'">
+    <PackageReference Include="Microsoft.CodeAnalysis.BannedApiAnalyzers" PrivateAssets="all" />
+    <AdditionalFiles Include="$(MSBuildThisFileDirectory)BannedSymbols.Roslyn.txt" />
+  </ItemGroup>
+
+</Project>

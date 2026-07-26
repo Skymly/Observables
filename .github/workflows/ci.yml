@@ -84,6 +84,22 @@ jobs:
       - name: Lint workflows
         run: actionlint .github/workflows/*.yml
 
+  format-whitespace:
+    name: Format whitespace verify
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: |
+            8.0.x
+            10.0.300
+
+      - name: Verify whitespace (LF / trailing)
+        run: dotnet format whitespace Observables.slnx --verify-no-changes --verbosity diagnostic
+
   changes:
     name: Detect changed domains
     runs-on: windows-latest

@@ -214,7 +214,7 @@ Grpc 两包已于 **`0.1.0`**（`v0.1.0-preview6` tag）发布至 nuget.org 与 
 |---|--------|--------|------|
 | E11 | 架构总览文档 + 贡献者指南 | M | **已完成**：[`architecture.md`](design/architecture.md)、[`contributor.md`](design/contributor.md)；文档体系见 [`DOCUMENTATION.md`](DOCUMENTATION.md) |
 | ~~E12~~ | ~~真实应用 Showcase（GitPulse）~~ | ~~M~~ | **已完成（Showcase）**：[`GitPulse`](https://github.com/Skymly/GitPulse) 作为日常可用的 .NET MAUI GitHub 客户端，消费 `Observables.RestAPI.R3` + `Observables.Events.R3`。**Samples**：多数 IO 域已有进程内 LiveDemo（CI 跑）；NATS 默认 RegistrationDemo、`--live` 才真 I/O。更深端到端示例不作为 E12 验收门槛（见搁置 D8） |
-| E13 | BannedApiAnalyzers + CI `dotnet format --verify` | S | 防止生成器代码误用反射等不安全 API；CI 格式校验（与 D5 合并处理） |
+| ~~E13~~ | ~~BannedApiAnalyzers + CI `dotnet format whitespace --verify`~~ | ~~S~~ | **已完成**：生成器 / Analyzers / CodeFixes 启用 `Microsoft.CodeAnalysis.BannedApiAnalyzers`（`eng/BannedSymbols.Roslyn.txt`）；CI Ubuntu job `Format whitespace verify`（与 D5 合并）。全量 `dotnet format style` 因 RestAPI 等 block namespace（IDE0161）暂缓 |
 
 ### 搁置（等用户反馈或维护者有额外精力）
 
@@ -224,7 +224,7 @@ Grpc 两包已于 **`0.1.0`**（`v0.1.0-preview6` tag）发布至 nuget.org 与 
 | D2 | 代码签名 | EV 证书成本高，个人项目收益低 |
 | ~~D3~~ | ~~增量生成器缓存命中测试~~ | **已完成（全量覆盖）**：8 域 × R3 + Reactive = 15 个测试项目，45 个缓存测试全部通过；`ForAttributeWithMetadataName` 域（SignalR/Mqtt/WebSocket/Grpc/Sse/Nats）无关编辑→Cached，`CreateSyntaxProvider` 域（RestAPI/Events）无关编辑可能 Modified（预期行为） |
 | D4 | 异常处理统一（非 RestAPI 域补自定义异常） | 各域策略可能有意为之，强行统一风险高 |
-| D5 | CI 添加 `dotnet format --verify` | 本地 editorconfig 已控制，CI 增加价值有限 |
+| ~~D5~~ | ~~CI 添加 `dotnet format whitespace --verify`~~ | **已完成（并入 E13）**：Ubuntu CI job 校验 LF / trailing whitespace；全量 style format 仍暂缓 |
 | D6 | SignalR/Nats/Mqtt 桥接释放/竞态细节修复 | 低风险，等用户反馈 |
 | D7 | NuGet 徽章更新、Events 硬编码 AssemblyName | 功能正确，重构风险 > 收益 |
 | D8 | 6 域 Samples 更深端到端示例（超出当前进程内 LiveDemo） | Events/RestAPI Samples + GitPulse 已覆盖真实消费；SignalR/Mqtt/Grpc/WebSocket/Sse 已有 loopback/embedded LiveDemo，NATS 有 `--live`；再加深按需 |

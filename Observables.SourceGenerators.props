@@ -22,4 +22,9 @@
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp" PrivateAssets="all" Pack="false" />
   </ItemGroup>
 
+  <PropertyGroup>
+    <ObservablesEnableBannedApiAnalyzers>true</ObservablesEnableBannedApiAnalyzers>
+  </PropertyGroup>
+  <Import Project="$(MSBuildThisFileDirectory)eng\Observables.BannedApi.props" />
+
 </Project>

@@ -12,4 +12,11 @@
 
   <Import Project="eng\Observables.ProjectDefaults.props" />
 
+  <!-- Analyzers / code fixes: enable BannedApi (generators enable via Observables.SourceGenerators.props). -->
+  <PropertyGroup Condition="'$(MSBuildProjectName)' == 'Observables.Analyzers' or '$(MSBuildProjectName)' == 'Observables.CodeFixes'">
+    <ObservablesEnableBannedApiAnalyzers>true</ObservablesEnableBannedApiAnalyzers>
+  </PropertyGroup>
+  <Import Project="eng\Observables.BannedApi.props"
+          Condition="'$(MSBuildProjectName)' == 'Observables.Analyzers' or '$(MSBuildProjectName)' == 'Observables.CodeFixes'" />
+
 </Project>

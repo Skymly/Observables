@@ -1,0 +1,14 @@
+// Banned APIs for Observables Roslyn components (generators, analyzers, code fixes).
+// Prefer Roslyn symbols / emitted source over System.Reflection runtime APIs.
+
+T:System.Activator; Source generators and analyzers must not use Activator; emit code or use Roslyn APIs instead
+M:System.Reflection.Assembly.Load(System.String); Do not load assemblies dynamically in generators/analyzers
+M:System.Reflection.Assembly.Load(System.Reflection.AssemblyName); Do not load assemblies dynamically in generators/analyzers
+M:System.Reflection.Assembly.Load(System.Byte[]); Do not load assemblies dynamically in generators/analyzers
+M:System.Reflection.Assembly.LoadFrom(System.String); Do not load assemblies dynamically in generators/analyzers
+M:System.Reflection.Assembly.LoadFile(System.String); Do not load assemblies dynamically in generators/analyzers
+M:System.Type.GetType(System.String); Prefer Roslyn ITypeSymbol over Type.GetType
+M:System.Type.GetType(System.String,System.Boolean); Prefer Roslyn ITypeSymbol over Type.GetType
+M:System.Type.GetType(System.String,System.Boolean,System.Boolean); Prefer Roslyn ITypeSymbol over Type.GetType
+M:System.Reflection.MethodBase.Invoke(System.Object,System.Object[]); Do not invoke members via reflection in generators/analyzers
+M:System.Reflection.MethodBase.Invoke(System.Object,System.Reflection.BindingFlags,System.Reflection.Binder,System.Object[],System.Globalization.CultureInfo); Do not invoke members via reflection in generators/analyzers

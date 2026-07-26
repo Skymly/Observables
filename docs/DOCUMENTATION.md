@@ -13,7 +13,8 @@
 | **PR** | 变更审查、讨论 | GitHub Pull Requests |
 | **Release** | 版本历史 | GitHub Releases + `CONTRIBUTING.md` 版本表 |
 | **用户文档** | 使用指南、诊断说明 | [Observables.Docs](https://github.com/Skymly/Observables.Docs)（VitePress） |
-| **示例** | 可运行 demo | [Observables.Samples](https://github.com/Skymly/Observables.Samples) |
+| **真实应用 Showcase** | 日常可用的消费方应用 | [GitPulse](https://github.com/Skymly/GitPulse) |
+| **示例** | 可运行 demo / smoke | [Observables.Samples](https://github.com/Skymly/Observables.Samples) |
 
 **无独立 `CHANGELOG.md`**（ROADMAP C3）。
 

@@ -12,6 +12,7 @@
 |------|------|
 | 源码 | [github.com/Skymly/Observables](https://github.com/Skymly/Observables) |
 | 用户文档 | [Observables.Docs](https://skymly.github.io/Observables.Docs/) |
+| 真实应用 Showcase | [GitPulse](https://github.com/Skymly/GitPulse)（.NET MAUI · `Observables.RestAPI.R3` + `Observables.Events.R3`） |
 | 示例应用 | [Observables.Samples](https://github.com/Skymly/Observables.Samples) |
 | NuGet | [nuget.org/profiles/Skymly](https://www.nuget.org/profiles/Skymly) |
 | 贡献与发版 | [CONTRIBUTING.md](./CONTRIBUTING.md) |

@@ -12,14 +12,6 @@ internal static class Parser
         SymbolDisplayFormat.FullyQualifiedFormat.WithMiscellaneousOptions(
             SymbolDisplayMiscellaneousOptions.IncludeNullableReferenceTypeModifier);
 
-#if SIGNALR_R3
-    const string ObservableMetadataName = "R3.Observable`1";
-    const string UnitMetadataName = "R3.Unit";
-#else
-    const string ObservableMetadataName = "System.IObservable`1";
-    const string UnitMetadataName = "System.Reactive.Unit";
-#endif
-
     public static (List<Diagnostic> diagnostics, ContextGenerationModel model) GenerateHubStubs(
         CSharpCompilation compilation,
         ImmutableArray<InterfaceDeclarationSyntax> candidateInterfaces,
@@ -37,8 +29,8 @@ internal static class Parser
         var sendAttribute = compilation.GetTypeByMetadataName("Observables.SignalR.HubSendAttribute");
         var streamAttribute = compilation.GetTypeByMetadataName("Observables.SignalR.HubStreamAttribute");
         var onAttribute = compilation.GetTypeByMetadataName("Observables.SignalR.HubOnAttribute");
-        var observableType = compilation.GetTypeByMetadataName(ObservableMetadataName);
-        var unitType = compilation.GetTypeByMetadataName(UnitMetadataName);
+        var observableType = compilation.GetTypeByMetadataName(BackendTokens.ObservableMetadataName);
+        var unitType = compilation.GetTypeByMetadataName(BackendTokens.UnitMetadataName);
 
         var interfaces = new List<HubInterfaceModel>();
 
@@ -118,11 +110,7 @@ internal static class Parser
                         $"{className}.SignalR.g.cs",
                         className,
                         ifaceSymbol.ToDisplayString(DisplayFormat),
-#if SIGNALR_R3
-                        "Observables.SignalR.Generated",
-#else
-                        "Observables.SignalR.Reactive.Generated",
-#endif
+                        BackendTokens.QualifyGeneratedNamespace("Observables.SignalR"),
                         members.ToImmutableEquatableArray(),
                         nullable));
             }
@@ -191,12 +179,15 @@ internal static class Parser
             }
         }
 
-        if (!TryParseObservableReturn(
-                compilation,
+        if (!ObservableReturnTypeParser.TryParse(
                 method.ReturnType,
+                compilation,
+                "Observables.SignalR.Reactive.SystemReactiveSignalRAdapter",
                 observableType,
                 unitType,
-                boundary.Value,
+                requiresUnitPayload: boundary.Value == HubBoundaryKind.Send,
+                DiagnosticDescriptors.UnsupportedReturnType,
+                DiagnosticDescriptors.SystemReactiveNotReferenced,
                 method.Locations.FirstOrDefault(),
                 diagnostics,
                 out var resultType,
@@ -266,12 +257,15 @@ internal static class Parser
             return;
         }
 
-        if (!TryParseObservableReturn(
-                compilation,
+        if (!ObservableReturnTypeParser.TryParse(
                 property.Type,
+                compilation,
+                "Observables.SignalR.Reactive.SystemReactiveSignalRAdapter",
                 observableType,
                 unitType: null,
-                HubBoundaryKind.On,
+                requiresUnitPayload: false,
+                DiagnosticDescriptors.UnsupportedReturnType,
+                DiagnosticDescriptors.SystemReactiveNotReferenced,
                 property.Locations.FirstOrDefault(),
                 diagnostics,
                 out var resultType,
@@ -426,35 +420,6 @@ internal static class Parser
         (invokeAttribute is not null && HasAttribute(property, invokeAttribute))
         || (sendAttribute is not null && HasAttribute(property, sendAttribute))
         || (streamAttribute is not null && HasAttribute(property, streamAttribute));
-
-    static bool TryParseObservableReturn(
-        CSharpCompilation compilation,
-        ITypeSymbol returnType,
-        INamedTypeSymbol? observableType,
-        INamedTypeSymbol? unitType,
-        HubBoundaryKind boundary,
-        Location? location,
-        List<Diagnostic> diagnostics,
-        out string resultTypeDisplay,
-        out string returnTypeDisplay) =>
-        ObservableReturnTypeParser.TryParse(
-            returnType,
-            compilation,
-#if SIGNALR_R3
-            isR3Generator: true,
-#else
-            isR3Generator: false,
-#endif
-            reactiveAdapterMetadataName: "Observables.SignalR.Reactive.SystemReactiveSignalRAdapter",
-            observableType,
-            unitType,
-            requiresUnitPayload: boundary == HubBoundaryKind.Send,
-            DiagnosticDescriptors.UnsupportedReturnType,
-            DiagnosticDescriptors.SystemReactiveNotReferenced,
-            location,
-            diagnostics,
-            out resultTypeDisplay,
-            out returnTypeDisplay);
 
     static (List<string> declarations, List<string> names, bool hasCancellationToken) BuildParameters(
         IMethodSymbol method)

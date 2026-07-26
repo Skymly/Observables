@@ -4,6 +4,8 @@
 
   <PropertyGroup>
     <ObservablesReactiveBackend>R3</ObservablesReactiveBackend>
+    <!-- Shared BackendTokens + IO Parsers; domain-level *_R3 retained for BridgeType etc. -->
+    <DefineConstants>$(DefineConstants);OBSERVABLES_R3</DefineConstants>
   </PropertyGroup>
 
   <!-- R3 程序集引用在实现各生成器时按包添加，例如：

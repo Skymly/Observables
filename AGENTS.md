@@ -46,7 +46,7 @@
 | 项目 | 角色 |
 |------|------|
 | **`Observables.Core`** | 全库通用**运行时**（≥2 个 Feature 复用的 Attribute、枚举、接口等）。不引用 Roslyn。 |
-| **`Observables.SourceGenerators.Shared`** | 全库通用**生成器**基础设施（`GeneratedSourceHeader`、符号扩展、跨域可复用诊断如 Events `OBS2xxx`）。不引用 R3 / System.Reactive。 |
+| **`Observables.SourceGenerators.Shared`** | 全库通用**生成器**基础设施（`BackendTokens`、`GeneratedSourceHeader`、符号扩展、跨域可复用诊断如 Events `OBS2xxx`）。不引用 R3 / System.Reactive。 |
 | **`Observables.Analyzers`** | 独立分析器（非生成器）：全库诊断 `OBS0001`（R3/Reactive 包冲突）、各域空代理接口 `OBS4007`/`OBS5007`/`OBS6007`/`OBS7007` 等。随 `.Package` 以 analyzer 形式分发。 |
 | **`Observables.CodeFixes`** | 对应分析器/生成器诊断的 `CodeFixProvider` 与补全提供器。随 `.Package` 以 analyzer 形式分发。 |
 
@@ -192,7 +192,7 @@ Observables/
   - 标准：csproj 仅保留 `RootNamespace`、`Description`、`IsPackable`（pack 为 `true`）等差异属性；生成器 TFM 仍由 [`Observables.SourceGenerators.props`](Observables.SourceGenerators.props) 在 csproj 导入后覆盖。
 - **props 分层职责**
   - [`Observables.SourceGenerators.props`](Observables.SourceGenerators.props)：生成器/分析器公共项（`netstandard2.0`、`IsRoslynComponent`、`EnforceExtendedAnalyzerRules`、Roslyn 包引用、`ObservablesReactiveBackend=SystemReactive`）。
-  - [`Observables.SourceGenerators.R3.props`](Observables.SourceGenerators.R3.props)：导入上者并切 `ObservablesReactiveBackend=R3`。
+  - [`Observables.SourceGenerators.R3.props`](Observables.SourceGenerators.R3.props)：导入上者并切 `ObservablesReactiveBackend=R3`，同时注入 `OBSERVABLES_R3`（供共享 `BackendTokens` 与 IO 域 Parser；域级 `*_R3` 仍可用于 BridgeType 等）。
   - [`eng/Observables.Package.props`](eng/Observables.Package.props)：打包元数据 + **唯一 `Version`/`PackageVersion`**。
   - 标准：新增项目按用途导入对应 props，不在 csproj 复制其内容。
 

@@ -15,14 +15,6 @@ internal static class Parser
 
     static readonly Regex PlaceholderRegex = new(@"\{([^}/]+)\}", RegexOptions.Compiled);
 
-#if NATS_R3
-    const string ObservableMetadataName = "R3.Observable`1";
-    const string UnitMetadataName = "R3.Unit";
-#else
-    const string ObservableMetadataName = "System.IObservable`1";
-    const string UnitMetadataName = "System.Reactive.Unit";
-#endif
-
     public static (List<Diagnostic> diagnostics, ContextGenerationModel model) GenerateNatsStubs(
         CSharpCompilation compilation,
         ImmutableArray<InterfaceDeclarationSyntax> candidateInterfaces,
@@ -39,8 +31,8 @@ internal static class Parser
         var publishAttribute = compilation.GetTypeByMetadataName("Observables.Nats.NatsPublishAttribute");
         var requestAttribute = compilation.GetTypeByMetadataName("Observables.Nats.NatsRequestAttribute");
         var subscribeAttribute = compilation.GetTypeByMetadataName("Observables.Nats.NatsSubscribeAttribute");
-        var observableType = compilation.GetTypeByMetadataName(ObservableMetadataName);
-        var unitType = compilation.GetTypeByMetadataName(UnitMetadataName);
+        var observableType = compilation.GetTypeByMetadataName(BackendTokens.ObservableMetadataName);
+        var unitType = compilation.GetTypeByMetadataName(BackendTokens.UnitMetadataName);
 
         var interfaces = new List<NatsInterfaceModel>();
 
@@ -111,11 +103,7 @@ internal static class Parser
                         $"{className}.Nats.g.cs",
                         className,
                         ifaceSymbol.ToDisplayString(DisplayFormat),
-#if NATS_R3
-                        "Observables.Nats.Generated",
-#else
-                        "Observables.Nats.Reactive.Generated",
-#endif
+                        BackendTokens.QualifyGeneratedNamespace("Observables.Nats"),
                         members.ToImmutableEquatableArray(),
                         nullable));
             }
@@ -203,12 +191,15 @@ internal static class Parser
             return;
         }
 
-        if (!TryParseObservableReturn(
-                compilation,
+        if (!ObservableReturnTypeParser.TryParse(
                 method.ReturnType,
+                compilation,
+                "Observables.Nats.Reactive.SystemReactiveNatsAdapter",
                 observableType,
                 unitType,
-                boundary,
+                requiresUnitPayload: boundary == NatsBoundaryKind.Publish,
+                DiagnosticDescriptors.UnsupportedReturnType,
+                DiagnosticDescriptors.SystemReactiveNotReferenced,
                 method.Locations.FirstOrDefault(),
                 diagnostics,
                 out var resultType,
@@ -300,12 +291,15 @@ internal static class Parser
             return;
         }
 
-        if (!TryParseObservableReturn(
-                compilation,
+        if (!ObservableReturnTypeParser.TryParse(
                 property.Type,
+                compilation,
+                "Observables.Nats.Reactive.SystemReactiveNatsAdapter",
                 observableType,
                 unitType: null,
-                NatsBoundaryKind.Subscribe,
+                requiresUnitPayload: false,
+                DiagnosticDescriptors.UnsupportedReturnType,
+                DiagnosticDescriptors.SystemReactiveNotReferenced,
                 property.Locations.FirstOrDefault(),
                 diagnostics,
                 out var resultType,
@@ -534,35 +528,6 @@ internal static class Parser
         badLocation = attribute.ApplicationSyntaxReference?.GetSyntax().GetLocation();
         return false;
     }
-
-    static bool TryParseObservableReturn(
-        CSharpCompilation compilation,
-        ITypeSymbol returnType,
-        INamedTypeSymbol? observableType,
-        INamedTypeSymbol? unitType,
-        NatsBoundaryKind boundary,
-        Location? location,
-        List<Diagnostic> diagnostics,
-        out string resultTypeDisplay,
-        out string returnTypeDisplay) =>
-        ObservableReturnTypeParser.TryParse(
-            returnType,
-            compilation,
-#if NATS_R3
-            isR3Generator: true,
-#else
-            isR3Generator: false,
-#endif
-            reactiveAdapterMetadataName: "Observables.Nats.Reactive.SystemReactiveNatsAdapter",
-            observableType,
-            unitType,
-            requiresUnitPayload: boundary == NatsBoundaryKind.Publish,
-            DiagnosticDescriptors.UnsupportedReturnType,
-            DiagnosticDescriptors.SystemReactiveNotReferenced,
-            location,
-            diagnostics,
-            out resultTypeDisplay,
-            out returnTypeDisplay);
 
     static (List<string> declarations, bool hasCancellationToken) BuildParameters(
         IMethodSymbol method)

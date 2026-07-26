@@ -12,12 +12,6 @@ internal static class Parser
         SymbolDisplayFormat.FullyQualifiedFormat.WithMiscellaneousOptions(
             SymbolDisplayMiscellaneousOptions.IncludeNullableReferenceTypeModifier);
 
-#if GRPC_R3
-    const string ObservableMetadataName = "R3.Observable`1";
-#else
-    const string ObservableMetadataName = "System.IObservable`1";
-#endif
-
     public static (List<Diagnostic> diagnostics, ContextGenerationModel model) GenerateGrpcStubs(
         CSharpCompilation compilation,
         ImmutableArray<InterfaceDeclarationSyntax> candidateInterfaces,
@@ -35,7 +29,7 @@ internal static class Parser
         var serverStreamAttribute = compilation.GetTypeByMetadataName("Observables.Grpc.GrpcServerStreamAttribute");
         var clientStreamAttribute = compilation.GetTypeByMetadataName("Observables.Grpc.GrpcClientStreamAttribute");
         var duplexAttribute = compilation.GetTypeByMetadataName("Observables.Grpc.GrpcDuplexAttribute");
-        var observableType = compilation.GetTypeByMetadataName(ObservableMetadataName);
+        var observableType = compilation.GetTypeByMetadataName(BackendTokens.ObservableMetadataName);
 
         var interfaces = new List<GrpcInterfaceModel>();
 
@@ -110,11 +104,7 @@ internal static class Parser
                         $"{className}.Grpc.g.cs",
                         className,
                         ifaceSymbol.ToDisplayString(DisplayFormat),
-#if GRPC_R3
-                        "Observables.Grpc.Generated",
-#else
-                        "Observables.Grpc.Reactive.Generated",
-#endif
+                        BackendTokens.QualifyGeneratedNamespace("Observables.Grpc"),
                         serviceName,
                         members.ToImmutableEquatableArray(),
                         nullable));
@@ -171,10 +161,15 @@ internal static class Parser
             return;
         }
 
-        if (!TryParseObservableReturn(
-                compilation,
+        if (!ObservableReturnTypeParser.TryParse(
                 method.ReturnType,
+                compilation,
+                "Observables.Grpc.Reactive.SystemReactiveGrpcAdapter",
                 observableType,
+                unitType: null,
+                requiresUnitPayload: false,
+                DiagnosticDescriptors.UnsupportedReturnType,
+                DiagnosticDescriptors.SystemReactiveNotReferenced,
                 method.Locations.FirstOrDefault(),
                 diagnostics,
                 out var resultType,
@@ -236,33 +231,6 @@ internal static class Parser
                 names.ToImmutableEquatableArray(),
                 hasCt));
     }
-
-    static bool TryParseObservableReturn(
-        CSharpCompilation compilation,
-        ITypeSymbol returnType,
-        INamedTypeSymbol? observableType,
-        Location? location,
-        List<Diagnostic> diagnostics,
-        out string resultTypeDisplay,
-        out string returnTypeDisplay) =>
-        ObservableReturnTypeParser.TryParse(
-            returnType,
-            compilation,
-#if GRPC_R3
-            isR3Generator: true,
-#else
-            isR3Generator: false,
-#endif
-            reactiveAdapterMetadataName: "Observables.Grpc.Reactive.SystemReactiveGrpcAdapter",
-            observableType,
-            unitType: null,
-            requiresUnitPayload: false,
-            DiagnosticDescriptors.UnsupportedReturnType,
-            DiagnosticDescriptors.SystemReactiveNotReferenced,
-            location,
-            diagnostics,
-            out resultTypeDisplay,
-            out returnTypeDisplay);
 
     static string? GetServiceName(INamedTypeSymbol ifaceSymbol)
     {

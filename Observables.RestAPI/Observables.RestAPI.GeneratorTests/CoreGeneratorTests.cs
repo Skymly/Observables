@@ -95,6 +95,29 @@ public class CoreGeneratorTests
         return Task.CompletedTask;
     }
 
+    [Fact]
+    public Task IObservable_on_R3_generator_reports_OBS3005()
+    {
+        GeneratorRunOutput output = GeneratorTestHarness.Run(
+            """
+            using System;
+
+            public interface IUserApi
+            {
+                [Get("/users/{id}")]
+                IObservable<User> GetUser(int id);
+            }
+
+            public sealed class User
+            {
+                public int Id { get; set; }
+            }
+            """);
+
+        Assert.Contains("OBS3005", GeneratorTestHarness.ToSnapshot(output), StringComparison.Ordinal);
+        return Task.CompletedTask;
+    }
+
     // ── Path + [Body]/[Query] regression tests (issue #111) ──
 
     [Fact]

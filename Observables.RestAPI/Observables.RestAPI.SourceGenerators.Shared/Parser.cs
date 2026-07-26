@@ -323,7 +323,11 @@ internal static class Parser
             declaredBaseName += $"<{typeParams}>";
         }
 
-        var returnTypeInfo = ClassifyReturnType(methodSymbol.ReturnType, methodSymbol, wellKnownTypes, diagnostics);
+        var returnClassification = RestApiReturnTypeClassifier.Classify(
+            methodSymbol.ReturnType,
+            methodSymbol,
+            wellKnownTypes,
+            diagnostics);
 
         var httpSemantics = ParseHttpSemantics(methodSymbol, httpMethodBaseAttributeSymbol);
         ValidatePathTemplate(methodSymbol, httpSemantics, diagnostics);
@@ -334,10 +338,9 @@ internal static class Parser
 
         var isExplicit = explicitImpl is not null;
         var constraints = GenerateConstraints(methodSymbol.TypeParameters, isExplicit || !isImplicitInterface);
-        var (returnResultType, deserializedResultType, isApiResponse) = ExtractReturnTypeInfo(methodSymbol.ReturnType, returnTypeInfo);
 
         return new MethodModel(methodSymbol.Name, returnType, containingType, declaredBaseName,
-            returnTypeInfo, parameters, constraints, isExplicit,
+            returnClassification.Info, parameters, constraints, isExplicit,
             HttpMethod: httpSemantics.HttpMethod,
             PathFragments: httpSemantics.PathFragments,
             CancellationTokenIndex: httpSemantics.CancellationTokenIndex,
@@ -348,78 +351,9 @@ internal static class Parser
             IsMultipart: httpSemantics.IsMultipart,
             MultipartBoundary: httpSemantics.MultipartBoundary,
             QueryUriFormat: httpSemantics.QueryUriFormat,
-            IsApiResponse: isApiResponse,
-            ReturnResultType: returnResultType,
-            DeserializedResultType: deserializedResultType);
-    }
-
-    static (string ReturnResultType, string DeserializedResultType, bool IsApiResponse) ExtractReturnTypeInfo(
-        ITypeSymbol returnType, ReturnTypeInfo returnTypeInfo)
-    {
-        if (returnTypeInfo == ReturnTypeInfo.SyncVoid || returnTypeInfo == ReturnTypeInfo.AsyncVoid)
-            return ("void", "void", false);
-
-        ITypeSymbol? innerType = null;
-        if (returnType is INamedTypeSymbol { IsGenericType: true } namedType)
-            innerType = namedType.TypeArguments.FirstOrDefault();
-
-        if (innerType == null)
-            return (returnType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat),
-                    returnType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat), false);
-
-        var innerDisplay = innerType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
-        var isApiResponse = innerType is INamedTypeSymbol innerNamed
-            && (innerNamed.Name == "ApiResponse" || innerNamed.Name == "IApiResponse") && innerNamed.IsGenericType;
-
-        if (isApiResponse && innerType is INamedTypeSymbol apiResponseNamed)
-        {
-            var bodyType = apiResponseNamed.TypeArguments.FirstOrDefault();
-            var bodyDisplay = bodyType?.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat) ?? "object";
-            return (innerDisplay, bodyDisplay, true);
-        }
-
-        return (innerDisplay, innerDisplay, false);
-    }
-
-    static ReturnTypeInfo ClassifyReturnType(ITypeSymbol returnType, IMethodSymbol methodSymbol,
-        WellKnownTypes wellKnownTypes, List<Diagnostic> diagnostics)
-    {
-        if (returnType.SpecialType == SpecialType.System_Void) return ReturnTypeInfo.SyncVoid;
-        if (returnType.MetadataName == "Task") return ReturnTypeInfo.AsyncVoid;
-
-        if (returnType is INamedTypeSymbol { IsGenericType: true } namedType)
-        {
-            var def = namedType.OriginalDefinition;
-            var metadata = def.MetadataName;
-            if (metadata is "Task`1" or "ValueTask`1") return ReturnTypeInfo.AsyncResult;
-
-#if RESTAPI_R3
-            if (metadata == "Observable`1" && def.ContainingNamespace?.ToDisplayString() == "R3")
-                return ReturnTypeInfo.R3Observable;
-            if (metadata == "IObservable`1")
-            {
-                diagnostics.Add(Diagnostic.Create(DiagnosticDescriptors.SystemReactiveNotReferenced,
-                    methodSymbol.Locations.FirstOrDefault(), returnType.ToDisplayString()));
-                return ReturnTypeInfo.Unsupported;
-            }
-#elif RESTAPI_REACTIVE
-            if (metadata == "Observable`1" && def.ContainingNamespace?.ToDisplayString() == "R3")
-            {
-                diagnostics.Add(Diagnostic.Create(DiagnosticDescriptors.UnsupportedReturnType,
-                    methodSymbol.Locations.FirstOrDefault(), returnType.ToDisplayString()));
-                return ReturnTypeInfo.Unsupported;
-            }
-            if (metadata == "IObservable`1")
-            {
-                if (wellKnownTypes.TryGet("Observables.RestAPI.Reactive.SystemReactiveObservableAdapter") != null)
-                    return ReturnTypeInfo.SystemReactiveObservable;
-                diagnostics.Add(Diagnostic.Create(DiagnosticDescriptors.SystemReactiveNotReferenced,
-                    methodSymbol.Locations.FirstOrDefault(), returnType.ToDisplayString()));
-                return ReturnTypeInfo.Unsupported;
-            }
-#endif
-        }
-        return ReturnTypeInfo.Return;
+            IsApiResponse: returnClassification.IsApiResponse,
+            ReturnResultType: returnClassification.ReturnResultType,
+            DeserializedResultType: returnClassification.DeserializedResultType);
     }
 
     // ─── HTTP semantic parsing ───────────────────────────────────────────

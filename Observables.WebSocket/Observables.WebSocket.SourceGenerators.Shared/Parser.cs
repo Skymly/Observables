@@ -12,14 +12,6 @@ internal static class Parser
         SymbolDisplayFormat.FullyQualifiedFormat.WithMiscellaneousOptions(
             SymbolDisplayMiscellaneousOptions.IncludeNullableReferenceTypeModifier);
 
-#if WEBSOCKET_R3
-    const string ObservableMetadataName = "R3.Observable`1";
-    const string UnitMetadataName = "R3.Unit";
-#else
-    const string ObservableMetadataName = "System.IObservable`1";
-    const string UnitMetadataName = "System.Reactive.Unit";
-#endif
-
     public static (List<Diagnostic> diagnostics, ContextGenerationModel model) GenerateWebSocketStubs(
         CSharpCompilation compilation,
         ImmutableArray<InterfaceDeclarationSyntax> candidateInterfaces,
@@ -37,8 +29,8 @@ internal static class Parser
         var receiveAttribute = compilation.GetTypeByMetadataName("Observables.WebSocket.WebSocketReceiveAttribute");
         var connectAttribute = compilation.GetTypeByMetadataName("Observables.WebSocket.WebSocketConnectAttribute");
         var closeAttribute = compilation.GetTypeByMetadataName("Observables.WebSocket.WebSocketCloseAttribute");
-        var observableType = compilation.GetTypeByMetadataName(ObservableMetadataName);
-        var unitType = compilation.GetTypeByMetadataName(UnitMetadataName);
+        var observableType = compilation.GetTypeByMetadataName(BackendTokens.ObservableMetadataName);
+        var unitType = compilation.GetTypeByMetadataName(BackendTokens.UnitMetadataName);
 
         var interfaces = new List<WebSocketInterfaceModel>();
 
@@ -113,11 +105,7 @@ internal static class Parser
                         $"{className}.WebSocket.g.cs",
                         className,
                         ifaceSymbol.ToDisplayString(DisplayFormat),
-#if WEBSOCKET_R3
-                        "Observables.WebSocket.Generated",
-#else
-                        "Observables.WebSocket.Reactive.Generated",
-#endif
+                        BackendTokens.QualifyGeneratedNamespace("Observables.WebSocket"),
                         members.ToImmutableEquatableArray(),
                         nullable));
             }
@@ -175,12 +163,17 @@ internal static class Parser
             return;
         }
 
-        if (!TryParseObservableReturn(
-                compilation,
+        if (!ObservableReturnTypeParser.TryParse(
                 method.ReturnType,
+                compilation,
+                "Observables.WebSocket.Reactive.SystemReactiveWebSocketAdapter",
                 observableType,
                 unitType,
-                boundary.Value,
+                requiresUnitPayload: boundary.Value is WebSocketBoundaryKind.Send
+                    or WebSocketBoundaryKind.Connect
+                    or WebSocketBoundaryKind.Close,
+                DiagnosticDescriptors.UnsupportedReturnType,
+                DiagnosticDescriptors.SystemReactiveNotReferenced,
                 method.Locations.FirstOrDefault(),
                 diagnostics,
                 out var resultType,
@@ -275,12 +268,15 @@ internal static class Parser
             return;
         }
 
-        if (!TryParseObservableReturn(
-                compilation,
+        if (!ObservableReturnTypeParser.TryParse(
                 property.Type,
+                compilation,
+                "Observables.WebSocket.Reactive.SystemReactiveWebSocketAdapter",
                 observableType,
                 unitType: null,
-                WebSocketBoundaryKind.Receive,
+                requiresUnitPayload: false,
+                DiagnosticDescriptors.UnsupportedReturnType,
+                DiagnosticDescriptors.SystemReactiveNotReferenced,
                 property.Locations.FirstOrDefault(),
                 diagnostics,
                 out var resultType,
@@ -309,37 +305,6 @@ internal static class Parser
         (sendAttribute is not null && HasAttribute(property, sendAttribute))
         || (connectAttribute is not null && HasAttribute(property, connectAttribute))
         || (closeAttribute is not null && HasAttribute(property, closeAttribute));
-
-    static bool TryParseObservableReturn(
-        CSharpCompilation compilation,
-        ITypeSymbol returnType,
-        INamedTypeSymbol? observableType,
-        INamedTypeSymbol? unitType,
-        WebSocketBoundaryKind boundary,
-        Location? location,
-        List<Diagnostic> diagnostics,
-        out string resultTypeDisplay,
-        out string returnTypeDisplay) =>
-        ObservableReturnTypeParser.TryParse(
-            returnType,
-            compilation,
-#if WEBSOCKET_R3
-            isR3Generator: true,
-#else
-            isR3Generator: false,
-#endif
-            reactiveAdapterMetadataName: "Observables.WebSocket.Reactive.SystemReactiveWebSocketAdapter",
-            observableType,
-            unitType,
-            requiresUnitPayload: boundary is WebSocketBoundaryKind.Send
-                or WebSocketBoundaryKind.Connect
-                or WebSocketBoundaryKind.Close,
-            DiagnosticDescriptors.UnsupportedReturnType,
-            DiagnosticDescriptors.SystemReactiveNotReferenced,
-            location,
-            diagnostics,
-            out resultTypeDisplay,
-            out returnTypeDisplay);
 
     static bool HasAttribute(ISymbol symbol, INamedTypeSymbol attributeType)
     {

@@ -15,14 +15,6 @@ internal static class Parser
 
     static readonly Regex PlaceholderRegex = new(@"\{([^}/]+)\}", RegexOptions.Compiled);
 
-#if MQTT_R3
-    const string ObservableMetadataName = "R3.Observable`1";
-    const string UnitMetadataName = "R3.Unit";
-#else
-    const string ObservableMetadataName = "System.IObservable`1";
-    const string UnitMetadataName = "System.Reactive.Unit";
-#endif
-
     public static (List<Diagnostic> diagnostics, ContextGenerationModel model) GenerateMqttStubs(
         CSharpCompilation compilation,
         ImmutableArray<InterfaceDeclarationSyntax> candidateInterfaces,
@@ -38,8 +30,8 @@ internal static class Parser
 
         var publishAttribute = compilation.GetTypeByMetadataName("Observables.Mqtt.MqttPublishAttribute");
         var subscribeAttribute = compilation.GetTypeByMetadataName("Observables.Mqtt.MqttSubscribeAttribute");
-        var observableType = compilation.GetTypeByMetadataName(ObservableMetadataName);
-        var unitType = compilation.GetTypeByMetadataName(UnitMetadataName);
+        var observableType = compilation.GetTypeByMetadataName(BackendTokens.ObservableMetadataName);
+        var unitType = compilation.GetTypeByMetadataName(BackendTokens.UnitMetadataName);
 
         var interfaces = new List<MqttInterfaceModel>();
 
@@ -109,11 +101,7 @@ internal static class Parser
                         $"{className}.Mqtt.g.cs",
                         className,
                         ifaceSymbol.ToDisplayString(DisplayFormat),
-#if MQTT_R3
-                        "Observables.Mqtt.Generated",
-#else
-                        "Observables.Mqtt.Reactive.Generated",
-#endif
+                        BackendTokens.QualifyGeneratedNamespace("Observables.Mqtt"),
                         members.ToImmutableEquatableArray(),
                         nullable));
             }
@@ -176,12 +164,15 @@ internal static class Parser
             return;
         }
 
-        if (!TryParseObservableReturn(
-                compilation,
+        if (!ObservableReturnTypeParser.TryParse(
                 method.ReturnType,
+                compilation,
+                "Observables.Mqtt.Reactive.SystemReactiveMqttAdapter",
                 observableType,
                 unitType,
-                MqttBoundaryKind.Publish,
+                requiresUnitPayload: true,
+                DiagnosticDescriptors.UnsupportedReturnType,
+                DiagnosticDescriptors.SystemReactiveNotReferenced,
                 method.Locations.FirstOrDefault(),
                 diagnostics,
                 out var resultType,
@@ -260,12 +251,15 @@ internal static class Parser
             return;
         }
 
-        if (!TryParseObservableReturn(
-                compilation,
+        if (!ObservableReturnTypeParser.TryParse(
                 property.Type,
+                compilation,
+                "Observables.Mqtt.Reactive.SystemReactiveMqttAdapter",
                 observableType,
                 unitType: null,
-                MqttBoundaryKind.Subscribe,
+                requiresUnitPayload: false,
+                DiagnosticDescriptors.UnsupportedReturnType,
+                DiagnosticDescriptors.SystemReactiveNotReferenced,
                 property.Locations.FirstOrDefault(),
                 diagnostics,
                 out var resultType,
@@ -417,35 +411,6 @@ internal static class Parser
         badLocation = attribute.ApplicationSyntaxReference?.GetSyntax().GetLocation();
         return false;
     }
-
-    static bool TryParseObservableReturn(
-        CSharpCompilation compilation,
-        ITypeSymbol returnType,
-        INamedTypeSymbol? observableType,
-        INamedTypeSymbol? unitType,
-        MqttBoundaryKind boundary,
-        Location? location,
-        List<Diagnostic> diagnostics,
-        out string resultTypeDisplay,
-        out string returnTypeDisplay) =>
-        ObservableReturnTypeParser.TryParse(
-            returnType,
-            compilation,
-#if MQTT_R3
-            isR3Generator: true,
-#else
-            isR3Generator: false,
-#endif
-            reactiveAdapterMetadataName: "Observables.Mqtt.Reactive.SystemReactiveMqttAdapter",
-            observableType,
-            unitType,
-            requiresUnitPayload: boundary == MqttBoundaryKind.Publish,
-            DiagnosticDescriptors.UnsupportedReturnType,
-            DiagnosticDescriptors.SystemReactiveNotReferenced,
-            location,
-            diagnostics,
-            out resultTypeDisplay,
-            out returnTypeDisplay);
 
     static (List<string> declarations, bool hasCancellationToken) BuildParameters(
         IMethodSymbol method)

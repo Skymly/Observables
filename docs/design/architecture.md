@@ -61,12 +61,13 @@ flowchart LR
 
 | 维度 | R3 路径 | Reactive 路径 |
 |------|---------|---------------|
-| 生成器常量 | `#if DOMAIN_R3` / `Observables.SourceGenerators.R3.props` | `ObservablesReactiveBackend=SystemReactive` |
+| 生成器常量 | `#if OBSERVABLES_R3`（`Observables.SourceGenerators.R3.props`）+ 域级 `#if DOMAIN_R3`（BridgeType 等） | `ObservablesReactiveBackend=SystemReactive`（无 `OBSERVABLES_R3`） |
+| 共享 backend tokens | `BackendTokens`（`Observable`/`Unit` 元数据名、`IsR3`、`QualifyGeneratedNamespace`） | 同上，编译进 Reactive 生成器时走 `#else` 分支 |
 | 生成返回类型 | `Observable<T>` | `IObservable<T>` |
 | 运行时依赖 | `R3` 包 | `System.Reactive` + 域 `.Reactive` 桥接 |
 | 禁止 | R3 包引用 System.Reactive | Reactive 包引用 R3 |
 
-共享生成逻辑放在 `*.SourceGenerators.Shared`（`.projitems`），由两路生成器项目 Import；全库基础设施在 `Observables.Shared/Observables.SourceGenerators.Shared`（`GeneratedSourceHeader`、`GeneratorFailSafe`、`DiagnosticHelpLink` 等），经 `Observables.SourceGenerators.SharedSource.props` 链接编译。
+共享生成逻辑放在 `*.SourceGenerators.Shared`（`.projitems`），由两路生成器项目 Import；全库基础设施在 `Observables.Shared/Observables.SourceGenerators.Shared`（`BackendTokens`、`GeneratedSourceHeader`、`GeneratorFailSafe`、`DiagnosticHelpLink` 等），经 `Observables.SourceGenerators.SharedSource.props` 链接编译。IO 代理域 Parser 经 `BackendTokens` 读编译期后端；返回类型校验经 `ObservableReturnTypeParser`（内部使用 `BackendTokens.IsR3`）；域特定 BridgeType / adapter 元数据仍留在各域 Emitter/Parser。
 
 ## 4. 源生成器管道（IO 域典型）
 

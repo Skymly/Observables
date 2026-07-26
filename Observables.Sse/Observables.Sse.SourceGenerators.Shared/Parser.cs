@@ -12,12 +12,6 @@ internal static class Parser
         SymbolDisplayFormat.FullyQualifiedFormat.WithMiscellaneousOptions(
             SymbolDisplayMiscellaneousOptions.IncludeNullableReferenceTypeModifier);
 
-#if SSE_R3
-    const string ObservableMetadataName = "R3.Observable`1";
-#else
-    const string ObservableMetadataName = "System.IObservable`1";
-#endif
-
     public static (List<Diagnostic> diagnostics, ContextGenerationModel model) GenerateSseStubs(
         CSharpCompilation compilation,
         ImmutableArray<InterfaceDeclarationSyntax> candidateInterfaces,
@@ -32,7 +26,7 @@ internal static class Parser
         }
 
         var eventAttribute = compilation.GetTypeByMetadataName("Observables.Sse.SseEventAttribute");
-        var observableType = compilation.GetTypeByMetadataName(ObservableMetadataName);
+        var observableType = compilation.GetTypeByMetadataName(BackendTokens.ObservableMetadataName);
 
         var interfaces = new List<SseInterfaceModel>();
 
@@ -93,11 +87,7 @@ internal static class Parser
                         $"{className}.Sse.g.cs",
                         className,
                         ifaceSymbol.ToDisplayString(DisplayFormat),
-#if SSE_R3
-                        "Observables.Sse.Generated",
-#else
-                        "Observables.Sse.Reactive.Generated",
-#endif
+                        BackendTokens.QualifyGeneratedNamespace("Observables.Sse"),
                         members.ToImmutableEquatableArray(),
                         nullable));
             }
@@ -156,10 +146,15 @@ internal static class Parser
 
         var eventName = GetEventName(property) ?? "message";
 
-        if (!TryParseObservableReturn(
-                compilation,
+        if (!ObservableReturnTypeParser.TryParse(
                 property.Type,
+                compilation,
+                "Observables.Sse.Reactive.SystemReactiveSseAdapter",
                 observableType,
+                unitType: null,
+                requiresUnitPayload: false,
+                DiagnosticDescriptors.UnsupportedReturnType,
+                DiagnosticDescriptors.SystemReactiveNotReferenced,
                 property.Locations.FirstOrDefault(),
                 diagnostics,
                 out var resultType,
@@ -176,33 +171,6 @@ internal static class Parser
                 returnDisplay,
                 resultType));
     }
-
-    static bool TryParseObservableReturn(
-        CSharpCompilation compilation,
-        ITypeSymbol returnType,
-        INamedTypeSymbol? observableType,
-        Location? location,
-        List<Diagnostic> diagnostics,
-        out string resultTypeDisplay,
-        out string returnTypeDisplay) =>
-        ObservableReturnTypeParser.TryParse(
-            returnType,
-            compilation,
-#if SSE_R3
-            isR3Generator: true,
-#else
-            isR3Generator: false,
-#endif
-            reactiveAdapterMetadataName: "Observables.Sse.Reactive.SystemReactiveSseAdapter",
-            observableType,
-            unitType: null,
-            requiresUnitPayload: false,
-            DiagnosticDescriptors.UnsupportedReturnType,
-            DiagnosticDescriptors.SystemReactiveNotReferenced,
-            location,
-            diagnostics,
-            out resultTypeDisplay,
-            out returnTypeDisplay);
 
     static string? GetEventName(IPropertySymbol property)
     {

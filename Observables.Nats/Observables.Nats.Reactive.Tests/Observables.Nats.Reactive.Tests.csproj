@@ -26,6 +26,7 @@
   <ItemGroup>
     <Compile Include="..\Observables.Nats.Tests\Infrastructure\NatsTestServer.cs" Link="Infrastructure\NatsTestServer.cs" />
     <Compile Include="..\Observables.Nats.Tests\Infrastructure\NatsTestServerFixture.cs" Link="Infrastructure\NatsTestServerFixture.cs" />
+    <Compile Include="..\Observables.Nats.Tests\Infrastructure\NatsE2EHelpers.cs" Link="Infrastructure\NatsE2EHelpers.cs" />
   </ItemGroup>
 
 </Project>

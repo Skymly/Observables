@@ -33,6 +33,7 @@ RestAPI 域的运行时部分包含由 [Refit](https://github.com/reactiveui/ref
 ### 2.2 新模型（Path B）
 
 - **Parser** 在编译期从接口方法符号提取全部 HTTP 语义（HTTP 方法、路径模板、参数绑定、序列化方式、静态头、multipart 设置等）。
+- **返回类型**：HTTP 方法经域内 `RestApiReturnTypeClassifier`（`Classify` → `RestApiReturnClassification`）分类；Observable / `IObservable` 分支读 `BackendTokens.IsR3`（不并入共享 `ObservableReturnTypeParser`，见 ROADMAP C1）。
 - **Emitter** 直接生成 `HttpRequestMessage` 构建代码与 `RestApiBridge` 调用，生成代码是直观的命令式方法体。
 - **运行时**不再反射接口元数据；`RestApiBridge` 仅提供静态助手（路径/查询格式化、请求发送、序列化）。
 - **代理注册**通过 `ModuleInitializer` + `RestService.RegisterGeneratedFactory` 自动注册（.NET 5+）；旧路径 `Type.GetType` + `Activator.CreateInstance` 保留为回退。
@@ -255,14 +256,12 @@ public static class RestApiBridge
 
 ## 6. 双后端条件编译
 
-R3 与 System.Reactive 的切换通过 `#if` 编译指令实现：
+| 生成器项目 | `DefineConstants` | 返回类型分类（`RestApiReturnTypeClassifier`） | Emitter 行为 |
+|------------|-------------------|-----------------------------------------------|--------------|
+| `RestAPI.R3.SourceGenerators` | `RESTAPI_R3`（+ `OBSERVABLES_R3` via R3.props） | `BackendTokens.IsR3`：`Observable<T>` → `R3Observable`；`IObservable<T>` → OBS3005 | `#if RESTAPI_R3` → `R3.Observable.FromAsync(...)` |
+| `RestAPI.Reactive.SourceGenerators` | `RESTAPI_REACTIVE` | `BackendTokens.IsR3 == false`：`IObservable<T>` → `SystemReactiveObservable`；`Observable<T>` → OBS3003 | `#else` → `SystemReactiveObservableAdapter.FromAsync(...)` |
 
-| 生成器项目 | `DefineConstants` | Parser 行为 | Emitter 行为 |
-|------------|-------------------|-------------|--------------|
-| `RestAPI.R3.SourceGenerators` | `RESTAPI_R3` | `Observable<T>` → `R3Observable`；`IObservable<T>` → OBS3005 | `R3.Observable.FromAsync(...)` |
-| `RestAPI.Reactive.SourceGenerators` | `RESTAPI_REACTIVE` | `IObservable<T>` → `SystemReactiveObservable`；`Observable<T>` → OBS3003 | `SystemReactiveObservableAdapter.FromAsync(...)` |
-
-两生成器共享同一份 `Parser.cs` / `Emitter.cs`（shproj），通过 `#if` 切换后端特定逻辑。
+两生成器共享同一份 shproj：返回类型分类走 `BackendTokens.IsR3`；Emitter 仍用 `#if RESTAPI_R3` 切换发射文本。
 
 ## 7. 诊断（OBS3xxx）
 
@@ -310,7 +309,7 @@ Observables.RestAPI/
 │   └── Observables.RestAPI.Reactive.Pack.csproj      # PackageId = Observables.RestAPI.Reactive
 ├── Observables.RestAPI.Tests/                        # 运行时测试
 ├── Observables.RestAPI.Reactive.Tests/               # Reactive 运行时测试
-├── Observables.RestAPI.GeneratorTests/               # 生成器快照测试（VerifyXunit）
+├── Observables.RestAPI.GeneratorTests/               # 生成器快照测试（VerifyXunit；R3 + Reactive 双 harness）
 └── Observables.RestAPI.HttpClientFactory.Tests/      # DI 扩展测试
 ```
 
@@ -323,7 +322,7 @@ Observables.RestAPI/
 | **`ModuleInitializer` 注册** | .NET 5+ 自动注册，AOT 友好；保留反射回退兼容旧框架 |
 | **`BodySerializationMethod` 镜像枚举** | 生成器（netstandard2.0）不引用运行时项目，用 internal 镜像枚举 + `int` 传递 |
 | **`#if NET6_0_OR_GREATER` 嵌入生成代码** | `HttpRequestMessage.Options` vs `Properties` 由消费者编译器选择 |
-| **`#if RESTAPI_R3` / `RESTAPI_REACTIVE`** | shproj 共享一份 Parser/Emitter，编译期切换后端 |
+| **`BackendTokens.IsR3` + `#if RESTAPI_R3`（Emitter）** | 返回类型分类与 IO 域共用 compile-time backend seam；Emitter 仍用域级 `#if` 切换发射文本 |
 | **`PathFragmentModel` readonly record struct** | 路径模板编译期拆分，常量段直接拼接，参数段运行时格式化 |
 | **`IApiResponse<T>` 可选不抛异常** | 需要检查状态码/头的场景用 `IApiResponse<T>`；需要抛异常用 `Task<T>` |
 | **HttpClientFactory 独立包** | DI 集成可选，不强制依赖 `Microsoft.Extensions.Http` |

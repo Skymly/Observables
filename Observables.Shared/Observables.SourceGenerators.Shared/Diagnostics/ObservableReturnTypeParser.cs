@@ -11,11 +11,11 @@ public static class ObservableReturnTypeParser
 
     /// <summary>
     /// Validates return type against the active generator backend (R3 vs System.Reactive).
+    /// Backend selection comes from <see cref="BackendTokens.IsR3"/>.
     /// </summary>
     public static bool TryParse(
         ITypeSymbol returnType,
         Compilation compilation,
-        bool isR3Generator,
         string reactiveAdapterMetadataName,
         INamedTypeSymbol? expectedObservableType,
         INamedTypeSymbol? unitType,
@@ -30,6 +30,7 @@ public static class ObservableReturnTypeParser
         resultTypeDisplay = string.Empty;
         returnTypeDisplay = returnType.ToDisplayString(DisplayFormat);
         location ??= Location.None;
+        var isR3Generator = BackendTokens.IsR3;
 
         if (returnType is not INamedTypeSymbol named || !named.IsGenericType)
         {

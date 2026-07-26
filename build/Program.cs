@@ -316,6 +316,16 @@ sealed class Build : NukeBuild
             }
         });
 
+    Target FormatWhitespace => _ => _
+        .DependsOn(Restore)
+        .Executes(() =>
+        {
+            // Whitespace-only (EOL / trailing). Style/analyzer format is deferred:
+            // RestAPI still uses block namespaces (IDE0161) from Refit-era sources.
+            // Prefer running on LF checkouts (CI ubuntu); Windows CRLF working trees may fail.
+            DotNet($"format whitespace {SolutionFile} --verify-no-changes --no-restore");
+        });
+
     Target Ci => _ => _
         .DependsOn(UnitTest);
 

@@ -213,7 +213,7 @@ Grpc 两包已于 **`0.1.0`**（`v0.1.0-preview6` tag）发布至 nuget.org 与 
 | # | 行动项 | 工作量 | 说明 |
 |---|--------|--------|------|
 | E11 | 架构总览文档 + 贡献者指南 | M | **已完成**：[`architecture.md`](design/architecture.md)、[`contributor.md`](design/contributor.md)；文档体系见 [`DOCUMENTATION.md`](DOCUMENTATION.md) |
-| ~~E12~~ | ~~真实应用 Showcase（GitPulse）~~ | ~~M~~ | **已完成（Showcase）**：[`GitPulse`](https://github.com/Skymly/GitPulse) 作为日常可用的 .NET MAUI GitHub 客户端，消费 `Observables.RestAPI.R3` + `Observables.Events.R3`。**Samples 域 demo（按需）**：SignalR/Mqtt/Grpc/WebSocket/Sse/Nats 仍可仅 `RegistrationDemo`；补真实可运行示例不作为 E12 验收门槛，有需求时按域单独处理（见搁置 D8） |
+| ~~E12~~ | ~~真实应用 Showcase（GitPulse）~~ | ~~M~~ | **已完成（Showcase）**：[`GitPulse`](https://github.com/Skymly/GitPulse) 作为日常可用的 .NET MAUI GitHub 客户端，消费 `Observables.RestAPI.R3` + `Observables.Events.R3`。**Samples**：多数 IO 域已有进程内 LiveDemo（CI 跑）；NATS 默认 RegistrationDemo、`--live` 才真 I/O。更深端到端示例不作为 E12 验收门槛（见搁置 D8） |
 | E13 | BannedApiAnalyzers + CI `dotnet format --verify` | S | 防止生成器代码误用反射等不安全 API；CI 格式校验（与 D5 合并处理） |
 
 ### 搁置（等用户反馈或维护者有额外精力）
@@ -227,4 +227,4 @@ Grpc 两包已于 **`0.1.0`**（`v0.1.0-preview6` tag）发布至 nuget.org 与 
 | D5 | CI 添加 `dotnet format --verify` | 本地 editorconfig 已控制，CI 增加价值有限 |
 | D6 | SignalR/Nats/Mqtt 桥接释放/竞态细节修复 | 低风险，等用户反馈 |
 | D7 | NuGet 徽章更新、Events 硬编码 AssemblyName | 功能正确，重构风险 > 收益 |
-| D8 | 6 域 Samples 补真实可运行示例（SignalR/Mqtt/Grpc/WebSocket/Sse/Nats） | Events/RestAPI Samples + GitPulse 已覆盖真实消费场景；其余域 `RegistrationDemo` 足够 smoke，按需补 |
+| D8 | 6 域 Samples 更深端到端示例（超出当前进程内 LiveDemo） | Events/RestAPI Samples + GitPulse 已覆盖真实消费；SignalR/Mqtt/Grpc/WebSocket/Sse 已有 loopback/embedded LiveDemo，NATS 有 `--live`；再加深按需 |

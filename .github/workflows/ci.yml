@@ -100,7 +100,8 @@ jobs:
       - name: Verify whitespace (LF / trailing)
         run: dotnet format whitespace Observables.slnx --verify-no-changes --verbosity diagnostic
 
-  changes:    name: Detect changed domains
+  changes:
+    name: Detect changed domains
     runs-on: windows-latest
     outputs:
       events: ${{ steps.filter.outputs.events }}

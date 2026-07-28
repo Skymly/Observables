@@ -257,5 +257,25 @@
 
   </Folder>
 
+  <Folder Name="/Postgres/">
+
+    <Project Path="Observables.Postgres/Observables.Postgres.SourceGenerators.Shared/Observables.Postgres.SourceGenerators.Shared.shproj" Id="b0f3c4d5-6e7f-4081-9b02-4d5e6f708192" />
+
+    <Project Path="Observables.Postgres/Observables.Postgres/Observables.Postgres.csproj" />
+
+    <Project Path="Observables.Postgres/Observables.Postgres.Reactive/Observables.Postgres.Reactive.csproj" />
+
+    <Project Path="Observables.Postgres/Observables.Postgres.Reactive.SourceGenerators/Observables.Postgres.Reactive.SourceGenerators.csproj" />
+
+    <Project Path="Observables.Postgres/Observables.Postgres.R3.SourceGenerators/Observables.Postgres.R3.SourceGenerators.csproj" />
+
+    <Folder Name="/Tests/">
+
+      <Project Path="Observables.Postgres/Observables.Postgres.Tests/Observables.Postgres.Tests.csproj" />
+
+    </Folder>
+
+  </Folder>
+
 </Solution>
 

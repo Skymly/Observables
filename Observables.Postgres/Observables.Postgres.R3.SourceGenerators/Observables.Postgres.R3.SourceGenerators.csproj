@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <Import Project="..\..\Observables.SourceGenerators.R3.props" />
+
+  <PropertyGroup>
+    <Description>Source generator for PostgreSQL LISTEN/NOTIFY proxies → R3 Observable (scaffold stub).</Description>
+    <DefineConstants>$(DefineConstants);ROSLYN_4;POSTGRES_R3</DefineConstants>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="R3" PrivateAssets="all" />
+  </ItemGroup>
+
+  <Import Project="..\Observables.Postgres.SourceGenerators.Shared\Observables.Postgres.SourceGenerators.Shared.projitems" Label="Shared" />
+
+</Project>

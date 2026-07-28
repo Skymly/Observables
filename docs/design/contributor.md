@@ -75,7 +75,7 @@ Skymly/Observables/
 4. [ ] 建立 `*.R3.SourceGenerators` 与 `*.Reactive.SourceGenerators`
 5. [ ] 建立 `*.Package`，产出两个 NuGet 包
 6. [ ] 在 `eng/Observables.BuildManifest.json` 登记 pack / test / smoke
-7. [ ] 分配诊断段（如 `OBS10xxx` 须先扩展 `AGENTS.md` 段表并记 ADR）
+7. [ ] 分配诊断段（Postgres 已占用 `OBS10xxx`；再增段须先扩展 `AGENTS.md` 段表并记 ADR）
 8. [ ] 各域 `AnalyzerReleases.Unshipped.md` 登记新诊断
 9. [ ] 生成器测试（Verify）+ 运行时 E2E + `eng/nuget-smoke` 消费者
 10. [ ] 三仓文档：主仓 `docs/design/`、Observables.Docs 域页 + `diagnostics.md`、Samples 示例项目

@@ -407,7 +407,7 @@ Agent 行为准则——与「与用户沟通」并行生效：
 
 ### Issue tracker
 
-Issues and planning artifacts live in GitHub Issues. See `docs/agents/issue-tracker.md`.
+GitHub Issues, routed by surface: library → `Skymly/Observables`; user Docs → `Skymly/Observables.Docs`; Samples → `Skymly/Observables.Samples`; GitPulse only when that repo is the work. See `docs/agents/issue-tracker.md`.
 
 ### Domain docs
 

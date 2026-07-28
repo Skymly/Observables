@@ -8,10 +8,11 @@
 
 ## 决策列表
 
-| ADR | 标题 | 状态 | 日期 | 关联 RFC |
-|-----|------|------|------|----------|
+| ADR | 标题 | 状态 | 日期 | 关联 Issue / RFC |
+|-----|------|------|------|------------------|
 | [ADR-001](ADR-001-primitives-backend-skip.md) | 不采用 ReactiveUI.Primitives 作为第三后端 | Accepted | 2026-06-28 | — |
+| [ADR-002](ADR-002-domain-admission-and-ranking.md) | 新域准入标准与下一批域 top-N 排名 | Accepted | 2026-07-28 | [#141](https://github.com/Skymly/Observables/issues/141) / [#149](https://github.com/Skymly/Observables/issues/149) |
 
 ## 下一个可用编号
 
-**ADR-002**
+**ADR-003**

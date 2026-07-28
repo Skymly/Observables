@@ -402,3 +402,13 @@ Agent 行为准则——与「与用户沟通」并行生效：
 
 - **最小 diff**、匹配现有风格；**不主动** `commit` / `push` / 发版，除非用户明确要求。
 - 中文解释权衡；代码标识符与对外文档默认英语。
+
+## Agent skills
+
+### Issue tracker
+
+Issues and planning artifacts live in GitHub Issues. See `docs/agents/issue-tracker.md`.
+
+### Domain docs
+
+This is a single-context repository using root `CONTEXT.md` and `docs/adr/`. See `docs/agents/domain.md`.

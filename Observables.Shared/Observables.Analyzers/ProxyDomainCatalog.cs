@@ -128,6 +128,20 @@ internal static class ProxyDomainCatalog
             new BoundaryAttributeSuggestion("NatsSubscribe", "NatsSubscribe"),
         ]);
 
+    internal static readonly ProxyDomain Postgres = new(
+        displayName: "Postgres",
+        interfaceMarkerMetadataName: "Observables.Postgres.PostgresAttribute",
+        reactiveAdapterMetadataName: "Observables.Postgres.Reactive.SystemReactivePostgresAdapter",
+        emptyInterfaceDescriptor: DiagnosticDescriptors.EmptyPostgresInterface,
+        methodAttributes:
+        [
+            new BoundaryAttributeSuggestion("Notify", "Notify"),
+        ],
+        propertyAttributes:
+        [
+            new BoundaryAttributeSuggestion("Listen", "Listen"),
+        ]);
+
     internal static readonly ProxyDomain RestApi = new(
         displayName: "RestAPI",
         interfaceMarkerMetadataName: "Observables.RestAPI.RestApiAttribute",
@@ -136,10 +150,10 @@ internal static class ProxyDomainCatalog
         methodAttributes: [],
         propertyAttributes: []);
 
-    internal static readonly IReadOnlyList<ProxyDomain> InterfaceProxyDomains = [SignalR, Mqtt, WebSocket, Grpc, Sse, Nats, RestApi];
+    internal static readonly IReadOnlyList<ProxyDomain> InterfaceProxyDomains = [SignalR, Mqtt, WebSocket, Grpc, Sse, Nats, Postgres, RestApi];
 
     internal static readonly IReadOnlyList<ProxyDomain> ReactiveConflictDomains =
-        [SignalR, Mqtt, WebSocket, Grpc, Sse, Nats, RestApi];
+        [SignalR, Mqtt, WebSocket, Grpc, Sse, Nats, Postgres, RestApi];
 
     internal static readonly string[] RestApiHttpMethodNames =
         ["Get", "Post", "Put", "Delete", "Patch", "Head", "Options"];

@@ -83,6 +83,17 @@ internal static class DiagnosticDescriptors
             description: "Empty [Nats] interface.",
             helpLinkUri: DiagnosticHelpLink.For("OBS9007"));
 
+    public static readonly DiagnosticDescriptor EmptyPostgresInterface =
+        new(
+            "OBS10007",
+            "Empty Postgres proxy interface",
+            "Interface '{0}' is marked with [Postgres] but declares no members. Add LISTEN/NOTIFY boundary members or remove [Postgres].",
+            "Observables.Postgres",
+            DiagnosticSeverity.Warning,
+            isEnabledByDefault: true,
+            description: "Empty [Postgres] interface.",
+            helpLinkUri: DiagnosticHelpLink.For("OBS10007"));
+
     public static readonly DiagnosticDescriptor EmptyRestApiInterface =
         new(
             "OBS3007",

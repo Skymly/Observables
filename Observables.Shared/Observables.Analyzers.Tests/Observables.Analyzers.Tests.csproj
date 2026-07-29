@@ -20,6 +20,7 @@
     <ProjectReference Include="..\..\Observables.SignalR\Observables.SignalR.Reactive\Observables.SignalR.Reactive.csproj" />
     <ProjectReference Include="..\..\Observables.Mqtt\Observables.Mqtt\Observables.Mqtt.csproj" />
     <ProjectReference Include="..\..\Observables.Nats\Observables.Nats\Observables.Nats.csproj" />
+    <ProjectReference Include="..\..\Observables.Postgres\Observables.Postgres\Observables.Postgres.csproj" />
     <ProjectReference Include="..\..\Observables.WebSocket\Observables.WebSocket\Observables.WebSocket.csproj" />
     <ProjectReference Include="..\..\Observables.RestAPI\Observables.RestAPI\Observables.RestAPI.csproj" />
     <ProjectReference Include="..\..\Observables.Grpc\Observables.Grpc\Observables.Grpc.csproj" />

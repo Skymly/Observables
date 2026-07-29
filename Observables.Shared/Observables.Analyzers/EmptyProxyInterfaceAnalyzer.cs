@@ -15,6 +15,7 @@ public sealed class EmptyProxyInterfaceAnalyzer : DiagnosticAnalyzer
             DiagnosticDescriptors.EmptyGrpcInterface,
             DiagnosticDescriptors.EmptySseInterface,
             DiagnosticDescriptors.EmptyNatsInterface,
+            DiagnosticDescriptors.EmptyPostgresInterface,
             DiagnosticDescriptors.EmptyRestApiInterface);
 
     public override void Initialize(AnalysisContext context)

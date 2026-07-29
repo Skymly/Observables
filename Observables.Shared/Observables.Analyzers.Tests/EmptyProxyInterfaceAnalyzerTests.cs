@@ -159,6 +159,27 @@ public sealed class EmptyProxyInterfaceAnalyzerTests
     }
 
     [Fact]
+    public void OBS10007_on_empty_postgres_interface()
+    {
+        const string source =
+            """
+            using Observables.Postgres;
+
+            [Postgres]
+            public interface IChannels
+            {
+            }
+            """;
+
+        var diagnostics = AnalyzerTestHarness.RunAnalyzers(
+            BuildSource(source, "Observables.Postgres"),
+            additionalReferences: [AnalyzerTestHarness.CreateReference<global::Observables.Postgres.PostgresAttribute>()],
+            new EmptyProxyInterfaceAnalyzer());
+
+        Assert.Contains(diagnostics, d => d.Id == "OBS10007");
+    }
+
+    [Fact]
     public void OBS3007_on_empty_restapi_interface()
     {
         const string source =

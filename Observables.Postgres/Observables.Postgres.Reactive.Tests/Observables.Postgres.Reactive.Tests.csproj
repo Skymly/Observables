@@ -1,0 +1,30 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <RootNamespace>Observables.Postgres.Reactive.Tests</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Using Include="Xunit" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="Npgsql" />
+    <PackageReference Include="System.Reactive" />
+    <PackageReference Include="xunit.v3" />
+    <PackageReference Include="xunit.runner.visualstudio">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Observables.Postgres.Reactive\Observables.Postgres.Reactive.csproj" />
+    <ProjectReference Include="..\Observables.Postgres.Reactive.SourceGenerators\Observables.Postgres.Reactive.SourceGenerators.csproj"
+                      OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Include="..\Observables.Postgres.Tests\Infrastructure\PostgresTestServer.cs" Link="Infrastructure\PostgresTestServer.cs" />
+    <Compile Include="..\Observables.Postgres.Tests\Infrastructure\PostgresTestServerFixture.cs" Link="Infrastructure\PostgresTestServerFixture.cs" />
+  </ItemGroup>
+
+</Project>

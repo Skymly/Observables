@@ -3,7 +3,7 @@
   <Import Project="..\..\Observables.SourceGenerators.props" />
 
   <PropertyGroup>
-    <Description>Source generator for PostgreSQL LISTEN/NOTIFY proxies → System.Reactive IObservable (scaffold stub).</Description>
+    <Description>Source generator for PostgreSQL LISTEN/NOTIFY proxies → System.Reactive IObservable.</Description>
     <DefineConstants>$(DefineConstants);ROSLYN_4;POSTGRES_REACTIVE</DefineConstants>
   </PropertyGroup>
 

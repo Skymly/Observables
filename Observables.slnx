@@ -273,7 +273,11 @@
 
       <Project Path="Observables.Postgres/Observables.Postgres.R3.SourceGenerators.Tests/Observables.Postgres.R3.SourceGenerators.Tests.csproj" />
 
+      <Project Path="Observables.Postgres/Observables.Postgres.Reactive.SourceGenerators.Tests/Observables.Postgres.Reactive.SourceGenerators.Tests.csproj" />
+
       <Project Path="Observables.Postgres/Observables.Postgres.Tests/Observables.Postgres.Tests.csproj" />
+
+      <Project Path="Observables.Postgres/Observables.Postgres.Reactive.Tests/Observables.Postgres.Reactive.Tests.csproj" />
 
     </Folder>
 

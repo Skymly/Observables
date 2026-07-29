@@ -98,7 +98,9 @@
     "Observables.Nats/Observables.Nats.Tests/Observables.Nats.Tests.csproj",
     "Observables.Nats/Observables.Nats.Reactive.Tests/Observables.Nats.Reactive.Tests.csproj",
     "Observables.Postgres/Observables.Postgres.R3.SourceGenerators.Tests/Observables.Postgres.R3.SourceGenerators.Tests.csproj",
+    "Observables.Postgres/Observables.Postgres.Reactive.SourceGenerators.Tests/Observables.Postgres.Reactive.SourceGenerators.Tests.csproj",
     "Observables.Postgres/Observables.Postgres.Tests/Observables.Postgres.Tests.csproj",
+    "Observables.Postgres/Observables.Postgres.Reactive.Tests/Observables.Postgres.Reactive.Tests.csproj",
     "Observables.Shared/Observables.CodeFixes.Tests/Observables.CodeFixes.Tests.csproj",
     "Observables.Shared/Observables.Analyzers.Tests/Observables.Analyzers.Tests.csproj",
     "Observables.Shared/Observables.TrimTests/Observables.TrimTests.csproj"

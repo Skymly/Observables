@@ -25,6 +25,32 @@ public sealed class PostgresInterfaceGeneratorTests
         return Verifier.Verify(GeneratorTestHarness.ToSnapshot(output));
     }
 
+    [Fact]
+    public Task Postgres_interface_generates_typed_json_payload_reactive_proxy()
+    {
+        const string userSource =
+            """
+            public sealed class OrderPayload
+            {
+                public string OrderId { get; set; } = "";
+                public int Quantity { get; set; }
+            }
+
+            [Postgres]
+            public interface ITypedOrderChannel
+            {
+                [Listen("order_created")]
+                IObservable<OrderPayload> OrderCreated { get; }
+
+                [Notify("order_created")]
+                IObservable<System.Reactive.Unit> Raise(OrderPayload payload);
+            }
+            """;
+
+        var output = GeneratorTestHarness.Run(userSource);
+        return Verifier.Verify(GeneratorTestHarness.ToSnapshot(output));
+    }
+
     const string CacheTestSource =
         """
         [Postgres]

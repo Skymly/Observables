@@ -9,4 +9,5 @@ internal sealed record PostgresMemberModel(
     string ResultTypeDisplay,
     ImmutableEquatableArray<string> ParameterDeclarations,
     bool HasCancellationToken,
-    string? PayloadParameterName);
+    string? PayloadParameterName,
+    string? PayloadTypeDisplay);

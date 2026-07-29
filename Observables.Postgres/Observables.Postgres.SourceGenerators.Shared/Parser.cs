@@ -34,7 +34,6 @@ internal static class Parser
         var listenAttribute = compilation.GetTypeByMetadataName("Observables.Postgres.ListenAttribute");
         var observableType = compilation.GetTypeByMetadataName(BackendTokens.ObservableMetadataName);
         var unitType = compilation.GetTypeByMetadataName(BackendTokens.UnitMetadataName);
-        var stringType = compilation.GetSpecialType(SpecialType.System_String);
 
         var interfaces = new List<PostgresInterfaceModel>();
 
@@ -77,7 +76,6 @@ internal static class Parser
                                 listenAttribute,
                                 observableType,
                                 unitType,
-                                stringType,
                                 members,
                                 diagnostics);
                             break;
@@ -88,7 +86,6 @@ internal static class Parser
                                 notifyAttribute,
                                 listenAttribute,
                                 observableType,
-                                stringType,
                                 members,
                                 diagnostics);
                             break;
@@ -123,7 +120,6 @@ internal static class Parser
         INamedTypeSymbol? listenAttribute,
         INamedTypeSymbol? observableType,
         INamedTypeSymbol? unitType,
-        INamedTypeSymbol stringType,
         List<PostgresMemberModel> members,
         List<Diagnostic> diagnostics)
     {
@@ -172,8 +168,8 @@ internal static class Parser
 
         if (!TryResolveNotifyParameters(
                 method,
-                stringType,
                 out var payloadParameterName,
+                out var payloadTypeDisplay,
                 out var unsupportedLocation))
         {
             diagnostics.Add(
@@ -213,7 +209,8 @@ internal static class Parser
                 resultType,
                 declarations.ToImmutableEquatableArray(),
                 hasCt,
-                payloadParameterName));
+                payloadParameterName,
+                payloadTypeDisplay));
     }
 
     static void TryAddProperty(
@@ -222,7 +219,6 @@ internal static class Parser
         INamedTypeSymbol? notifyAttribute,
         INamedTypeSymbol? listenAttribute,
         INamedTypeSymbol? observableType,
-        INamedTypeSymbol stringType,
         List<PostgresMemberModel> members,
         List<Diagnostic> diagnostics)
     {
@@ -290,18 +286,6 @@ internal static class Parser
             return;
         }
 
-        if (property.Type is not INamedTypeSymbol listenObservable
-            || !listenObservable.IsGenericType
-            || !IsStringType(listenObservable.TypeArguments[0], stringType))
-        {
-            diagnostics.Add(
-                Diagnostic.Create(
-                    DiagnosticDescriptors.UnsupportedReturnType,
-                    property.Locations.FirstOrDefault(),
-                    returnDisplay));
-            return;
-        }
-
         members.Add(
             new PostgresMemberModel(
                 IdentifierHelper.Escape(property.Name),
@@ -312,16 +296,18 @@ internal static class Parser
                 resultType,
                 ImmutableEquatableArray.Empty<string>(),
                 false,
+                null,
                 null));
     }
 
     static bool TryResolveNotifyParameters(
         IMethodSymbol method,
-        INamedTypeSymbol stringType,
         out string? payloadParameterName,
+        out string? payloadTypeDisplay,
         out Location? badLocation)
     {
         payloadParameterName = null;
+        payloadTypeDisplay = null;
         badLocation = null;
         var payloadCandidates = new List<IParameterSymbol>();
 
@@ -343,23 +329,12 @@ internal static class Parser
 
         if (payloadCandidates.Count == 1)
         {
-            if (!IsStringType(payloadCandidates[0].Type, stringType))
-            {
-                badLocation = payloadCandidates[0].Locations.FirstOrDefault()
-                    ?? method.Locations.FirstOrDefault();
-                return false;
-            }
-
             payloadParameterName = IdentifierHelper.Escape(payloadCandidates[0].Name);
+            payloadTypeDisplay = payloadCandidates[0].Type.ToDisplayString(DisplayFormat);
         }
 
         return true;
     }
-
-    static bool IsStringType(ITypeSymbol? type, INamedTypeSymbol stringType) =>
-        type is not null
-        && (type.SpecialType == SpecialType.System_String
-            || SymbolEqualityComparer.Default.Equals(type.WithNullableAnnotation(NullableAnnotation.None), stringType));
 
     static bool IsValidChannelName(string channel) =>
         channel.Length is > 0 and <= 63 && ChannelNameRegex.IsMatch(channel);

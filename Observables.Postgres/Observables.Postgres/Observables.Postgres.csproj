@@ -13,4 +13,8 @@
     <PackageReference Include="R3" />
   </ItemGroup>
 
+  <ItemGroup>
+    <InternalsVisibleTo Include="Observables.Postgres.Reactive" />
+  </ItemGroup>
+
 </Project>

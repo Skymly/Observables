@@ -3,7 +3,7 @@
   <Import Project="..\..\Observables.SourceGenerators.R3.props" />
 
   <PropertyGroup>
-    <Description>Source generator for PostgreSQL LISTEN/NOTIFY proxies → R3 Observable (scaffold stub).</Description>
+    <Description>Source generator for PostgreSQL LISTEN/NOTIFY proxies → R3 Observable.</Description>
     <DefineConstants>$(DefineConstants);ROSLYN_4;POSTGRES_R3</DefineConstants>
   </PropertyGroup>
 

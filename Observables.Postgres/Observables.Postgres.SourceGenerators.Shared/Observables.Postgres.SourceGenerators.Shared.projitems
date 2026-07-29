@@ -12,5 +12,12 @@
     <AdditionalFiles Include="$(MSBuildThisFileDirectory)AnalyzerReleases.Shipped.md" />
     <AdditionalFiles Include="$(MSBuildThisFileDirectory)AnalyzerReleases.Unshipped.md" />
     <Compile Include="$(MSBuildThisFileDirectory)DiagnosticDescriptors.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Emitter.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)IncrementalValuesProviderExtensions.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Models\ContextGenerationModel.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Models\PostgresBoundaryKind.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Models\PostgresInterfaceModel.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Models\PostgresMemberModel.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Parser.cs" />
   </ItemGroup>
 </Project>

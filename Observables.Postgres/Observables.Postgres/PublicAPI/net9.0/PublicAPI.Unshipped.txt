@@ -1,1 +1,17 @@
 #nullable enable
+Observables.Postgres.ListenAttribute
+Observables.Postgres.ListenAttribute.Channel.get -> string?
+Observables.Postgres.ListenAttribute.ListenAttribute(string? channel = null) -> void
+Observables.Postgres.NotifyAttribute
+Observables.Postgres.NotifyAttribute.Channel.get -> string?
+Observables.Postgres.NotifyAttribute.NotifyAttribute(string? channel = null) -> void
+Observables.Postgres.PostgresAttribute
+Observables.Postgres.PostgresAttribute.PostgresAttribute() -> void
+Observables.Postgres.PostgresObservable
+Observables.Postgres.PostgresService
+static Observables.Postgres.PostgresObservable.FromListen(Npgsql.NpgsqlConnection! connection, string! channel) -> R3.Observable<string!>!
+static Observables.Postgres.PostgresObservable.FromNotify(Npgsql.NpgsqlConnection! connection, string! channel, string? payload, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> R3.Observable<R3.Unit>!
+static Observables.Postgres.PostgresObservable.FromNotify(Npgsql.NpgsqlConnection! connection, string! channel, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> R3.Observable<R3.Unit>!
+static Observables.Postgres.PostgresService.For(System.Type! postgresInterfaceType, Npgsql.NpgsqlConnection! connection) -> object!
+static Observables.Postgres.PostgresService.For<T>(Npgsql.NpgsqlConnection! connection) -> T
+static Observables.Postgres.PostgresService.RegisterGeneratedFactory(System.Type! postgresInterfaceType, System.Func<Npgsql.NpgsqlConnection!, object!>! factory) -> void

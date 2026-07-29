@@ -1,14 +1,16 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <RootNamespace>Observables.Postgres.Tests</RootNamespace>
+    <RootNamespace>Observables.Postgres.R3.SourceGenerators.Tests</RootNamespace>
   </PropertyGroup>
 
   <ItemGroup>
     <Using Include="Xunit" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" />
     <PackageReference Include="Npgsql" />
     <PackageReference Include="R3" />
+    <PackageReference Include="Verify.XunitV3" />
     <PackageReference Include="xunit.v3" />
     <PackageReference Include="xunit.runner.visualstudio">
       <PrivateAssets>all</PrivateAssets>
@@ -17,9 +19,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\Observables.Shared\Observables.TestSupport\Observables.TestSupport.csproj" />
     <ProjectReference Include="..\Observables.Postgres\Observables.Postgres.csproj" />
-    <ProjectReference Include="..\Observables.Postgres.R3.SourceGenerators\Observables.Postgres.R3.SourceGenerators.csproj"
-                      OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+    <ProjectReference Include="..\Observables.Postgres.R3.SourceGenerators\Observables.Postgres.R3.SourceGenerators.csproj" />
   </ItemGroup>
 
 </Project>

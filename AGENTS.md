@@ -158,6 +158,7 @@ Observables/
 | **Grpc** | `Observables.Grpc` | `Grpc.R3.SourceGenerators` | `Grpc.Reactive.SourceGenerators` | R3 + Reactive 生成器测试；E2E（`Grpc.Tests` / `Grpc.Reactive.Tests`，进程内 `TestServer`） |
 | **Sse** | `Observables.Sse` | `Sse.R3.SourceGenerators` | `Sse.Reactive.SourceGenerators` | R3 + Reactive 生成器测试；E2E（`Sse.Tests` / `Sse.Reactive.Tests`，内嵌 HTTP server） |
 | **Nats** | `Observables.Nats` | `Nats.R3.SourceGenerators` | `Nats.Reactive.SourceGenerators` | R3 + Reactive 生成器测试；E2E（`Nats.Tests` / `Nats.Reactive.Tests`，进程内 nats-server） |
+| **Postgres** | `Observables.Postgres`（脚手架） | `Postgres.R3.SourceGenerators`（stub） | `Postgres.Reactive.SourceGenerators`（stub） | B-tier peer + raw Npgsql LISTEN/NOTIFY（`Postgres.Tests`）；生成代理 / Package 待后续票 |
 
 **RestAPI 运行时**：`RestApiSettings`、`RestService.For<T>()`；命名空间 `Observables.RestAPI`。
 
@@ -221,6 +222,7 @@ Observables/
     | `OBS7xxx` | Grpc |
     | `OBS8xxx` | Sse |
     | `OBS9xxx` | Nats |
+    | `OBS10xxx` | Postgres |
 
   - 新增诊断落入对应段，**不复用、不跨段**。
   - 新增诊断写入对应项目的 `AnalyzerReleases.Unshipped.md`；发版时移入 `Shipped.md`（**已启用**，勿再 `#pragma warning disable RS2008`）。
@@ -368,7 +370,7 @@ dotnet run --project build/_build.csproj -- --target Ci --configuration Release
 | **Shared** | `Observables.Core`、`Observables.SourceGenerators.Shared`、`Observables.Analyzers`、`Observables.CodeFixes` |
 | **Events** | `/Events/`（含 `Observables.Events/targets`、Shared 诊断 `OBS2001`–`OBS2005`） |
 | **RestAPI** | `/RestAPI/`（含 `SourceGenerators.Shared`、Tests） |
-| **SignalR** / **WebSocket** / **Mqtt** / **Grpc** / **Sse** / **Nats** | 各对应文件夹 |
+| **SignalR** / **WebSocket** / **Mqtt** / **Grpc** / **Sse** / **Nats** / **Postgres** | 各对应文件夹 |
 | **Docs** | 本仓 `docs/`（维护者/中文）；用户文档站 [Observables.Docs](https://github.com/Skymly/Observables.Docs)（VitePress，**分 PR**） |
 | **Repository (root README)** | 根 `README.md`、`CONTRIBUTING.md` |
 | **Solution Items** | 根 `AGENTS.md`、`Observables.slnx`、`Directory.Build.props`、`Directory.Packages.props`（CPM）、公共 props、`eng/`、`build/`（Nuke）、`.github/` |

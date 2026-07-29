@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <RootNamespace>Observables.Postgres.Reactive</RootNamespace>
+    <AssemblyName>Observables.Postgres.Reactive</AssemblyName>
+    <Description>System.Reactive bridges for Observables.Postgres (scaffolding).</Description>
+    <TargetFrameworks>net8.0;net9.0;net10.0</TargetFrameworks>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Observables.Postgres\Observables.Postgres.csproj" />
+    <PackageReference Include="System.Reactive" />
+  </ItemGroup>
+
+</Project>

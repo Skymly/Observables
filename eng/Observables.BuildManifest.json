@@ -63,6 +63,14 @@
     {
       "packProject": "Observables.Nats/Observables.Nats.Package/Observables.Nats.Reactive.Pack.csproj",
       "packageId": "Observables.Nats.Reactive"
+    },
+    {
+      "packProject": "Observables.Postgres/Observables.Postgres.Package/Observables.Postgres.R3.csproj",
+      "packageId": "Observables.Postgres.R3"
+    },
+    {
+      "packProject": "Observables.Postgres/Observables.Postgres.Package/Observables.Postgres.Reactive.Pack.csproj",
+      "packageId": "Observables.Postgres.Reactive"
     }
   ],
   "testProjects": [
@@ -121,6 +129,8 @@
     "eng/nuget-smoke/Sse.R3.Consumer/Sse.R3.Consumer.csproj",
     "eng/nuget-smoke/Sse.Reactive.Consumer/Sse.Reactive.Consumer.csproj",
     "eng/nuget-smoke/Nats.R3.Consumer/Nats.R3.Consumer.csproj",
-    "eng/nuget-smoke/Nats.Reactive.Consumer/Nats.Reactive.Consumer.csproj"
+    "eng/nuget-smoke/Nats.Reactive.Consumer/Nats.Reactive.Consumer.csproj",
+    "eng/nuget-smoke/Postgres.R3.Consumer/Postgres.R3.Consumer.csproj",
+    "eng/nuget-smoke/Postgres.Reactive.Consumer/Postgres.Reactive.Consumer.csproj"
   ]
 }

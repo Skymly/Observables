@@ -261,6 +261,8 @@
 
     <Project Path="Observables.Postgres/Observables.Postgres.SourceGenerators.Shared/Observables.Postgres.SourceGenerators.Shared.shproj" Id="b0f3c4d5-6e7f-4081-9b02-4d5e6f708192" />
 
+    <Project Path="Observables.Postgres/Observables.Postgres.Package/Observables.Postgres.Package.csproj" />
+
     <Project Path="Observables.Postgres/Observables.Postgres/Observables.Postgres.csproj" />
 
     <Project Path="Observables.Postgres/Observables.Postgres.Reactive/Observables.Postgres.Reactive.csproj" />

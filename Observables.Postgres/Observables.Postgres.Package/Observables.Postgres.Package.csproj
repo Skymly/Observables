@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.Build.Traversal/4.1.82">
+
+  <PropertyGroup>
+    <Description>Traversal root for Observables.Postgres.R3 and Observables.Postgres.Reactive NuGet packages.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="Observables.Postgres.R3.csproj" />
+    <ProjectReference Include="Observables.Postgres.Reactive.Pack.csproj" />
+  </ItemGroup>
+
+</Project>

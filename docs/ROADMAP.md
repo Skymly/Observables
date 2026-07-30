@@ -8,10 +8,10 @@
 
 | 维度 | 现状 |
 |------|------|
-| 已实现域 | **Events**、**RestAPI**、**SignalR**、**Mqtt**、**WebSocket**、**Grpc**、**Sse**、**Nats**（运行时 + 双路生成器 + 测试） |
+| 已实现域 | **Events**、**RestAPI**、**SignalR**、**Mqtt**、**WebSocket**、**Grpc**、**Sse**、**Nats**、**Postgres**（运行时 + 双路生成器 + 测试；Postgres 待 nuget.org 发版） |
 | 共享层 | `Observables.Core`、`Observables.SourceGenerators.Shared`、`Observables.CodeFixes`、`Observables.Analyzers` |
 | nuget.org 已发 | **`0.1.0-preview6`** — **12 包**；**`0.1.0-preview7`** — **14 包**（+ Sse）；**`0.1.0-preview8`** — **16 包**（+ Nats）；**`0.1.0`** — **16 包**（稳定版）；**`0.1.1-preview1`** — 本地化 IntelliSense 预览；**`0.1.1`** — **16 包**（稳定版，`v0.1.1` tag + GitHub Release）；**`0.1.2`** — **16 包**（稳定版，`v0.1.2` tag + GitHub Release，含 Events 增量缓存 + 诊断描述符收敛）；**`0.1.3`** — 未发布（空 snupkg 被 nuget.org 拒绝）；**`0.1.4`** — **16 包** + **16 snupkg**（稳定版，`v0.1.4` tag，含符号包修复 + CI smoke job + RestAPI 常量统一 + E2E 端口修复 + RestAPI.Reactive 对齐 + Events Reactive 前缀统一） |
-| 构建 | 主仓 Nuke `Ci` / `CiPack` / `Publish`；`PackVerify` + `eng/nuget-smoke`（**16** 消费者） |
+| 构建 | 主仓 Nuke `Ci` / `CiPack` / `Publish`；`PackVerify` + `eng/nuget-smoke`（本地 manifest **18** 包 / 消费者，含 Postgres；nuget.org 仍为 **16**） |
 | 示例仓 CI | `Observables.Samples` Nuke `Ci`（NuGet `0.1.1`，已同步） |
 
 ### 已知工程债（详见 AGENTS.md「工程治理」）
@@ -42,8 +42,9 @@
 | `OBS7001`–`OBS7999` | Grpc | 使用中（7001–7008；7008 为内部 fail-safe） |
 | `OBS8001`–`OBS8999` | SSE | 使用中（8001–8007；8006 为内部 fail-safe） |
 | `OBS9001`–`OBS9999` | NATS | 使用中（9001–9008；9008 为内部 fail-safe） |
+| `OBS10001`–`OBS10999` | Postgres | 使用中（10001–10008；10008 为内部 fail-safe；10007 为空接口，Shared Analyzer） |
 
-当前共 **60** 个唯一诊断：**52** 个用户可行动诊断与 **8** 个内部 fail-safe 诊断。新增诊断须落入对应段并在 `AnalyzerReleases.Unshipped.md` 登记（见 AGENTS.md）。
+当前共 **68** 个唯一诊断（含 Postgres OBS10xxx）：前八域 **60** 个 + Postgres **8** 个。新增诊断须落入对应段并在 `AnalyzerReleases.Unshipped.md` 登记（见 AGENTS.md）。
 
 ## 里程碑
 
@@ -167,6 +168,14 @@ Grpc 两包已于 **`0.1.0`**（`v0.1.0-preview6` tag）发布至 nuget.org 与 
 ## Post-1.0 Follow-up（按需，不绑定版本）
 
 以下为 0.1.0 稳定版后的工程改进项，按优先级分组。不阻断发版，维护者有精力时按需处理。
+
+### P1 — 第九域 Postgres（ADR-002）
+
+| # | 行动项 | 状态 | 说明 |
+|---|--------|------|------|
+| P1-PG | Postgres LISTEN/NOTIFY Feature（主仓） | ✅ 代码落地 | 运行时 + 双路生成器 + Package + E2E（B-tier peer）+ PackVerify / nuget-smoke；设计文档 [`docs/design/postgres.md`](design/postgres.md)；README / CONTRIBUTING / ROADMAP 已同步 |
+| P1-PG-nuget | nuget.org 发第九域（+2 包 → 18） | 待维护者批准 | 勿擅自改 `PackageVersion` / tag；发版后 ADR-002 §6 mid-trigger 复审剩余 top-5 |
+| P1-PG-docs | Observables.Docs / Samples | 跨仓待办 | 用户站与 Samples 不在本仓本票范围 |
 
 ### P2 — 中期处理
 

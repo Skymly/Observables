@@ -17,6 +17,7 @@
 | Grpc | [grpc.md](grpc.md) |
 | Sse | [sse.md](sse.md) |
 | Nats | [nats.md](nats.md) |
+| Postgres | [postgres.md](postgres.md) |
 
 ## 横切工程文档
 

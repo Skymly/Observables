@@ -95,20 +95,36 @@ internal static class Emitter
     {
         if (member.IsProperty)
         {
+            var listenCall = IsStringType(member.ResultTypeDisplay)
+                ? $"{BridgeType}.FromListen(_connection, \"{member.ChannelName}\")"
+                : $"{BridgeType}.FromListen<{member.ResultTypeDisplay}>(_connection, \"{member.ChannelName}\")";
+
             writer.WriteLine(
                 $$"""
                     private {{member.ReturnTypeDisplay}}? _{{member.MemberName}};
                     public {{member.ReturnTypeDisplay}} {{member.MemberName}} =>
-                        _{{member.MemberName}} ??= {{BridgeType}}.FromListen(_connection, "{{member.ChannelName}}");
+                        _{{member.MemberName}} ??= {{listenCall}};
 
                 """);
             return;
         }
 
         var cancellation = member.HasCancellationToken ? "cancellationToken" : "default";
-        var bridgeCall = member.PayloadParameterName is not null
-            ? $"{BridgeType}.FromNotify(_connection, \"{member.ChannelName}\", {member.PayloadParameterName}, {cancellation})"
-            : $"{BridgeType}.FromNotify(_connection, \"{member.ChannelName}\", {cancellation})";
+        string bridgeCall;
+        if (member.PayloadParameterName is null)
+        {
+            bridgeCall = $"{BridgeType}.FromNotify(_connection, \"{member.ChannelName}\", {cancellation})";
+        }
+        else if (IsStringType(member.PayloadTypeDisplay))
+        {
+            bridgeCall =
+                $"{BridgeType}.FromNotify(_connection, \"{member.ChannelName}\", {member.PayloadParameterName}, {cancellation})";
+        }
+        else
+        {
+            bridgeCall =
+                $"{BridgeType}.FromNotify<{member.PayloadTypeDisplay}>(_connection, \"{member.ChannelName}\", {member.PayloadParameterName}, {cancellation})";
+        }
 
         var parameterList = member.ParameterDeclarations.Count == 0
             ? string.Empty
@@ -121,4 +137,7 @@ internal static class Emitter
 
             """);
     }
+
+    static bool IsStringType(string? typeDisplay) =>
+        typeDisplay is "string" or "string?" or "global::System.String" or "global::System.String?";
 }

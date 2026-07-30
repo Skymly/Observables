@@ -1,4 +1,5 @@
 using System.Data;
+using System.Diagnostics.CodeAnalysis;
 using System.Text.RegularExpressions;
 using Npgsql;
 using R3;
@@ -82,6 +83,86 @@ public static class PostgresObservable
         });
     }
 
+    /// <summary>
+    /// Hot stream: <c>LISTEN</c> on <paramref name="channel"/> and deserialize notification payloads to
+    /// <typeparamref name="T"/> until disposed.
+    /// </summary>
+    [RequiresUnreferencedCode(PostgresTrimAnnotations.JsonPayload)]
+    [RequiresDynamicCode(PostgresTrimAnnotations.JsonPayload)]
+    public static Observable<T> FromListen<T>(NpgsqlConnection connection, string channel)
+    {
+        if (connection is null)
+        {
+            throw new ArgumentNullException(nameof(connection));
+        }
+
+        ValidateChannelName(channel);
+
+        return Observable.Create<T>(async (observer, ct) =>
+        {
+            void Handler(object sender, NpgsqlNotificationEventArgs args)
+            {
+                if (!string.Equals(args.Channel, channel, StringComparison.Ordinal))
+                {
+                    return;
+                }
+
+                try
+                {
+                    observer.OnNext(PostgresPayload.Deserialize<T>(args.Payload));
+                }
+                catch (Exception ex)
+                {
+                    observer.OnErrorResume(ex);
+                }
+            }
+
+            connection.Notification += Handler;
+            try
+            {
+                await using (var listen = new NpgsqlCommand(
+                    "LISTEN " + QuoteIdent(channel) + ";",
+                    connection))
+                {
+                    await listen.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
+                }
+
+                while (!ct.IsCancellationRequested)
+                {
+                    await connection.WaitAsync(ct).ConfigureAwait(false);
+                }
+
+                observer.OnCompleted();
+            }
+            catch (OperationCanceledException)
+            {
+                observer.OnCompleted();
+            }
+            catch (Exception ex)
+            {
+                observer.OnErrorResume(ex);
+            }
+            finally
+            {
+                connection.Notification -= Handler;
+                try
+                {
+                    if (connection.State == ConnectionState.Open)
+                    {
+                        await using var unlisten = new NpgsqlCommand(
+                            "UNLISTEN " + QuoteIdent(channel) + ";",
+                            connection);
+                        await unlisten.ExecuteNonQueryAsync(CancellationToken.None).ConfigureAwait(false);
+                    }
+                }
+                catch
+                {
+                    // Best-effort cleanup when the connection is already broken.
+                }
+            }
+        });
+    }
+
     /// <summary>Cold stream: send <c>NOTIFY</c> with an empty payload when subscribed.</summary>
     public static Observable<Unit> FromNotify(
         NpgsqlConnection connection,
@@ -114,6 +195,41 @@ public static class PostgresObservable
                 {
                     new("channel", channel),
                     new("payload", payload ?? string.Empty),
+                },
+            };
+            await command.ExecuteNonQueryAsync(linked.Token).ConfigureAwait(false);
+            return Unit.Default;
+        });
+    }
+
+    /// <summary>Cold stream: serialize <paramref name="payload"/> and send <c>NOTIFY</c> when subscribed.</summary>
+    [RequiresUnreferencedCode(PostgresTrimAnnotations.JsonPayload)]
+    [RequiresDynamicCode(PostgresTrimAnnotations.JsonPayload)]
+    public static Observable<Unit> FromNotify<T>(
+        NpgsqlConnection connection,
+        string channel,
+        T payload,
+        CancellationToken cancellationToken = default)
+    {
+        if (connection is null)
+        {
+            throw new ArgumentNullException(nameof(connection));
+        }
+
+        ValidateChannelName(channel);
+
+        return Observable.FromAsync(async ct =>
+        {
+            using var linked = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, ct);
+            var text = PostgresPayload.SerializeToText(payload);
+            await using var command = new NpgsqlCommand(
+                "SELECT pg_notify(@channel, @payload);",
+                connection)
+            {
+                Parameters =
+                {
+                    new("channel", channel),
+                    new("payload", text),
                 },
             };
             await command.ExecuteNonQueryAsync(linked.Token).ConfigureAwait(false);

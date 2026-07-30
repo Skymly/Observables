@@ -6,7 +6,7 @@
 
 - **类型**：个人项目（Skymly 工作区）
 - **远端**：https://github.com/Skymly/Observables（私有）；文件夹名 `Observables` = 仓库名；同步状态以 `git status` 为准
-- **阶段**：**Events**、**RestAPI**、**SignalR**、**Mqtt**、**WebSocket**、**Grpc**、**Sse**、**Nats** 已实现（运行时 + 双路生成器 + 测试）；共享层另含 `Observables.CodeFixes` 与 `Observables.Analyzers`；**nuget.org 已发** `0.1.6`（**16 包**）；Nuke `PackVerify` + `eng/nuget-smoke` 覆盖 16 包
+- **阶段**：**Events**、**RestAPI**、**SignalR**、**Mqtt**、**WebSocket**、**Grpc**、**Sse**、**Nats**、**Postgres** 已实现（运行时 + 双路生成器 + 测试）；共享层另含 `Observables.CodeFixes` 与 `Observables.Analyzers`；**nuget.org 已发** `0.1.6`（**16 包**）；本地 manifest / PackVerify 已含 Postgres（**18 包**，待发版）；Nuke `PackVerify` + `eng/nuget-smoke` 覆盖 manifest 包清单
 - **下一里程碑**：post-1.0 维护期（M1–M7 全部完成，0.1.6 稳定版已发）；待定项见 [`docs/ROADMAP.md`](docs/ROADMAP.md) 末尾
 - **路线图**：里程碑与发版顺序见 [`docs/ROADMAP.md`](docs/ROADMAP.md)（M1 ✅ … M7 ✅，0.1.6 稳定版已发）
 - **结构约定**：下文「仓库结构」与命名约定为权威；**工程治理**（包管理、警告、诊断、版本来源）见下文同名章节
@@ -158,7 +158,7 @@ Observables/
 | **Grpc** | `Observables.Grpc` | `Grpc.R3.SourceGenerators` | `Grpc.Reactive.SourceGenerators` | R3 + Reactive 生成器测试；E2E（`Grpc.Tests` / `Grpc.Reactive.Tests`，进程内 `TestServer`） |
 | **Sse** | `Observables.Sse` | `Sse.R3.SourceGenerators` | `Sse.Reactive.SourceGenerators` | R3 + Reactive 生成器测试；E2E（`Sse.Tests` / `Sse.Reactive.Tests`，内嵌 HTTP server） |
 | **Nats** | `Observables.Nats` | `Nats.R3.SourceGenerators` | `Nats.Reactive.SourceGenerators` | R3 + Reactive 生成器测试；E2E（`Nats.Tests` / `Nats.Reactive.Tests`，进程内 nats-server） |
-| **Postgres** | `Observables.Postgres`（脚手架） | `Postgres.R3.SourceGenerators`（stub） | `Postgres.Reactive.SourceGenerators`（stub） | B-tier peer + raw Npgsql LISTEN/NOTIFY（`Postgres.Tests`）；生成代理 / Package 待后续票 |
+| **Postgres** | `Observables.Postgres` | `Postgres.R3.SourceGenerators` | `Postgres.Reactive.SourceGenerators` | R3/Reactive 生成器测试；E2E（`Postgres.Tests` / `Postgres.Reactive.Tests`，B-tier portable peer）；`Postgres.Package` + PackVerify + nuget-smoke |
 
 **RestAPI 运行时**：`RestApiSettings`、`RestService.For<T>()`；命名空间 `Observables.RestAPI`。
 
@@ -345,13 +345,13 @@ dotnet run --project build/_build.csproj -- --target Ci --configuration Release
 | **Test** | 同 `Ci`（`Compile` + `UnitTest`）；可附加 `--test-domains <逗号分隔>` 过滤测试项目（例如 `--test-domains mqtt,shared`） |
 | **Pack** | 打包 pack 子项目 → `artifacts/package/`（**不**依赖 UnitTest）；可附加 `--pack-domains <逗号分隔>` 过滤包（按 `PackageId` 前缀 `Observables.<d>.` 匹配） |
 | **PackOnly** | `Pack` + `PackVerify`（**不**跑 UnitTest） |
-| **PackVerify** | 断言 nupkg 含 analyzer、Events `observables.events.props`、RestAPI/SignalR/Mqtt/WebSocket/Sse/Grpc/Nats `lib/`（manifest 当前 **16 包**） |
+| **PackVerify** | 断言 nupkg 含 analyzer、Events `observables.events.props`、RestAPI/SignalR/Mqtt/WebSocket/Sse/Grpc/Nats/Postgres `lib/`（manifest 当前 **18 包**） |
 | **CiPack** | CI 完整流水线：`Test` + `PackOnly` + `NuGetConsumerSmoke`（本地包）；保留供本地或 release.yml 全链路调试 |
 | **Publish** | 推送到 nuget.org（`NUGET_API_KEY`）与 GitHub Packages（`GITHUB_TOKEN`，`packages:write`）；`DependsOn(Test, PackVerify)` 确保发版前测试已通过 |
 
 | Workflow | 触发 | 作用 |
 |----------|------|------|
-| [`ci.yml`](.github/workflows/ci.yml) | PR / push `main` | **changes** job（`dorny/paths-filter`）→ 6 个 `test-domain` 矩阵（**Shared 改动 → 全域跑**）+ `test-shared`（仅 Shared 改动时跑）+ 6 个 `pack-domain` 矩阵（push main / PR 带 `pack` label，且域命中）；各 job **完全并行**，未命中的域整列跳过 |
+| [`ci.yml`](.github/workflows/ci.yml) | PR / push `main` | **changes** job（`dorny/paths-filter`）→ 域 `test-domain` 矩阵（含 postgres；**Shared 改动 → 全域跑**）+ `test-shared`（仅 Shared 改动时跑）+ 域 `pack-domain` 矩阵（push main / PR 带 `pack` label，且域命中）；各 job **完全并行**，未命中的域整列跳过 |
 | [`release.yml`](.github/workflows/release.yml) | push tag `v*` / `workflow_dispatch` | **Publish**（须 Secrets + 维护者 actor；内部 `Test` → `PackVerify` → push） |
 
 ## 工作约定

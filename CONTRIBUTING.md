@@ -40,7 +40,7 @@ Release notes: update the version table in this file and [docs/ROADMAP.md](docs/
 ### PR conventions
 
 - **Titles and descriptions**: English.
-- **Scope**: Prefer one solution-folder module per PR (Shared, Events, RestAPI, SignalR, Mqtt, WebSocket, Grpc, Sse, Nats, or Solution Items for root props / `eng/` / `build/` / `.github/`).
+- **Scope**: Prefer one solution-folder module per PR (Shared, Events, RestAPI, SignalR, Mqtt, WebSocket, Grpc, Sse, Nats, Postgres, or Solution Items for root props / `eng/` / `build/` / `.github/`).
 - **Commits**: English; do not mention AI or agent tools in commit messages.
 - **Do not** change `eng/Observables.Package.props` version or create tags unless the task explicitly requests a release.
 
@@ -69,7 +69,9 @@ Preview builds (`0.1.0-preview*`, `0.1.1-preview*`) were published to NuGet with
 
 ### Package set
 
-Sixteen NuGet packages — eight domains, each as `Observables.<Feature>.R3` and `Observables.<Feature>.Reactive`:
+**nuget.org (`0.1.6`)**: sixteen packages — eight domains, each as `Observables.<Feature>.R3` and `Observables.<Feature>.Reactive`.
+
+**Local tree / PackVerify**: eighteen packages — nine domains (adds Postgres). Postgres ships on the next maintainer-approved release; until then Package IDs exist in-repo and in `eng/Observables.BuildManifest.json` but are not yet on nuget.org.
 
 | Package ID | Domain |
 |------------|--------|
@@ -81,6 +83,7 @@ Sixteen NuGet packages — eight domains, each as `Observables.<Feature>.R3` and
 | `Observables.Grpc.R3` / `.Reactive` | gRPC `CallInvoker` proxy |
 | `Observables.Sse.R3` / `.Reactive` | Server-Sent Events (`text/event-stream`) |
 | `Observables.Nats.R3` / `.Reactive` | Core NATS subject proxy |
+| `Observables.Postgres.R3` / `.Reactive` | PostgreSQL LISTEN/NOTIFY channel proxy (in-repo; pending nuget.org) |
 
 Version source of truth: `eng/Observables.Package.props` (`PackageVersion` / `Version`).
 

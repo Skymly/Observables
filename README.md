@@ -1,12 +1,12 @@
 # Observables
 
-> **Roslyn source generators bridging events & IO boundaries to R3 / System.Reactive.** Declarative interface-driven proxies for HTTP, SignalR, MQTT, WebSocket, gRPC, SSE, and NATS — write the interface, get the `Observable<T>`.
+> **Roslyn source generators bridging events & IO boundaries to R3 / System.Reactive.** Declarative interface-driven proxies for HTTP, SignalR, MQTT, WebSocket, gRPC, SSE, NATS, and PostgreSQL LISTEN/NOTIFY — write the interface, get the `Observable<T>`.
 
 [![NuGet](https://img.shields.io/nuget/v/Observables.Events.R3.svg?label=NuGet&logo=nuget)](https://www.nuget.org/profiles/Skymly)
 [![CI](https://img.shields.io/github/actions/workflow/status/Skymly/Observables/ci.yml?branch=main&label=CI&logo=github)](https://github.com/Skymly/Observables/actions/workflows/ci.yml)
 [![License](https://img.shields.io/github/license/Skymly/Observables.svg?label=License&logo=opensourcehardware)](LICENSE)
 
-面向 **反应式编程（Rx）** 的 Roslyn 源生成器套件：用声明式接口把 .NET 事件、HTTP、SignalR、MQTT、WebSocket、gRPC、SSE、NATS 等边界桥接到 **R3** 或 **System.Reactive**。
+面向 **反应式编程（Rx）** 的 Roslyn 源生成器套件：用声明式接口把 .NET 事件、HTTP、SignalR、MQTT、WebSocket、gRPC、SSE、NATS、PostgreSQL LISTEN/NOTIFY 等边界桥接到 **R3** 或 **System.Reactive**。
 
 | 资源 | 链接 |
 |------|------|
@@ -43,7 +43,7 @@ System.Reactive 路径将 `Observables.Events.R3` 换为 `Observables.Events.Rea
 
 ## 功能域
 
-八域均已提供运行时（按需）、双路源生成器、测试与 NuGet 包；共享层另有 `Observables.Core`、`Observables.Analyzers`、`Observables.CodeFixes`。
+九域均已在主仓提供运行时（按需）、双路源生成器与测试；前八域已发 nuget.org（`0.1.6`，16 包），**Postgres** 已落地并纳入本地 PackVerify（18 包，待发版）。共享层另有 `Observables.Core`、`Observables.Analyzers`、`Observables.CodeFixes`。
 
 | 域 | 说明 |
 |----|------|
@@ -55,6 +55,7 @@ System.Reactive 路径将 `Observables.Events.R3` 换为 `Observables.Events.Rea
 | **Grpc** | `CallInvoker` 代理 |
 | **Sse** | `text/event-stream` 事件流 |
 | **Nats** | Core NATS subject 代理（v1 不含 JetStream） |
+| **Postgres** | PostgreSQL LISTEN/NOTIFY 通道代理（专用非池化连接；推荐 keepalive） |
 
 设计稿见 [`docs/`](docs/README.md)（文档体系见 [`docs/DOCUMENTATION.md`](docs/DOCUMENTATION.md)）。路由事件生成默认关闭；在消费者项目中设置 `<ObservableRoutedEvents>true</ObservableRoutedEvents>`（见 `Observables.Events/Observables.Events/targets/observables.events.props`）。
 
@@ -292,6 +293,29 @@ var hub = NatsService.For<IOrderHub>(nats);
 ```
 
 依赖 [NATS.Client.Core](https://www.nuget.org/packages/NATS.Client.Core)。
+
+## Postgres（LISTEN/NOTIFY）
+
+在 `[Postgres]` 接口上用 `[Listen]` / `[Notify]` 标注成员，生成器产出 LISTEN 热流与 NOTIFY 冷流。`PostgresService.For<T>` 接受**专用、非池化**的 `NpgsqlConnection`（勿从连接池借连接做长生命周期 `Wait`）；Listen 连接建议 `Pooling=false` 并设置 Npgsql **`Keepalive`**。
+
+```csharp
+[Postgres]
+public interface IOrderHub
+{
+    [Listen("orders")]
+    Observable<string> Orders { get; }
+
+    [Notify("orders")]
+    Observable<Unit> PublishOrder(string payload, CancellationToken cancellationToken = default);
+}
+
+await using var connection = new NpgsqlConnection(
+    "Host=localhost;Database=app;Username=app;Password=…;Pooling=false;Keepalive=30");
+await connection.OpenAsync();
+var hub = PostgresService.For<IOrderHub>(connection);
+```
+
+依赖 [Npgsql](https://www.nuget.org/packages/Npgsql)。维护者设计说明见 [`docs/design/postgres.md`](docs/design/postgres.md)。
 
 ## 构建
 

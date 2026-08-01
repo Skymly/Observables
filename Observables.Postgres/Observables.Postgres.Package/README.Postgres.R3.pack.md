@@ -5,7 +5,7 @@ Declarative PostgreSQL LISTEN/NOTIFY proxies with Roslyn source generators — a
 ## Install
 
 ```xml
-<PackageReference Include="Observables.Postgres.R3" Version="0.1.6" />
+<PackageReference Include="Observables.Postgres.R3" Version="0.1.7" />
 <PackageReference Include="Npgsql" Version="10.0.3" />
 <PackageReference Include="R3" Version="1.3.0" />
 ```

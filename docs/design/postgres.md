@@ -1,6 +1,6 @@
 # 设计：Postgres 域
 
-> 状态：主仓已实现（运行时 + 双路生成器 + Package + 三层测试）；**nuget.org 尚未发**第九域（本地 PackVerify / manifest 为 **18 包**，当前稳定版 `0.1.6` 仍为 **16 包**）。关联 Issue [#154](https://github.com/Skymly/Observables/issues/154) / [#160](https://github.com/Skymly/Observables/issues/160)。面向用户文档见 Observables.Docs（跨仓，未含在本票）。
+> 状态：主仓已实现（运行时 + 双路生成器 + Package + 三层测试）；发版目标 **`0.1.7`**（**18 包**，含本域）。关联 Issue [#154](https://github.com/Skymly/Observables/issues/154)。面向用户文档见 Observables.Docs。
 
 ## 1. 动机与定位
 
@@ -135,8 +135,8 @@ Observables.Postgres/
 
 ## 10. Follow-up
 
-- nuget.org 发第九域（版本须维护者批准；发版后触发 ADR-002 §6 mid-trigger 复审剩余 top-5）
-- Observables.Docs `postgres.md` + `diagnostics.md` OBS10xxx；Observables.Samples.Postgres（跨仓）
+- 推 `v0.1.7` → nuget.org Publish + GitHub Release（维护者）；完成后 ADR-002 §6 mid-trigger（剩余 top-4：Redis / Diagnostic Source / RabbitMQ / AMQP 1.0）
+- Observables.Samples.Postgres（跨仓 [#9](https://github.com/Skymly/Observables.Samples/issues/9)）
 - JSON sourcegen / 更严格 AOT 友好载荷路径
 
 ## 11. 参考

@@ -1,0 +1,29 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <RootNamespace>Observables.Redis.Tests</RootNamespace>
+    <!-- Garnet spike locked on net8; keep E2E single-TFM to avoid multi-TFM apphost copy races. -->
+    <TargetFrameworks>net8.0</TargetFrameworks>
+    <!-- Garnet pulls System.Text.Json 10.x; keep transitive pinning from forcing CPM 8.x downgrades. -->
+    <CentralPackageTransitivePinningEnabled>false</CentralPackageTransitivePinningEnabled>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Using Include="Xunit" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="Microsoft.Garnet" />
+    <PackageReference Include="StackExchange.Redis" />
+    <PackageReference Include="xunit.v3" />
+    <PackageReference Include="xunit.runner.visualstudio">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Observables.Redis\Observables.Redis.csproj" />
+    <ProjectReference Include="..\Observables.Redis.R3.SourceGenerators\Observables.Redis.R3.SourceGenerators.csproj"
+                      OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+  </ItemGroup>
+
+</Project>

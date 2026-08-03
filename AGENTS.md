@@ -223,6 +223,7 @@ Observables/
     | `OBS8xxx` | Sse |
     | `OBS9xxx` | Nats |
     | `OBS10xxx` | Postgres |
+    | `OBS11xxx` | Redis |
 
   - 新增诊断落入对应段，**不复用、不跨段**。
   - 新增诊断写入对应项目的 `AnalyzerReleases.Unshipped.md`；发版时移入 `Shipped.md`（**已启用**，勿再 `#pragma warning disable RS2008`）。

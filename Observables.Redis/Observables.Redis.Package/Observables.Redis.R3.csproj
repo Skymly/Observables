@@ -1,0 +1,30 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <Import Project="..\..\eng\Observables.Package.props" />
+  <Import Project="..\..\eng\PackRoslynAnalyzer.targets" />
+  <Import Project="..\..\eng\PackReferencedProjects.targets" />
+
+  <PropertyGroup>
+    <IsPackable>true</IsPackable>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <IncludeBuildOutput>false</IncludeBuildOutput>
+    <DevelopmentDependency>false</DevelopmentDependency>
+    <SuppressDependenciesWhenPacking>false</SuppressDependenciesWhenPacking>
+    <PackageId>Observables.Redis.R3</PackageId>
+    <Description>Declarative Redis Pub/Sub proxies with Roslyn source generators — annotate interfaces with [RedisSubscribe]/[RedisPublish] to generate R3 Observable&lt;T&gt; proxies for classic Redis Pub/Sub.</Description>
+    <PackageTags>observables;redis;pubsub;messaging;realtime;reactive;r3;declarative;roslyn;source-generator;csharp;dotnet</PackageTags>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <ObservablesPackGeneratorProject>..\Observables.Redis.R3.SourceGenerators\Observables.Redis.R3.SourceGenerators.csproj</ObservablesPackGeneratorProject>
+    <ObservablesPackGeneratorAssemblyName>Observables.Redis.R3.SourceGenerators.dll</ObservablesPackGeneratorAssemblyName>
+    <ObservablesPackGeneratorOutputDir>$(MSBuildProjectDirectory)\..\Observables.Redis.R3.SourceGenerators\bin\$(Configuration)\netstandard2.0\</ObservablesPackGeneratorOutputDir>
+    <ObservablesPackPackagePropsFile>$(MSBuildProjectDirectory)\build\Observables.Redis.R3.props</ObservablesPackPackagePropsFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ObservablesPackLibProjectReference Include="..\Observables.Redis\Observables.Redis.csproj" />
+    <PackageReference Include="R3" />
+    <PackageReference Include="StackExchange.Redis" />
+    <None Include="README.Redis.R3.pack.md" Pack="true" PackagePath="README.md" Visible="false" />
+  </ItemGroup>
+
+</Project>

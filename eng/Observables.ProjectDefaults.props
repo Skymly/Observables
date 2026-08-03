@@ -34,6 +34,7 @@
     <_ObsIsDomainFolder Condition="$(_ObsProjectDir.Contains('/Observables.Sse/'))">true</_ObsIsDomainFolder>
     <_ObsIsDomainFolder Condition="$(_ObsProjectDir.Contains('/Observables.Nats/'))">true</_ObsIsDomainFolder>
     <_ObsIsDomainFolder Condition="$(_ObsProjectDir.Contains('/Observables.Postgres/'))">true</_ObsIsDomainFolder>
+    <_ObsIsDomainFolder Condition="$(_ObsProjectDir.Contains('/Observables.Redis/'))">true</_ObsIsDomainFolder>
     <_ObsIsEventsPackProject>false</_ObsIsEventsPackProject>
     <_ObsIsEventsPackProject Condition="$(_ObsProjectDir.Contains('/Observables.Events.Package')) and '$(_ObsIsGeneratorProject)' != 'true'">true</_ObsIsEventsPackProject>
     <_ObsIsSharedProject>false</_ObsIsSharedProject>

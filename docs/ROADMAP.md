@@ -1,16 +1,16 @@
 # Observables 路线图
 
-本文件描述 Observables 从预览版走向 **`0.1.0` 稳定版** 的里程碑规划（M1–M7 已全部完成；当前发版目标 **`0.1.7`** = 第九域 Postgres）。它是规划层文档：每个里程碑的工程标准（中央包管理、警告策略、诊断治理等）以 [`AGENTS.md`](../AGENTS.md) 为权威，本文件只排序与拆解。
+本文件描述 Observables 从预览版走向 **`0.1.0` 稳定版** 的里程碑规划（M1–M7 已全部完成；当前稳定版 **`0.1.7`** = 第九域 Postgres（18 包））。它是规划层文档：每个里程碑的工程标准（中央包管理、警告策略、诊断治理等）以 [`AGENTS.md`](../AGENTS.md) 为权威，本文件只排序与拆解。
 
 > 版本号、tag、发版均须维护者明确批准；本文件中的版本号（如 `preview5`）为规划占位，不构成自动发版授权。
 
-## 现状基线（`0.1.7` = Postgres 第九域）
+## 现状基线（`0.1.7` 已发 nuget.org）
 
 | 维度 | 现状 |
 |------|------|
 | 已实现域 | **Events**、**RestAPI**、**SignalR**、**Mqtt**、**WebSocket**、**Grpc**、**Sse**、**Nats**、**Postgres**（运行时 + 双路生成器 + 测试） |
 | 共享层 | `Observables.Core`、`Observables.SourceGenerators.Shared`、`Observables.CodeFixes`、`Observables.Analyzers` |
-| nuget.org | 至 **`0.1.6`** 为 **16 包**；**`0.1.7`** 目标 **18 包**（+ Postgres R3/Reactive；tag/Publish 见维护者步骤） |
+| nuget.org 已发 | **`0.1.7`** — **18 包**（+ Postgres R3/Reactive；`v0.1.7` tag + GitHub Release） |
 | 构建 | 主仓 Nuke `Ci` / `CiPack` / `Publish`；`PackVerify` + `eng/nuget-smoke`（manifest **18** 包） |
 | 示例仓 CI | `Observables.Samples` Nuke `Ci`（对齐库版本；Postgres 样例见跨仓 #9） |
 
@@ -175,8 +175,8 @@ Grpc 两包已于 **`0.1.0`**（`v0.1.0-preview6` tag）发布至 nuget.org 与 
 | # | 行动项 | 状态 | 说明 |
 |---|--------|------|------|
 | P1-PG | Postgres LISTEN/NOTIFY Feature（主仓） | ✅ 代码落地 | 运行时 + 双路生成器 + Package + E2E（B-tier peer）+ PackVerify / nuget-smoke；设计文档 [`docs/design/postgres.md`](design/postgres.md)；README / CONTRIBUTING / ROADMAP 已同步 |
-| P1-PG-nuget | nuget.org 发第九域（+2 包 → 18） | 🔄 `0.1.7` 准备中 | `PackageVersion=0.1.7`；推 `v0.1.7` + Publish + GitHub Release 后勾完成；发版后 ADR-002 §6 mid-trigger |
-| P1-PG-docs | Observables.Docs / Samples | 🔄 跨仓收尾 | Docs 去掉 pending；Samples [#9](https://github.com/Skymly/Observables.Samples/issues/9) |
+| P1-PG-nuget | nuget.org 发第九域（+2 包 → 18） | ✅ `0.1.7` | `v0.1.7` tag + nuget.org / GitHub Packages + GitHub Release；ADR-002 §6 mid-trigger 已记 |
+| P1-PG-docs | Observables.Docs / Samples | ✅ | Docs PR #13；Samples PR #10（关 #9） |
 
 ### P2 — 中期处理
 

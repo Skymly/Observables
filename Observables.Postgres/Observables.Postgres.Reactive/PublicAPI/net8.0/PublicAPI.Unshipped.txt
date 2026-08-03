@@ -1,7 +1,1 @@
 #nullable enable
-Observables.Postgres.Reactive.SystemReactivePostgresAdapter
-static Observables.Postgres.Reactive.SystemReactivePostgresAdapter.FromListen(Npgsql.NpgsqlConnection! connection, string! channel) -> System.IObservable<string!>!
-static Observables.Postgres.Reactive.SystemReactivePostgresAdapter.FromListen<T>(Npgsql.NpgsqlConnection! connection, string! channel) -> System.IObservable<T>!
-static Observables.Postgres.Reactive.SystemReactivePostgresAdapter.FromNotify(Npgsql.NpgsqlConnection! connection, string! channel, string? payload, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.IObservable<System.Reactive.Unit>!
-static Observables.Postgres.Reactive.SystemReactivePostgresAdapter.FromNotify(Npgsql.NpgsqlConnection! connection, string! channel, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.IObservable<System.Reactive.Unit>!
-static Observables.Postgres.Reactive.SystemReactivePostgresAdapter.FromNotify<T>(Npgsql.NpgsqlConnection! connection, string! channel, T payload, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.IObservable<System.Reactive.Unit>!

@@ -43,7 +43,7 @@ System.Reactive 路径将 `Observables.Events.R3` 换为 `Observables.Events.Rea
 
 ## 功能域
 
-九域均已在主仓提供运行时（按需）、双路源生成器与测试；前八域已发 nuget.org（`0.1.6`，16 包），**Postgres** 已落地并纳入本地 PackVerify（18 包，待发版）。共享层另有 `Observables.Core`、`Observables.Analyzers`、`Observables.CodeFixes`。
+九域均已在主仓提供运行时（按需）、双路源生成器与测试；**`0.1.7`** 将九域 **18 包**（含 **Postgres**）发至 nuget.org。共享层另有 `Observables.Core`、`Observables.Analyzers`、`Observables.CodeFixes`。
 
 | 域 | 说明 |
 |----|------|

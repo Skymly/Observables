@@ -64,14 +64,13 @@ Stable packages are published to [nuget.org](https://www.nuget.org/profiles/Skym
 | **0.1.5** | Maintenance release — RestAPI OBS3004 fix (path + [Body]/[Query] parameters no longer falsely rejected); incremental generator cache hit tests across all 8 domains (45 tests). |
 | **0.1.6-preview1** | Preview release — NuGet package icon added (hexagon purple→magenta gradient + Rx shape, `PackageIcon` wired into all 16 packages). |
 | **0.1.6** | Stable release — package icon; C# keyword identifier escaping in six domain source generators; source generator fail-safe with per-domain internal error diagnostics (OBS2005–OBS9008). |
+| **0.1.7** | Stable release — ninth domain **Postgres** (LISTEN/NOTIFY): `Observables.Postgres.R3` / `.Reactive` (+2 → **18** packages); OBS10xxx; PackVerify / nuget-smoke / Public API baselines. |
 
 Preview builds (`0.1.0-preview*`, `0.1.1-preview*`) were published to NuGet with tags only (no GitHub Release). Details and milestone planning: [docs/ROADMAP.md](docs/ROADMAP.md).
 
 ### Package set
 
-**nuget.org (`0.1.6`)**: sixteen packages — eight domains, each as `Observables.<Feature>.R3` and `Observables.<Feature>.Reactive`.
-
-**Local tree / PackVerify**: eighteen packages — nine domains (adds Postgres). Postgres ships on the next maintainer-approved release; until then Package IDs exist in-repo and in `eng/Observables.BuildManifest.json` but are not yet on nuget.org.
+**nuget.org (`0.1.7`)**: eighteen packages — nine domains, each as `Observables.<Feature>.R3` and `Observables.<Feature>.Reactive`.
 
 | Package ID | Domain |
 |------------|--------|
@@ -83,7 +82,7 @@ Preview builds (`0.1.0-preview*`, `0.1.1-preview*`) were published to NuGet with
 | `Observables.Grpc.R3` / `.Reactive` | gRPC `CallInvoker` proxy |
 | `Observables.Sse.R3` / `.Reactive` | Server-Sent Events (`text/event-stream`) |
 | `Observables.Nats.R3` / `.Reactive` | Core NATS subject proxy |
-| `Observables.Postgres.R3` / `.Reactive` | PostgreSQL LISTEN/NOTIFY channel proxy (in-repo; pending nuget.org) |
+| `Observables.Postgres.R3` / `.Reactive` | PostgreSQL LISTEN/NOTIFY channel proxy |
 
 Version source of truth: `eng/Observables.Package.props` (`PackageVersion` / `Version`).
 

@@ -1,0 +1,16 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>GarnetPubSub.Spike</RootNamespace>
+    <AssemblyName>GarnetPubSub.Spike</AssemblyName>
+    <Description>Issue #170 spike: prove Garnet in-process classic Redis Pub/Sub for Observables.Redis E2E.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Test/tooling only — must never appear on Observables.*.Package dependency graphs. -->
+    <PackageReference Include="Microsoft.Garnet" Version="2.1.1" />
+    <PackageReference Include="StackExchange.Redis" Version="2.8.41" />
+  </ItemGroup>
+
+</Project>

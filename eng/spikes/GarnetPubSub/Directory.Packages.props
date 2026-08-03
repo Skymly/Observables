@@ -1,0 +1,6 @@
+<Project>
+  <!-- Keep Microsoft.Garnet / StackExchange.Redis out of the repo-root CPM and pack graphs. -->
+  <PropertyGroup>
+    <ManagePackageVersionsCentrally>false</ManagePackageVersionsCentrally>
+  </PropertyGroup>
+</Project>

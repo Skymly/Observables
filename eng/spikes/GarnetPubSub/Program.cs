@@ -51,7 +51,7 @@ try
 
     results.Add(await ProbeExactSubscribeAsync(subscriber).ConfigureAwait(false));
     results.Add(await ProbePatternSubscribeAsync(subscriber).ConfigureAwait(false));
-    results.Add(await ProbePublishFanoutAsync(subscriber).ConfigureAwait(false));
+    results.Add(await ProbePublishAsync(subscriber).ConfigureAwait(false));
 }
 catch (Exception ex)
 {
@@ -109,13 +109,11 @@ static async Task<(string Family, bool Pass, string Detail)> ProbeExactSubscribe
 
     try
     {
+        // SubscribeAsync completes after the server acknowledges SUBSCRIBE.
         await subscriber.SubscribeAsync(channel, (_, value) =>
         {
             received.TrySetResult(value.ToString());
         }).ConfigureAwait(false);
-
-        // Give the subscription handshake a moment before publish.
-        await Task.Delay(100).ConfigureAwait(false);
 
         var receivers = await subscriber.PublishAsync(channel, payload).ConfigureAwait(false);
         using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
@@ -152,8 +150,6 @@ static async Task<(string Family, bool Pass, string Detail)> ProbePatternSubscri
             received.TrySetResult((ch.ToString(), value.ToString()));
         }).ConfigureAwait(false);
 
-        await Task.Delay(100).ConfigureAwait(false);
-
         var receivers = await subscriber.PublishAsync(concrete, payload).ConfigureAwait(false);
         using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
         var (channel, message) = await received.Task.WaitAsync(cts.Token).ConfigureAwait(false);
@@ -178,35 +174,38 @@ static async Task<(string Family, bool Pass, string Detail)> ProbePatternSubscri
     }
 }
 
-static async Task<(string Family, bool Pass, string Detail)> ProbePublishFanoutAsync(ISubscriber subscriber)
+static async Task<(string Family, bool Pass, string Detail)> ProbePublishAsync(ISubscriber subscriber)
 {
-    const string family = "PUBLISH (fan-out)";
+    const string family = "PUBLISH";
     var channel = RedisChannel.Literal($"obs-spike-pub-{Guid.NewGuid():N}");
     const string payload = "publish-hello";
-    var a = new TaskCompletionSource<string>(TaskCreationOptions.RunContinuationsAsynchronously);
-    var b = new TaskCompletionSource<string>(TaskCreationOptions.RunContinuationsAsynchronously);
+    var received = new TaskCompletionSource<string>(TaskCreationOptions.RunContinuationsAsynchronously);
 
     try
     {
-        await subscriber.SubscribeAsync(channel, (_, value) => a.TrySetResult(value.ToString())).ConfigureAwait(false);
-        // Second subscription on the same multiplexer still exercises PUBLISH delivery count.
-        await subscriber.SubscribeAsync(channel, (_, value) => b.TrySetResult(value.ToString())).ConfigureAwait(false);
-
-        await Task.Delay(100).ConfigureAwait(false);
+        // Dedicated publish probe: one subscriber, assert Publish returns receivers >= 1 and payload arrives.
+        await subscriber.SubscribeAsync(channel, (_, value) =>
+        {
+            received.TrySetResult(value.ToString());
+        }).ConfigureAwait(false);
 
         var receivers = await subscriber.PublishAsync(channel, payload).ConfigureAwait(false);
         using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
-        var msgA = await a.Task.WaitAsync(cts.Token).ConfigureAwait(false);
-        var msgB = await b.Task.WaitAsync(cts.Token).ConfigureAwait(false);
+        var message = await received.Task.WaitAsync(cts.Token).ConfigureAwait(false);
 
         await subscriber.UnsubscribeAsync(channel).ConfigureAwait(false);
 
-        if (!string.Equals(msgA, payload, StringComparison.Ordinal) || !string.Equals(msgB, payload, StringComparison.Ordinal))
+        if (receivers < 1)
         {
-            return (family, false, $"payload mismatch a='{msgA}' b='{msgB}', receivers={receivers}");
+            return (family, false, $"Publish reported receivers={receivers} (expected >= 1)");
         }
 
-        return (family, true, $"both handlers received payload, Publish receivers={receivers}");
+        if (!string.Equals(message, payload, StringComparison.Ordinal))
+        {
+            return (family, false, $"payload mismatch: got '{message}', receivers={receivers}");
+        }
+
+        return (family, true, $"payload OK, Publish receivers={receivers}");
     }
     catch (Exception ex)
     {

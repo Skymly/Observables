@@ -223,7 +223,8 @@ sealed class Build : NukeBuild
                     || packageId.StartsWith("Observables.Grpc.", StringComparison.Ordinal)
                     || packageId.StartsWith("Observables.Sse.", StringComparison.Ordinal)
                     || packageId.StartsWith("Observables.Nats.", StringComparison.Ordinal)
-                    || packageId.StartsWith("Observables.Postgres.", StringComparison.Ordinal))
+                    || packageId.StartsWith("Observables.Postgres.", StringComparison.Ordinal)
+                    || packageId.StartsWith("Observables.Redis.", StringComparison.Ordinal))
                 {
                     Assert.True(
                         entries.Contains("analyzers/dotnet/roslyn4.12/cs/Observables.CodeFixes.dll"),
@@ -247,11 +248,19 @@ sealed class Build : NukeBuild
                     || packageId.StartsWith("Observables.Grpc.", StringComparison.Ordinal)
                     || packageId.StartsWith("Observables.Sse.", StringComparison.Ordinal)
                     || packageId.StartsWith("Observables.Nats.", StringComparison.Ordinal)
-                    || packageId.StartsWith("Observables.Postgres.", StringComparison.Ordinal))
+                    || packageId.StartsWith("Observables.Postgres.", StringComparison.Ordinal)
+                    || packageId.StartsWith("Observables.Redis.", StringComparison.Ordinal))
                 {
                     bool hasLib = entries.Any(e => e.StartsWith("lib/", StringComparison.OrdinalIgnoreCase)
                         && e.EndsWith(".dll", StringComparison.OrdinalIgnoreCase));
                     Assert.True(hasLib, $"{packageId}: missing runtime assemblies under lib/");
+                }
+
+                if (packageId.StartsWith("Observables.Redis.", StringComparison.Ordinal))
+                {
+                    bool hasGarnet = entries.Any(e =>
+                        e.Contains("Garnet", StringComparison.OrdinalIgnoreCase));
+                    Assert.False(hasGarnet, $"{packageId}: Garnet must stay out of pack dependency graphs");
                 }
 
                 Assert.True(

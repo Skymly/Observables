@@ -100,11 +100,19 @@ internal static class Emitter
     {
         if (member.IsProperty)
         {
+            var subscribeMethod = (member.IsPatternSubscribe, member.UseEnvelope) switch
+            {
+                (false, false) => "FromSubscribe",
+                (true, false) => "FromPatternSubscribe",
+                (false, true) => "FromSubscribeMessage",
+                (true, true) => "FromPatternSubscribeMessage",
+            };
+
             writer.WriteLine(
                 $$"""
                     private {{member.ReturnTypeDisplay}}? _{{member.MemberName}};
                     public {{member.ReturnTypeDisplay}} {{member.MemberName}} =>
-                        _{{member.MemberName}} ??= {{BridgeType}}.FromSubscribe<{{member.ResultTypeDisplay}}>(_multiplexer, "{{member.ChannelTemplate}}");
+                        _{{member.MemberName}} ??= {{BridgeType}}.{{subscribeMethod}}<{{member.ResultTypeDisplay}}>(_multiplexer, "{{member.ChannelTemplate}}");
 
                 """);
             return;

@@ -11,4 +11,6 @@ internal sealed record RedisMemberModel(
     ImmutableEquatableArray<string> ChannelParameterNames,
     bool HasCancellationToken,
     string? PayloadParameterName,
-    string? PayloadTypeDisplay);
+    string? PayloadTypeDisplay,
+    bool IsPatternSubscribe = false,
+    bool UseEnvelope = false);

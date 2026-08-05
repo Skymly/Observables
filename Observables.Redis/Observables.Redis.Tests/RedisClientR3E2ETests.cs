@@ -187,6 +187,31 @@ public sealed class RedisClientR3E2ETests(RedisTestServerFixture fixture)
     }
 
     [Fact]
+    public async Task RedisSubscribe_pattern_envelope_roundtrip_via_For()
+    {
+        var cancellation = TestContext.Current.CancellationToken;
+        await using var subMux = await fixture.Server.ConnectAsync(cancellation);
+        await using var pubMux = await fixture.Server.ConnectAsync(cancellation);
+        var subHub = RedisService.For<IE2EHub>(subMux);
+        var pubHub = RedisService.For<IE2EHub>(pubMux);
+
+        using var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellation);
+        cts.CancelAfter(DefaultTimeout);
+        var receive = subHub.PatternEnvelope.FirstAsync(cts.Token);
+        await RedisE2EHelpers.PublishUntilReceivedAsync(
+            async ct =>
+            {
+                await pubHub.PublishPattern("sports", "goal!").FirstAsync(ct);
+            },
+            receive,
+            cts.Token);
+
+        var message = await receive;
+        Assert.Equal("e2e.pattern.sports", message.Channel);
+        Assert.Equal("goal!", message.Payload);
+    }
+
+    [Fact]
     public async Task RedisPublish_byte_array_raw_roundtrip()
     {
         var cancellation = TestContext.Current.CancellationToken;

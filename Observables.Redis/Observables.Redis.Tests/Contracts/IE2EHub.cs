@@ -20,4 +20,10 @@ public interface IE2EHub
 
     [RedisPublish("e2e.bytes")]
     Observable<Unit> PublishBytes(byte[] payload);
+
+    [RedisSubscribe("e2e.pattern.*")]
+    Observable<RedisMessage<string>> PatternEnvelope { get; }
+
+    [RedisPublish("e2e.pattern.{topic}")]
+    Observable<Unit> PublishPattern(string topic, string payload);
 }

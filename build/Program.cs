@@ -258,9 +258,19 @@ sealed class Build : NukeBuild
 
                 if (packageId.StartsWith("Observables.Redis.", StringComparison.Ordinal))
                 {
-                    bool hasGarnet = entries.Any(e =>
+                    bool hasGarnetEntry = entries.Any(e =>
                         e.Contains("Garnet", StringComparison.OrdinalIgnoreCase));
-                    Assert.False(hasGarnet, $"{packageId}: Garnet must stay out of pack dependency graphs");
+                    Assert.False(hasGarnetEntry, $"{packageId}: Garnet must stay out of pack dependency graphs");
+
+                    ZipArchiveEntry? nuspec = archive.Entries.FirstOrDefault(e =>
+                        e.FullName.EndsWith(".nuspec", StringComparison.OrdinalIgnoreCase));
+                    Assert.True(nuspec is not null, $"{packageId}: missing .nuspec");
+                    using Stream nuspecStream = nuspec!.Open();
+                    using var nuspecReader = new StreamReader(nuspecStream);
+                    string nuspecText = nuspecReader.ReadToEnd();
+                    Assert.False(
+                        nuspecText.Contains("Garnet", StringComparison.OrdinalIgnoreCase),
+                        $"{packageId}: Garnet must stay out of pack dependency graphs (nuspec)");
                 }
 
                 Assert.True(

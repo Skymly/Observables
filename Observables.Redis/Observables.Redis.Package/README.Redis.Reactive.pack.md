@@ -5,7 +5,7 @@ Declarative Redis Pub/Sub proxies with Roslyn source generators — annotate int
 ## Install
 
 ```xml
-<PackageReference Include="Observables.Redis.Reactive" Version="0.1.8" />
+<PackageReference Include="Observables.Redis.Reactive" Version="0.1.9" />
 <PackageReference Include="StackExchange.Redis" Version="2.8.41" />
 <PackageReference Include="System.Reactive" Version="6.0.1" />
 ```

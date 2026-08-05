@@ -72,14 +72,14 @@ Observables 在 `0.1.6` 已于 nuget.org 稳定发布：**8 域 / 16 包 / 60 �
 | 序 | 候选 | 要点 | 状态 |
 |----|------|------|------|
 | 1 | PostgreSQL LISTEN/NOTIFY | Npgsql + SO `postgresql`；契合；E2E B | **已发版**（`0.1.7`） |
-| 2 | Redis Pub/Sub | StackExchange.Redis + SO `redis`；契合；E2E A（Garnet） | **已发版**（`0.1.8`） |
+| 2 | Redis Pub/Sub | StackExchange.Redis + SO `redis`；契合；E2E A（Garnet） | **已发版**（`0.1.9`） |
 | 3 | .NET 诊断源 | 诊断栈无处不在（BCL 降权后仍强）；契合；E2E A | 待实现 |
 | 4 | RabbitMQ（AMQP 0-9-1） | 「部分」可剥 ack；E2E C；Apache-2.0 一侧 | 待实现 |
 | 5 | AMQP 1.0 | 契合；E2E A（AMQPNetLite listener）；Apache-2.0 | 待实现 |
 
 **§6 mid-trigger 复审（`0.1.7` / Postgres）：** #1 已发版落地触发复审。未发现可点名的采用度位次翻转、许可/官方 codegen 剧变或 gating 规则变更；**剩余次序 #2–#5 维持不变**。本复审**不**自动开 Redis epic / 实现排期。
 
-**§6 mid-trigger 复审（`0.1.8` / Redis）：** #2 已发版落地触发复审。未发现可点名的采用度位次翻转、许可/官方 codegen 剧变或 gating 规则变更；**剩余次序 #3–#5 维持不变**。本复审**不**改写 §1–§4 准入规则。
+**§6 mid-trigger 复审（`0.1.9` / Redis）：** #2 已发版落地触发复审。未发现可点名的采用度位次翻转、许可/官方 codegen 剧变或 gating 规则变更；**剩余次序 #3–#5 维持不变**。本复审**不**改写 §1–§4 准入规则。
 
 **单 OS 殿后（过 gating，不进 top-5）：** WMI 事件；Windows 事件日志。
 

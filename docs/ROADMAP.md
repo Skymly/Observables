@@ -1,16 +1,16 @@
 # Observables 路线图
 
-本文件描述 Observables 从预览版走向 **`0.1.0` 稳定版** 的里程碑规划（M1–M7 已全部完成；当前 nuget.org 稳定版 **`0.1.8`** = 第十域 Redis（20 包））。它是规划层文档：每个里程碑的工程标准（中央包管理、警告策略、诊断治理等）以 [`AGENTS.md`](../AGENTS.md) 为权威，本文件只排序与拆解。
+本文件描述 Observables 从预览版走向 **`0.1.0` 稳定版** 的里程碑规划（M1–M7 已全部完成；当前 nuget.org 稳定版 **`0.1.9`** = 第十域 Redis（20 包））。它是规划层文档：每个里程碑的工程标准（中央包管理、警告策略、诊断治理等）以 [`AGENTS.md`](../AGENTS.md) 为权威，本文件只排序与拆解。
 
 > 版本号、tag、发版均须维护者明确批准；本文件中的版本号（如 `preview5`）为规划占位，不构成自动发版授权。
 
-## 现状基线（`0.1.8` 已发 nuget.org）
+## 现状基线（`0.1.9` 已发 nuget.org）
 
 | 维度 | 现状 |
 |------|------|
 | 已实现域 | **Events**、**RestAPI**、**SignalR**、**Mqtt**、**WebSocket**、**Grpc**、**Sse**、**Nats**、**Postgres**、**Redis**（运行时 + 双路生成器 + 测试） |
 | 共享层 | `Observables.Core`、`Observables.SourceGenerators.Shared`、`Observables.CodeFixes`、`Observables.Analyzers` |
-| nuget.org 已发 | **`0.1.8`** — **20 包**（+ Redis R3/Reactive；`v0.1.8` tag + GitHub Release） |
+| nuget.org 已发 | **`0.1.9`** — **20 包**（+ Redis R3/Reactive；`v0.1.9` tag + GitHub Release） |
 | 构建 | 主仓 Nuke `Ci` / `CiPack` / `Publish`；`PackVerify` + `eng/nuget-smoke`（manifest **20** 包） |
 | 示例仓 CI | `Observables.Samples` Nuke `Ci`（对齐库版本；Redis Samples 见跨仓 companion） |
 
@@ -166,7 +166,8 @@ Grpc 两包已于 **`0.1.0`**（`v0.1.0-preview6` tag）发布至 nuget.org 与 
 | `0.1.6-preview1` | 预览版：NuGet 包图标（六边形紫→品红渐变 + Rx 造型，`PackageIcon` 接入）（**16 包** + **16 snupkg**） |
 | `0.1.6` | 稳定版：包图标 + C# 关键字标识符转义（6 域）+ 源生成器 fail-safe（E2，OBS* 内部错误诊断）（**16 包** + **16 snupkg**，`v0.1.6` tag + GitHub Release） |
 | `0.1.7` | 稳定版：第九域 **Postgres** LISTEN/NOTIFY（**18 包** + **18 snupkg**；OBS10xxx；ADR-002 §6 mid-trigger） |
-| `0.1.8` | 稳定版：第十域 **Redis** Pub/Sub（**20 包** + **20 snupkg**；OBS11xxx；ADR-002 #2） |
+| `0.1.8` | 仅 tag：Redis 发版准备已合入；Publish 因 `cursor[bot]` 不在 allowlist 被跳过；由 **`0.1.9`** 取代 |
+| `0.1.9` | 稳定版：第十域 **Redis** Pub/Sub（**20 包** + **20 snupkg**；OBS11xxx；ADR-002 #2） |
 
 ## Post-1.0 Follow-up（按需，不绑定版本）
 
@@ -186,7 +187,7 @@ Grpc 两包已于 **`0.1.0`**（`v0.1.0-preview6` tag）发布至 nuget.org 与 
 |---|--------|------|------|
 | P1-RD | Redis Pub/Sub Feature（主仓） | ✅ 代码落地 | 运行时 + 双路生成器 + Package + Garnet E2E + Shared catalog（#170–#175）；设计文档 [`docs/design/redis.md`](design/redis.md) |
 | P1-RD-pack | PackVerify / nuget-smoke / CI | ✅ [#176](https://github.com/Skymly/Observables/issues/176) / [#186](https://github.com/Skymly/Observables/pull/186) | BuildManifest + PackVerify + smoke + paths-filter |
-| P1-RD-nuget | nuget.org 发第十域（+2 包 → 20） | ✅ `0.1.8` | `v0.1.8` tag + nuget.org / GitHub Packages + GitHub Release |
+| P1-RD-nuget | nuget.org 发第十域（+2 包 → 20） | ✅ `0.1.9` | `v0.1.8` tag 仅存在、Publish 跳过；实际 nuget.org / GitHub Packages / GitHub Release 为 `v0.1.9` |
 | P1-RD-docs | Observables.Docs / Samples | ⏳ companion | Docs [#14](https://github.com/Skymly/Observables.Docs/issues/14)；Samples [#11](https://github.com/Skymly/Observables.Samples/issues/11) |
 
 ### P2 — 中期处理

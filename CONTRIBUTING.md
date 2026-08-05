@@ -65,13 +65,14 @@ Stable packages are published to [nuget.org](https://www.nuget.org/profiles/Skym
 | **0.1.6-preview1** | Preview release — NuGet package icon added (hexagon purple→magenta gradient + Rx shape, `PackageIcon` wired into all 16 packages). |
 | **0.1.6** | Stable release — package icon; C# keyword identifier escaping in six domain source generators; source generator fail-safe with per-domain internal error diagnostics (OBS2005–OBS9008). |
 | **0.1.7** | Stable release — ninth domain **Postgres** (LISTEN/NOTIFY): `Observables.Postgres.R3` / `.Reactive` (+2 → **18** packages); OBS10xxx; PackVerify / nuget-smoke / Public API baselines. |
-| **0.1.8** | Stable release — tenth domain **Redis** Pub/Sub: `Observables.Redis.R3` / `.Reactive` (+2 → **20** packages); OBS11xxx; PackVerify / nuget-smoke / Public API baselines. |
+| **0.1.8** | Tag only — Redis release prep on `main`; Publish skipped (`cursor[bot]` not allowlisted). Superseded by **0.1.9**. |
+| **0.1.9** | Stable release — tenth domain **Redis** Pub/Sub: `Observables.Redis.R3` / `.Reactive` (+2 → **20** packages); OBS11xxx; PackVerify / nuget-smoke / Public API baselines. |
 
 Preview builds (`0.1.0-preview*`, `0.1.1-preview*`) were published to NuGet with tags only (no GitHub Release). Details and milestone planning: [docs/ROADMAP.md](docs/ROADMAP.md).
 
 ### Package set
 
-**nuget.org (`0.1.8`)**: twenty packages — ten domains, each as `Observables.<Feature>.R3` and `Observables.<Feature>.Reactive`.
+**nuget.org (`0.1.9`)**: twenty packages — ten domains, each as `Observables.<Feature>.R3` and `Observables.<Feature>.Reactive`.
 
 | Package ID | Domain |
 |------------|--------|

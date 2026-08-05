@@ -43,7 +43,7 @@ System.Reactive 路径将 `Observables.Events.R3` 换为 `Observables.Events.Rea
 
 ## 功能域
 
-十域均已在主仓提供运行时（按需）、双路源生成器与测试；**`0.1.8`** 将十域 **20 包**（含 **Redis**）发至 nuget.org。共享层另有 `Observables.Core`、`Observables.Analyzers`、`Observables.CodeFixes`。
+十域均已在主仓提供运行时（按需）、双路源生成器与测试；**`0.1.9`** 将十域 **20 包**（含 **Redis**）发至 nuget.org。共享层另有 `Observables.Core`、`Observables.Analyzers`、`Observables.CodeFixes`。
 
 | 域 | 说明 |
 |----|------|

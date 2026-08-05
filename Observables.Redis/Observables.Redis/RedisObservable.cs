@@ -47,20 +47,14 @@ public static class RedisObservable
     [RequiresDynamicCode(RedisTrimAnnotations.JsonPayload)]
 #endif
     public static Observable<T> FromSubscribe<T>(IConnectionMultiplexer multiplexer, string channel) =>
-        CreateSubscribe(
-            multiplexer,
-            RedisChannel.Literal(channel),
-            static message => RedisPayload.Deserialize<T>((byte[]?)message.Message ?? Array.Empty<byte>()));
+        CreateSubscribe(multiplexer, RedisChannel.Literal(channel), static message => DeserializePayload<T>(message));
 
 #if NET8_0_OR_GREATER
     [RequiresUnreferencedCode(RedisTrimAnnotations.JsonPayload)]
     [RequiresDynamicCode(RedisTrimAnnotations.JsonPayload)]
 #endif
     public static Observable<T> FromPatternSubscribe<T>(IConnectionMultiplexer multiplexer, string pattern) =>
-        CreateSubscribe(
-            multiplexer,
-            RedisChannel.Pattern(pattern),
-            static message => RedisPayload.Deserialize<T>((byte[]?)message.Message ?? Array.Empty<byte>()));
+        CreateSubscribe(multiplexer, RedisChannel.Pattern(pattern), static message => DeserializePayload<T>(message));
 
 #if NET8_0_OR_GREATER
     [RequiresUnreferencedCode(RedisTrimAnnotations.JsonPayload)]
@@ -90,11 +84,15 @@ public static class RedisObservable
     [RequiresUnreferencedCode(RedisTrimAnnotations.JsonPayload)]
     [RequiresDynamicCode(RedisTrimAnnotations.JsonPayload)]
 #endif
-    static RedisMessage<T> ToRedisMessage<T>(ChannelMessage message)
-    {
-        var bytes = (byte[]?)message.Message ?? Array.Empty<byte>();
-        return new RedisMessage<T>(message.Channel.ToString(), RedisPayload.Deserialize<T>(bytes));
-    }
+    static T DeserializePayload<T>(ChannelMessage message) =>
+        RedisPayload.Deserialize<T>((byte[]?)message.Message ?? Array.Empty<byte>());
+
+#if NET8_0_OR_GREATER
+    [RequiresUnreferencedCode(RedisTrimAnnotations.JsonPayload)]
+    [RequiresDynamicCode(RedisTrimAnnotations.JsonPayload)]
+#endif
+    static RedisMessage<T> ToRedisMessage<T>(ChannelMessage message) =>
+        new(message.Channel.ToString(), DeserializePayload<T>(message));
 
 #if NET8_0_OR_GREATER
     [RequiresUnreferencedCode(RedisTrimAnnotations.JsonPayload)]

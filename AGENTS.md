@@ -159,7 +159,7 @@ Observables/
 | **Sse** | `Observables.Sse` | `Sse.R3.SourceGenerators` | `Sse.Reactive.SourceGenerators` | R3 + Reactive 生成器测试；E2E（`Sse.Tests` / `Sse.Reactive.Tests`，内嵌 HTTP server） |
 | **Nats** | `Observables.Nats` | `Nats.R3.SourceGenerators` | `Nats.Reactive.SourceGenerators` | R3 + Reactive 生成器测试；E2E（`Nats.Tests` / `Nats.Reactive.Tests`，进程内 nats-server） |
 | **Postgres** | `Observables.Postgres` | `Postgres.R3.SourceGenerators` | `Postgres.Reactive.SourceGenerators` | R3/Reactive 生成器测试；E2E（`Postgres.Tests` / `Postgres.Reactive.Tests`，B-tier portable peer）；`Postgres.Package` + PackVerify + nuget-smoke |
-| **Redis** | `Observables.Redis` | `Redis.R3.SourceGenerators` | `Redis.Reactive.SourceGenerators` | R3/Reactive 生成器测试；E2E（`Redis.Tests` / `Redis.Reactive.Tests`，进程内 Garnet）；`Redis.Package`；PackVerify / nuget-smoke / CI 见 #176 |
+| **Redis** | `Observables.Redis` | `Redis.R3.SourceGenerators` | `Redis.Reactive.SourceGenerators` | R3/Reactive 生成器测试；E2E（`Redis.Tests` / `Redis.Reactive.Tests`，进程内 Garnet）；`Redis.Package`；PackVerify / nuget-smoke / CI 登记见 [#176](https://github.com/Skymly/Observables/issues/176) |
 
 **RestAPI 运行时**：`RestApiSettings`、`RestService.For<T>()`；命名空间 `Observables.RestAPI`。
 

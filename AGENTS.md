@@ -411,6 +411,10 @@ Agent 行为准则——与「与用户沟通」并行生效：
 
 GitHub Issues, routed by surface: library → `Skymly/Observables`; user Docs → `Skymly/Observables.Docs`; Samples → `Skymly/Observables.Samples`; GitPulse only when that repo is the work. See `docs/agents/issue-tracker.md`.
 
+### Triage labels
+
+Default five roles: `needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix`. See `docs/agents/triage-labels.md`.
+
 ### Domain docs
 
 This is a single-context repository using root `CONTEXT.md` and `docs/adr/`. See `docs/agents/domain.md`.

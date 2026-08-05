@@ -1,19 +1,18 @@
 # Observables 路线图
 
-本文件描述 Observables 从预览版走向 **`0.1.0` 稳定版** 的里程碑规划（M1–M7 已全部完成；当前 nuget.org 稳定版 **`0.1.7`** = 第九域 Postgres（18 包）；**第十域 Redis** 主仓已落地，规划 **`0.1.8`**）。它是规划层文档：每个里程碑的工程标准（中央包管理、警告策略、诊断治理等）以 [`AGENTS.md`](../AGENTS.md) 为权威，本文件只排序与拆解。
+本文件描述 Observables 从预览版走向 **`0.1.0` 稳定版** 的里程碑规划（M1–M7 已全部完成；当前 nuget.org 稳定版 **`0.1.8`** = 第十域 Redis（20 包））。它是规划层文档：每个里程碑的工程标准（中央包管理、警告策略、诊断治理等）以 [`AGENTS.md`](../AGENTS.md) 为权威，本文件只排序与拆解。
 
 > 版本号、tag、发版均须维护者明确批准；本文件中的版本号（如 `preview5`）为规划占位，不构成自动发版授权。
 
-## 现状基线（`0.1.7` 已发 nuget.org；Redis 主仓已落地）
+## 现状基线（`0.1.8` 已发 nuget.org）
 
 | 维度 | 现状 |
 |------|------|
 | 已实现域 | **Events**、**RestAPI**、**SignalR**、**Mqtt**、**WebSocket**、**Grpc**、**Sse**、**Nats**、**Postgres**、**Redis**（运行时 + 双路生成器 + 测试） |
 | 共享层 | `Observables.Core`、`Observables.SourceGenerators.Shared`、`Observables.CodeFixes`、`Observables.Analyzers` |
-| nuget.org 已发 | **`0.1.7`** — **18 包**（+ Postgres R3/Reactive；`v0.1.7` tag + GitHub Release） |
-| 主仓下一域 | **Redis** Pub/Sub — 代码已落地；PackVerify / smoke / CI 见 [#176](https://github.com/Skymly/Observables/issues/176)；nuget.org 规划 **`0.1.8`**（+2 → **20** 包，**未**授权 bump/tag） |
-| 构建 | 主仓 Nuke `Ci` / `CiPack` / `Publish`；`PackVerify` + `eng/nuget-smoke`（`0.1.7` manifest **18** 包；Redis 登记后 **20**） |
-| 示例仓 CI | `Observables.Samples` Nuke `Ci`（对齐库版本；Postgres 样例见跨仓 #9；Redis Samples 待 companion） |
+| nuget.org 已发 | **`0.1.8`** — **20 包**（+ Redis R3/Reactive；`v0.1.8` tag + GitHub Release） |
+| 构建 | 主仓 Nuke `Ci` / `CiPack` / `Publish`；`PackVerify` + `eng/nuget-smoke`（manifest **20** 包） |
+| 示例仓 CI | `Observables.Samples` Nuke `Ci`（对齐库版本；Redis Samples 见跨仓 companion） |
 
 ### 已知工程债（详见 AGENTS.md「工程治理」）
 
@@ -167,7 +166,7 @@ Grpc 两包已于 **`0.1.0`**（`v0.1.0-preview6` tag）发布至 nuget.org 与 
 | `0.1.6-preview1` | 预览版：NuGet 包图标（六边形紫→品红渐变 + Rx 造型，`PackageIcon` 接入）（**16 包** + **16 snupkg**） |
 | `0.1.6` | 稳定版：包图标 + C# 关键字标识符转义（6 域）+ 源生成器 fail-safe（E2，OBS* 内部错误诊断）（**16 包** + **16 snupkg**，`v0.1.6` tag + GitHub Release） |
 | `0.1.7` | 稳定版：第九域 **Postgres** LISTEN/NOTIFY（**18 包** + **18 snupkg**；OBS10xxx；ADR-002 §6 mid-trigger） |
-| `0.1.8` | 规划：第十域 **Redis** Pub/Sub（**20 包**；OBS11xxx；主仓已落地，发版须维护者授权） |
+| `0.1.8` | 稳定版：第十域 **Redis** Pub/Sub（**20 包** + **20 snupkg**；OBS11xxx；ADR-002 #2） |
 
 ## Post-1.0 Follow-up（按需，不绑定版本）
 
@@ -186,9 +185,9 @@ Grpc 两包已于 **`0.1.0`**（`v0.1.0-preview6` tag）发布至 nuget.org 与 
 | # | 行动项 | 状态 | 说明 |
 |---|--------|------|------|
 | P1-RD | Redis Pub/Sub Feature（主仓） | ✅ 代码落地 | 运行时 + 双路生成器 + Package + Garnet E2E + Shared catalog（#170–#175）；设计文档 [`docs/design/redis.md`](design/redis.md) |
-| P1-RD-pack | PackVerify / nuget-smoke / CI | 🔄 [#176](https://github.com/Skymly/Observables/issues/176) | BuildManifest + PackVerify + smoke + paths-filter |
-| P1-RD-nuget | nuget.org 发第十域（+2 包 → 20） | ⏳ 规划 `0.1.8` | **须**维护者明确授权后再 bump / tag / Publish |
-| P1-RD-docs | Observables.Docs / Samples | ⏳ companion | 用户文档与 Samples 跨仓；不在本库 PR 内实现 |
+| P1-RD-pack | PackVerify / nuget-smoke / CI | ✅ [#176](https://github.com/Skymly/Observables/issues/176) / [#186](https://github.com/Skymly/Observables/pull/186) | BuildManifest + PackVerify + smoke + paths-filter |
+| P1-RD-nuget | nuget.org 发第十域（+2 包 → 20） | ✅ `0.1.8` | `v0.1.8` tag + nuget.org / GitHub Packages + GitHub Release |
+| P1-RD-docs | Observables.Docs / Samples | ⏳ companion | Docs [#14](https://github.com/Skymly/Observables.Docs/issues/14)；Samples [#11](https://github.com/Skymly/Observables.Samples/issues/11) |
 
 ### P2 — 中期处理
 

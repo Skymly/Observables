@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <Import Project="..\..\Observables.SourceGenerators.R3.props" />
+
+  <PropertyGroup>
+    <Description>Source generator for Redis Pub/Sub proxies → R3 Observable.</Description>
+    <DefineConstants>$(DefineConstants);ROSLYN_4;REDIS_R3</DefineConstants>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="R3" PrivateAssets="all" />
+  </ItemGroup>
+
+  <Import Project="..\Observables.Redis.SourceGenerators.Shared\Observables.Redis.SourceGenerators.Shared.projitems" Label="Shared" />
+
+</Project>

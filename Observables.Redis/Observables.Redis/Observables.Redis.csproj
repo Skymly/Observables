@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <RootNamespace>Observables.Redis</RootNamespace>
+    <AssemblyName>Observables.Redis</AssemblyName>
+    <Description>Redis Pub/Sub runtime and R3 stream bridges.</Description>
+  </PropertyGroup>
+
+  <Import Project="..\..\eng\NetStandard20.props" Condition="Exists('..\..\eng\NetStandard20.props')" />
+
+  <ItemGroup>
+    <PackageReference Include="StackExchange.Redis" />
+    <PackageReference Include="R3" />
+  </ItemGroup>
+
+</Project>

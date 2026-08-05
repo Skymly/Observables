@@ -18,6 +18,7 @@
 | Sse | [sse.md](sse.md) |
 | Nats | [nats.md](nats.md) |
 | Postgres | [postgres.md](postgres.md) |
+| Redis | [redis.md](redis.md) |
 
 ## 横切工程文档
 

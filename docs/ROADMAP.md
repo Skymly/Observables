@@ -1,18 +1,19 @@
 # Observables 路线图
 
-本文件描述 Observables 从预览版走向 **`0.1.0` 稳定版** 的里程碑规划（M1–M7 已全部完成；当前稳定版 **`0.1.7`** = 第九域 Postgres（18 包））。它是规划层文档：每个里程碑的工程标准（中央包管理、警告策略、诊断治理等）以 [`AGENTS.md`](../AGENTS.md) 为权威，本文件只排序与拆解。
+本文件描述 Observables 从预览版走向 **`0.1.0` 稳定版** 的里程碑规划（M1–M7 已全部完成；当前 nuget.org 稳定版 **`0.1.7`** = 第九域 Postgres（18 包）；**第十域 Redis** 主仓已落地，规划 **`0.1.8`**）。它是规划层文档：每个里程碑的工程标准（中央包管理、警告策略、诊断治理等）以 [`AGENTS.md`](../AGENTS.md) 为权威，本文件只排序与拆解。
 
 > 版本号、tag、发版均须维护者明确批准；本文件中的版本号（如 `preview5`）为规划占位，不构成自动发版授权。
 
-## 现状基线（`0.1.7` 已发 nuget.org）
+## 现状基线（`0.1.7` 已发 nuget.org；Redis 主仓已落地）
 
 | 维度 | 现状 |
 |------|------|
-| 已实现域 | **Events**、**RestAPI**、**SignalR**、**Mqtt**、**WebSocket**、**Grpc**、**Sse**、**Nats**、**Postgres**（运行时 + 双路生成器 + 测试） |
+| 已实现域 | **Events**、**RestAPI**、**SignalR**、**Mqtt**、**WebSocket**、**Grpc**、**Sse**、**Nats**、**Postgres**、**Redis**（运行时 + 双路生成器 + 测试） |
 | 共享层 | `Observables.Core`、`Observables.SourceGenerators.Shared`、`Observables.CodeFixes`、`Observables.Analyzers` |
 | nuget.org 已发 | **`0.1.7`** — **18 包**（+ Postgres R3/Reactive；`v0.1.7` tag + GitHub Release） |
-| 构建 | 主仓 Nuke `Ci` / `CiPack` / `Publish`；`PackVerify` + `eng/nuget-smoke`（manifest **18** 包） |
-| 示例仓 CI | `Observables.Samples` Nuke `Ci`（对齐库版本；Postgres 样例见跨仓 #9） |
+| 主仓下一域 | **Redis** Pub/Sub — 代码已落地；PackVerify / smoke / CI 见 [#176](https://github.com/Skymly/Observables/issues/176)；nuget.org 规划 **`0.1.8`**（+2 → **20** 包，**未**授权 bump/tag） |
+| 构建 | 主仓 Nuke `Ci` / `CiPack` / `Publish`；`PackVerify` + `eng/nuget-smoke`（`0.1.7` manifest **18** 包；Redis 登记后 **20**） |
+| 示例仓 CI | `Observables.Samples` Nuke `Ci`（对齐库版本；Postgres 样例见跨仓 #9；Redis Samples 待 companion） |
 
 ### 已知工程债（详见 AGENTS.md「工程治理」）
 
@@ -43,8 +44,9 @@
 | `OBS8001`–`OBS8999` | SSE | 使用中（8001–8007；8006 为内部 fail-safe） |
 | `OBS9001`–`OBS9999` | NATS | 使用中（9001–9008；9008 为内部 fail-safe） |
 | `OBS10001`–`OBS10999` | Postgres | 使用中（10001–10008；10008 为内部 fail-safe；10007 为空接口，Shared Analyzer） |
+| `OBS11001`–`OBS11999` | Redis | 使用中（11001–11008；11008 为内部 fail-safe；11007 为空接口，Shared Analyzer） |
 
-当前共 **68** 个唯一诊断（含 Postgres OBS10xxx）：前八域 **60** 个 + Postgres **8** 个。新增诊断须落入对应段并在 `AnalyzerReleases.Unshipped.md` 登记（见 AGENTS.md）。
+当前共 **76** 个唯一诊断（含 Postgres OBS10xxx + Redis OBS11xxx）：前九域 **68** 个 + Redis **8** 个。新增诊断须落入对应段并在 `AnalyzerReleases.Unshipped.md` 登记（见 AGENTS.md）。
 
 ## 里程碑
 
@@ -165,6 +167,7 @@ Grpc 两包已于 **`0.1.0`**（`v0.1.0-preview6` tag）发布至 nuget.org 与 
 | `0.1.6-preview1` | 预览版：NuGet 包图标（六边形紫→品红渐变 + Rx 造型，`PackageIcon` 接入）（**16 包** + **16 snupkg**） |
 | `0.1.6` | 稳定版：包图标 + C# 关键字标识符转义（6 域）+ 源生成器 fail-safe（E2，OBS* 内部错误诊断）（**16 包** + **16 snupkg**，`v0.1.6` tag + GitHub Release） |
 | `0.1.7` | 稳定版：第九域 **Postgres** LISTEN/NOTIFY（**18 包** + **18 snupkg**；OBS10xxx；ADR-002 §6 mid-trigger） |
+| `0.1.8` | 规划：第十域 **Redis** Pub/Sub（**20 包**；OBS11xxx；主仓已落地，发版须维护者授权） |
 
 ## Post-1.0 Follow-up（按需，不绑定版本）
 
@@ -177,6 +180,15 @@ Grpc 两包已于 **`0.1.0`**（`v0.1.0-preview6` tag）发布至 nuget.org 与 
 | P1-PG | Postgres LISTEN/NOTIFY Feature（主仓） | ✅ 代码落地 | 运行时 + 双路生成器 + Package + E2E（B-tier peer）+ PackVerify / nuget-smoke；设计文档 [`docs/design/postgres.md`](design/postgres.md)；README / CONTRIBUTING / ROADMAP 已同步 |
 | P1-PG-nuget | nuget.org 发第九域（+2 包 → 18） | ✅ `0.1.7` | `v0.1.7` tag + nuget.org / GitHub Packages + GitHub Release；ADR-002 §6 mid-trigger 已记 |
 | P1-PG-docs | Observables.Docs / Samples | ✅ | Docs PR #13；Samples PR #10（关 #9） |
+
+### P1b — 第十域 Redis（ADR-002）
+
+| # | 行动项 | 状态 | 说明 |
+|---|--------|------|------|
+| P1-RD | Redis Pub/Sub Feature（主仓） | ✅ 代码落地 | 运行时 + 双路生成器 + Package + Garnet E2E + Shared catalog（#170–#175）；设计文档 [`docs/design/redis.md`](design/redis.md) |
+| P1-RD-pack | PackVerify / nuget-smoke / CI | 🔄 [#176](https://github.com/Skymly/Observables/issues/176) | BuildManifest + PackVerify + smoke + paths-filter |
+| P1-RD-nuget | nuget.org 发第十域（+2 包 → 20） | ⏳ 规划 `0.1.8` | **须**维护者明确授权后再 bump / tag / Publish |
+| P1-RD-docs | Observables.Docs / Samples | ⏳ companion | 用户文档与 Samples 跨仓；不在本库 PR 内实现 |
 
 ### P2 — 中期处理
 

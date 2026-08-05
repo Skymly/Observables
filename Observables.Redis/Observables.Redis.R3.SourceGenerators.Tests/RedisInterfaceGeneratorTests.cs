@@ -48,4 +48,27 @@ public sealed class RedisInterfaceGeneratorTests
             reason is IncrementalStepRunReason.Cached or IncrementalStepRunReason.Unchanged,
             $"Expected cache hit (Cached/Unchanged), got {reason}");
     }
+
+    [Fact]
+    public Task Redis_pattern_subscribe_and_envelope_modes_generate_proxy()
+    {
+        const string userSource =
+            """
+            [Redis]
+            public interface INewsHub
+            {
+                [RedisSubscribe("news.*")]
+                Observable<string> PatternPayload { get; }
+
+                [RedisSubscribe("news.?")]
+                Observable<RedisMessage<string>> PatternEnvelope { get; }
+
+                [RedisSubscribe("news.alerts")]
+                Observable<RedisMessage<string>> ExactEnvelope { get; }
+            }
+            """;
+
+        var output = GeneratorTestHarness.Run(userSource);
+        return Verifier.Verify(GeneratorTestHarness.ToSnapshot(output));
+    }
 }

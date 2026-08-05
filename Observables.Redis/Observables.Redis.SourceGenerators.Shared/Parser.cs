@@ -30,6 +30,7 @@ internal static class Parser
 
         var publishAttribute = compilation.GetTypeByMetadataName("Observables.Redis.RedisPublishAttribute");
         var subscribeAttribute = compilation.GetTypeByMetadataName("Observables.Redis.RedisSubscribeAttribute");
+        var redisMessageType = compilation.GetTypeByMetadataName("Observables.Redis.RedisMessage`1");
         var observableType = compilation.GetTypeByMetadataName(BackendTokens.ObservableMetadataName);
         var unitType = compilation.GetTypeByMetadataName(BackendTokens.UnitMetadataName);
 
@@ -84,6 +85,7 @@ internal static class Parser
                                 publishAttribute,
                                 subscribeAttribute,
                                 observableType,
+                                redisMessageType,
                                 members,
                                 diagnostics);
                             break;
@@ -212,7 +214,9 @@ internal static class Parser
                 channelParameterNames.ToImmutableEquatableArray(),
                 hasCt,
                 payloadParameterName,
-                payloadTypeDisplay));
+                payloadTypeDisplay,
+                IsPatternSubscribe: false,
+                UseEnvelope: false));
     }
 
     static void TryAddProperty(
@@ -221,6 +225,7 @@ internal static class Parser
         INamedTypeSymbol? publishAttribute,
         INamedTypeSymbol? subscribeAttribute,
         INamedTypeSymbol? observableType,
+        INamedTypeSymbol? redisMessageType,
         List<RedisMemberModel> members,
         List<Diagnostic> diagnostics)
     {
@@ -271,17 +276,7 @@ internal static class Parser
             return;
         }
 
-        // Exact-Channel slice: Pattern metacharacters are reserved for a later ticket.
-        if (channelTemplate.IndexOf('*') >= 0 || channelTemplate.IndexOf('?') >= 0)
-        {
-            diagnostics.Add(
-                Diagnostic.Create(
-                    DiagnosticDescriptors.UnsupportedRedisOption,
-                    property.Locations.FirstOrDefault(),
-                    property.ContainingType.Name,
-                    property.Name));
-            return;
-        }
+        var isPattern = channelTemplate.IndexOf('*') >= 0 || channelTemplate.IndexOf('?') >= 0;
 
         if (!ObservableReturnTypeParser.TryParse(
                 property.Type,
@@ -300,6 +295,11 @@ internal static class Parser
             return;
         }
 
+        var useEnvelope = TryUnwrapRedisMessage(
+            property.Type,
+            redisMessageType,
+            ref resultType);
+
         members.Add(
             new RedisMemberModel(
                 IdentifierHelper.Escape(property.Name),
@@ -312,7 +312,30 @@ internal static class Parser
                 ImmutableEquatableArray.Empty<string>(),
                 false,
                 null,
-                null));
+                null,
+                IsPatternSubscribe: isPattern,
+                UseEnvelope: useEnvelope));
+    }
+
+    static bool TryUnwrapRedisMessage(
+        ITypeSymbol observableReturnType,
+        INamedTypeSymbol? redisMessageType,
+        ref string resultTypeDisplay)
+    {
+        if (redisMessageType is null
+            || observableReturnType is not INamedTypeSymbol named
+            || !named.IsGenericType
+            || named.TypeArguments.Length != 1
+            || named.TypeArguments[0] is not INamedTypeSymbol element
+            || !element.IsGenericType
+            || element.TypeArguments.Length != 1
+            || !SymbolEqualityComparer.Default.Equals(element.OriginalDefinition, redisMessageType))
+        {
+            return false;
+        }
+
+        resultTypeDisplay = element.TypeArguments[0].ToDisplayString(DisplayFormat);
+        return true;
     }
 
     static bool TryResolveMethodParameters(

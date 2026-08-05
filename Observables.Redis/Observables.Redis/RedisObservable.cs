@@ -47,19 +47,73 @@ public static class RedisObservable
     [RequiresDynamicCode(RedisTrimAnnotations.JsonPayload)]
 #endif
     public static Observable<T> FromSubscribe<T>(IConnectionMultiplexer multiplexer, string channel) =>
+        CreateSubscribe(multiplexer, RedisChannel.Literal(channel), static message => DeserializePayload<T>(message));
+
+#if NET8_0_OR_GREATER
+    [RequiresUnreferencedCode(RedisTrimAnnotations.JsonPayload)]
+    [RequiresDynamicCode(RedisTrimAnnotations.JsonPayload)]
+#endif
+    public static Observable<T> FromPatternSubscribe<T>(IConnectionMultiplexer multiplexer, string pattern) =>
+        CreateSubscribe(multiplexer, RedisChannel.Pattern(pattern), static message => DeserializePayload<T>(message));
+
+#if NET8_0_OR_GREATER
+    [RequiresUnreferencedCode(RedisTrimAnnotations.JsonPayload)]
+    [RequiresDynamicCode(RedisTrimAnnotations.JsonPayload)]
+#endif
+    public static Observable<RedisMessage<T>> FromSubscribeMessage<T>(
+        IConnectionMultiplexer multiplexer,
+        string channel) =>
+        CreateSubscribe(
+            multiplexer,
+            RedisChannel.Literal(channel),
+            static message => ToRedisMessage<T>(message));
+
+#if NET8_0_OR_GREATER
+    [RequiresUnreferencedCode(RedisTrimAnnotations.JsonPayload)]
+    [RequiresDynamicCode(RedisTrimAnnotations.JsonPayload)]
+#endif
+    public static Observable<RedisMessage<T>> FromPatternSubscribeMessage<T>(
+        IConnectionMultiplexer multiplexer,
+        string pattern) =>
+        CreateSubscribe(
+            multiplexer,
+            RedisChannel.Pattern(pattern),
+            static message => ToRedisMessage<T>(message));
+
+#if NET8_0_OR_GREATER
+    [RequiresUnreferencedCode(RedisTrimAnnotations.JsonPayload)]
+    [RequiresDynamicCode(RedisTrimAnnotations.JsonPayload)]
+#endif
+    static T DeserializePayload<T>(ChannelMessage message) =>
+        RedisPayload.Deserialize<T>((byte[]?)message.Message ?? Array.Empty<byte>());
+
+#if NET8_0_OR_GREATER
+    [RequiresUnreferencedCode(RedisTrimAnnotations.JsonPayload)]
+    [RequiresDynamicCode(RedisTrimAnnotations.JsonPayload)]
+#endif
+    static RedisMessage<T> ToRedisMessage<T>(ChannelMessage message) =>
+        new(message.Channel.ToString(), DeserializePayload<T>(message));
+
+#if NET8_0_OR_GREATER
+    [RequiresUnreferencedCode(RedisTrimAnnotations.JsonPayload)]
+    [RequiresDynamicCode(RedisTrimAnnotations.JsonPayload)]
+#endif
+    static Observable<T> CreateSubscribe<T>(
+        IConnectionMultiplexer multiplexer,
+        RedisChannel channel,
+        Func<ChannelMessage, T> map) =>
         Observable.Create<T>(async (observer, ct) =>
         {
             ChannelMessageQueue? queue = null;
             try
             {
                 var subscriber = multiplexer.GetSubscriber();
-                queue = await subscriber.SubscribeAsync(RedisChannel.Literal(channel)).ConfigureAwait(false);
+                queue = await subscriber.SubscribeAsync(channel).ConfigureAwait(false);
 
                 // ChannelMessageQueue enumeration is sequential (SER OnMessage / queue path).
                 await foreach (var message in queue.WithCancellation(ct).ConfigureAwait(false))
                 {
-                    var bytes = (byte[]?)message.Message ?? Array.Empty<byte>();
-                    observer.OnNext(RedisPayload.Deserialize<T>(bytes));
+                    observer.OnNext(map(message));
                 }
 
                 observer.OnCompleted();

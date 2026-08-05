@@ -1,11 +1,12 @@
 <Project Sdk="Microsoft.Build.Traversal/4.1.82">
 
   <PropertyGroup>
-    <Description>Traversal root for Observables.Redis.R3 NuGet package (Reactive twin lands in a later ticket).</Description>
+    <Description>Traversal root for Observables.Redis.R3 and Observables.Redis.Reactive NuGet packages.</Description>
   </PropertyGroup>
 
   <ItemGroup>
     <ProjectReference Include="Observables.Redis.R3.csproj" />
+    <ProjectReference Include="Observables.Redis.Reactive.Pack.csproj" />
   </ItemGroup>
 
 </Project>

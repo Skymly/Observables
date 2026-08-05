@@ -1,0 +1,31 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <Import Project="..\..\eng\Observables.Package.props" />
+  <Import Project="..\..\eng\PackRoslynAnalyzer.targets" />
+  <Import Project="..\..\eng\PackReferencedProjects.targets" />
+
+  <PropertyGroup>
+    <IsPackable>true</IsPackable>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <IncludeBuildOutput>false</IncludeBuildOutput>
+    <DevelopmentDependency>false</DevelopmentDependency>
+    <SuppressDependenciesWhenPacking>false</SuppressDependenciesWhenPacking>
+    <PackageId>Observables.Redis.Reactive</PackageId>
+    <Description>Declarative Redis Pub/Sub proxies with Roslyn source generators — annotate interfaces with [RedisSubscribe]/[RedisPublish] to generate System.Reactive IObservable&lt;T&gt; proxies for classic Redis Pub/Sub.</Description>
+    <PackageTags>observables;redis;pubsub;messaging;realtime;reactive;rx;reactive-extensions;iobservable;system.reactive;declarative;roslyn;source-generator;csharp;dotnet</PackageTags>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <ObservablesPackGeneratorProject>..\Observables.Redis.Reactive.SourceGenerators\Observables.Redis.Reactive.SourceGenerators.csproj</ObservablesPackGeneratorProject>
+    <ObservablesPackGeneratorAssemblyName>Observables.Redis.Reactive.SourceGenerators.dll</ObservablesPackGeneratorAssemblyName>
+    <ObservablesPackGeneratorOutputDir>$(MSBuildProjectDirectory)\..\Observables.Redis.Reactive.SourceGenerators\bin\$(Configuration)\netstandard2.0\</ObservablesPackGeneratorOutputDir>
+    <ObservablesPackPackagePropsFile>$(MSBuildProjectDirectory)\build\Observables.Redis.Reactive.props</ObservablesPackPackagePropsFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ObservablesPackLibProjectReference Include="..\Observables.Redis\Observables.Redis.csproj" />
+    <ObservablesPackLibProjectReference Include="..\Observables.Redis.Reactive\Observables.Redis.Reactive.csproj" />
+    <PackageReference Include="System.Reactive" />
+    <PackageReference Include="StackExchange.Redis" />
+    <None Include="README.Redis.Reactive.pack.md" Pack="true" PackagePath="README.md" Visible="false" />
+  </ItemGroup>
+
+</Project>

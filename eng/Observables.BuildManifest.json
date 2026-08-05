@@ -110,7 +110,9 @@
     "Observables.Postgres/Observables.Postgres.Tests/Observables.Postgres.Tests.csproj",
     "Observables.Postgres/Observables.Postgres.Reactive.Tests/Observables.Postgres.Reactive.Tests.csproj",
     "Observables.Redis/Observables.Redis.R3.SourceGenerators.Tests/Observables.Redis.R3.SourceGenerators.Tests.csproj",
+    "Observables.Redis/Observables.Redis.Reactive.SourceGenerators.Tests/Observables.Redis.Reactive.SourceGenerators.Tests.csproj",
     "Observables.Redis/Observables.Redis.Tests/Observables.Redis.Tests.csproj",
+    "Observables.Redis/Observables.Redis.Reactive.Tests/Observables.Redis.Reactive.Tests.csproj",
     "Observables.Shared/Observables.CodeFixes.Tests/Observables.CodeFixes.Tests.csproj",
     "Observables.Shared/Observables.Analyzers.Tests/Observables.Analyzers.Tests.csproj",
     "Observables.Shared/Observables.TrimTests/Observables.TrimTests.csproj"

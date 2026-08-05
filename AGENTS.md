@@ -347,13 +347,13 @@ dotnet run --project build/_build.csproj -- --target Ci --configuration Release
 | **Test** | 同 `Ci`（`Compile` + `UnitTest`）；可附加 `--test-domains <逗号分隔>` 过滤测试项目（例如 `--test-domains mqtt,shared`） |
 | **Pack** | 打包 pack 子项目 → `artifacts/package/`（**不**依赖 UnitTest）；可附加 `--pack-domains <逗号分隔>` 过滤包（按 `PackageId` 前缀 `Observables.<d>.` 匹配） |
 | **PackOnly** | `Pack` + `PackVerify`（**不**跑 UnitTest） |
-| **PackVerify** | 断言 nupkg 含 analyzer、Events `observables.events.props`、RestAPI/SignalR/Mqtt/WebSocket/Sse/Grpc/Nats/Postgres/Redis `lib/`（`0.1.7` nuget.org **18** 包；Redis 登记后 manifest **20** 包） |
+| **PackVerify** | 断言 nupkg 含 analyzer、Events `observables.events.props`、RestAPI/SignalR/Mqtt/WebSocket/Sse/Grpc/Nats/Postgres `lib/`（nuget.org **`0.1.7`** = **18** 包）；Redis 包登记与 PackVerify 扩展见 [#176](https://github.com/Skymly/Observables/issues/176)（目标 **20** 包） |
 | **CiPack** | CI 完整流水线：`Test` + `PackOnly` + `NuGetConsumerSmoke`（本地包）；保留供本地或 release.yml 全链路调试 |
 | **Publish** | 推送到 nuget.org（`NUGET_API_KEY`）与 GitHub Packages（`GITHUB_TOKEN`，`packages:write`）；`DependsOn(Test, PackVerify)` 确保发版前测试已通过 |
 
 | Workflow | 触发 | 作用 |
 |----------|------|------|
-| [`ci.yml`](.github/workflows/ci.yml) | PR / push `main` | **changes** job（`dorny/paths-filter`）→ 域 `test-domain` 矩阵（含 postgres / redis；**Shared 改动 → 全域跑**）+ `test-shared`（仅 Shared 改动时跑）+ 域 `pack-domain` 矩阵（push main / PR 带 `pack` label，且域命中）；各 job **完全并行**，未命中的域整列跳过 |
+| [`ci.yml`](.github/workflows/ci.yml) | PR / push `main` | **changes** job（`dorny/paths-filter`）→ 域 `test-domain` 矩阵（含 postgres；**Shared 改动 → 全域跑**）+ `test-shared`（仅 Shared 改动时跑）+ 域 `pack-domain` 矩阵（push main / PR 带 `pack` label，且域命中）；各 job **完全并行**，未命中的域整列跳过。Redis 域矩阵登记见 [#176](https://github.com/Skymly/Observables/issues/176) |
 | [`release.yml`](.github/workflows/release.yml) | push tag `v*` / `workflow_dispatch` | **Publish**（须 Secrets + 维护者 actor；内部 `Test` → `PackVerify` → push） |
 
 ## 工作约定

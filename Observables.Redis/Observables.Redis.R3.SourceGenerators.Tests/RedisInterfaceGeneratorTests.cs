@@ -71,4 +71,182 @@ public sealed class RedisInterfaceGeneratorTests
         var output = GeneratorTestHarness.Run(userSource);
         return Verifier.Verify(GeneratorTestHarness.ToSnapshot(output));
     }
+
+    [Fact]
+    public void Redis_interface_OBS11001_on_unannotated_member()
+    {
+        const string userSource =
+            """
+            [Redis]
+            public interface INewsHub
+            {
+                Observable<Unit> Publish(string topic, string payload);
+
+                [RedisSubscribe("news.alerts")]
+                Observable<string> Alerts { get; }
+            }
+            """;
+
+        var output = GeneratorTestHarness.Run(userSource);
+        var snapshot = GeneratorTestHarness.ToSnapshot(output);
+
+        Assert.Contains("OBS11001", snapshot, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Redis_interface_OBS11001_on_non_literal_channel()
+    {
+        const string userSource =
+            """
+            public static class Channels
+            {
+                public const string Alerts = "news.alerts";
+            }
+
+            [Redis]
+            public interface INewsHub
+            {
+                [RedisSubscribe(Channels.Alerts)]
+                Observable<string> Alerts { get; }
+            }
+            """;
+
+        var output = GeneratorTestHarness.Run(userSource);
+        var snapshot = GeneratorTestHarness.ToSnapshot(output);
+
+        Assert.Contains("OBS11001", snapshot, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Redis_interface_OBS11002_when_runtime_missing()
+    {
+        const string userSource =
+            """
+            [Redis]
+            public interface INewsHub
+            {
+                [RedisSubscribe("news.alerts")]
+                Observable<string> Alerts { get; }
+            }
+            """;
+
+        var output = GeneratorTestHarness.Run(userSource, includeCoreReference: false);
+        var snapshot = GeneratorTestHarness.ToSnapshot(output);
+
+        Assert.Contains("OBS11002", snapshot, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Redis_interface_OBS11003_on_unsupported_return_type()
+    {
+        const string userSource =
+            """
+            [Redis]
+            public interface INewsHub
+            {
+                [RedisPublish("news.alerts")]
+                Observable<string> Publish(string payload);
+            }
+            """;
+
+        var output = GeneratorTestHarness.Run(userSource);
+        var snapshot = GeneratorTestHarness.ToSnapshot(output);
+
+        Assert.Contains("OBS11003", snapshot, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Redis_interface_OBS11004_on_subscribe_method()
+    {
+        const string userSource =
+            """
+            [Redis]
+            public interface INewsHub
+            {
+                [RedisSubscribe("news.alerts")]
+                Observable<string> Alerts();
+            }
+            """;
+
+        var output = GeneratorTestHarness.Run(userSource);
+        var snapshot = GeneratorTestHarness.ToSnapshot(output);
+
+        Assert.Contains("OBS11004", snapshot, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Redis_interface_OBS11004_on_publish_property()
+    {
+        const string userSource =
+            """
+            [Redis]
+            public interface INewsHub
+            {
+                [RedisPublish("news.alerts")]
+                Observable<Unit> Publish { get; }
+            }
+            """;
+
+        var output = GeneratorTestHarness.Run(userSource);
+        var snapshot = GeneratorTestHarness.ToSnapshot(output);
+
+        Assert.Contains("OBS11004", snapshot, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Redis_interface_OBS11005_on_iobservable_with_r3_generator()
+    {
+        const string userSource =
+            """
+            [Redis]
+            public interface INewsHub
+            {
+                [RedisSubscribe("news.alerts")]
+                IObservable<string> Alerts { get; }
+            }
+            """;
+
+        var output = GeneratorTestHarness.Run(userSource);
+        var snapshot = GeneratorTestHarness.ToSnapshot(output);
+
+        Assert.Contains("OBS11005", snapshot, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Redis_interface_OBS11006_on_subscribe_placeholder()
+    {
+        const string userSource =
+            """
+            [Redis]
+            public interface INewsHub
+            {
+                [RedisSubscribe("news.{topic}")]
+                Observable<string> Alerts { get; }
+            }
+            """;
+
+        var output = GeneratorTestHarness.Run(userSource);
+        var snapshot = GeneratorTestHarness.ToSnapshot(output);
+
+        Assert.Contains("OBS11006", snapshot, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Redis_interface_OBS11006_on_publish_pattern_metacharacters()
+    {
+        const string userSource =
+            """
+            [Redis]
+            public interface INewsHub
+            {
+                [RedisPublish("news.*")]
+                Observable<Unit> Publish(string payload);
+            }
+            """;
+
+        var output = GeneratorTestHarness.Run(userSource);
+        var snapshot = GeneratorTestHarness.ToSnapshot(output);
+
+        Assert.Contains("OBS11006", snapshot, StringComparison.Ordinal);
+    }
 }

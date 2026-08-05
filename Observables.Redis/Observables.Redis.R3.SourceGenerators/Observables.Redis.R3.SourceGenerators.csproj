@@ -11,6 +11,10 @@
     <PackageReference Include="R3" PrivateAssets="all" />
   </ItemGroup>
 
+  <ItemGroup>
+    <InternalsVisibleTo Include="Observables.Redis.R3.SourceGenerators.Tests" />
+  </ItemGroup>
+
   <Import Project="..\Observables.Redis.SourceGenerators.Shared\Observables.Redis.SourceGenerators.Shared.projitems" Label="Shared" />
 
 </Project>

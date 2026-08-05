@@ -463,19 +463,29 @@ internal static class Parser
             return true;
         }
 
-        if (attribute.ConstructorArguments.Length == 0
-            || attribute.ConstructorArguments[0].IsNull)
+        var attributeSyntax = attribute.ApplicationSyntaxReference?.GetSyntax() as AttributeSyntax;
+        var argument = attributeSyntax?.ArgumentList?.Arguments.FirstOrDefault();
+        if (argument is null)
         {
             return true;
         }
 
-        if (attribute.ConstructorArguments[0].Value is string literal && !string.IsNullOrWhiteSpace(literal))
+        if (argument.Expression is LiteralExpressionSyntax literal
+            && literal.Token.IsKind(SyntaxKind.StringLiteralToken)
+            && literal.Token.Value is string text
+            && !string.IsNullOrWhiteSpace(text))
         {
-            channelTemplate = literal;
+            channelTemplate = text;
             return true;
         }
 
-        badLocation = attribute.ApplicationSyntaxReference?.GetSyntax().GetLocation();
+        if (argument.Expression is LiteralExpressionSyntax nullLiteral
+            && nullLiteral.Token.IsKind(SyntaxKind.NullKeyword))
+        {
+            return true;
+        }
+
+        badLocation = argument.GetLocation();
         return false;
     }
 

@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <RootNamespace>Observables.Redis.Reactive</RootNamespace>
+    <AssemblyName>Observables.Redis.Reactive</AssemblyName>
+    <Description>System.Reactive bridges for Observables.Redis.</Description>
+  </PropertyGroup>
+
+  <Import Project="..\..\eng\NetStandard20.props" Condition="Exists('..\..\eng\NetStandard20.props')" />
+
+  <ItemGroup>
+    <ProjectReference Include="..\Observables.Redis\Observables.Redis.csproj" />
+    <PackageReference Include="System.Reactive" />
+  </ItemGroup>
+
+</Project>

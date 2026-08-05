@@ -293,13 +293,21 @@
 
     <Project Path="Observables.Redis/Observables.Redis/Observables.Redis.csproj" />
 
+    <Project Path="Observables.Redis/Observables.Redis.Reactive/Observables.Redis.Reactive.csproj" />
+
     <Project Path="Observables.Redis/Observables.Redis.R3.SourceGenerators/Observables.Redis.R3.SourceGenerators.csproj" />
+
+    <Project Path="Observables.Redis/Observables.Redis.Reactive.SourceGenerators/Observables.Redis.Reactive.SourceGenerators.csproj" />
 
     <Folder Name="/Tests/">
 
       <Project Path="Observables.Redis/Observables.Redis.R3.SourceGenerators.Tests/Observables.Redis.R3.SourceGenerators.Tests.csproj" />
 
+      <Project Path="Observables.Redis/Observables.Redis.Reactive.SourceGenerators.Tests/Observables.Redis.Reactive.SourceGenerators.Tests.csproj" />
+
       <Project Path="Observables.Redis/Observables.Redis.Tests/Observables.Redis.Tests.csproj" />
+
+      <Project Path="Observables.Redis/Observables.Redis.Reactive.Tests/Observables.Redis.Reactive.Tests.csproj" />
 
     </Folder>
 

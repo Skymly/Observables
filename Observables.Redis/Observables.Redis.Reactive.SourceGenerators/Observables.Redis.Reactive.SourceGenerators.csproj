@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <Import Project="..\..\Observables.SourceGenerators.props" />
+
+  <PropertyGroup>
+    <Description>Source generator for Redis Pub/Sub proxies → System.Reactive IObservable.</Description>
+    <DefineConstants>$(DefineConstants);ROSLYN_4;REDIS_REACTIVE</DefineConstants>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="System.Reactive" PrivateAssets="all" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Observables.Redis.Reactive.SourceGenerators.Tests" />
+  </ItemGroup>
+
+  <Import Project="..\Observables.Redis.SourceGenerators.Shared\Observables.Redis.SourceGenerators.Shared.projitems" Label="Shared" />
+
+</Project>

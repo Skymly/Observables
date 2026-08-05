@@ -65,14 +65,13 @@ Stable packages are published to [nuget.org](https://www.nuget.org/profiles/Skym
 | **0.1.6-preview1** | Preview release — NuGet package icon added (hexagon purple→magenta gradient + Rx shape, `PackageIcon` wired into all 16 packages). |
 | **0.1.6** | Stable release — package icon; C# keyword identifier escaping in six domain source generators; source generator fail-safe with per-domain internal error diagnostics (OBS2005–OBS9008). |
 | **0.1.7** | Stable release — ninth domain **Postgres** (LISTEN/NOTIFY): `Observables.Postgres.R3` / `.Reactive` (+2 → **18** packages); OBS10xxx; PackVerify / nuget-smoke / Public API baselines. |
-
-Planned (not published): **0.1.8** — tenth domain **Redis** Pub/Sub (`Observables.Redis.R3` / `.Reactive`, +2 → **20** packages, OBS11xxx). Requires explicit maintainer authorization before version bump / tag / Publish.
+| **0.1.8** | Stable release — tenth domain **Redis** Pub/Sub: `Observables.Redis.R3` / `.Reactive` (+2 → **20** packages); OBS11xxx; PackVerify / nuget-smoke / Public API baselines. |
 
 Preview builds (`0.1.0-preview*`, `0.1.1-preview*`) were published to NuGet with tags only (no GitHub Release). Details and milestone planning: [docs/ROADMAP.md](docs/ROADMAP.md).
 
 ### Package set
 
-**nuget.org (`0.1.7`)**: eighteen packages — nine domains, each as `Observables.<Feature>.R3` and `Observables.<Feature>.Reactive`.
+**nuget.org (`0.1.8`)**: twenty packages — ten domains, each as `Observables.<Feature>.R3` and `Observables.<Feature>.Reactive`.
 
 | Package ID | Domain |
 |------------|--------|
@@ -85,8 +84,7 @@ Preview builds (`0.1.0-preview*`, `0.1.1-preview*`) were published to NuGet with
 | `Observables.Sse.R3` / `.Reactive` | Server-Sent Events (`text/event-stream`) |
 | `Observables.Nats.R3` / `.Reactive` | Core NATS subject proxy |
 | `Observables.Postgres.R3` / `.Reactive` | PostgreSQL LISTEN/NOTIFY channel proxy |
-
-**In-repo (not yet on nuget.org):** `Observables.Redis.R3` / `.Reactive` — classic Redis Pub/Sub channel proxy (planned `0.1.8`).
+| `Observables.Redis.R3` / `.Reactive` | Classic Redis Pub/Sub channel proxy |
 
 Version source of truth: `eng/Observables.Package.props` (`PackageVersion` / `Version`).
 

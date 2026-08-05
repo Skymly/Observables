@@ -13,3 +13,4 @@ OBS7007 | Observables.Grpc | Warning | Empty gRPC proxy interface
 OBS8007 | Observables.Sse | Warning | Empty SSE proxy interface
 OBS9007 | Observables.Nats | Warning | Empty NATS proxy interface
 OBS10007 | Observables.Postgres | Warning | Empty Postgres proxy interface
+OBS11007 | Observables.Redis | Warning | Empty Redis proxy interface

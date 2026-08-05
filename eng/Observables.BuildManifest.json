@@ -71,6 +71,14 @@
     {
       "packProject": "Observables.Postgres/Observables.Postgres.Package/Observables.Postgres.Reactive.Pack.csproj",
       "packageId": "Observables.Postgres.Reactive"
+    },
+    {
+      "packProject": "Observables.Redis/Observables.Redis.Package/Observables.Redis.R3.csproj",
+      "packageId": "Observables.Redis.R3"
+    },
+    {
+      "packProject": "Observables.Redis/Observables.Redis.Package/Observables.Redis.Reactive.Pack.csproj",
+      "packageId": "Observables.Redis.Reactive"
     }
   ],
   "testProjects": [
@@ -135,6 +143,8 @@
     "eng/nuget-smoke/Nats.R3.Consumer/Nats.R3.Consumer.csproj",
     "eng/nuget-smoke/Nats.Reactive.Consumer/Nats.Reactive.Consumer.csproj",
     "eng/nuget-smoke/Postgres.R3.Consumer/Postgres.R3.Consumer.csproj",
-    "eng/nuget-smoke/Postgres.Reactive.Consumer/Postgres.Reactive.Consumer.csproj"
+    "eng/nuget-smoke/Postgres.Reactive.Consumer/Postgres.Reactive.Consumer.csproj",
+    "eng/nuget-smoke/Redis.R3.Consumer/Redis.R3.Consumer.csproj",
+    "eng/nuget-smoke/Redis.Reactive.Consumer/Redis.Reactive.Consumer.csproj"
   ]
 }

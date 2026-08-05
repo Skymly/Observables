@@ -223,7 +223,8 @@ sealed class Build : NukeBuild
                     || packageId.StartsWith("Observables.Grpc.", StringComparison.Ordinal)
                     || packageId.StartsWith("Observables.Sse.", StringComparison.Ordinal)
                     || packageId.StartsWith("Observables.Nats.", StringComparison.Ordinal)
-                    || packageId.StartsWith("Observables.Postgres.", StringComparison.Ordinal))
+                    || packageId.StartsWith("Observables.Postgres.", StringComparison.Ordinal)
+                    || packageId.StartsWith("Observables.Redis.", StringComparison.Ordinal))
                 {
                     Assert.True(
                         entries.Contains("analyzers/dotnet/roslyn4.12/cs/Observables.CodeFixes.dll"),
@@ -247,11 +248,29 @@ sealed class Build : NukeBuild
                     || packageId.StartsWith("Observables.Grpc.", StringComparison.Ordinal)
                     || packageId.StartsWith("Observables.Sse.", StringComparison.Ordinal)
                     || packageId.StartsWith("Observables.Nats.", StringComparison.Ordinal)
-                    || packageId.StartsWith("Observables.Postgres.", StringComparison.Ordinal))
+                    || packageId.StartsWith("Observables.Postgres.", StringComparison.Ordinal)
+                    || packageId.StartsWith("Observables.Redis.", StringComparison.Ordinal))
                 {
                     bool hasLib = entries.Any(e => e.StartsWith("lib/", StringComparison.OrdinalIgnoreCase)
                         && e.EndsWith(".dll", StringComparison.OrdinalIgnoreCase));
                     Assert.True(hasLib, $"{packageId}: missing runtime assemblies under lib/");
+                }
+
+                if (packageId.StartsWith("Observables.Redis.", StringComparison.Ordinal))
+                {
+                    bool hasGarnetEntry = entries.Any(e =>
+                        e.Contains("Garnet", StringComparison.OrdinalIgnoreCase));
+                    Assert.False(hasGarnetEntry, $"{packageId}: Garnet must stay out of pack dependency graphs");
+
+                    ZipArchiveEntry? nuspec = archive.Entries.FirstOrDefault(e =>
+                        e.FullName.EndsWith(".nuspec", StringComparison.OrdinalIgnoreCase));
+                    Assert.True(nuspec is not null, $"{packageId}: missing .nuspec");
+                    using Stream nuspecStream = nuspec!.Open();
+                    using var nuspecReader = new StreamReader(nuspecStream);
+                    string nuspecText = nuspecReader.ReadToEnd();
+                    Assert.False(
+                        nuspecText.Contains("Garnet", StringComparison.OrdinalIgnoreCase),
+                        $"{packageId}: Garnet must stay out of pack dependency graphs (nuspec)");
                 }
 
                 Assert.True(

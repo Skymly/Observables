@@ -113,6 +113,7 @@ jobs:
       sse: ${{ steps.filter.outputs.sse }}
       nats: ${{ steps.filter.outputs.nats }}
       postgres: ${{ steps.filter.outputs.postgres }}
+      redis: ${{ steps.filter.outputs.redis }}
       shared: ${{ steps.filter.outputs.shared }}
       any: ${{ steps.filter.outputs.any }}
     steps:
@@ -152,6 +153,9 @@ jobs:
               - 'Observables.slnx'
             postgres:
               - 'Observables.Postgres/**'
+              - 'Observables.slnx'
+            redis:
+              - 'Observables.Redis/**'
               - 'Observables.slnx'
             shared:
               - 'Observables.Shared/**'
@@ -223,7 +227,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        domain: [events, restapi, signalr, mqtt, websocket, grpc, sse, nats, postgres]
+        domain: [events, restapi, signalr, mqtt, websocket, grpc, sse, nats, postgres, redis]
     steps:
       - name: Skip if domain not changed and not shared
         if: |
@@ -283,7 +287,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        domain: [events, restapi, signalr, mqtt, websocket, grpc, sse, nats, postgres]
+        domain: [events, restapi, signalr, mqtt, websocket, grpc, sse, nats, postgres, redis]
     steps:
       - name: Skip if domain not changed, push event skipped, or PR missing pack label
         if: |

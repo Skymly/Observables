@@ -142,6 +142,20 @@ internal static class ProxyDomainCatalog
             new BoundaryAttributeSuggestion("Listen", "Listen"),
         ]);
 
+    internal static readonly ProxyDomain Redis = new(
+        displayName: "Redis",
+        interfaceMarkerMetadataName: "Observables.Redis.RedisAttribute",
+        reactiveAdapterMetadataName: "Observables.Redis.Reactive.SystemReactiveRedisAdapter",
+        emptyInterfaceDescriptor: DiagnosticDescriptors.EmptyRedisInterface,
+        methodAttributes:
+        [
+            new BoundaryAttributeSuggestion("RedisPublish", "RedisPublish"),
+        ],
+        propertyAttributes:
+        [
+            new BoundaryAttributeSuggestion("RedisSubscribe", "RedisSubscribe"),
+        ]);
+
     internal static readonly ProxyDomain RestApi = new(
         displayName: "RestAPI",
         interfaceMarkerMetadataName: "Observables.RestAPI.RestApiAttribute",
@@ -150,10 +164,11 @@ internal static class ProxyDomainCatalog
         methodAttributes: [],
         propertyAttributes: []);
 
-    internal static readonly IReadOnlyList<ProxyDomain> InterfaceProxyDomains = [SignalR, Mqtt, WebSocket, Grpc, Sse, Nats, Postgres, RestApi];
+    internal static readonly IReadOnlyList<ProxyDomain> InterfaceProxyDomains =
+        [SignalR, Mqtt, WebSocket, Grpc, Sse, Nats, Postgres, Redis, RestApi];
 
     internal static readonly IReadOnlyList<ProxyDomain> ReactiveConflictDomains =
-        [SignalR, Mqtt, WebSocket, Grpc, Sse, Nats, Postgres, RestApi];
+        [SignalR, Mqtt, WebSocket, Grpc, Sse, Nats, Postgres, Redis, RestApi];
 
     internal static readonly string[] RestApiHttpMethodNames =
         ["Get", "Post", "Put", "Delete", "Patch", "Head", "Options"];

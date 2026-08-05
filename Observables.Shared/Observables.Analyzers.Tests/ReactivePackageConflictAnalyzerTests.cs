@@ -28,6 +28,28 @@ public sealed class ReactivePackageConflictAnalyzerTests
     }
 
     [Fact]
+    public void OBS0001_when_r3_and_redis_reactive_are_referenced()
+    {
+        var diagnostics = AnalyzerTestHarness.RunAnalyzers(
+            """
+            namespace Test;
+
+            public interface IMarker { }
+            """,
+            additionalReferences:
+            [
+                AnalyzerTestHarness.CreateReference<global::R3.Unit>(),
+                AnalyzerTestHarness.CreateReferenceFromAssemblyOf(typeof(global::Observables.Redis.RedisAttribute)),
+                AnalyzerTestHarness.CreateReferenceFromAssemblyOf(typeof(global::Observables.Redis.Reactive.SystemReactiveRedisAdapter)),
+            ],
+            new ReactivePackageConflictAnalyzer());
+
+        Assert.Contains(
+            diagnostics,
+            d => d.Id == "OBS0001" && d.GetMessage().Contains("Redis", StringComparison.Ordinal));
+    }
+
+    [Fact]
     public void No_OBS0001_when_only_r3_is_referenced()
     {
         var diagnostics = AnalyzerTestHarness.RunAnalyzers(

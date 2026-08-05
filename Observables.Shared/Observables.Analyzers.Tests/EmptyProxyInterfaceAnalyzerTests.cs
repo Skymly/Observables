@@ -180,6 +180,37 @@ public sealed class EmptyProxyInterfaceAnalyzerTests
     }
 
     [Fact]
+    public void OBS11007_on_empty_redis_interface()
+    {
+        const string source =
+            """
+            using Observables.Redis;
+
+            [Redis]
+            public interface IChannels
+            {
+            }
+            """;
+
+        var diagnostics = AnalyzerTestHarness.RunAnalyzers(
+            BuildSource(source, "Observables.Redis"),
+            additionalReferences: [AnalyzerTestHarness.CreateReference<global::Observables.Redis.RedisAttribute>()],
+            new EmptyProxyInterfaceAnalyzer());
+
+        Assert.Contains(diagnostics, d => d.Id == "OBS11007");
+    }
+
+    [Fact]
+    public void ProxyDomainCatalog_Redis_lists_publish_and_subscribe_suggestions()
+    {
+        var domain = ProxyDomainCatalog.Redis;
+        Assert.Equal("OBS11007", domain.EmptyInterfaceDescriptor.Id);
+        Assert.Equal("Observables.Redis.RedisAttribute", domain.InterfaceMarkerMetadataName);
+        Assert.Contains(domain.MethodAttributes, s => s.DisplayText == "RedisPublish");
+        Assert.Contains(domain.PropertyAttributes, s => s.DisplayText == "RedisSubscribe");
+    }
+
+    [Fact]
     public void OBS3007_on_empty_restapi_interface()
     {
         const string source =

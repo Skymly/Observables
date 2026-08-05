@@ -15,6 +15,7 @@ internal static class ObservablesPackageReferenceMappings
             ["OBS8002"] = "Observables.Sse",
             ["OBS9002"] = "Observables.Nats",
             ["OBS10002"] = "Observables.Postgres",
+            ["OBS11002"] = "Observables.Redis",
         }.ToImmutableDictionary(StringComparer.Ordinal);
 
     internal static readonly ImmutableDictionary<string, string> ReactivePackageByDiagnosticId =
@@ -28,6 +29,7 @@ internal static class ObservablesPackageReferenceMappings
             ["OBS8005"] = "Observables.Sse.Reactive",
             ["OBS9005"] = "Observables.Nats.Reactive",
             ["OBS10005"] = "Observables.Postgres.Reactive",
+            ["OBS11005"] = "Observables.Redis.Reactive",
         }.ToImmutableDictionary(StringComparer.Ordinal);
 
     internal static readonly ImmutableDictionary<string, string> R3PackageByReactivePackageId =
@@ -41,6 +43,7 @@ internal static class ObservablesPackageReferenceMappings
             ["Observables.Sse.Reactive"] = "Observables.Sse.R3",
             ["Observables.Nats.Reactive"] = "Observables.Nats.R3",
             ["Observables.Postgres.Reactive"] = "Observables.Postgres.R3",
+            ["Observables.Redis.Reactive"] = "Observables.Redis.R3",
         }.ToImmutableDictionary(StringComparer.Ordinal);
 
     internal static bool TryGetRuntimePackage(string diagnosticId, out string packageId) =>

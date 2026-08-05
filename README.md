@@ -1,12 +1,12 @@
 # Observables
 
-> **Roslyn source generators bridging events & IO boundaries to R3 / System.Reactive.** Declarative interface-driven proxies for HTTP, SignalR, MQTT, WebSocket, gRPC, SSE, NATS, and PostgreSQL LISTEN/NOTIFY — write the interface, get the `Observable<T>`.
+> **Roslyn source generators bridging events & IO boundaries to R3 / System.Reactive.** Declarative interface-driven proxies for HTTP, SignalR, MQTT, WebSocket, gRPC, SSE, NATS, PostgreSQL LISTEN/NOTIFY, and Redis Pub/Sub — write the interface, get the `Observable<T>`.
 
 [![NuGet](https://img.shields.io/nuget/v/Observables.Events.R3.svg?label=NuGet&logo=nuget)](https://www.nuget.org/profiles/Skymly)
 [![CI](https://img.shields.io/github/actions/workflow/status/Skymly/Observables/ci.yml?branch=main&label=CI&logo=github)](https://github.com/Skymly/Observables/actions/workflows/ci.yml)
 [![License](https://img.shields.io/github/license/Skymly/Observables.svg?label=License&logo=opensourcehardware)](LICENSE)
 
-面向 **反应式编程（Rx）** 的 Roslyn 源生成器套件：用声明式接口把 .NET 事件、HTTP、SignalR、MQTT、WebSocket、gRPC、SSE、NATS、PostgreSQL LISTEN/NOTIFY 等边界桥接到 **R3** 或 **System.Reactive**。
+面向 **反应式编程（Rx）** 的 Roslyn 源生成器套件：用声明式接口把 .NET 事件、HTTP、SignalR、MQTT、WebSocket、gRPC、SSE、NATS、PostgreSQL LISTEN/NOTIFY、Redis Pub/Sub 等边界桥接到 **R3** 或 **System.Reactive**。
 
 | 资源 | 链接 |
 |------|------|
@@ -43,7 +43,7 @@ System.Reactive 路径将 `Observables.Events.R3` 换为 `Observables.Events.Rea
 
 ## 功能域
 
-九域均已在主仓提供运行时（按需）、双路源生成器与测试；**`0.1.7`** 将九域 **18 包**（含 **Postgres**）发至 nuget.org。共享层另有 `Observables.Core`、`Observables.Analyzers`、`Observables.CodeFixes`。
+九域已在 nuget.org **`0.1.7`** 以 **18 包**发布；**第十域 Redis** 已在主仓提供运行时、双路源生成器与测试（nuget.org 规划 **`0.1.8`** → **20 包**，须维护者授权）。共享层另有 `Observables.Core`、`Observables.Analyzers`、`Observables.CodeFixes`。
 
 | 域 | 说明 |
 |----|------|
@@ -56,6 +56,7 @@ System.Reactive 路径将 `Observables.Events.R3` 换为 `Observables.Events.Rea
 | **Sse** | `text/event-stream` 事件流 |
 | **Nats** | Core NATS subject 代理（v1 不含 JetStream） |
 | **Postgres** | PostgreSQL LISTEN/NOTIFY 通道代理（专用非池化连接；推荐 keepalive） |
+| **Redis** | Redis 经典 Pub/Sub 通道代理（exact Channel + Pattern；`RedisMessage<T>` 信封） |
 
 设计稿见 [`docs/`](docs/README.md)（文档体系见 [`docs/DOCUMENTATION.md`](docs/DOCUMENTATION.md)）。路由事件生成默认关闭；在消费者项目中设置 `<ObservableRoutedEvents>true</ObservableRoutedEvents>`（见 `Observables.Events/Observables.Events/targets/observables.events.props`）。
 
@@ -316,6 +317,30 @@ var hub = PostgresService.For<IOrderHub>(connection);
 ```
 
 依赖 [Npgsql](https://www.nuget.org/packages/Npgsql)。维护者设计说明见 [`docs/design/postgres.md`](docs/design/postgres.md)。
+
+## Redis（Pub/Sub）
+
+在 `[Redis]` 接口上用 `[RedisSubscribe]` / `[RedisPublish]` 标注成员，生成器产出 Subscribe 热流与 Publish 冷流。含 `*` / `?` 的 Channel 走 Pattern（`PSUBSCRIBE`）；返回 `Observable<RedisMessage<T>>` 时附带具体 Channel。`RedisService.For<T>` 接受 `IConnectionMultiplexer`。
+
+```csharp
+[Redis]
+public interface INewsHub
+{
+    [RedisSubscribe("news.sports")]
+    Observable<string> Sports { get; }
+
+    [RedisSubscribe("news.*")]
+    Observable<RedisMessage<string>> NewsFamily { get; }
+
+    [RedisPublish("news.{topic}")]
+    Observable<Unit> Publish(string topic, string payload, CancellationToken cancellationToken = default);
+}
+
+await using var mux = await ConnectionMultiplexer.ConnectAsync("localhost:6379");
+var hub = RedisService.For<INewsHub>(mux);
+```
+
+依赖 [StackExchange.Redis](https://www.nuget.org/packages/StackExchange.Redis)。维护者设计说明见 [`docs/design/redis.md`](docs/design/redis.md)。v1 **不含** Streams / keyspace / sharded Pub/Sub。
 
 ## 构建
 

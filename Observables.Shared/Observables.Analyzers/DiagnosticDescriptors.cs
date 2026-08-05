@@ -94,6 +94,17 @@ internal static class DiagnosticDescriptors
             description: "Empty [Postgres] interface.",
             helpLinkUri: DiagnosticHelpLink.For("OBS10007"));
 
+    public static readonly DiagnosticDescriptor EmptyRedisInterface =
+        new(
+            "OBS11007",
+            "Empty Redis proxy interface",
+            "Interface '{0}' is marked with [Redis] but declares no members. Add Redis Pub/Sub boundary members or remove [Redis].",
+            "Observables.Redis",
+            DiagnosticSeverity.Warning,
+            isEnabledByDefault: true,
+            description: "Empty [Redis] interface.",
+            helpLinkUri: DiagnosticHelpLink.For("OBS11007"));
+
     public static readonly DiagnosticDescriptor EmptyRestApiInterface =
         new(
             "OBS3007",

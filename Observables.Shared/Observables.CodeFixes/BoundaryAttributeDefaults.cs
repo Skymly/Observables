@@ -8,6 +8,7 @@ internal static class BoundaryAttributeDefaults
             ObservablesMemberDiagnosticIds.InterfaceProxyDomain.SignalR => $"[HubInvoke(\"{memberName}\")]",
             ObservablesMemberDiagnosticIds.InterfaceProxyDomain.Mqtt => $"[MqttPublish(\"{memberName}\")]",
             ObservablesMemberDiagnosticIds.InterfaceProxyDomain.WebSocket => $"[WebSocketSend(\"{memberName}\")]",
+            ObservablesMemberDiagnosticIds.InterfaceProxyDomain.Redis => $"[RedisPublish(\"{memberName}\")]",
             _ => throw new ArgumentOutOfRangeException(nameof(domain)),
         };
 
@@ -17,14 +18,17 @@ internal static class BoundaryAttributeDefaults
             ObservablesMemberDiagnosticIds.InterfaceProxyDomain.SignalR => $"[HubOn(\"{memberName}\")]",
             ObservablesMemberDiagnosticIds.InterfaceProxyDomain.Mqtt => $"[MqttSubscribe(\"{memberName}\")]",
             ObservablesMemberDiagnosticIds.InterfaceProxyDomain.WebSocket => $"[WebSocketReceive(\"{memberName}\")]",
+            ObservablesMemberDiagnosticIds.InterfaceProxyDomain.Redis => $"[RedisSubscribe(\"{memberName}\")]",
             _ => throw new ArgumentOutOfRangeException(nameof(domain)),
         };
 
     internal static bool RequiresProperty(string attributeName) =>
-        attributeName is "HubOnAttribute" or "MqttSubscribeAttribute" or "WebSocketReceiveAttribute";
+        attributeName is "HubOnAttribute" or "MqttSubscribeAttribute" or "WebSocketReceiveAttribute"
+            or "RedisSubscribeAttribute";
 
     internal static bool RequiresMethod(string attributeName) =>
         attributeName is "HubInvokeAttribute" or "HubSendAttribute" or "HubStreamAttribute"
             or "MqttPublishAttribute"
-            or "WebSocketSendAttribute" or "WebSocketConnectAttribute" or "WebSocketCloseAttribute";
+            or "WebSocketSendAttribute" or "WebSocketConnectAttribute" or "WebSocketCloseAttribute"
+            or "RedisPublishAttribute";
 }

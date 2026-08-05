@@ -29,6 +29,7 @@ internal static class ReactivePackageConflictDetection
             { DisplayName: "WebSocket" } => HasAssemblyReference(compilation, "Observables.WebSocket.Reactive"),
             { DisplayName: "Grpc" } => HasAssemblyReference(compilation, "Observables.Grpc.Reactive"),
             { DisplayName: "RestAPI" } => HasAssemblyReference(compilation, "Observables.RestAPI.Reactive"),
+            { DisplayName: "Redis" } => HasAssemblyReference(compilation, "Observables.Redis.Reactive"),
             _ => false,
         };
 }

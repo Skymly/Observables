@@ -190,6 +190,13 @@ Grpc 两包已于 **`0.1.0`**（`v0.1.0-preview6` tag）发布至 nuget.org 与 
 | P1-RD-nuget | nuget.org 发第十域（+2 包 → 20） | ✅ `0.1.9` | `v0.1.8` tag 仅存在、Publish 跳过；实际 nuget.org / GitHub Packages / GitHub Release 为 `v0.1.9` |
 | P1-RD-docs | Observables.Docs / Samples | ✅ | Docs [#14](https://github.com/Skymly/Observables.Docs/issues/14) / PR [#15](https://github.com/Skymly/Observables.Docs/pull/15)；Samples [#11](https://github.com/Skymly/Observables.Samples/issues/11) / PR [#12](https://github.com/Skymly/Observables.Samples/pull/12) |
 
+### P1c — Diagnostics（ADR-002 #3，Park）
+
+| # | 行动项 | 状态 | 说明 |
+|---|--------|------|------|
+| P1-DG | .NET `DiagnosticListener` Feature | ⏸ Park | 维护者 grill 后暂缓：BCL 已是 `IObservable`；名次保留。冻结 v1 形状见 [`docs/design/diagnostics.md`](design/diagnostics.md)；ADR-002 §5/#3 + §6 排期备注 |
+| P1-DG-impl | 运行时 / 生成器 / nuget | — | **未排期**；un-park 须维护者明确批准 |
+
 ### P2 — 中期处理
 
 | # | 行动项 | 工作量 | 说明 |

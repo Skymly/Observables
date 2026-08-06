@@ -19,10 +19,30 @@ permissions:
 
 jobs:
   publish:
-    if: contains(fromJson('["Skymly","wys0610"]'), github.actor)
+    # Authorize on actor OR triggering_actor so maintainer-driven agent tag
+    # pushes (e.g. cursor[bot] with triggering_actor=Skymly) still publish.
+    # Do not gate with job-level `if:` — a false condition skips silently
+    # (0.1.8); fail the job instead so the miss is visible.
     runs-on: windows-latest
 
     steps:
+      - name: Authorize publisher
+        shell: bash
+        env:
+          TRIGGERING_ACTOR: ${{ github.triggering_actor }}
+        run: |
+          is_maintainer() {
+            local who="$1"
+            [[ "$who" == "Skymly" || "$who" == "wys0610" ]]
+          }
+          echo "actor=${GITHUB_ACTOR} triggering_actor=${TRIGGERING_ACTOR:-}"
+          if is_maintainer "$GITHUB_ACTOR" || is_maintainer "${TRIGGERING_ACTOR:-}"; then
+            echo "Authorized publisher."
+            exit 0
+          fi
+          echo "::error::Publish refused: neither github.actor (${GITHUB_ACTOR}) nor github.triggering_actor (${TRIGGERING_ACTOR:-}) is a maintainer (Skymly|wys0610). Push the v* tag (or workflow_dispatch) as a maintainer, or have a maintainer re-run."
+          exit 1
+
       - uses: actions/checkout@v4
 
       - name: Setup .NET SDKs
@@ -97,5 +117,6 @@ jobs:
             echo "- Trigger: \`${GITHUB_EVENT_NAME}\`"
             echo "- Ref: \`${GITHUB_REF}\`"
             echo "- Actor: \`${GITHUB_ACTOR}\`"
+            echo "- Triggering actor: \`${{ github.triggering_actor }}\`"
             echo "- Job status: \`${{ job.status }}\`"
           } >> "$GITHUB_STEP_SUMMARY"

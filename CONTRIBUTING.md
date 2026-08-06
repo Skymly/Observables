@@ -109,8 +109,8 @@ Publishing is **tag-triggered** (aligned with [MvvmAIO.Markup](https://github.co
    git push origin v0.1.1
    ```
 
-4. [`.github/workflows/release.yml`](.github/workflows/release.yml) runs Nuke **`Publish`** on `push` of `v*` tags (`Test` → `PackVerify` → nuget.org + GitHub Packages). Maintainer actor only. Does **not** create a GitHub Release automatically.
-5. For stable releases, create a GitHub Release separately if desired. Emergency republish: `workflow_dispatch` with manual `version`.
+4. [`.github/workflows/release.yml`](.github/workflows/release.yml) runs Nuke **`Publish`** on `push` of `v*` tags (`Test` → `PackVerify` → nuget.org + GitHub Packages). Authorized when `github.actor` **or** `github.triggering_actor` is a maintainer (`Skymly` / `wys0610`) — covers maintainer-driven agent tag pushes; unauthorized runs **fail** (not silent skip). Does **not** create a GitHub Release automatically.
+5. For stable releases, create a GitHub Release separately if desired. Emergency republish: `workflow_dispatch` with manual `version` (same authorization).
 
 ### Local pack and verify
 

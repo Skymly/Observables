@@ -188,7 +188,7 @@ Grpc 两包已于 **`0.1.0`**（`v0.1.0-preview6` tag）发布至 nuget.org 与 
 | P1-RD | Redis Pub/Sub Feature（主仓） | ✅ 代码落地 | 运行时 + 双路生成器 + Package + Garnet E2E + Shared catalog（#170–#175）；设计文档 [`docs/design/redis.md`](design/redis.md) |
 | P1-RD-pack | PackVerify / nuget-smoke / CI | ✅ [#176](https://github.com/Skymly/Observables/issues/176) / [#186](https://github.com/Skymly/Observables/pull/186) | BuildManifest + PackVerify + smoke + paths-filter |
 | P1-RD-nuget | nuget.org 发第十域（+2 包 → 20） | ✅ `0.1.9` | `v0.1.8` tag 仅存在、Publish 跳过；实际 nuget.org / GitHub Packages / GitHub Release 为 `v0.1.9` |
-| P1-RD-docs | Observables.Docs / Samples | ⏳ companion | Docs [#14](https://github.com/Skymly/Observables.Docs/issues/14)；Samples [#11](https://github.com/Skymly/Observables.Samples/issues/11) |
+| P1-RD-docs | Observables.Docs / Samples | ✅ | Docs [#14](https://github.com/Skymly/Observables.Docs/issues/14) / PR [#15](https://github.com/Skymly/Observables.Docs/pull/15)；Samples [#11](https://github.com/Skymly/Observables.Samples/issues/11) / PR [#12](https://github.com/Skymly/Observables.Samples/pull/12) |
 
 ### P2 — 中期处理
 

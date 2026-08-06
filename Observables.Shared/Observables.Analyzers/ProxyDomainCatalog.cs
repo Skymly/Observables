@@ -28,6 +28,12 @@ internal static class ProxyDomainCatalog
         internal DiagnosticDescriptor EmptyInterfaceDescriptor { get; }
         internal IReadOnlyList<BoundaryAttributeSuggestion> MethodAttributes { get; }
         internal IReadOnlyList<BoundaryAttributeSuggestion> PropertyAttributes { get; }
+
+        /// <summary>
+        /// NuGet / assembly id for the System.Reactive bridge package
+        /// (<c>Observables.{DisplayName}.Reactive</c>).
+        /// </summary>
+        internal string ReactiveAssemblyName => $"Observables.{DisplayName}.Reactive";
     }
 
     internal sealed class BoundaryAttributeSuggestion

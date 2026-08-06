@@ -1,10 +1,20 @@
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp;
 
 namespace Observables.Analyzers.Tests;
 
 public sealed class ReactivePackageConflictAnalyzerTests
 {
+    [Fact]
+    public void ReactiveAssemblyName_matches_Observables_DisplayName_Reactive_for_all_conflict_domains()
+    {
+        foreach (var domain in ProxyDomainCatalog.ReactiveConflictDomains)
+        {
+            Assert.Equal(
+                $"Observables.{domain.DisplayName}.Reactive",
+                domain.ReactiveAssemblyName);
+        }
+    }
+
     [Fact]
     public void OBS0001_when_r3_and_signalr_reactive_are_referenced()
     {
@@ -47,6 +57,28 @@ public sealed class ReactivePackageConflictAnalyzerTests
         Assert.Contains(
             diagnostics,
             d => d.Id == "OBS0001" && d.GetMessage().Contains("Redis", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void OBS0001_when_r3_and_sse_reactive_are_referenced()
+    {
+        var diagnostics = AnalyzerTestHarness.RunAnalyzers(
+            """
+            namespace Test;
+
+            public interface IMarker { }
+            """,
+            additionalReferences:
+            [
+                AnalyzerTestHarness.CreateReference<global::R3.Unit>(),
+                AnalyzerTestHarness.CreateReferenceFromAssemblyOf(typeof(global::Observables.Sse.SseAttribute)),
+                AnalyzerTestHarness.CreateReferenceFromAssemblyOf(typeof(global::Observables.Sse.Reactive.SystemReactiveSseAdapter)),
+            ],
+            new ReactivePackageConflictAnalyzer());
+
+        Assert.Contains(
+            diagnostics,
+            d => d.Id == "OBS0001" && d.GetMessage().Contains("Sse", StringComparison.Ordinal));
     }
 
     [Fact]

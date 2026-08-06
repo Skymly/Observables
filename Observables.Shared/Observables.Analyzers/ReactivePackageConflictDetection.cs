@@ -22,14 +22,5 @@ internal static class ReactivePackageConflictDetection
         HasAssemblyReference(compilation, "R3");
 
     internal static bool HasReactiveBridgeReference(Compilation compilation, ProxyDomainCatalog.ProxyDomain domain) =>
-        domain switch
-        {
-            { DisplayName: "SignalR" } => HasAssemblyReference(compilation, "Observables.SignalR.Reactive"),
-            { DisplayName: "Mqtt" } => HasAssemblyReference(compilation, "Observables.Mqtt.Reactive"),
-            { DisplayName: "WebSocket" } => HasAssemblyReference(compilation, "Observables.WebSocket.Reactive"),
-            { DisplayName: "Grpc" } => HasAssemblyReference(compilation, "Observables.Grpc.Reactive"),
-            { DisplayName: "RestAPI" } => HasAssemblyReference(compilation, "Observables.RestAPI.Reactive"),
-            { DisplayName: "Redis" } => HasAssemblyReference(compilation, "Observables.Redis.Reactive"),
-            _ => false,
-        };
+        HasAssemblyReference(compilation, domain.ReactiveAssemblyName);
 }

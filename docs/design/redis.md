@@ -1,6 +1,6 @@
 # 设计：Redis 域
 
-> 状态：已随 **`0.1.9`** 发至 nuget.org（**20 包**）。关联 PRD [#169](https://github.com/Skymly/Observables/issues/169)（库内切片 #170–#177）。面向用户文档见 Observables.Docs（跨仓 companion [#14](https://github.com/Skymly/Observables.Docs/issues/14)）。
+> 状态：已随 **`0.1.9`** 发至 nuget.org（**20 包**）。关联 PRD [#169](https://github.com/Skymly/Observables/issues/169)（库内切片 #170–#177）。面向用户文档：Observables.Docs（[#14](https://github.com/Skymly/Observables.Docs/issues/14) / PR [#15](https://github.com/Skymly/Observables.Docs/pull/15)）；Samples：[#11](https://github.com/Skymly/Observables.Samples/issues/11) / PR [#12](https://github.com/Skymly/Observables.Samples/pull/12)。
 
 ## 1. 动机与定位
 
@@ -148,8 +148,8 @@ Observables.Redis/
 ## 12. Follow-up
 
 - ✅ `v0.1.9` 已发
-- Observables.Docs Redis 页 + `diagnostics.md` OBS11xxx（跨仓 [#14](https://github.com/Skymly/Observables.Docs/issues/14)）
-- Observables.Samples.Redis（跨仓 [#11](https://github.com/Skymly/Observables.Samples/issues/11)）
+- ✅ Observables.Docs Redis 页 + `diagnostics.md` OBS11xxx（[#14](https://github.com/Skymly/Observables.Docs/issues/14) / PR [#15](https://github.com/Skymly/Observables.Docs/pull/15)）
+- ✅ Observables.Samples.Redis（[#11](https://github.com/Skymly/Observables.Samples/issues/11) / PR [#12](https://github.com/Skymly/Observables.Samples/pull/12)）
 - JSON sourcegen / 更严格 AOT 友好载荷路径（可选）
 
 ## 13. 参考

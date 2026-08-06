@@ -331,8 +331,8 @@ git tag -a v0.1.0-preview1 -m "0.1.0-preview1"
 git push origin v0.1.0-preview1
 ```
 
-4. [`.github/workflows/release.yml`](.github/workflows/release.yml) 在 **`push` `v*` tag** 时运行 Nuke **`Publish`**（`PackVerify` → nuget.org + GitHub Packages）。仅允许维护者账号（workflow 内 `github.actor` 校验）。**不**创建 GitHub Release。
-5. 紧急重发可用 **workflow_dispatch** 并手动填写 `version`（仍受 actor 限制；同样**不**发 GitHub Release）。
+4. [`.github/workflows/release.yml`](.github/workflows/release.yml) 在 **`push` `v*` tag** 时运行 Nuke **`Publish`**（`PackVerify` → nuget.org + GitHub Packages）。授权：`github.actor` **或** `github.triggering_actor` 须为维护者（`Skymly` / `wys0610`）——覆盖维护者驱动的 agent 打 tag（如 `cursor[bot]` + `triggering_actor=Skymly`）；未授权时 **失败**（不静默 skip）。**不**创建 GitHub Release。
+5. 紧急重发可用 **workflow_dispatch** 并手动填写 `version`（同样受上述授权约束；**不**发 GitHub Release）。
 
 ## 构建与测试
 
@@ -354,7 +354,7 @@ dotnet run --project build/_build.csproj -- --target Ci --configuration Release
 | Workflow | 触发 | 作用 |
 |----------|------|------|
 | [`ci.yml`](.github/workflows/ci.yml) | PR / push `main` | **changes** job（`dorny/paths-filter`）→ 域 `test-domain` 矩阵（含 postgres / redis；**Shared 改动 → 全域跑**）+ `test-shared`（仅 Shared 改动时跑）+ 域 `pack-domain` 矩阵（push main / PR 带 `pack` label，且域命中）；各 job **完全并行**，未命中的域整列跳过 |
-| [`release.yml`](.github/workflows/release.yml) | push tag `v*` / `workflow_dispatch` | **Publish**（须 Secrets + 维护者 actor；内部 `Test` → `PackVerify` → push） |
+| [`release.yml`](.github/workflows/release.yml) | push tag `v*` / `workflow_dispatch` | **Publish**（须 Secrets + 维护者 `actor`/`triggering_actor`；内部 `Test` → `PackVerify` → push） |
 
 ## 工作约定
 

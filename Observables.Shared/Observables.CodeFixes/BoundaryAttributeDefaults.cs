@@ -1,34 +1,18 @@
+using Observables.Roslyn.Shared;
+
 namespace Observables.CodeFixes;
 
 internal static class BoundaryAttributeDefaults
 {
-    internal static string MethodAttribute(ObservablesMemberDiagnosticIds.InterfaceProxyDomain domain, string memberName) =>
-        domain switch
-        {
-            ObservablesMemberDiagnosticIds.InterfaceProxyDomain.SignalR => $"[HubInvoke(\"{memberName}\")]",
-            ObservablesMemberDiagnosticIds.InterfaceProxyDomain.Mqtt => $"[MqttPublish(\"{memberName}\")]",
-            ObservablesMemberDiagnosticIds.InterfaceProxyDomain.WebSocket => $"[WebSocketSend(\"{memberName}\")]",
-            ObservablesMemberDiagnosticIds.InterfaceProxyDomain.Redis => $"[RedisPublish(\"{memberName}\")]",
-            _ => throw new ArgumentOutOfRangeException(nameof(domain)),
-        };
+    internal static string? MethodAttribute(ObservablesMemberDiagnosticIds.InterfaceProxyDomain domain, string memberName) =>
+        ProxyDomainTable.Get((ProxyDomainTable.DomainKind)domain).DefaultMethodAttribute(memberName);
 
-    internal static string PropertyAttribute(ObservablesMemberDiagnosticIds.InterfaceProxyDomain domain, string memberName) =>
-        domain switch
-        {
-            ObservablesMemberDiagnosticIds.InterfaceProxyDomain.SignalR => $"[HubOn(\"{memberName}\")]",
-            ObservablesMemberDiagnosticIds.InterfaceProxyDomain.Mqtt => $"[MqttSubscribe(\"{memberName}\")]",
-            ObservablesMemberDiagnosticIds.InterfaceProxyDomain.WebSocket => $"[WebSocketReceive(\"{memberName}\")]",
-            ObservablesMemberDiagnosticIds.InterfaceProxyDomain.Redis => $"[RedisSubscribe(\"{memberName}\")]",
-            _ => throw new ArgumentOutOfRangeException(nameof(domain)),
-        };
+    internal static string? PropertyAttribute(ObservablesMemberDiagnosticIds.InterfaceProxyDomain domain, string memberName) =>
+        ProxyDomainTable.Get((ProxyDomainTable.DomainKind)domain).DefaultPropertyAttribute(memberName);
 
     internal static bool RequiresProperty(string attributeName) =>
-        attributeName is "HubOnAttribute" or "MqttSubscribeAttribute" or "WebSocketReceiveAttribute"
-            or "RedisSubscribeAttribute";
+        ProxyDomainTable.PropertyAttributeTypeNames.Contains(attributeName);
 
     internal static bool RequiresMethod(string attributeName) =>
-        attributeName is "HubInvokeAttribute" or "HubSendAttribute" or "HubStreamAttribute"
-            or "MqttPublishAttribute"
-            or "WebSocketSendAttribute" or "WebSocketConnectAttribute" or "WebSocketCloseAttribute"
-            or "RedisPublishAttribute";
+        ProxyDomainTable.MethodAttributeTypeNames.Contains(attributeName);
 }

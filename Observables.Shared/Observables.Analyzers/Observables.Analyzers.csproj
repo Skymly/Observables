@@ -27,6 +27,9 @@
     <Compile Include="..\..\Observables.Shared\Observables.SourceGenerators.Shared\DiagnosticHelpLink.cs">
       <Link>Shared/DiagnosticHelpLink.cs</Link>
     </Compile>
+    <Compile Include="..\Observables.Roslyn.Shared\ProxyDomainTable.cs">
+      <Link>Shared/ProxyDomainTable.cs</Link>
+    </Compile>
   </ItemGroup>
 
   <ItemGroup>

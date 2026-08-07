@@ -1,8 +1,7 @@
+using System.Collections.Immutable;
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
-using Observables.WebSocket.Generators;
 using Observables.SourceGenerators.Shared;
+using Observables.WebSocket.Generators;
 
 namespace Observables.WebSocket.Reactive.SourceGenerators;
 
@@ -11,33 +10,16 @@ public sealed class WebSocketInterfaceStubGenerator : IIncrementalGenerator
 {
     public void Initialize(IncrementalGeneratorInitializationContext context)
     {
-        var candidateInterfaces = context.SyntaxProvider.ForAttributeWithMetadataName(
-            "Observables.WebSocket.WebSocketAttribute",
-            static (node, _) => node is InterfaceDeclarationSyntax,
-            static (ctx, _) => (InterfaceDeclarationSyntax)ctx.TargetNode);
-
-        var pipeline = candidateInterfaces
-            .Collect()
-            .Combine(context.CompilationProvider)
-            .Select(static (pair, _) => (pair.Left, pair.Right));
-
-        var parseStep = pipeline.Select(
-            static (input, ct) =>
-                GeneratorFailSafe.ExecuteParse(
-                    () => Parser.GenerateWebSocketStubs((CSharpCompilation)input.Right, input.Left, ct),
-                    DiagnosticDescriptors.InternalGeneratorError,
-                    () => new ContextGenerationModel(ImmutableEquatableArray.Empty<WebSocketInterfaceModel>())));
-
-        var diagnostics = parseStep
-            .Select(static (x, _) => x.diagnostics.ToImmutableEquatableArray())
-            .WithTrackingName(WebSocketGeneratorStepName.ReportDiagnostics);
-        context.ReportDiagnostics(diagnostics);
-
-        var contextModel = parseStep.Select(static (x, _) => x.model);
-        var interfaceModels = contextModel
-            .SelectMany(static (x, _) => x.Interfaces)
-            .WithTrackingName(WebSocketGeneratorStepName.BuildWebSocket);
-        context.EmitSource(interfaceModels);
-        context.EmitModuleInitializers(contextModel);
+        IoProxyGeneratorPipeline.RegisterForAttributeInterfaces(
+            context,
+            interfaceMarkerMetadataName: "Observables.WebSocket.WebSocketAttribute",
+            parse: Parser.GenerateWebSocketStubs,
+            internalErrorDescriptor: DiagnosticDescriptors.InternalGeneratorError,
+            emptyModelFactory: static () => new ContextGenerationModel(ImmutableEquatableArray.Empty<WebSocketInterfaceModel>()),
+            getInterfaces: static model => model.Interfaces,
+            reportDiagnosticsTrackingName: WebSocketGeneratorStepName.ReportDiagnostics,
+            buildInterfacesTrackingName: WebSocketGeneratorStepName.BuildWebSocket,
+            emitInterface: static (model, addSource) => addSource(model.FileName, Emitter.EmitInterface(model)),
+            emitModuleInitializers: Emitter.EmitModuleInitializers);
     }
 }

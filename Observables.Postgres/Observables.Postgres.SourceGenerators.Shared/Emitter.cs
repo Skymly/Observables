@@ -14,46 +14,17 @@ internal static class Emitter
         ContextGenerationModel model,
         Action<string, SourceText> addSource)
     {
-        if (model.Interfaces.Count == 0)
-        {
-            return;
-        }
-
-        var dependencyAttributes = string.Join(
-            "\n",
-            model.Interfaces.AsArray().Select(static m =>
-                $"                    [global::System.Diagnostics.CodeAnalysis.DynamicDependency(global::System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.PublicConstructors | global::System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.PublicMethods | global::System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.PublicProperties, typeof({m.GeneratedNamespace}.{m.ClassName}))]"));
-
-        var registrations = string.Join(
-            "\n",
-            model.Interfaces.AsArray().Select(static m =>
-                $"            global::Observables.Postgres.PostgresService.RegisterGeneratedFactory(typeof({m.InterfaceDisplayName}), static c => new {m.GeneratedNamespace}.{m.ClassName}(c));"));
-
-        var ns = model.Interfaces[0].GeneratedNamespace;
-        addSource(
-            "PostgresProxyRegistration.g.cs",
-            GeneratedSourceHeader.ToSourceText(
-                $$"""
-                namespace {{ns}}
-                {
-                    [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
-                    [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-                    internal static class PostgresProxyRegistration
-                    {
-                #if NET5_0_OR_GREATER
-                {{dependencyAttributes}}
-                        [System.Runtime.CompilerServices.ModuleInitializer]
-                        [global::System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessage("ILLink", "IL2026", Justification = "Factory registration only; the proxy is invoked by user code that declares RequiresUnreferencedCode.")]
-                        internal static void Initialize()
-                        {
-                {{registrations}}
-                        }
-                #endif
-                    }
-                }
-                """));
+        ProxyRegistrationEmitter.Emit(
+            hintName: "PostgresProxyRegistration.g.cs",
+            registrationClassName: "PostgresProxyRegistration",
+            registerGeneratedFactoryMetadataName: "global::Observables.Postgres.PostgresService.RegisterGeneratedFactory",
+            registrations: model.Interfaces.AsArray().Select(static m =>
+                new ProxyRegistrationEmitter.ProxyTypeRegistration(
+                    m.InterfaceDisplayName,
+                    m.GeneratedNamespace,
+                    m.ClassName)).ToArray(),
+            addSource);
     }
-
     public static SourceText EmitInterface(PostgresInterfaceModel model)
     {
         var writer = new SourceWriter();

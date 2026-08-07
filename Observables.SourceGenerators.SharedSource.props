@@ -46,6 +46,12 @@
     <Compile Include="$(MSBuildThisFileDirectory)Observables.Shared/Observables.SourceGenerators.Shared/DiagnosticHelpLink.cs">
       <Link>Shared/DiagnosticHelpLink.cs</Link>
     </Compile>
+    <Compile Include="$(MSBuildThisFileDirectory)Observables.Shared/Observables.SourceGenerators.Shared/ProxyRegistrationEmitter.cs">
+      <Link>Shared/ProxyRegistrationEmitter.cs</Link>
+    </Compile>
+    <Compile Include="$(MSBuildThisFileDirectory)Observables.Shared/Observables.SourceGenerators.Shared/IoProxyGeneratorPipeline.cs">
+      <Link>Shared/IoProxyGeneratorPipeline.cs</Link>
+    </Compile>
   </ItemGroup>
 
   <!-- Global using to avoid qualifying shared types -->

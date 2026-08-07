@@ -6,6 +6,7 @@ using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Options;
 using Microsoft.CodeAnalysis.Text;
+using Observables.Roslyn.Shared;
 
 namespace Observables.Analyzers;
 
@@ -92,7 +93,7 @@ public sealed class BoundaryAttributeCompletionProvider : CompletionProvider
         }
     }
 
-    static CompletionItem CreateItem(ProxyDomainCatalog.BoundaryAttributeSuggestion suggestion, string memberName)
+    static CompletionItem CreateItem(ProxyDomainTable.BoundaryAttributeSuggestion suggestion, string memberName)
     {
         var insertText = suggestion.InsertText.Contains('(')
             ? suggestion.InsertText

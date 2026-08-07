@@ -1,4 +1,5 @@
 using Microsoft.CodeAnalysis;
+using Observables.Roslyn.Shared;
 
 namespace Observables.Analyzers;
 
@@ -7,177 +8,67 @@ internal static class ProxyDomainCatalog
     internal sealed class ProxyDomain
     {
         internal ProxyDomain(
-            string displayName,
-            string interfaceMarkerMetadataName,
-            string reactiveAdapterMetadataName,
-            DiagnosticDescriptor emptyInterfaceDescriptor,
-            IReadOnlyList<BoundaryAttributeSuggestion> methodAttributes,
-            IReadOnlyList<BoundaryAttributeSuggestion> propertyAttributes)
+            ProxyDomainTable.ProxyDomainDefinition definition,
+            DiagnosticDescriptor emptyInterfaceDescriptor)
         {
-            DisplayName = displayName;
-            InterfaceMarkerMetadataName = interfaceMarkerMetadataName;
-            ReactiveAdapterMetadataName = reactiveAdapterMetadataName;
+            Definition = definition;
             EmptyInterfaceDescriptor = emptyInterfaceDescriptor;
-            MethodAttributes = methodAttributes;
-            PropertyAttributes = propertyAttributes;
         }
 
-        internal string DisplayName { get; }
-        internal string InterfaceMarkerMetadataName { get; }
-        internal string ReactiveAdapterMetadataName { get; }
+        internal ProxyDomainTable.ProxyDomainDefinition Definition { get; }
+        internal string DisplayName => Definition.DisplayName;
+        internal string InterfaceMarkerMetadataName => Definition.InterfaceMarkerMetadataName;
+        internal string ReactiveAdapterMetadataName => Definition.ReactiveAdapterMetadataName;
         internal DiagnosticDescriptor EmptyInterfaceDescriptor { get; }
-        internal IReadOnlyList<BoundaryAttributeSuggestion> MethodAttributes { get; }
-        internal IReadOnlyList<BoundaryAttributeSuggestion> PropertyAttributes { get; }
-
-        /// <summary>
-        /// NuGet / assembly id for the System.Reactive bridge package
-        /// (<c>Observables.{DisplayName}.Reactive</c>).
-        /// </summary>
-        internal string ReactiveAssemblyName => $"Observables.{DisplayName}.Reactive";
-    }
-
-    internal sealed class BoundaryAttributeSuggestion
-    {
-        internal BoundaryAttributeSuggestion(string displayText, string insertText)
-        {
-            DisplayText = displayText;
-            InsertText = insertText;
-        }
-
-        internal string DisplayText { get; }
-        internal string InsertText { get; }
+        internal IReadOnlyList<ProxyDomainTable.BoundaryAttributeSuggestion> MethodAttributes =>
+            Definition.MethodAttributes;
+        internal IReadOnlyList<ProxyDomainTable.BoundaryAttributeSuggestion> PropertyAttributes =>
+            Definition.PropertyAttributes;
+        internal string ReactiveAssemblyName => Definition.ReactiveAssemblyName;
     }
 
     internal static readonly ProxyDomain SignalR = new(
-        displayName: "SignalR",
-        interfaceMarkerMetadataName: "Observables.SignalR.HubAttribute",
-        reactiveAdapterMetadataName: "Observables.SignalR.Reactive.SystemReactiveSignalRAdapter",
-        emptyInterfaceDescriptor: DiagnosticDescriptors.EmptyHubInterface,
-        methodAttributes:
-        [
-            new BoundaryAttributeSuggestion("HubInvoke", "HubInvoke"),
-            new BoundaryAttributeSuggestion("HubSend", "HubSend"),
-            new BoundaryAttributeSuggestion("HubStream", "HubStream"),
-        ],
-        propertyAttributes:
-        [
-            new BoundaryAttributeSuggestion("HubOn", "HubOn"),
-        ]);
+        ProxyDomainTable.SignalR,
+        DiagnosticDescriptors.EmptyHubInterface);
 
     internal static readonly ProxyDomain Mqtt = new(
-        displayName: "Mqtt",
-        interfaceMarkerMetadataName: "Observables.Mqtt.MqttAttribute",
-        reactiveAdapterMetadataName: "Observables.Mqtt.Reactive.SystemReactiveMqttAdapter",
-        emptyInterfaceDescriptor: DiagnosticDescriptors.EmptyMqttInterface,
-        methodAttributes:
-        [
-            new BoundaryAttributeSuggestion("MqttPublish", "MqttPublish"),
-        ],
-        propertyAttributes:
-        [
-            new BoundaryAttributeSuggestion("MqttSubscribe", "MqttSubscribe"),
-        ]);
+        ProxyDomainTable.Mqtt,
+        DiagnosticDescriptors.EmptyMqttInterface);
 
     internal static readonly ProxyDomain WebSocket = new(
-        displayName: "WebSocket",
-        interfaceMarkerMetadataName: "Observables.WebSocket.WebSocketAttribute",
-        reactiveAdapterMetadataName: "Observables.WebSocket.Reactive.SystemReactiveWebSocketAdapter",
-        emptyInterfaceDescriptor: DiagnosticDescriptors.EmptyWebSocketInterface,
-        methodAttributes:
-        [
-            new BoundaryAttributeSuggestion("WebSocketSend", "WebSocketSend"),
-            new BoundaryAttributeSuggestion("WebSocketConnect", "WebSocketConnect"),
-            new BoundaryAttributeSuggestion("WebSocketClose", "WebSocketClose"),
-        ],
-        propertyAttributes:
-        [
-            new BoundaryAttributeSuggestion("WebSocketReceive", "WebSocketReceive"),
-        ]);
+        ProxyDomainTable.WebSocket,
+        DiagnosticDescriptors.EmptyWebSocketInterface);
 
     internal static readonly ProxyDomain Grpc = new(
-        displayName: "Grpc",
-        interfaceMarkerMetadataName: "Observables.Grpc.GrpcAttribute",
-        reactiveAdapterMetadataName: "Observables.Grpc.Reactive.SystemReactiveGrpcAdapter",
-        emptyInterfaceDescriptor: DiagnosticDescriptors.EmptyGrpcInterface,
-        methodAttributes:
-        [
-            new BoundaryAttributeSuggestion("GrpcUnary", "GrpcUnary"),
-            new BoundaryAttributeSuggestion("GrpcServerStream", "GrpcServerStream"),
-            new BoundaryAttributeSuggestion("GrpcClientStream", "GrpcClientStream"),
-            new BoundaryAttributeSuggestion("GrpcDuplex", "GrpcDuplex"),
-        ],
-        propertyAttributes: []);
+        ProxyDomainTable.Grpc,
+        DiagnosticDescriptors.EmptyGrpcInterface);
 
     internal static readonly ProxyDomain Sse = new(
-        displayName: "Sse",
-        interfaceMarkerMetadataName: "Observables.Sse.SseAttribute",
-        reactiveAdapterMetadataName: "Observables.Sse.Reactive.SystemReactiveSseAdapter",
-        emptyInterfaceDescriptor: DiagnosticDescriptors.EmptySseInterface,
-        methodAttributes: [],
-        propertyAttributes:
-        [
-            new BoundaryAttributeSuggestion("SseEvent", "SseEvent"),
-        ]);
+        ProxyDomainTable.Sse,
+        DiagnosticDescriptors.EmptySseInterface);
 
     internal static readonly ProxyDomain Nats = new(
-        displayName: "Nats",
-        interfaceMarkerMetadataName: "Observables.Nats.NatsAttribute",
-        reactiveAdapterMetadataName: "Observables.Nats.Reactive.SystemReactiveNatsAdapter",
-        emptyInterfaceDescriptor: DiagnosticDescriptors.EmptyNatsInterface,
-        methodAttributes:
-        [
-            new BoundaryAttributeSuggestion("NatsPublish", "NatsPublish"),
-            new BoundaryAttributeSuggestion("NatsRequest", "NatsRequest"),
-        ],
-        propertyAttributes:
-        [
-            new BoundaryAttributeSuggestion("NatsSubscribe", "NatsSubscribe"),
-        ]);
+        ProxyDomainTable.Nats,
+        DiagnosticDescriptors.EmptyNatsInterface);
 
     internal static readonly ProxyDomain Postgres = new(
-        displayName: "Postgres",
-        interfaceMarkerMetadataName: "Observables.Postgres.PostgresAttribute",
-        reactiveAdapterMetadataName: "Observables.Postgres.Reactive.SystemReactivePostgresAdapter",
-        emptyInterfaceDescriptor: DiagnosticDescriptors.EmptyPostgresInterface,
-        methodAttributes:
-        [
-            new BoundaryAttributeSuggestion("Notify", "Notify"),
-        ],
-        propertyAttributes:
-        [
-            new BoundaryAttributeSuggestion("Listen", "Listen"),
-        ]);
+        ProxyDomainTable.Postgres,
+        DiagnosticDescriptors.EmptyPostgresInterface);
 
     internal static readonly ProxyDomain Redis = new(
-        displayName: "Redis",
-        interfaceMarkerMetadataName: "Observables.Redis.RedisAttribute",
-        reactiveAdapterMetadataName: "Observables.Redis.Reactive.SystemReactiveRedisAdapter",
-        emptyInterfaceDescriptor: DiagnosticDescriptors.EmptyRedisInterface,
-        methodAttributes:
-        [
-            new BoundaryAttributeSuggestion("RedisPublish", "RedisPublish"),
-        ],
-        propertyAttributes:
-        [
-            new BoundaryAttributeSuggestion("RedisSubscribe", "RedisSubscribe"),
-        ]);
+        ProxyDomainTable.Redis,
+        DiagnosticDescriptors.EmptyRedisInterface);
 
     internal static readonly ProxyDomain RestApi = new(
-        displayName: "RestAPI",
-        interfaceMarkerMetadataName: "Observables.RestAPI.RestApiAttribute",
-        reactiveAdapterMetadataName: "Observables.RestAPI.Reactive.SystemReactiveObservableAdapter",
-        emptyInterfaceDescriptor: DiagnosticDescriptors.EmptyRestApiInterface,
-        methodAttributes: [],
-        propertyAttributes: []);
+        ProxyDomainTable.RestApi,
+        DiagnosticDescriptors.EmptyRestApiInterface);
 
     internal static readonly IReadOnlyList<ProxyDomain> InterfaceProxyDomains =
         [SignalR, Mqtt, WebSocket, Grpc, Sse, Nats, Postgres, Redis, RestApi];
 
-    internal static readonly IReadOnlyList<ProxyDomain> ReactiveConflictDomains =
-        [SignalR, Mqtt, WebSocket, Grpc, Sse, Nats, Postgres, Redis, RestApi];
+    internal static readonly IReadOnlyList<ProxyDomain> ReactiveConflictDomains = InterfaceProxyDomains;
 
-    internal static readonly string[] RestApiHttpMethodNames =
-        ["Get", "Post", "Put", "Delete", "Patch", "Head", "Options"];
+    internal static readonly string[] RestApiHttpMethodNames = ProxyDomainTable.RestApiHttpMethodNames;
 
     internal static bool HasAttribute(ISymbol symbol, INamedTypeSymbol attributeType)
     {

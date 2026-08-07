@@ -17,6 +17,12 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Compile Include="..\Observables.Roslyn.Shared\ProxyDomainTable.cs">
+      <Link>Shared/ProxyDomainTable.cs</Link>
+    </Compile>
+  </ItemGroup>
+
+  <ItemGroup>
     <InternalsVisibleTo Include="Observables.CodeFixes.Tests" />
   </ItemGroup>
 

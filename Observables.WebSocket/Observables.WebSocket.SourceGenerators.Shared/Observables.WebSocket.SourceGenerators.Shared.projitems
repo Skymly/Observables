@@ -13,7 +13,6 @@
     <AdditionalFiles Include="$(MSBuildThisFileDirectory)AnalyzerReleases.Unshipped.md" />
     <Compile Include="$(MSBuildThisFileDirectory)DiagnosticDescriptors.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Emitter.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)IncrementalValuesProviderExtensions.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Models\ContextGenerationModel.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Models\WebSocketBoundaryKind.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Models\WebSocketInterfaceModel.cs" />

@@ -1,8 +1,7 @@
+using System.Collections.Immutable;
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
-using Observables.Nats.Generators;
 using Observables.SourceGenerators.Shared;
+using Observables.Nats.Generators;
 
 namespace Observables.Nats.R3.SourceGenerators;
 
@@ -11,33 +10,16 @@ public sealed class NatsInterfaceStubGenerator : IIncrementalGenerator
 {
     public void Initialize(IncrementalGeneratorInitializationContext context)
     {
-        var candidateInterfaces = context.SyntaxProvider.ForAttributeWithMetadataName(
-            "Observables.Nats.NatsAttribute",
-            static (node, _) => node is InterfaceDeclarationSyntax,
-            static (ctx, _) => (InterfaceDeclarationSyntax)ctx.TargetNode);
-
-        var pipeline = candidateInterfaces
-            .Collect()
-            .Combine(context.CompilationProvider)
-            .Select(static (pair, _) => (pair.Left, pair.Right));
-
-        var parseStep = pipeline.Select(
-            static (input, ct) =>
-                GeneratorFailSafe.ExecuteParse(
-                    () => Parser.GenerateNatsStubs((CSharpCompilation)input.Right, input.Left, ct),
-                    DiagnosticDescriptors.InternalGeneratorError,
-                    () => new ContextGenerationModel(ImmutableEquatableArray.Empty<NatsInterfaceModel>())));
-
-        var diagnostics = parseStep
-            .Select(static (x, _) => x.diagnostics.ToImmutableEquatableArray())
-            .WithTrackingName(NatsGeneratorStepName.ReportDiagnostics);
-        context.ReportDiagnostics(diagnostics);
-
-        var contextModel = parseStep.Select(static (x, _) => x.model);
-        var interfaceModels = contextModel
-            .SelectMany(static (x, _) => x.Interfaces)
-            .WithTrackingName(NatsGeneratorStepName.BuildNats);
-        context.EmitSource(interfaceModels);
-        context.EmitModuleInitializers(contextModel);
+        IoProxyGeneratorPipeline.RegisterForAttributeInterfaces(
+            context,
+            interfaceMarkerMetadataName: "Observables.Nats.NatsAttribute",
+            parse: Parser.GenerateNatsStubs,
+            internalErrorDescriptor: DiagnosticDescriptors.InternalGeneratorError,
+            emptyModelFactory: static () => new ContextGenerationModel(ImmutableEquatableArray.Empty<NatsInterfaceModel>()),
+            getInterfaces: static model => model.Interfaces,
+            reportDiagnosticsTrackingName: NatsGeneratorStepName.ReportDiagnostics,
+            buildInterfacesTrackingName: NatsGeneratorStepName.BuildNats,
+            emitInterface: static (model, addSource) => addSource(model.FileName, Emitter.EmitInterface(model)),
+            emitModuleInitializers: Emitter.EmitModuleInitializers);
     }
 }

@@ -1,8 +1,7 @@
+using System.Collections.Immutable;
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
-using Observables.Mqtt.Generators;
 using Observables.SourceGenerators.Shared;
+using Observables.Mqtt.Generators;
 
 namespace Observables.Mqtt.R3.SourceGenerators;
 
@@ -11,33 +10,16 @@ public sealed class MqttInterfaceStubGenerator : IIncrementalGenerator
 {
     public void Initialize(IncrementalGeneratorInitializationContext context)
     {
-        var candidateInterfaces = context.SyntaxProvider.ForAttributeWithMetadataName(
-            "Observables.Mqtt.MqttAttribute",
-            static (node, _) => node is InterfaceDeclarationSyntax,
-            static (ctx, _) => (InterfaceDeclarationSyntax)ctx.TargetNode);
-
-        var pipeline = candidateInterfaces
-            .Collect()
-            .Combine(context.CompilationProvider)
-            .Select(static (pair, _) => (pair.Left, pair.Right));
-
-        var parseStep = pipeline.Select(
-            static (input, ct) =>
-                GeneratorFailSafe.ExecuteParse(
-                    () => Parser.GenerateMqttStubs((CSharpCompilation)input.Right, input.Left, ct),
-                    DiagnosticDescriptors.InternalGeneratorError,
-                    () => new ContextGenerationModel(ImmutableEquatableArray.Empty<MqttInterfaceModel>())));
-
-        var diagnostics = parseStep
-            .Select(static (x, _) => x.diagnostics.ToImmutableEquatableArray())
-            .WithTrackingName(MqttGeneratorStepName.ReportDiagnostics);
-        context.ReportDiagnostics(diagnostics);
-
-        var contextModel = parseStep.Select(static (x, _) => x.model);
-        var interfaceModels = contextModel
-            .SelectMany(static (x, _) => x.Interfaces)
-            .WithTrackingName(MqttGeneratorStepName.BuildMqtt);
-        context.EmitSource(interfaceModels);
-        context.EmitModuleInitializers(contextModel);
+        IoProxyGeneratorPipeline.RegisterForAttributeInterfaces(
+            context,
+            interfaceMarkerMetadataName: "Observables.Mqtt.MqttAttribute",
+            parse: Parser.GenerateMqttStubs,
+            internalErrorDescriptor: DiagnosticDescriptors.InternalGeneratorError,
+            emptyModelFactory: static () => new ContextGenerationModel(ImmutableEquatableArray.Empty<MqttInterfaceModel>()),
+            getInterfaces: static model => model.Interfaces,
+            reportDiagnosticsTrackingName: MqttGeneratorStepName.ReportDiagnostics,
+            buildInterfacesTrackingName: MqttGeneratorStepName.BuildMqtt,
+            emitInterface: static (model, addSource) => addSource(model.FileName, Emitter.EmitInterface(model)),
+            emitModuleInitializers: Emitter.EmitModuleInitializers);
     }
 }

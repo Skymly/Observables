@@ -91,6 +91,9 @@ namespace Observables.RestAPI
                 }
                 catch (Exception ex)
                 {
+                    if (IsCallerCancellation(ex, cancellationToken))
+                        throw;
+
                     if (!isApiResponse)
                         throw new ApiRequestException(request, request.Method, settings, ex);
 
@@ -124,6 +127,9 @@ namespace Observables.RestAPI
                     }
                     catch (Exception ex)
                     {
+                        if (IsCallerCancellation(ex, cancellationToken))
+                            throw;
+
                         if (settings.DeserializationExceptionFactory != null)
                             error = await settings
                                 .DeserializationExceptionFactory(response, ex)
@@ -143,12 +149,14 @@ namespace Observables.RestAPI
                         }
                     }
 
+                    // IApiResponse owns the HttpResponseMessage from here.
+                    disposeResponse = false;
                     return ApiResponse.Create<T, TBody>(
                         request,
                         response,
                         body,
                         settings,
-                        error as ApiException
+                        await CoerceToApiExceptionBase(error, request, response, settings).ConfigureAwait(false)
                     );
                 }
                 else if (error != null)
@@ -200,6 +208,10 @@ namespace Observables.RestAPI
                 {
                     response?.Dispose();
                     content?.Dispose();
+                }
+                else if (content is not null && !ReferenceEquals(content, response?.Content))
+                {
+                    content.Dispose();
                 }
             }
         }
@@ -540,6 +552,35 @@ namespace Observables.RestAPI
             deserializedType != typeof(HttpResponseMessage)
             && deserializedType != typeof(HttpContent)
             && deserializedType != typeof(Stream);
+
+        static bool IsCallerCancellation(Exception exception, CancellationToken cancellationToken) =>
+            exception is OperationCanceledException && cancellationToken.IsCancellationRequested;
+
+        static async Task<ApiExceptionBase?> CoerceToApiExceptionBase(
+            Exception? error,
+            HttpRequestMessage request,
+            HttpResponseMessage response,
+            RestApiSettings settings)
+        {
+            switch (error)
+            {
+                case null:
+                    return null;
+                case ApiExceptionBase api:
+                    return api;
+                default:
+                    return await ApiException
+                        .Create(
+                            error.Message,
+                            request,
+                            request.Method,
+                            response,
+                            settings,
+                            error
+                        )
+                        .ConfigureAwait(false);
+            }
+        }
 
         /// <summary>
         /// A no-op <see cref="ICustomAttributeProvider"/> that returns no attributes.

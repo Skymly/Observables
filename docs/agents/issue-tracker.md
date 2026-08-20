@@ -17,7 +17,7 @@ Inside a clone, `gh` defaults to that clone's remote. **When the target is a com
 
 | Surface | Repository | When to open issues **there** |
 |---------|------------|-------------------------------|
-| Library / generators / eng / maintainer `docs/` / ADR | [Skymly/Observables](https://github.com/Skymly/Observables) | Default for mattpocock/skills flows (`/to-tickets`, `/wayfinder`, `/triage`, `/qa`, …) when the work is in this clone |
+| Library / generators / eng / maintainer `docs/` / ADR | [Skymly/Observables](https://github.com/Skymly/Observables) | Default for user-local skill flows (`/to-tickets`, `/wayfinder`, `/triage`, `/qa`, …) when the work is in this clone |
 | User docs (VitePress) | [Skymly/Observables.Docs](https://github.com/Skymly/Observables.Docs) | Flow involves **user-facing Docs** (guides, `diagnostics.md`, zh pages, site config) |
 | Samples / smoke demos | [Skymly/Observables.Samples](https://github.com/Skymly/Observables.Samples) | Flow involves **Samples** (`Observables.Samples.<Feature>`, RegistrationDemo / LiveDemo, samples CI) |
 | Downstream showcase | [Skymly/GitPulse](https://github.com/Skymly/GitPulse) | **Only** when the work explicitly changes GitPulse; do **not** auto-file library/Docs/Samples tickets there |

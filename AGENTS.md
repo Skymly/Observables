@@ -409,6 +409,8 @@ Agent 行为准则——与「与用户沟通」并行生效：
 
 ## Agent skills
 
+本仓库**不内置** Skills。代理只使用维护者本机技能（通常为 `~/.agents/skills` / Cursor 用户技能），不要再往本仓拷贝 `.agents/skills` 或 `skills-lock.json`。
+
 ### Issue tracker
 
 GitHub Issues, routed by surface: library → `Skymly/Observables`; user Docs → `Skymly/Observables.Docs`; Samples → `Skymly/Observables.Samples`; GitPulse only when that repo is the work. See `docs/agents/issue-tracker.md`.

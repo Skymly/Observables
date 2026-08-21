@@ -8,4 +8,7 @@ public interface IE2EReactiveHub
 {
     [GrpcUnary("UnaryEcho")]
     IObservable<EchoReply> UnaryEcho(EchoRequest request, CancellationToken cancellationToken = default);
+
+    [GrpcServerStream("ServerStreamEcho")]
+    IObservable<EchoReply> ServerStreamEcho(EchoRequest request, CancellationToken cancellationToken = default);
 }

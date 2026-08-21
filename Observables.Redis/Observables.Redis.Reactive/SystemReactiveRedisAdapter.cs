@@ -1,4 +1,3 @@
-using System.Reactive.Disposables;
 using System.Reactive.Linq;
 using StackExchange.Redis;
 #if NET8_0_OR_GREATER
@@ -28,6 +27,7 @@ public static class SystemReactiveRedisAdapter
             var subscriber = multiplexer.GetSubscriber();
             await subscriber
                 .PublishAsync(RedisChannel.Literal(channel), payload ?? Array.Empty<byte>())
+                .WaitAsync(linked.Token)
                 .ConfigureAwait(false);
             return System.Reactive.Unit.Default;
         });
@@ -103,49 +103,37 @@ public static class SystemReactiveRedisAdapter
         IConnectionMultiplexer multiplexer,
         RedisChannel channel,
         Func<ChannelMessage, T> map) =>
-        Observable.Create<T>(observer =>
+        Observable.Create<T>(async (observer, ct) =>
         {
-            var cts = new CancellationTokenSource();
-            _ = RunAsync();
-
-            return Disposable.Create(cts.Cancel);
-
-            async Task RunAsync()
+            ChannelMessageQueue? queue = null;
+            try
             {
-                ChannelMessageQueue? queue = null;
-                try
-                {
-                    var subscriber = multiplexer.GetSubscriber();
-                    queue = await subscriber.SubscribeAsync(channel).ConfigureAwait(false);
+                var subscriber = multiplexer.GetSubscriber();
+                queue = await subscriber.SubscribeAsync(channel).ConfigureAwait(false);
 
-                    // ChannelMessageQueue enumeration is sequential (SER OnMessage / queue path).
-                    await foreach (var message in queue.WithCancellation(cts.Token).ConfigureAwait(false))
+                // ChannelMessageQueue enumeration is sequential (SER OnMessage / queue path).
+                await foreach (var message in queue.WithCancellation(ct).ConfigureAwait(false))
+                {
+                    observer.OnNext(map(message));
+                }
+
+                observer.OnCompleted();
+            }
+            catch (Exception ex) when (ex is not OperationCanceledException)
+            {
+                observer.OnError(ex);
+            }
+            finally
+            {
+                if (queue is not null)
+                {
+                    try
                     {
-                        observer.OnNext(map(message));
+                        await queue.UnsubscribeAsync().ConfigureAwait(false);
                     }
-
-                    observer.OnCompleted();
-                }
-                catch (OperationCanceledException)
-                {
-                    observer.OnCompleted();
-                }
-                catch (Exception ex)
-                {
-                    observer.OnError(ex);
-                }
-                finally
-                {
-                    if (queue is not null)
+                    catch (Exception)
                     {
-                        try
-                        {
-                            await queue.UnsubscribeAsync().ConfigureAwait(false);
-                        }
-                        catch (Exception)
-                        {
-                            // best-effort unsubscribe on dispose / fault
-                        }
+                        // best-effort unsubscribe on dispose / fault
                     }
                 }
             }

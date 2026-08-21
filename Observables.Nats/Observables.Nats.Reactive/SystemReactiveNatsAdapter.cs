@@ -43,29 +43,21 @@ public static class SystemReactiveNatsAdapter
     [RequiresDynamicCode("NATS payload serialization may use reflection.")]
 #endif
     public static IObservable<T> FromSubscribe<T>(INatsConnection connection, string subject) =>
-        Observable.Create<T>(observer =>
+        Observable.Create<T>(async (observer, ct) =>
         {
-            var cts = new CancellationTokenSource();
-            _ = SubscribeAsync();
-
-            return () => cts.Cancel();
-
-            async Task SubscribeAsync()
+            try
             {
-                try
+                await foreach (var msg in connection.SubscribeAsync<T>(subject, cancellationToken: ct)
+                                   .ConfigureAwait(false))
                 {
-                    await foreach (var msg in connection.SubscribeAsync<T>(subject, cancellationToken: cts.Token)
-                                       .ConfigureAwait(false))
-                    {
-                        observer.OnNext(msg.Data!);
-                    }
+                    observer.OnNext(msg.Data!);
+                }
 
-                    observer.OnCompleted();
-                }
-                catch (Exception ex) when (ex is not OperationCanceledException)
-                {
-                    observer.OnError(ex);
-                }
+                observer.OnCompleted();
+            }
+            catch (Exception ex) when (ex is not OperationCanceledException)
+            {
+                observer.OnError(ex);
             }
         });
 

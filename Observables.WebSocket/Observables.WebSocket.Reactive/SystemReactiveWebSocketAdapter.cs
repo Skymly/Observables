@@ -1,7 +1,6 @@
 using System;
 using System.IO;
 using System.Net.WebSockets;
-using System.Reactive.Disposables;
 using System.Reactive.Linq;
 using System.Text;
 using System.Threading;
@@ -85,65 +84,44 @@ public static class SystemReactiveWebSocketAdapter
     [RequiresDynamicCode("JSON payload deserialization uses System.Text.Json reflection.")]
 #endif
     public static IObservable<T> FromReceive<T>(ClientWebSocket socket) =>
-        System.Reactive.Linq.Observable.Create<T>(observer =>
+        System.Reactive.Linq.Observable.Create<T>(async (observer, ct) =>
         {
-            var cts = new CancellationTokenSource();
-
-            _ = ReceiveLoopAsync();
-
-            return Disposable.Create(() => cts.Cancel());
-
-            async Task ReceiveLoopAsync()
+            var buffer = new byte[4096];
+            try
             {
-                var buffer = new byte[4096];
-                try
+                while (!ct.IsCancellationRequested && socket.State == WebSocketState.Open)
                 {
-                    while (!cts.IsCancellationRequested && socket.State == WebSocketState.Open)
+                    // Assemble potentially fragmented message
+                    using var ms = new MemoryStream();
+                    WebSocketMessageType messageType = WebSocketMessageType.Binary;
+                    WebSocketReceiveResult result;
+                    do
                     {
-                        // Assemble potentially fragmented message
-                        using var ms = new MemoryStream();
-                        WebSocketMessageType messageType = WebSocketMessageType.Binary;
-                        WebSocketReceiveResult result;
-                        try
-                        {
-                            do
-                            {
-                                result = await socket
-                                    .ReceiveAsync(new ArraySegment<byte>(buffer), cts.Token)
-                                    .ConfigureAwait(false);
+                        result = await socket
+                            .ReceiveAsync(new ArraySegment<byte>(buffer), ct)
+                            .ConfigureAwait(false);
 
-                                if (result.MessageType == WebSocketMessageType.Close)
-                                {
-                                    observer.OnCompleted();
-                                    return;
-                                }
-
-                                messageType = result.MessageType;
-                                ms.Write(buffer, 0, result.Count);
-                            }
-                            while (!result.EndOfMessage);
-                        }
-                        catch (OperationCanceledException)
+                        if (result.MessageType == WebSocketMessageType.Close)
                         {
+                            observer.OnCompleted();
                             return;
                         }
 
-                        var payload = ms.ToArray();
-                        try
-                        {
-                            observer.OnNext(DeserializePayload<T>(payload, messageType));
-                        }
-                        catch (Exception ex)
-                        {
-                            observer.OnError(ex);
-                            return;
-                        }
+                        messageType = result.MessageType;
+                        ms.Write(buffer, 0, result.Count);
                     }
+                    while (!result.EndOfMessage);
+
+                    var payload = ms.ToArray();
+                    observer.OnNext(DeserializePayload<T>(payload, messageType));
                 }
-                catch (Exception ex)
-                {
-                    observer.OnError(ex);
-                }
+            }
+            catch (OperationCanceledException)
+            {
+            }
+            catch (Exception ex)
+            {
+                observer.OnError(ex);
             }
         });
 

@@ -1,7 +1,9 @@
 using System.Net.WebSockets;
 using System.Reactive.Linq;
 using System.Reactive.Threading.Tasks;
+using System.Text;
 using Observables.WebSocket;
+using Observables.WebSocket.Reactive;
 using Observables.WebSocket.Reactive.Tests.Contracts;
 using Observables.WebSocket.Tests.Infrastructure;
 
@@ -77,5 +79,34 @@ public sealed class WebSocketClientReactiveE2ETests(WebSocketTestServerFixture f
         var received = await receiveTask;
         Assert.Equal(expected.Length, received.Length);
         Assert.Equal(expected, received);
+    }
+
+    [Fact]
+    public async Task FromReceive_dispose_cancels_the_pump_without_completing()
+    {
+        using var socket = new ClientWebSocket();
+        using var cts = new CancellationTokenSource(DefaultTimeout);
+        await socket.ConnectAsync(fixture.Server.Uri, cts.Token);
+
+        var completed = 0;
+        var errored = 0;
+        var ready = new TaskCompletionSource<string>(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        using var subscription = SystemReactiveWebSocketAdapter.FromReceive<string>(socket)
+            .Subscribe(
+                value => ready.TrySetResult(value),
+                _ => Interlocked.Exchange(ref errored, 1),
+                () => Interlocked.Exchange(ref completed, 1));
+
+        var payload = Encoding.UTF8.GetBytes("ready");
+        await socket.SendAsync(new ArraySegment<byte>(payload), WebSocketMessageType.Text, true, cts.Token);
+
+        Assert.Equal("ready", await ready.Task.WaitAsync(cts.Token));
+
+        subscription.Dispose();
+        await Task.Delay(200, cts.Token);
+
+        Assert.Equal(0, Volatile.Read(ref completed));
+        Assert.Equal(0, Volatile.Read(ref errored));
     }
 }

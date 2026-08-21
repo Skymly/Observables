@@ -7,7 +7,7 @@ namespace Observables.Sse.Tests.Infrastructure;
 /// <summary>Minimal in-process <c>text/event-stream</c> server for E2E tests.</summary>
 public sealed class SseTestServer : IAsyncDisposable
 {
-    // One deterministic event block written per request, then the response closes.
+    // `/stream` writes one deterministic event block then closes. `/keepalive` emits one event and holds the response open.
     const string Stream =
         ": comment line\n" +
         "event: price\n" +
@@ -36,6 +36,8 @@ public sealed class SseTestServer : IAsyncDisposable
     public int Port { get; }
 
     public Uri Uri => new($"http://127.0.0.1:{Port}/stream");
+
+    public Uri KeepAliveUri => new($"http://127.0.0.1:{Port}/keepalive");
 
     public static SseTestServer Start()
     {
@@ -78,19 +80,37 @@ public sealed class SseTestServer : IAsyncDisposable
                 return;
             }
 
-            _ = HandleAsync(context);
+            _ = HandleAsync(context, cancellationToken);
         }
     }
 
-    static async Task HandleAsync(HttpListenerContext context)
+    static async Task HandleAsync(HttpListenerContext context, CancellationToken cancellationToken)
     {
         try
         {
             context.Response.ContentType = "text/event-stream";
             context.Response.StatusCode = 200;
+
+            var path = context.Request.Url?.AbsolutePath ?? string.Empty;
+            if (path.Equals("/keepalive", StringComparison.OrdinalIgnoreCase))
+            {
+                context.Response.SendChunked = true;
+                var ready = Encoding.UTF8.GetBytes(
+                    "event: price\n" +
+                    "data: ready\n" +
+                    "\n");
+                await context.Response.OutputStream.WriteAsync(ready, 0, ready.Length).ConfigureAwait(false);
+                await context.Response.OutputStream.FlushAsync().ConfigureAwait(false);
+                await Task.Delay(Timeout.Infinite, cancellationToken).ConfigureAwait(false);
+                return;
+            }
+
             var bytes = Encoding.UTF8.GetBytes(Stream);
             await context.Response.OutputStream.WriteAsync(bytes, 0, bytes.Length).ConfigureAwait(false);
             await context.Response.OutputStream.FlushAsync().ConfigureAwait(false);
+        }
+        catch (OperationCanceledException)
+        {
         }
         catch
         {

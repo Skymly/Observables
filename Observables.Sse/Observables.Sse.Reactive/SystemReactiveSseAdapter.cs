@@ -1,9 +1,7 @@
 using System.IO;
 using System.Net.Http;
-using System.Reactive.Disposables;
 using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
+using System.Reactive.Linq;
 #if NET8_0_OR_GREATER
 using System.Diagnostics.CodeAnalysis;
 #endif
@@ -22,55 +20,46 @@ public static class SystemReactiveSseAdapter
     [RequiresDynamicCode("JSON payload deserialization uses System.Text.Json reflection.")]
 #endif
     public static IObservable<T> FromEvent<T>(SseConnection connection, string eventName) =>
-        System.Reactive.Linq.Observable.Create<T>(observer =>
+        Observable.Create<T>(async (observer, ct) =>
         {
-            var cts = new CancellationTokenSource();
-
-            _ = RunAsync();
-
-            return Disposable.Create(() => cts.Cancel());
-
-            async Task RunAsync()
+            try
             {
-                try
-                {
-                    using var request = new HttpRequestMessage(HttpMethod.Get, connection.Endpoint);
-                    request.Headers.Accept.ParseAdd("text/event-stream");
+                using var request = new HttpRequestMessage(HttpMethod.Get, connection.Endpoint);
+                request.Headers.Accept.ParseAdd("text/event-stream");
 
-                    using var response = await connection.HttpClient
-                        .SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cts.Token)
-                        .ConfigureAwait(false);
-                    response.EnsureSuccessStatusCode();
+                using var response = await connection.HttpClient
+                    .SendAsync(request, HttpCompletionOption.ResponseHeadersRead, ct)
+                    .ConfigureAwait(false);
+                response.EnsureSuccessStatusCode();
 
 #if NET8_0_OR_GREATER
-                    using var stream = await response.Content.ReadAsStreamAsync(cts.Token).ConfigureAwait(false);
+                using var stream = await response.Content.ReadAsStreamAsync(ct).ConfigureAwait(false);
 #else
-                    using var stream = await response.Content.ReadAsStreamAsync().ConfigureAwait(false);
+                using var stream = await response.Content.ReadAsStreamAsync().ConfigureAwait(false);
 #endif
-                    using var reader = new StreamReader(stream, Encoding.UTF8);
+                using var reader = new StreamReader(stream, Encoding.UTF8);
 
-                    while (!cts.IsCancellationRequested)
+                while (!ct.IsCancellationRequested)
+                {
+                    var sseEvent = await SseProtocol.ReadEventAsync(reader).ConfigureAwait(false);
+                    if (sseEvent is null)
                     {
-                        var sseEvent = await SseProtocol.ReadEventAsync(reader).ConfigureAwait(false);
-                        if (sseEvent is null)
-                        {
-                            observer.OnCompleted();
-                            return;
-                        }
+                        observer.OnCompleted();
+                        return;
+                    }
 
-                        if (sseEvent.Value.EventName == eventName)
-                        {
-                            observer.OnNext(SseProtocol.Deserialize<T>(sseEvent.Value.Data));
-                        }
+                    if (sseEvent.Value.EventName == eventName)
+                    {
+                        observer.OnNext(SseProtocol.Deserialize<T>(sseEvent.Value.Data));
                     }
                 }
-                catch (OperationCanceledException)
-                {
-                }
-                catch (Exception ex)
-                {
-                    observer.OnError(ex);
-                }
+            }
+            catch (OperationCanceledException)
+            {
+            }
+            catch (Exception ex)
+            {
+                observer.OnError(ex);
             }
         });
 }

@@ -31,6 +31,7 @@
     <Compile Include="..\Observables.Redis.Tests\Infrastructure\RedisTestServer.cs" Link="Infrastructure\RedisTestServer.cs" />
     <Compile Include="..\Observables.Redis.Tests\Infrastructure\RedisTestServerFixture.cs" Link="Infrastructure\RedisTestServerFixture.cs" />
     <Compile Include="..\Observables.Redis.Tests\Infrastructure\RedisE2EHelpers.cs" Link="Infrastructure\RedisE2EHelpers.cs" />
+    <Compile Include="..\Observables.Redis.Tests\Infrastructure\HangingRedis.cs" Link="Infrastructure\HangingRedis.cs" />
   </ItemGroup>
 
 </Project>

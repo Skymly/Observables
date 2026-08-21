@@ -27,6 +27,7 @@ public static class RedisObservable
             var subscriber = multiplexer.GetSubscriber();
             await subscriber
                 .PublishAsync(RedisChannel.Literal(channel), payload ?? Array.Empty<byte>())
+                .WaitAsync(linked.Token)
                 .ConfigureAwait(false);
             return Unit.Default;
         });

@@ -1,6 +1,5 @@
 using System.Data;
 using System.Diagnostics.CodeAnalysis;
-using System.Reactive.Disposables;
 using System.Reactive.Linq;
 using System.Text.RegularExpressions;
 using Npgsql;
@@ -13,6 +12,8 @@ public static class SystemReactivePostgresAdapter
     static readonly Regex ChannelNameRegex = new(
         @"^[A-Za-z_][A-Za-z0-9_]*$",
         RegexOptions.CultureInvariant | RegexOptions.Compiled);
+
+    static readonly TimeSpan ListenWaitSlice = TimeSpan.FromMilliseconds(250);
 
     /// <summary>
     /// Hot stream: <c>LISTEN</c> on <paramref name="channel"/> and emit notification payloads until disposed.
@@ -28,66 +29,49 @@ public static class SystemReactivePostgresAdapter
 
         ValidateChannelName(channel);
 
-        return Observable.Create<string>(observer =>
+        return Observable.Create<string>(async (observer, ct) =>
         {
-            var cts = new CancellationTokenSource();
-            _ = RunAsync();
-
-            return Disposable.Create(cts.Cancel);
-
-            async Task RunAsync()
+            void Handler(object sender, NpgsqlNotificationEventArgs args)
             {
-                void Handler(object sender, NpgsqlNotificationEventArgs args)
+                if (string.Equals(args.Channel, channel, StringComparison.Ordinal))
                 {
-                    if (string.Equals(args.Channel, channel, StringComparison.Ordinal))
-                    {
-                        observer.OnNext(args.Payload ?? string.Empty);
-                    }
+                    observer.OnNext(args.Payload ?? string.Empty);
+                }
+            }
+
+            connection.Notification += Handler;
+            Exception? error = null;
+            try
+            {
+                await using (var listen = new NpgsqlCommand(
+                    "LISTEN " + QuoteIdent(channel) + ";",
+                    connection))
+                {
+                    await listen.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
                 }
 
-                connection.Notification += Handler;
-                try
-                {
-                    await using (var listen = new NpgsqlCommand(
-                        "LISTEN " + QuoteIdent(channel) + ";",
-                        connection))
-                    {
-                        await listen.ExecuteNonQueryAsync(cts.Token).ConfigureAwait(false);
-                    }
+                await WaitForNotificationsAsync(connection, ct).ConfigureAwait(false);
+            }
+            catch (OperationCanceledException)
+            {
+            }
+            catch (Exception ex)
+            {
+                error = ex;
+            }
+            finally
+            {
+                connection.Notification -= Handler;
+                await UnlistenBestEffortAsync(connection, channel).ConfigureAwait(false);
+            }
 
-                    while (!cts.Token.IsCancellationRequested)
-                    {
-                        await connection.WaitAsync(cts.Token).ConfigureAwait(false);
-                    }
-
-                    observer.OnCompleted();
-                }
-                catch (OperationCanceledException)
-                {
-                    observer.OnCompleted();
-                }
-                catch (Exception ex)
-                {
-                    observer.OnError(ex);
-                }
-                finally
-                {
-                    connection.Notification -= Handler;
-                    try
-                    {
-                        if (connection.State == ConnectionState.Open)
-                        {
-                            await using var unlisten = new NpgsqlCommand(
-                                "UNLISTEN " + QuoteIdent(channel) + ";",
-                                connection);
-                            await unlisten.ExecuteNonQueryAsync(CancellationToken.None).ConfigureAwait(false);
-                        }
-                    }
-                    catch
-                    {
-                        // Best-effort cleanup when the connection is already broken.
-                    }
-                }
+            if (error is not null)
+            {
+                observer.OnError(error);
+            }
+            else if (!ct.IsCancellationRequested)
+            {
+                observer.OnCompleted();
             }
         });
     }
@@ -107,75 +91,74 @@ public static class SystemReactivePostgresAdapter
 
         ValidateChannelName(channel);
 
-        return Observable.Create<T>(observer =>
+        return Observable.Create<T>(async (observer, ct) =>
         {
-            var cts = new CancellationTokenSource();
-            _ = RunAsync();
+            using var cts = CancellationTokenSource.CreateLinkedTokenSource(ct);
+            var hasError = false;
+            Exception? error = null;
 
-            return Disposable.Create(cts.Cancel);
-
-            async Task RunAsync()
+            void Handler(object sender, NpgsqlNotificationEventArgs args)
             {
-                void Handler(object sender, NpgsqlNotificationEventArgs args)
+                if (!string.Equals(args.Channel, channel, StringComparison.Ordinal))
                 {
-                    if (!string.Equals(args.Channel, channel, StringComparison.Ordinal))
-                    {
-                        return;
-                    }
-
-                    try
-                    {
-                        observer.OnNext(PostgresPayload.Deserialize<T>(args.Payload));
-                    }
-                    catch (Exception ex)
-                    {
-                        observer.OnError(ex);
-                    }
+                    return;
                 }
 
-                connection.Notification += Handler;
                 try
                 {
-                    await using (var listen = new NpgsqlCommand(
-                        "LISTEN " + QuoteIdent(channel) + ";",
-                        connection))
-                    {
-                        await listen.ExecuteNonQueryAsync(cts.Token).ConfigureAwait(false);
-                    }
-
-                    while (!cts.Token.IsCancellationRequested)
-                    {
-                        await connection.WaitAsync(cts.Token).ConfigureAwait(false);
-                    }
-
-                    observer.OnCompleted();
-                }
-                catch (OperationCanceledException)
-                {
-                    observer.OnCompleted();
+                    observer.OnNext(PostgresPayload.Deserialize<T>(args.Payload));
                 }
                 catch (Exception ex)
                 {
+                    hasError = true;
                     observer.OnError(ex);
-                }
-                finally
-                {
-                    connection.Notification -= Handler;
                     try
                     {
-                        if (connection.State == ConnectionState.Open)
-                        {
-                            await using var unlisten = new NpgsqlCommand(
-                                "UNLISTEN " + QuoteIdent(channel) + ";",
-                                connection);
-                            await unlisten.ExecuteNonQueryAsync(CancellationToken.None).ConfigureAwait(false);
-                        }
+                        cts.Cancel();
                     }
-                    catch
+                    catch (ObjectDisposedException)
                     {
-                        // Best-effort cleanup when the connection is already broken.
                     }
                 }
+            }
+
+            connection.Notification += Handler;
+            try
+            {
+                await using (var listen = new NpgsqlCommand(
+                    "LISTEN " + QuoteIdent(channel) + ";",
+                    connection))
+                {
+                    await listen.ExecuteNonQueryAsync(cts.Token).ConfigureAwait(false);
+                }
+
+                await WaitForNotificationsAsync(connection, cts.Token).ConfigureAwait(false);
+            }
+            catch (OperationCanceledException)
+            {
+            }
+            catch (Exception ex)
+            {
+                error = ex;
+            }
+            finally
+            {
+                connection.Notification -= Handler;
+                await UnlistenBestEffortAsync(connection, channel).ConfigureAwait(false);
+            }
+
+            if (hasError)
+            {
+                return;
+            }
+
+            if (error is not null)
+            {
+                observer.OnError(error);
+            }
+            else if (!ct.IsCancellationRequested)
+            {
+                observer.OnCompleted();
             }
         });
     }
@@ -252,6 +235,42 @@ public static class SystemReactivePostgresAdapter
             await command.ExecuteNonQueryAsync(linked.Token).ConfigureAwait(false);
             return System.Reactive.Unit.Default;
         });
+    }
+
+    static async Task WaitForNotificationsAsync(NpgsqlConnection connection, CancellationToken cancellationToken)
+    {
+        while (!cancellationToken.IsCancellationRequested)
+        {
+            await connection.WaitAsync(ListenWaitSlice, cancellationToken).ConfigureAwait(false);
+        }
+    }
+
+    static async Task UnlistenBestEffortAsync(NpgsqlConnection connection, string channel)
+    {
+        for (var attempt = 0; attempt < 20; attempt++)
+        {
+            try
+            {
+                if ((connection.State & ConnectionState.Open) == 0)
+                {
+                    return;
+                }
+
+                await using var unlisten = new NpgsqlCommand(
+                    "UNLISTEN " + QuoteIdent(channel) + ";",
+                    connection);
+                await unlisten.ExecuteNonQueryAsync(CancellationToken.None).ConfigureAwait(false);
+                return;
+            }
+            catch (NpgsqlOperationInProgressException)
+            {
+                await Task.Delay(25, CancellationToken.None).ConfigureAwait(false);
+            }
+            catch
+            {
+                return;
+            }
+        }
     }
 
     static void ValidateChannelName(string channel)

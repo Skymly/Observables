@@ -1,4 +1,3 @@
-using System.Reactive.Disposables;
 using System.Reactive.Linq;
 using Grpc.Core;
 
@@ -32,36 +31,30 @@ public static class SystemReactiveGrpcAdapter
         CancellationToken cancellationToken = default)
         where TRequest : class
         where TResponse : class =>
-        Observable.Create<TResponse>(observer =>
+        Observable.Create<TResponse>(async (observer, ct) =>
         {
-            var cts = new CancellationTokenSource();
-            using var linked = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, cts.Token);
-            _ = PumpAsync();
-
-            return Disposable.Create(() => cts.Cancel());
-
-            async Task PumpAsync()
+            using var linked = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, ct);
+            try
             {
-                try
-                {
-                    using var call = invoker.AsyncServerStreamingCall(
-                        method,
-                        host: null,
-                        options: new CallOptions(cancellationToken: linked.Token),
-                        request);
+                using var call = invoker.AsyncServerStreamingCall(
+                    method,
+                    host: null,
+                    options: new CallOptions(cancellationToken: linked.Token),
+                    request);
 
-                    while (await call.ResponseStream.MoveNext(linked.Token).ConfigureAwait(false))
-                    {
-                        observer.OnNext(call.ResponseStream.Current);
-                    }
-
-                    observer.OnCompleted();
-                }
-                catch (OperationCanceledException) { }
-                catch (Exception ex)
+                while (await call.ResponseStream.MoveNext(linked.Token).ConfigureAwait(false))
                 {
-                    observer.OnError(ex);
+                    observer.OnNext(call.ResponseStream.Current);
                 }
+
+                observer.OnCompleted();
+            }
+            catch (OperationCanceledException)
+            {
+            }
+            catch (Exception ex)
+            {
+                observer.OnError(ex);
             }
         });
 
@@ -99,15 +92,10 @@ public static class SystemReactiveGrpcAdapter
         CancellationToken cancellationToken = default)
         where TRequest : class
         where TResponse : class =>
-        Observable.Create<TResponse>(observer =>
+        Observable.Create<TResponse>(async (observer, ct) =>
         {
-            var cts = new CancellationTokenSource();
-            using var linked = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, cts.Token);
-            _ = PumpAsync();
-
-            return Disposable.Create(() => cts.Cancel());
-
-            async Task PumpAsync()
+            using var linked = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, ct);
+            try
             {
                 using var call = invoker.AsyncDuplexStreamingCall(
                     method,
@@ -118,20 +106,19 @@ public static class SystemReactiveGrpcAdapter
                     item => WriteRequest(call.RequestStream, item),
                     () => _ = call.RequestStream.CompleteAsync());
 
-                try
+                while (await call.ResponseStream.MoveNext(linked.Token).ConfigureAwait(false))
                 {
-                    while (await call.ResponseStream.MoveNext(linked.Token).ConfigureAwait(false))
-                    {
-                        observer.OnNext(call.ResponseStream.Current);
-                    }
+                    observer.OnNext(call.ResponseStream.Current);
+                }
 
-                    observer.OnCompleted();
-                }
-                catch (OperationCanceledException) { }
-                catch (Exception ex)
-                {
-                    observer.OnError(ex);
-                }
+                observer.OnCompleted();
+            }
+            catch (OperationCanceledException)
+            {
+            }
+            catch (Exception ex)
+            {
+                observer.OnError(ex);
             }
         });
 

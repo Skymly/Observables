@@ -13,6 +13,22 @@ public sealed class EchoServiceImpl : Echo.EchoBase
         IServerStreamWriter<EchoReply> responseStream,
         ServerCallContext context)
     {
+        if (request.Text == "hang")
+        {
+            await responseStream
+                .WriteAsync(new EchoReply { Text = "ready" })
+                .ConfigureAwait(false);
+            try
+            {
+                await Task.Delay(Timeout.Infinite, context.CancellationToken).ConfigureAwait(false);
+            }
+            catch (OperationCanceledException)
+            {
+            }
+
+            return;
+        }
+
         for (var i = 0; i < 3; i++)
         {
             await responseStream

@@ -16,15 +16,15 @@ internal static class MqttTopicMatcher
         var topicParts = topic.Split('/');
         for (var i = 0; i < filterParts.Length; i++)
         {
-            if (i >= topicParts.Length)
-            {
-                return false;
-            }
-
             var fp = filterParts[i];
             if (fp == MultiLevelWildcard)
             {
                 return true;
+            }
+
+            if (i >= topicParts.Length)
+            {
+                return false;
             }
 
             if (fp != SingleLevelWildcard && fp != topicParts[i])

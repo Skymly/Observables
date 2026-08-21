@@ -78,6 +78,14 @@ public static class MqttObservable
             finally
             {
                 client.ApplicationMessageReceivedAsync -= Handler;
+                try
+                {
+                    await client.UnsubscribeAsync(topicFilter).ConfigureAwait(false);
+                }
+                catch (Exception)
+                {
+                    // best-effort if the client is already down
+                }
             }
         });
 }

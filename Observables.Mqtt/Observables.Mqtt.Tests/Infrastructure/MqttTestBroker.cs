@@ -81,6 +81,36 @@ public sealed class MqttTestBroker : IAsyncDisposable
         }
     }
 
+    /// <summary>Waits until the broker accepts an unsubscription for <paramref name="topicFilter"/> from <paramref name="clientId"/>.</summary>
+    public async Task WaitForUnsubscriptionAsync(
+        string clientId,
+        string topicFilter,
+        CancellationToken cancellationToken = default)
+    {
+        var tcs = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        Task Handler(InterceptingUnsubscriptionEventArgs e)
+        {
+            if (string.Equals(e.ClientId, clientId, StringComparison.Ordinal)
+                && string.Equals(e.Topic, topicFilter, StringComparison.Ordinal))
+            {
+                tcs.TrySetResult();
+            }
+
+            return Task.CompletedTask;
+        }
+
+        server.InterceptingUnsubscriptionAsync += Handler;
+        try
+        {
+            await tcs.Task.WaitAsync(cancellationToken).ConfigureAwait(false);
+        }
+        finally
+        {
+            server.InterceptingUnsubscriptionAsync -= Handler;
+        }
+    }
+
     public async Task<MqttClientSession> ConnectAsync(CancellationToken cancellationToken = default)
     {
         var clientId = Guid.NewGuid().ToString("N");

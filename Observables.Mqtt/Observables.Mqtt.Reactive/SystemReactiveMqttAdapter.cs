@@ -1,7 +1,4 @@
-using System.Reactive.Disposables;
 using System.Reactive.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 using MQTTnet;
 using MQTTnet.Client;
 using MQTTnet.Protocol;
@@ -36,63 +33,51 @@ public static class SystemReactiveMqttAdapter
     [RequiresDynamicCode("JSON payload serialization uses System.Text.Json reflection.")]
 #endif
     public static IObservable<T> FromSubscribe<T>(IMqttClient client, string topicFilter) =>
-        Observable.Create<T>(observer =>
+        Observable.Create<T>(async (observer, ct) =>
         {
-            var gate = new object();
-            Func<MqttApplicationMessageReceivedEventArgs, Task>? handler = null;
-
-            _ = SubscribeAsync();
-
-            return Disposable.Create(() =>
+            async Task Handler(MqttApplicationMessageReceivedEventArgs e)
             {
-                lock (gate)
+                if (!Mqtt.MqttTopicMatcher.Matches(topicFilter, e.ApplicationMessage.Topic))
                 {
-                    if (handler is not null)
-                    {
-                        client.ApplicationMessageReceivedAsync -= handler;
-                        handler = null;
-                    }
+                    return;
                 }
-            });
 
-            async Task SubscribeAsync()
-            {
                 try
                 {
-                    handler = async e =>
-                    {
-                        if (!Mqtt.MqttTopicMatcher.Matches(topicFilter, e.ApplicationMessage.Topic))
-                        {
-                            return;
-                        }
-
-                        try
-                        {
-                            var payload = e.ApplicationMessage.PayloadSegment.Count == 0
-                                ? Array.Empty<byte>()
-                                : e.ApplicationMessage.PayloadSegment.ToArray();
-                            observer.OnNext(MqttPayloadSerializers.Deserialize<T>(payload));
-                        }
-                        catch (Exception ex)
-                        {
-                            observer.OnError(ex);
-                        }
-
-                        await Task.CompletedTask.ConfigureAwait(false);
-                    };
-
-                    lock (gate)
-                    {
-                        client.ApplicationMessageReceivedAsync += handler;
-                    }
-
-                    await client
-                        .SubscribeAsync(new MqttTopicFilterBuilder().WithTopic(topicFilter).Build())
-                        .ConfigureAwait(false);
+                    var payload = e.ApplicationMessage.PayloadSegment.Count == 0
+                        ? Array.Empty<byte>()
+                        : e.ApplicationMessage.PayloadSegment.ToArray();
+                    observer.OnNext(MqttPayloadSerializers.Deserialize<T>(payload));
                 }
                 catch (Exception ex)
                 {
                     observer.OnError(ex);
+                }
+
+                await Task.CompletedTask.ConfigureAwait(false);
+            }
+
+            client.ApplicationMessageReceivedAsync += Handler;
+            try
+            {
+                await client
+                    .SubscribeAsync(
+                        new MqttTopicFilterBuilder().WithTopic(topicFilter).Build(),
+                        ct)
+                    .ConfigureAwait(false);
+
+                await Task.Delay(Timeout.Infinite, ct).ConfigureAwait(false);
+            }
+            finally
+            {
+                client.ApplicationMessageReceivedAsync -= Handler;
+                try
+                {
+                    await client.UnsubscribeAsync(topicFilter).ConfigureAwait(false);
+                }
+                catch (Exception)
+                {
+                    // best-effort if the client is already down
                 }
             }
         });

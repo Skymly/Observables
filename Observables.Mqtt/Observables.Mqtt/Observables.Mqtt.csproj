@@ -12,6 +12,7 @@
 
   <ItemGroup>
     <InternalsVisibleTo Include="Observables.Mqtt.Reactive" />
+    <InternalsVisibleTo Include="Observables.Mqtt.Tests" />
   </ItemGroup>
 
   <ItemGroup>

@@ -84,6 +84,7 @@ public sealed class PostgresReactiveFromListenContractTests(PostgresTestServerFi
         Assert.Equal("ready", await ready.Task.WaitAsync(timeout.Token));
 
         subscription.Dispose();
+        await NotifyAsync(notifier, channel, "wake", timeout.Token);
         await WaitUntilIdleAndNotListeningAsync(listener, channel, timeout.Token);
     }
 
@@ -123,9 +124,10 @@ public sealed class PostgresReactiveFromListenContractTests(PostgresTestServerFi
         string channel,
         CancellationToken cancellation)
     {
-        for (var attempt = 0; attempt < 40; attempt++)
+        var sawInProgress = false;
+        long lastCount = -1;
+        while (!cancellation.IsCancellationRequested)
         {
-            cancellation.ThrowIfCancellationRequested();
             try
             {
                 await using var command = new NpgsqlCommand(
@@ -137,19 +139,28 @@ public sealed class PostgresReactiveFromListenContractTests(PostgresTestServerFi
                         new("channel", channel),
                     },
                 };
-                var count = (long)(await command.ExecuteScalarAsync(cancellation))!;
-                if (count == 0)
+                lastCount = Convert.ToInt64(await command.ExecuteScalarAsync(cancellation));
+                if (lastCount == 0)
                 {
                     return;
                 }
             }
             catch (NpgsqlOperationInProgressException)
             {
+                sawInProgress = true;
             }
 
-            await Task.Delay(50, cancellation);
+            try
+            {
+                await Task.Delay(50, cancellation);
+            }
+            catch (OperationCanceledException)
+            {
+                break;
+            }
         }
 
-        Assert.Fail($"Connection still listening on '{channel}' or WaitAsync is still in progress.");
+        Assert.Fail(
+            $"Connection still listening on '{channel}' or WaitAsync is still in progress. lastCount={lastCount}, sawInProgress={sawInProgress}.");
     }
 }

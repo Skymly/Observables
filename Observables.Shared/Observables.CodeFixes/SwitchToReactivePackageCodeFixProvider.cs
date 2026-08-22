@@ -3,6 +3,7 @@ using System.Composition;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CodeActions;
 using Microsoft.CodeAnalysis.CodeFixes;
+using Observables.Roslyn.Shared;
 
 namespace Observables.CodeFixes;
 
@@ -10,7 +11,7 @@ namespace Observables.CodeFixes;
 public sealed class SwitchToReactivePackageCodeFixProvider : CodeFixProvider
 {
     public override ImmutableArray<string> FixableDiagnosticIds { get; } =
-        ObservablesPackageReferenceMappings.ReactivePackageByDiagnosticId.Keys.ToImmutableArray();
+        ProxyDomainTable.ReactivePackageByDiagnosticId.Keys.ToImmutableArray();
 
     public override FixAllProvider GetFixAllProvider() => WellKnownFixAllProviders.BatchFixer;
 
@@ -20,7 +21,7 @@ public sealed class SwitchToReactivePackageCodeFixProvider : CodeFixProvider
         if (diagnostic is null)
             return Task.CompletedTask;
 
-        if (!ObservablesPackageReferenceMappings.TryGetReactivePackage(
+        if (!ProxyDomainTable.ReactivePackageByDiagnosticId.TryGetValue(
                 diagnostic.Id,
                 out var reactivePackageId))
             return Task.CompletedTask;
@@ -33,7 +34,7 @@ public sealed class SwitchToReactivePackageCodeFixProvider : CodeFixProvider
                 equivalenceKey: $"{nameof(SwitchToReactivePackageCodeFixProvider)}:Add:{reactivePackageId}"),
             diagnostic);
 
-        if (ObservablesPackageReferenceMappings.R3PackageByReactivePackageId.TryGetValue(
+        if (ProxyDomainTable.R3PackageByReactivePackageId.TryGetValue(
                 reactivePackageId,
                 out var r3PackageId))
         {
@@ -96,7 +97,7 @@ public sealed class SwitchToReactivePackageCodeFixProvider : CodeFixProvider
 
     internal static string? InferReactivePackageVersion(string csprojContent, string reactivePackageId)
     {
-        if (ObservablesPackageReferenceMappings.R3PackageByReactivePackageId.TryGetValue(
+        if (ProxyDomainTable.R3PackageByReactivePackageId.TryGetValue(
                 reactivePackageId,
                 out var r3PackageId))
         {

@@ -6,6 +6,7 @@ using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Editing;
+using Observables.Roslyn.Shared;
 
 namespace Observables.CodeFixes;
 
@@ -13,13 +14,13 @@ namespace Observables.CodeFixes;
 public sealed class AddHttpMethodAttributeCodeFixProvider : CodeFixProvider
 {
     public override ImmutableArray<string> FixableDiagnosticIds { get; } =
-        ObservablesMemberDiagnosticIds.MissingHttpMethod;
+        [ProxyDomainTable.RestApi.MissingBoundaryDiagnosticId];
 
     public override FixAllProvider GetFixAllProvider() => WellKnownFixAllProviders.BatchFixer;
 
     public override async Task RegisterCodeFixesAsync(CodeFixContext context)
     {
-        var diagnostic = context.Diagnostics.FirstOrDefault(d => d.Id == "OBS3001");
+        var diagnostic = context.Diagnostics.FirstOrDefault(d => d.Id == ProxyDomainTable.RestApi.MissingBoundaryDiagnosticId);
         if (diagnostic?.Location is not { IsInSource: true } location)
         {
             return;

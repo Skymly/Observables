@@ -22,5 +22,5 @@ internal static class ReactivePackageConflictDetection
         HasAssemblyReference(compilation, "R3");
 
     internal static bool HasReactiveBridgeReference(Compilation compilation, ProxyDomainCatalog.ProxyDomain domain) =>
-        HasAssemblyReference(compilation, domain.ReactiveAssemblyName);
+        HasAssemblyReference(compilation, domain.Definition.ReactiveAssemblyName);
 }

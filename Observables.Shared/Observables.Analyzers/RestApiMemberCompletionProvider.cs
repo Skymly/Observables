@@ -6,6 +6,7 @@ using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Options;
 using Microsoft.CodeAnalysis.Text;
+using Observables.Roslyn.Shared;
 
 namespace Observables.Analyzers;
 
@@ -71,7 +72,7 @@ public sealed class RestApiMemberCompletionProvider : CompletionProvider
     static IEnumerable<CompletionItem> CreateHttpMethodItems(MethodDeclarationSyntax method)
     {
         var path = RestApiPathSuggestions.SuggestPath(method);
-        foreach (var verb in ProxyDomainCatalog.RestApiHttpMethodNames)
+        foreach (var verb in ProxyDomainTable.RestApiHttpMethodNames)
         {
             yield return CompletionItemFactory.Create(verb, $"{verb}(\"{path}\")]");
         }
@@ -115,6 +116,6 @@ public sealed class RestApiMemberCompletionProvider : CompletionProvider
     }
 
     static bool IsHttpMethodAttributeName(string name) =>
-        ProxyDomainCatalog.RestApiHttpMethodNames.Any(verb =>
+        ProxyDomainTable.RestApiHttpMethodNames.Any(verb =>
             name is var n && (n == verb || n == verb + "Attribute"));
 }

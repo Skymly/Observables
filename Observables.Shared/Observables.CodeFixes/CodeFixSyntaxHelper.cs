@@ -2,6 +2,7 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Editing;
+using Observables.Roslyn.Shared;
 using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 
 namespace Observables.CodeFixes;
@@ -67,8 +68,8 @@ internal static class CodeFixSyntaxHelper
         foreach (var attribute in member.AttributeLists.SelectMany(list => list.Attributes))
         {
             var name = NormalizeAttributeName(attribute.Name.ToString());
-            if (BoundaryAttributeDefaults.RequiresProperty(name)
-                || BoundaryAttributeDefaults.RequiresMethod(name))
+            if (ProxyDomainTable.PropertyAttributeTypeNames.Contains(name)
+                || ProxyDomainTable.MethodAttributeTypeNames.Contains(name))
             {
                 return attribute;
             }

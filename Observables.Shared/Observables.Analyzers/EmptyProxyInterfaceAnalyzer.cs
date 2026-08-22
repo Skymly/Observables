@@ -8,16 +8,9 @@ namespace Observables.Analyzers;
 public sealed class EmptyProxyInterfaceAnalyzer : DiagnosticAnalyzer
 {
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics { get; } =
-        ImmutableArray.Create(
-            DiagnosticDescriptors.EmptyHubInterface,
-            DiagnosticDescriptors.EmptyMqttInterface,
-            DiagnosticDescriptors.EmptyWebSocketInterface,
-            DiagnosticDescriptors.EmptyGrpcInterface,
-            DiagnosticDescriptors.EmptySseInterface,
-            DiagnosticDescriptors.EmptyNatsInterface,
-            DiagnosticDescriptors.EmptyPostgresInterface,
-            DiagnosticDescriptors.EmptyRedisInterface,
-            DiagnosticDescriptors.EmptyRestApiInterface);
+        ProxyDomainCatalog.InterfaceProxyDomains
+            .Select(domain => domain.EmptyInterfaceDescriptor)
+            .ToImmutableArray();
 
     public override void Initialize(AnalysisContext context)
     {

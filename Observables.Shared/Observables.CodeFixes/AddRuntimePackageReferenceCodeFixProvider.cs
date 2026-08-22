@@ -3,6 +3,7 @@ using System.Composition;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CodeActions;
 using Microsoft.CodeAnalysis.CodeFixes;
+using Observables.Roslyn.Shared;
 
 namespace Observables.CodeFixes;
 
@@ -10,7 +11,7 @@ namespace Observables.CodeFixes;
 public sealed class AddRuntimePackageReferenceCodeFixProvider : CodeFixProvider
 {
     public override ImmutableArray<string> FixableDiagnosticIds { get; } =
-        ObservablesPackageReferenceMappings.RuntimePackageByDiagnosticId.Keys.ToImmutableArray();
+        ProxyDomainTable.RuntimePackageByDiagnosticId.Keys.ToImmutableArray();
 
     public override FixAllProvider GetFixAllProvider() => WellKnownFixAllProviders.BatchFixer;
 
@@ -20,7 +21,7 @@ public sealed class AddRuntimePackageReferenceCodeFixProvider : CodeFixProvider
         if (diagnostic is null)
             return Task.CompletedTask;
 
-        if (!ObservablesPackageReferenceMappings.TryGetRuntimePackage(
+        if (!ProxyDomainTable.RuntimePackageByDiagnosticId.TryGetValue(
                 diagnostic.Id,
                 out var packageId))
             return Task.CompletedTask;
@@ -59,7 +60,7 @@ public sealed class AddRuntimePackageReferenceCodeFixProvider : CodeFixProvider
 
     internal static string? InferVersionFromSiblingPackages(string csprojContent, string runtimePackageId)
     {
-        foreach (var pair in ObservablesPackageReferenceMappings.R3PackageByReactivePackageId)
+        foreach (var pair in ProxyDomainTable.R3PackageByReactivePackageId)
         {
             if (!pair.Value.StartsWith(runtimePackageId + ".", StringComparison.Ordinal))
                 continue;
@@ -69,7 +70,7 @@ public sealed class AddRuntimePackageReferenceCodeFixProvider : CodeFixProvider
                 return version;
         }
 
-        foreach (var reactivePackage in ObservablesPackageReferenceMappings.ReactivePackageByDiagnosticId.Values)
+        foreach (var reactivePackage in ProxyDomainTable.ReactivePackageByDiagnosticId.Values)
         {
             if (!reactivePackage.StartsWith(runtimePackageId + ".", StringComparison.Ordinal))
                 continue;

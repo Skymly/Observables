@@ -1,3 +1,4 @@
+using System.Runtime.CompilerServices;
 using Microsoft.AspNetCore.SignalR;
 
 namespace Observables.SignalR.Tests.Infrastructure;
@@ -20,4 +21,16 @@ public sealed class E2ETestHub : Hub
 
     public async Task PushNotify(string message) =>
         await Clients.Caller.SendAsync("Notify", message).ConfigureAwait(false);
+
+    public async Task<int> HoldInvoke(CancellationToken cancellationToken)
+    {
+        await Task.Delay(Timeout.Infinite, cancellationToken).ConfigureAwait(false);
+        return 0;
+    }
+
+    public async IAsyncEnumerable<int> Hold([EnumeratorCancellation] CancellationToken cancellationToken)
+    {
+        yield return 0;
+        await Task.Delay(Timeout.Infinite, cancellationToken).ConfigureAwait(false);
+    }
 }

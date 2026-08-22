@@ -1,8 +1,6 @@
-using System.Reactive.Disposables;
 using System.Reactive.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 using Microsoft.AspNetCore.SignalR.Client;
+using Observables.SignalR;
 
 namespace Observables.SignalR.Reactive;
 
@@ -20,10 +18,11 @@ public static class SystemReactiveSignalRAdapter
         string methodName,
         object?[] args,
         CancellationToken cancellationToken = default) =>
-        Observable.FromAsync(ct =>
+        Observable.FromAsync(async ct =>
         {
             using var linked = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, ct);
-            return HubConnectionArgs.InvokeAsync<T>(connection, methodName, args, linked.Token);
+            return await HubConnectionArgs.InvokeAsync<T>(connection, methodName, args, linked.Token)
+                .ConfigureAwait(false);
         });
 
     public static IObservable<System.Reactive.Unit> FromSend(
@@ -55,41 +54,33 @@ public static class SystemReactiveSignalRAdapter
         string methodName,
         object?[] args,
         CancellationToken cancellationToken = default) =>
-        Observable.Create<T>(observer =>
+        Observable.Create<T>(async (observer, ct) =>
         {
-            var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-            _ = PumpStreamAsync(connection, methodName, args, observer, cts.Token);
-            return Disposable.Create(cts.Cancel);
-        });
-
-    static async Task PumpStreamAsync<T>(
-        HubConnection connection,
-        string methodName,
-        object?[] args,
-        IObserver<T> observer,
-        CancellationToken cancellationToken)
-    {
-        try
-        {
-            await foreach (var item in HubConnectionArgs
-                               .StreamAsync<T>(connection, methodName, args, cancellationToken)
-                               .ConfigureAwait(false))
+            using var linked = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, ct);
+            try
             {
-                observer.OnNext(item);
-            }
+                await foreach (var item in HubConnectionArgs
+                                   .StreamAsync<T>(connection, methodName, args, linked.Token)
+                                   .ConfigureAwait(false))
+                {
+                    observer.OnNext(item);
+                }
 
-            observer.OnCompleted();
-        }
-        catch (Exception ex)
-        {
-            observer.OnError(ex);
-        }
-    }
+                observer.OnCompleted();
+            }
+            catch (OperationCanceledException)
+            {
+            }
+            catch (Exception ex)
+            {
+                observer.OnError(ex);
+            }
+        });
 
     public static IObservable<T> FromOn<T>(HubConnection connection, string methodName) =>
         Observable.Create<T>(observer =>
         {
             var subscription = connection.On<T>(methodName, observer.OnNext);
-            return Disposable.Create(subscription.Dispose);
+            return System.Reactive.Disposables.Disposable.Create(subscription.Dispose);
         });
 }

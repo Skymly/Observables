@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.AspNetCore.SignalR.Client;
 using Observables.SignalR;
 using Observables.SignalR.Reactive.Tests.Contracts;
@@ -55,6 +56,54 @@ public sealed class HubConnectionReactiveE2ETests(SignalRTestServerFixture fixtu
         var message = await receive;
 
         Assert.Equal("hello", message);
+    }
+
+
+    [Fact]
+    public async Task FromInvoke_dispose_cancels_without_ObjectDisposedException()
+    {
+        await using var connection = await ConnectAsync();
+        var error = new TaskCompletionSource<Exception>(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        using var subscription = SystemReactiveSignalRAdapter.FromInvoke<int>(connection, "HoldInvoke", TestContext.Current.CancellationToken)
+            .Subscribe(
+                _ => { },
+                ex => error.TrySetResult(ex),
+                () => { });
+
+        using var timeout = CancellationTokenSource.CreateLinkedTokenSource(TestContext.Current.CancellationToken);
+        timeout.CancelAfter(DefaultTimeout);
+        await Task.Delay(50, timeout.Token);
+        subscription.Dispose();
+
+        var ex = await error.Task.WaitAsync(timeout.Token);
+        Assert.True(ex is OperationCanceledException or HubException, ex.GetType().FullName);
+        Assert.IsNotType<ObjectDisposedException>(ex);
+    }
+
+    [Fact]
+    public async Task FromStream_dispose_cancels_the_pump_without_completing()
+    {
+        await using var connection = await ConnectStreamingAsync();
+        var completed = 0;
+        var errored = 0;
+        var ready = new TaskCompletionSource<int>(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        using var subscription = SystemReactiveSignalRAdapter.FromStream<int>(connection, "Hold", TestContext.Current.CancellationToken)
+            .Subscribe(
+                value => ready.TrySetResult(value),
+                _ => Interlocked.Exchange(ref errored, 1),
+                () => Interlocked.Exchange(ref completed, 1));
+
+        using var timeout = CancellationTokenSource.CreateLinkedTokenSource(TestContext.Current.CancellationToken);
+        timeout.CancelAfter(DefaultTimeout);
+        Assert.Equal(0, await ready.Task.WaitAsync(timeout.Token));
+
+        subscription.Dispose();
+        await Task.Delay(200, timeout.Token);
+
+        Assert.Equal(0, Volatile.Read(ref completed));
+        Assert.Equal(0, Volatile.Read(ref errored));
     }
 
     async Task<HubConnection> ConnectAsync() => await StartAsync(fixture.Server.CreateConnection());

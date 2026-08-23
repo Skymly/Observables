@@ -29,6 +29,7 @@
     <ProjectReference Include="..\..\Observables.Sse\Observables.Sse\Observables.Sse.csproj" />
     <ProjectReference Include="..\..\Observables.Sse\Observables.Sse.Reactive\Observables.Sse.Reactive.csproj" />
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp" />
+    <PackageReference Include="Microsoft.CodeAnalysis.Features" />
     <PackageReference Include="R3" />
   </ItemGroup>
 

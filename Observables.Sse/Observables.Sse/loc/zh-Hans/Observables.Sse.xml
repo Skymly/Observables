@@ -70,5 +70,8 @@
         <member name="M:Observables.Sse.SseService.RegisterGeneratedFactory(System.Type,System.Func{Observables.Sse.SseConnection,System.Object})">
             <summary>注册源生成的 SSE 代理工厂。</summary>
         </member>
+        <member name="T:Observables.GeneratedProxyFactoryRegistry`1">
+            <summary>各 Feature *Service.For 共用的生成代理工厂登记表。</summary>
+        </member>
     </members>
 </doc>

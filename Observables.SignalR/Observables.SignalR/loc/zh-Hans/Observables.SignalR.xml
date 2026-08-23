@@ -46,5 +46,8 @@
         <member name="T:Observables.SignalR.SignalRObservable">
             <summary>将 SignalR 客户端 API 桥接到 R3 <see cref="T:R3.Observable`1"/>。</summary>
         </member>
+            <member name="T:Observables.GeneratedProxyFactoryRegistry`1">
+            <summary>各 Feature *Service.For 共用的生成代理工厂登记表。</summary>
+        </member>
     </members>
 </doc>

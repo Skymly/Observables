@@ -1,4 +1,3 @@
-using System.Collections.Concurrent;
 using System.ComponentModel;
 #if NET8_0_OR_GREATER
 using System.Diagnostics.CodeAnalysis;
@@ -9,8 +8,6 @@ namespace Observables.Sse;
 /// <summary>Creates source-generated SSE proxy implementations.</summary>
 public static class SseService
 {
-    static readonly ConcurrentDictionary<Type, Func<SseConnection, object>> GeneratedFactories = new();
-
     /// <summary>Registers a source-generated SSE proxy factory.</summary>
     [EditorBrowsable(EditorBrowsableState.Never)]
 #if NET8_0_OR_GREATER
@@ -18,23 +15,12 @@ public static class SseService
         [DynamicallyAccessedMembers(
             DynamicallyAccessedMemberTypes.PublicMethods | DynamicallyAccessedMemberTypes.PublicProperties
         )] Type sseInterfaceType,
-        Func<SseConnection, object> factory)
+        Func<SseConnection, object> factory) =>
+        global::Observables.GeneratedProxyFactoryRegistry<SseConnection>.Register(sseInterfaceType, factory);
 #else
-    public static void RegisterGeneratedFactory(Type sseInterfaceType, Func<SseConnection, object> factory)
+    public static void RegisterGeneratedFactory(Type sseInterfaceType, Func<SseConnection, object> factory) =>
+        global::Observables.GeneratedProxyFactoryRegistry<SseConnection>.Register(sseInterfaceType, factory);
 #endif
-    {
-        if (sseInterfaceType is null)
-        {
-            throw new ArgumentNullException(nameof(sseInterfaceType));
-        }
-
-        if (factory is null)
-        {
-            throw new ArgumentNullException(nameof(factory));
-        }
-
-        GeneratedFactories[sseInterfaceType] = factory;
-    }
 
 #if NET8_0_OR_GREATER
     public static T For<
@@ -61,17 +47,9 @@ public static class SseService
             throw new ArgumentNullException(nameof(sseInterfaceType));
         }
 
-        if (connection is null)
-        {
-            throw new ArgumentNullException(nameof(connection));
-        }
-
-        if (GeneratedFactories.TryGetValue(sseInterfaceType, out var factory))
-        {
-            return factory(connection);
-        }
-
-        throw new InvalidOperationException(
+        return global::Observables.GeneratedProxyFactoryRegistry<SseConnection>.Create(
+            sseInterfaceType,
+            connection,
             sseInterfaceType.Name
             + " does not have a generated SSE proxy. Ensure the interface is marked with [Sse], "
             + "Observables.Sse source generators are referenced, and the project was rebuilt.");

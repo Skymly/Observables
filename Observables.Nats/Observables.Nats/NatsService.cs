@@ -1,4 +1,3 @@
-using System.Collections.Concurrent;
 using System.ComponentModel;
 using NATS.Client.Core;
 #if NET8_0_OR_GREATER
@@ -10,8 +9,6 @@ namespace Observables.Nats;
 /// <summary>Creates source-generated NATS subject proxy implementations.</summary>
 public static class NatsService
 {
-    static readonly ConcurrentDictionary<Type, Func<INatsConnection, object>> GeneratedFactories = new();
-
     /// <summary>Registers a source-generated subject proxy factory.</summary>
     [EditorBrowsable(EditorBrowsableState.Never)]
 #if NET8_0_OR_GREATER
@@ -19,23 +16,12 @@ public static class NatsService
         [DynamicallyAccessedMembers(
             DynamicallyAccessedMemberTypes.PublicMethods | DynamicallyAccessedMemberTypes.PublicProperties
         )] Type natsInterfaceType,
-        Func<INatsConnection, object> factory)
+        Func<INatsConnection, object> factory) =>
+        global::Observables.GeneratedProxyFactoryRegistry<INatsConnection>.Register(natsInterfaceType, factory);
 #else
-    public static void RegisterGeneratedFactory(Type natsInterfaceType, Func<INatsConnection, object> factory)
+    public static void RegisterGeneratedFactory(Type natsInterfaceType, Func<INatsConnection, object> factory) =>
+        global::Observables.GeneratedProxyFactoryRegistry<INatsConnection>.Register(natsInterfaceType, factory);
 #endif
-    {
-        if (natsInterfaceType is null)
-        {
-            throw new ArgumentNullException(nameof(natsInterfaceType));
-        }
-
-        if (factory is null)
-        {
-            throw new ArgumentNullException(nameof(factory));
-        }
-
-        GeneratedFactories[natsInterfaceType] = factory;
-    }
 
 #if NET8_0_OR_GREATER
     public static T For<
@@ -62,17 +48,9 @@ public static class NatsService
             throw new ArgumentNullException(nameof(natsInterfaceType));
         }
 
-        if (connection is null)
-        {
-            throw new ArgumentNullException(nameof(connection));
-        }
-
-        if (GeneratedFactories.TryGetValue(natsInterfaceType, out var factory))
-        {
-            return factory(connection);
-        }
-
-        throw new InvalidOperationException(
+        return global::Observables.GeneratedProxyFactoryRegistry<INatsConnection>.Create(
+            natsInterfaceType,
+            connection,
             natsInterfaceType.Name
             + " does not have a generated NATS proxy. Ensure the interface is marked with [Nats], "
             + "Observables.Nats source generators are referenced, and the project was rebuilt.");

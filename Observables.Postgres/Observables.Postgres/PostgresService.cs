@@ -1,4 +1,3 @@
-using System.Collections.Concurrent;
 using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
 using Npgsql;
@@ -8,28 +7,14 @@ namespace Observables.Postgres;
 /// <summary>Creates source-generated PostgreSQL LISTEN/NOTIFY proxy implementations.</summary>
 public static class PostgresService
 {
-    static readonly ConcurrentDictionary<Type, Func<NpgsqlConnection, object>> GeneratedFactories = new();
-
     /// <summary>Registers a source-generated channel proxy factory.</summary>
     [EditorBrowsable(EditorBrowsableState.Never)]
     public static void RegisterGeneratedFactory(
         [DynamicallyAccessedMembers(
             DynamicallyAccessedMemberTypes.PublicMethods | DynamicallyAccessedMemberTypes.PublicProperties
         )] Type postgresInterfaceType,
-        Func<NpgsqlConnection, object> factory)
-    {
-        if (postgresInterfaceType is null)
-        {
-            throw new ArgumentNullException(nameof(postgresInterfaceType));
-        }
-
-        if (factory is null)
-        {
-            throw new ArgumentNullException(nameof(factory));
-        }
-
-        GeneratedFactories[postgresInterfaceType] = factory;
-    }
+        Func<NpgsqlConnection, object> factory) =>
+        global::Observables.GeneratedProxyFactoryRegistry<NpgsqlConnection>.Register(postgresInterfaceType, factory);
 
     /// <summary>
     /// Creates a generated proxy for <typeparamref name="T"/> using a dedicated, non-pooled
@@ -55,17 +40,9 @@ public static class PostgresService
             throw new ArgumentNullException(nameof(postgresInterfaceType));
         }
 
-        if (connection is null)
-        {
-            throw new ArgumentNullException(nameof(connection));
-        }
-
-        if (GeneratedFactories.TryGetValue(postgresInterfaceType, out var factory))
-        {
-            return factory(connection);
-        }
-
-        throw new InvalidOperationException(
+        return global::Observables.GeneratedProxyFactoryRegistry<NpgsqlConnection>.Create(
+            postgresInterfaceType,
+            connection,
             postgresInterfaceType.Name
             + " does not have a generated Postgres proxy. Ensure the interface is marked with [Postgres], "
             + "Observables.Postgres source generators are referenced, and the project was rebuilt.");

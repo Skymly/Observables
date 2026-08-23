@@ -70,8 +70,8 @@ public sealed class BoundaryAttributeCompletionProvider : CompletionProvider
 
         var suggestions = member switch
         {
-            MethodDeclarationSyntax => domain.MethodAttributes,
-            PropertyDeclarationSyntax => domain.PropertyAttributes,
+            MethodDeclarationSyntax => domain.Definition.MethodAttributes,
+            PropertyDeclarationSyntax => domain.Definition.PropertyAttributes,
             _ => null,
         };
 

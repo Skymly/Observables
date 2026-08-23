@@ -1,4 +1,5 @@
 using Microsoft.CodeAnalysis.CSharp;
+using Observables.Roslyn.Shared;
 
 namespace Observables.Analyzers.Tests;
 
@@ -205,9 +206,9 @@ public sealed class EmptyProxyInterfaceAnalyzerTests
     {
         var domain = ProxyDomainCatalog.Redis;
         Assert.Equal("OBS11007", domain.EmptyInterfaceDescriptor.Id);
-        Assert.Equal("Observables.Redis.RedisAttribute", domain.InterfaceMarkerMetadataName);
-        Assert.Contains(domain.MethodAttributes, s => s.DisplayText == "RedisPublish");
-        Assert.Contains(domain.PropertyAttributes, s => s.DisplayText == "RedisSubscribe");
+        Assert.Equal("Observables.Redis.RedisAttribute", domain.Definition.InterfaceMarkerMetadataName);
+        Assert.Contains(domain.Definition.MethodAttributes, s => s.DisplayText == "RedisPublish");
+        Assert.Contains(domain.Definition.PropertyAttributes, s => s.DisplayText == "RedisSubscribe");
     }
 
     [Fact]
@@ -266,6 +267,28 @@ public sealed class EmptyProxyInterfaceAnalyzerTests
         var domain = ProxyDomainCatalog.RestApi;
         Assert.Equal("OBS3007", domain.EmptyInterfaceDescriptor.Id);
         Assert.Equal("Empty RestAPI proxy interface", domain.EmptyInterfaceDescriptor.Title);
+    }
+
+    [Fact]
+    public void EmptyRestApiInterface_message_describes_empty_restapi_interface()
+    {
+        // Regression: OBS3007 used to talk about "HTTP method attributes", which belongs to
+        // member-level diagnostics, not the empty-interface diagnostic.
+        var message = DiagnosticDescriptors.EmptyRestApiInterface.MessageFormat.ToString();
+        Assert.Contains("[RestApi]", message);
+        Assert.DoesNotContain("HTTP method attributes", message);
+    }
+
+    [Fact]
+    public void Catalog_matches_table_interface_proxy_domains()
+    {
+        Assert.Equal(
+            ProxyDomainTable.InterfaceProxyDomains.Select(d => d.InterfaceMarkerMetadataName),
+            ProxyDomainCatalog.InterfaceProxyDomains.Select(d => d.Definition.InterfaceMarkerMetadataName));
+
+        Assert.Equal(
+            ProxyDomainTable.InterfaceProxyDomains.Select(d => d.EmptyInterfaceDiagnosticId).OrderBy(id => id, StringComparer.Ordinal),
+            ProxyDomainCatalog.InterfaceProxyDomains.Select(d => d.EmptyInterfaceDescriptor.Id).OrderBy(id => id, StringComparer.Ordinal));
     }
 
     static string BuildSource(string body, params string[] usings)

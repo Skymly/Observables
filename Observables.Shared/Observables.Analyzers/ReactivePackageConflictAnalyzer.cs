@@ -34,7 +34,7 @@ public sealed class ReactivePackageConflictAnalyzer : DiagnosticAnalyzer
             context.ReportDiagnostic(Diagnostic.Create(
                 DiagnosticDescriptors.ConflictingReactivePackages,
                 Location.None,
-                domain.DisplayName));
+                domain.Definition.DisplayName));
         }
     }
 }

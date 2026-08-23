@@ -5,6 +5,7 @@ using Microsoft.CodeAnalysis.CodeActions;
 using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Editing;
+using Observables.Roslyn.Shared;
 
 namespace Observables.CodeFixes;
 
@@ -12,7 +13,7 @@ namespace Observables.CodeFixes;
 public sealed class AddBoundaryAttributeCodeFixProvider : CodeFixProvider
 {
     public override ImmutableArray<string> FixableDiagnosticIds { get; } =
-        ObservablesMemberDiagnosticIds.MissingBoundaryAttribute;
+        ProxyDomainTable.MissingBoundaryDiagnosticIds;
 
     public override FixAllProvider GetFixAllProvider() => WellKnownFixAllProviders.BatchFixer;
 
@@ -20,7 +21,7 @@ public sealed class AddBoundaryAttributeCodeFixProvider : CodeFixProvider
     {
         var diagnostic = context.Diagnostics.FirstOrDefault();
         if (diagnostic is null
-            || !ObservablesMemberDiagnosticIds.TryGetDomain(diagnostic.Id, out var domain)
+            || !ProxyDomainTable.TryGetByDiagnosticId(diagnostic.Id, out var domain)
             || diagnostic.Location is not { IsInSource: true } location)
         {
             return;
@@ -42,9 +43,9 @@ public sealed class AddBoundaryAttributeCodeFixProvider : CodeFixProvider
         var attributeSource = member switch
         {
             MethodDeclarationSyntax method =>
-                BoundaryAttributeDefaults.MethodAttribute(domain, method.Identifier.Text),
+                domain.DefaultMethodAttribute(method.Identifier.Text),
             PropertyDeclarationSyntax property =>
-                BoundaryAttributeDefaults.PropertyAttribute(domain, property.Identifier.Text),
+                domain.DefaultPropertyAttribute(property.Identifier.Text),
             _ => null,
         };
 

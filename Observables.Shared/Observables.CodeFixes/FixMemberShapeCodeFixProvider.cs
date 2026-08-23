@@ -5,6 +5,7 @@ using Microsoft.CodeAnalysis.CodeActions;
 using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Editing;
+using Observables.Roslyn.Shared;
 
 namespace Observables.CodeFixes;
 
@@ -12,7 +13,7 @@ namespace Observables.CodeFixes;
 public sealed class FixMemberShapeCodeFixProvider : CodeFixProvider
 {
     public override ImmutableArray<string> FixableDiagnosticIds { get; } =
-        ObservablesMemberDiagnosticIds.MemberShapeMismatch;
+        ProxyDomainTable.MemberShapeMismatchDiagnosticIds;
 
     public override FixAllProvider GetFixAllProvider() => WellKnownFixAllProviders.BatchFixer;
 
@@ -41,7 +42,7 @@ public sealed class FixMemberShapeCodeFixProvider : CodeFixProvider
         var attributeName = CodeFixSyntaxHelper.NormalizeAttributeName(boundaryAttribute.Name.ToString());
         switch (member)
         {
-            case MethodDeclarationSyntax method when BoundaryAttributeDefaults.RequiresProperty(attributeName):
+            case MethodDeclarationSyntax method when ProxyDomainTable.PropertyAttributeTypeNames.Contains(attributeName):
                 context.RegisterCodeFix(
                     CodeAction.Create(
                         title: "Convert method to property",
@@ -51,7 +52,7 @@ public sealed class FixMemberShapeCodeFixProvider : CodeFixProvider
                     diagnostic);
                 break;
 
-            case PropertyDeclarationSyntax property when BoundaryAttributeDefaults.RequiresMethod(attributeName):
+            case PropertyDeclarationSyntax property when ProxyDomainTable.MethodAttributeTypeNames.Contains(attributeName):
                 context.RegisterCodeFix(
                     CodeAction.Create(
                         title: "Convert property to method",

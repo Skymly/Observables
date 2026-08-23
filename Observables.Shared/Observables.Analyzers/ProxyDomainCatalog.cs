@@ -3,6 +3,10 @@ using Observables.Roslyn.Shared;
 
 namespace Observables.Analyzers;
 
+/// <summary>
+/// Thin analyzer-side adapter over <see cref="ProxyDomainTable"/>: attaches the empty-interface
+/// <see cref="DiagnosticDescriptor"/> to each table definition. Domain identity stays in the table.
+/// </summary>
 internal static class ProxyDomainCatalog
 {
     internal sealed class ProxyDomain
@@ -16,15 +20,7 @@ internal static class ProxyDomainCatalog
         }
 
         internal ProxyDomainTable.ProxyDomainDefinition Definition { get; }
-        internal string DisplayName => Definition.DisplayName;
-        internal string InterfaceMarkerMetadataName => Definition.InterfaceMarkerMetadataName;
-        internal string ReactiveAdapterMetadataName => Definition.ReactiveAdapterMetadataName;
         internal DiagnosticDescriptor EmptyInterfaceDescriptor { get; }
-        internal IReadOnlyList<ProxyDomainTable.BoundaryAttributeSuggestion> MethodAttributes =>
-            Definition.MethodAttributes;
-        internal IReadOnlyList<ProxyDomainTable.BoundaryAttributeSuggestion> PropertyAttributes =>
-            Definition.PropertyAttributes;
-        internal string ReactiveAssemblyName => Definition.ReactiveAssemblyName;
     }
 
     internal static readonly ProxyDomain SignalR = new(
@@ -68,8 +64,6 @@ internal static class ProxyDomainCatalog
 
     internal static readonly IReadOnlyList<ProxyDomain> ReactiveConflictDomains = InterfaceProxyDomains;
 
-    internal static readonly string[] RestApiHttpMethodNames = ProxyDomainTable.RestApiHttpMethodNames;
-
     internal static bool HasAttribute(ISymbol symbol, INamedTypeSymbol attributeType)
     {
         foreach (var attribute in symbol.GetAttributes())
@@ -106,7 +100,7 @@ internal static class ProxyDomainCatalog
     {
         foreach (var domain in InterfaceProxyDomains)
         {
-            var marker = compilation.GetTypeByMetadataName(domain.InterfaceMarkerMetadataName);
+            var marker = compilation.GetTypeByMetadataName(domain.Definition.InterfaceMarkerMetadataName);
             if (marker is not null && HasAttribute(interfaceSymbol, marker))
             {
                 return domain;

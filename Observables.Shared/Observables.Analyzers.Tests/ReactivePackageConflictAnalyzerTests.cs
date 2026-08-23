@@ -10,8 +10,8 @@ public sealed class ReactivePackageConflictAnalyzerTests
         foreach (var domain in ProxyDomainCatalog.ReactiveConflictDomains)
         {
             Assert.Equal(
-                $"Observables.{domain.DisplayName}.Reactive",
-                domain.ReactiveAssemblyName);
+                $"Observables.{domain.Definition.DisplayName}.Reactive",
+                domain.Definition.ReactiveAssemblyName);
         }
     }
 

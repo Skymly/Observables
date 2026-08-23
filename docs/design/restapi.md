@@ -274,9 +274,9 @@ public static class RestApiBridge
 | OBS3003 | Error | 不支持的返回类型 |
 | OBS3004 | Error | 路径模板与参数不匹配（占位符无对应参数或反之） |
 | OBS3005 | Error | `IObservable<T>` 返回但未引用 `Observables.RestAPI.Reactive`（R3 生成器侧） |
-| OBS3007 | Warning | 空 RestAPI 代理接口（无有效 HTTP 方法成员，`Observables.Analyzers`） |
+| OBS3007 | Warning | 空 `[RestApi]` 接口（未声明任何成员，`Observables.Analyzers`） |
 
-Release 跟踪：`Observables.RestAPI.SourceGenerators.Shared/AnalyzerReleases.Shipped.md`（OBS3001–3005 v1.0 已发）；`Observables.Analyzers/AnalyzerReleases.Unshipped.md`（OBS3007 待下次发版迁入 Shipped）。
+Release 跟踪：`Observables.RestAPI.SourceGenerators.Shared/AnalyzerReleases.Shipped.md`（OBS3001–3005 v1.0 已发）；`Observables.Analyzers/AnalyzerReleases.Shipped.md`（OBS3007 已发）。
 
 ## 8. HttpClientFactory 扩展
 

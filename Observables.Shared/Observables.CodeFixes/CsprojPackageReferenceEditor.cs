@@ -1,105 +1,149 @@
-using System.Text.RegularExpressions;
+using System.Text;
+using System.Xml;
 
 namespace Observables.CodeFixes;
 
+/// <summary>
+/// Adds / replaces / removes <c>&lt;PackageReference /&gt;</c> entries in a csproj using a real XML writer
+/// (preserves whitespace and formatting) instead of ad-hoc regex on the text.
+/// </summary>
 internal static class CsprojPackageReferenceEditor
 {
-    static readonly Regex PackageReferencePattern = new(
-        "<PackageReference\\s+Include\\s*=\\s*\"(?<id>[^\"]+)\"(?:\\s+Version\\s*=\\s*\"(?<version>[^\"]+)\")?",
-        RegexOptions.IgnoreCase | RegexOptions.Compiled | RegexOptions.CultureInvariant);
-
-    public static bool ContainsPackageReference(string csprojContent, string packageId)
+    static readonly XmlWriterSettings WriterSettings = new()
     {
-        foreach (Match match in PackageReferencePattern.Matches(csprojContent))
+        OmitXmlDeclaration = true,
+        Indent = true,
+        IndentChars = "  ",
+        NewLineChars = "\n",
+    };
+
+    public static bool ContainsPackageReference(string csprojContent, string packageId) =>
+        FindPackageReference(LoadDocument(csprojContent), packageId) is not null;
+
+    public static string? TryGetPackageVersion(string csprojContent, string packageId) =>
+        FindPackageReference(LoadDocument(csprojContent), packageId)?.Attributes?["Version"]?.Value;
+
+    public static string AddPackageReferenceIfMissing(string csprojContent, string packageId, string? version)
+    {
+        var document = LoadDocument(csprojContent);
+        if (FindPackageReference(document, packageId) is not null)
         {
-            if (string.Equals(match.Groups["id"].Value, packageId, StringComparison.OrdinalIgnoreCase))
-                return true;
+            return csprojContent;
         }
 
-        return false;
+        var packageRef = CreatePackageReference(document, packageId, version);
+        var itemGroup = FindItemGroupWithPackageReferences(document);
+        if (itemGroup is not null)
+        {
+            itemGroup.AppendChild(packageRef);
+        }
+        else
+        {
+            var newGroup = document.CreateElement("ItemGroup");
+            newGroup.AppendChild(packageRef);
+            document.DocumentElement!.AppendChild(newGroup);
+        }
+
+        return SaveDocument(document);
     }
 
-    public static string? TryGetPackageVersion(string csprojContent, string packageId)
+    public static string ReplacePackageReference(string csprojContent, string oldPackageId, string newPackageId, string? version)
     {
-        foreach (Match match in PackageReferencePattern.Matches(csprojContent))
+        var document = LoadDocument(csprojContent);
+        var existingNew = FindPackageReference(document, newPackageId);
+        var existingOld = FindPackageReference(document, oldPackageId);
+        if (existingNew is not null)
         {
-            if (!string.Equals(match.Groups["id"].Value, packageId, StringComparison.OrdinalIgnoreCase))
-                continue;
+            existingOld?.ParentNode?.RemoveChild(existingOld);
+            return SaveDocument(document);
+        }
 
-            var version = match.Groups["version"].Value;
-            return string.IsNullOrEmpty(version) ? null : version;
+        if (existingOld is not null)
+        {
+            existingOld.Attributes!["Include"]!.Value = newPackageId;
+            if (version is not null)
+            {
+                if (existingOld.Attributes["Version"] is null)
+                {
+                    existingOld.Attributes.Append(CreateAttribute(document, "Version", version));
+                }
+                else
+                {
+                    existingOld.Attributes["Version"]!.Value = version;
+                }
+            }
+
+            return SaveDocument(document);
+        }
+
+        return AddPackageReferenceIfMissing(csprojContent, newPackageId, version);
+    }
+
+    public static string RemovePackageReference(string csprojContent, string packageId)
+    {
+        var document = LoadDocument(csprojContent);
+        var existing = FindPackageReference(document, packageId);
+        existing?.ParentNode?.RemoveChild(existing);
+        return SaveDocument(document);
+    }
+
+    static XmlDocument LoadDocument(string csprojContent)
+    {
+        var document = new XmlDocument { PreserveWhitespace = true };
+        document.LoadXml(csprojContent);
+        return document;
+    }
+
+    static string SaveDocument(XmlDocument document)
+    {
+        var builder = new StringBuilder();
+        using var writer = XmlWriter.Create(builder, WriterSettings);
+        document.Save(writer);
+        return builder.ToString();
+    }
+
+    static XmlNode? FindPackageReference(XmlDocument document, string packageId)
+    {
+        foreach (XmlNode node in document.GetElementsByTagName("PackageReference"))
+        {
+            if (string.Equals(node.Attributes?["Include"]?.Value, packageId, StringComparison.Ordinal))
+            {
+                return node;
+            }
         }
 
         return null;
     }
 
-    public static string AddPackageReferenceIfMissing(string csprojContent, string packageId, string? version)
+    static XmlNode? FindItemGroupWithPackageReferences(XmlDocument document)
     {
-        if (ContainsPackageReference(csprojContent, packageId))
-            return csprojContent;
-
-        var packageLine = version is null
-            ? $"    <PackageReference Include=\"{packageId}\" />"
-            : $"    <PackageReference Include=\"{packageId}\" Version=\"{version}\" />";
-
-        var lastPackageReference = csprojContent.LastIndexOf("<PackageReference", StringComparison.OrdinalIgnoreCase);
-        if (lastPackageReference >= 0)
+        foreach (XmlNode node in document.GetElementsByTagName("ItemGroup"))
         {
-            var itemGroupEnd = csprojContent.IndexOf("</ItemGroup>", lastPackageReference, StringComparison.OrdinalIgnoreCase);
-            if (itemGroupEnd >= 0)
-                return csprojContent.Insert(itemGroupEnd, "\n" + packageLine);
+            if (node.SelectSingleNode("PackageReference") is not null)
+            {
+                return node;
+            }
         }
 
-        var projectEnd = csprojContent.LastIndexOf("</Project>", StringComparison.OrdinalIgnoreCase);
-        if (projectEnd < 0)
-            throw new InvalidOperationException("The project file does not contain a </Project> element.");
-
-        var block = "\n  <ItemGroup>\n" + packageLine + "\n  </ItemGroup>\n";
-        return csprojContent.Insert(projectEnd, block);
+        return null;
     }
 
-    public static string ReplacePackageReference(string csprojContent, string oldPackageId, string newPackageId, string? version)
+    static XmlElement CreatePackageReference(XmlDocument document, string packageId, string? version)
     {
-        if (ContainsPackageReference(csprojContent, newPackageId))
-            return RemovePackageReference(csprojContent, oldPackageId);
-
-        var updated = Regex.Replace(
-            csprojContent,
-            $"(<PackageReference\\s+Include\\s*=\\s*\"){Regex.Escape(oldPackageId)}(\")",
-            match => $"{match.Groups[1].Value}{newPackageId}{match.Groups[2].Value}",
-            RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
-
-        if (!string.Equals(updated, csprojContent, StringComparison.Ordinal))
+        var element = document.CreateElement("PackageReference");
+        element.SetAttribute("Include", packageId);
+        if (version is not null)
         {
-            if (version is not null)
-                updated = SetPackageVersion(updated, newPackageId, version);
-
-            return updated;
+            element.SetAttribute("Version", version);
         }
 
-        return AddPackageReferenceIfMissing(RemovePackageReference(csprojContent, oldPackageId), newPackageId, version);
+        return element;
     }
 
-    public static string RemovePackageReference(string csprojContent, string packageId)
+    static XmlAttribute CreateAttribute(XmlDocument document, string localName, string value)
     {
-        return Regex.Replace(
-            csprojContent,
-            "\\s*<PackageReference\\s+Include\\s*=\\s*\"" + Regex.Escape(packageId) +
-            "\"(?:\\s+Version\\s*=\\s*\"[^\"]+\")?\\s*/>\\s*",
-            "\n",
-            RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
-    }
-
-    static string SetPackageVersion(string csprojContent, string packageId, string version)
-    {
-        var pattern =
-            "(<PackageReference\\s+Include\\s*=\\s*\"" + Regex.Escape(packageId) +
-            "\")(?:\\s+Version\\s*=\\s*\"[^\"]+\")?(\\s*/>)";
-
-        return Regex.Replace(
-            csprojContent,
-            pattern,
-            $"$1 Version=\"{version}\"$2",
-            RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
+        var attribute = document.CreateAttribute(localName);
+        attribute.Value = value;
+        return attribute;
     }
 }

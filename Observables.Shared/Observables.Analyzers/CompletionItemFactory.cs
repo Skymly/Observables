@@ -1,17 +1,18 @@
-using System.Collections.Immutable;
 using Microsoft.CodeAnalysis.Completion;
 
 namespace Observables.Analyzers;
 
+/// <summary>
+/// Builds <see cref="CompletionItem"/>s whose <see cref="CompletionItem.DisplayText"/>
+/// is the exact text that will be inserted on commit (Roslyn's default commit inserts DisplayText).
+/// Callers MUST NOT append a trailing <c>]</c>: the editor auto-closes the bracket the user typed.
+/// </summary>
 internal static class CompletionItemFactory
 {
-    private const string InsertTextPropertyName = "InsertText";
-
-    internal static CompletionItem Create(string displayText, string insertText, string? sortText = null) =>
+    internal static CompletionItem Create(string displayAndInsertText, string? sortText = null) =>
         CompletionItem
             .Create(
-                displayText: displayText,
-                sortText: sortText ?? displayText,
-                rules: CompletionItemRules.Default)
-            .AddProperty(InsertTextPropertyName, insertText);
+                displayText: displayAndInsertText,
+                sortText: sortText ?? displayAndInsertText,
+                rules: CompletionItemRules.Default);
 }

@@ -50,6 +50,25 @@ public sealed class RestApiMemberCompletionProvider : CompletionProvider
             return;
         }
 
+        var semanticModel = await document.GetSemanticModelAsync(cancellationToken).ConfigureAwait(false);
+        if (semanticModel is null)
+        {
+            return;
+        }
+
+        var interfaceSyntax = method.Ancestors().OfType<InterfaceDeclarationSyntax>().FirstOrDefault();
+        if (interfaceSyntax is null
+            || semanticModel.GetDeclaredSymbol(interfaceSyntax, cancellationToken) is not INamedTypeSymbol interfaceSymbol)
+        {
+            return;
+        }
+
+        var domain = ProxyDomainCatalog.TryGetInterfaceProxyDomain(interfaceSymbol, semanticModel.Compilation);
+        if (domain is null || domain.Definition.Kind != ProxyDomainTable.DomainKind.RestApi)
+        {
+            return;
+        }
+
         if (IsInsidePathLiteral(root, position, method, out _))
         {
             foreach (var item in CreatePathPlaceholderItems(method))
@@ -74,7 +93,7 @@ public sealed class RestApiMemberCompletionProvider : CompletionProvider
         var path = RestApiPathSuggestions.SuggestPath(method);
         foreach (var verb in ProxyDomainTable.RestApiHttpMethodNames)
         {
-            yield return CompletionItemFactory.Create(verb, $"{verb}(\"{path}\")]");
+            yield return CompletionItemFactory.Create($"{verb}(\"{path}\")");
         }
     }
 
@@ -82,7 +101,7 @@ public sealed class RestApiMemberCompletionProvider : CompletionProvider
     {
         foreach (var name in RestApiPathSuggestions.GetNonCancellationParameterNames(method))
         {
-            yield return CompletionItemFactory.Create($"{{{name}}}", $"{{{name}}}", name);
+            yield return CompletionItemFactory.Create($"{{{name}}}", sortText: name);
         }
     }
 

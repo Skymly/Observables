@@ -99,6 +99,6 @@ public sealed class BoundaryAttributeCompletionProvider : CompletionProvider
             ? suggestion.InsertText
             : $"{suggestion.InsertText}(\"{memberName}\")]";
 
-        return CompletionItemFactory.Create(suggestion.DisplayText, insertText);
+        return CompletionItemFactory.Create(insertText);
     }
 }

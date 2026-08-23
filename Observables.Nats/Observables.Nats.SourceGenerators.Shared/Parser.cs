@@ -17,7 +17,7 @@ internal static class Parser
 
     public static (List<Diagnostic> diagnostics, ContextGenerationModel model) GenerateNatsStubs(
         CSharpCompilation compilation,
-        ImmutableArray<InterfaceDeclarationSyntax> candidateInterfaces,
+        ImmutableArray<MarkedInterfaceContext> markedInterfaces,
         CancellationToken cancellationToken)
     {
         var diagnostics = new List<Diagnostic>();
@@ -36,77 +36,57 @@ internal static class Parser
 
         var interfaces = new List<NatsInterfaceModel>();
 
-        foreach (var group in candidateInterfaces.GroupBy(static i => i.SyntaxTree))
+        foreach (var marked in markedInterfaces)
         {
-            var semanticModel = compilation.GetSemanticModel(group.Key);
-            foreach (var ifaceSyntax in group)
+            var ifaceSymbol = marked.InterfaceSymbol;
+            var nullable = marked.Nullability;
+
+            var members = new List<NatsMemberModel>();
+            foreach (var member in marked.PublicInstanceMembers)
             {
-                if (semanticModel.GetDeclaredSymbol(ifaceSyntax, cancellationToken) is not INamedTypeSymbol ifaceSymbol)
+
+                switch (member)
                 {
-                    continue;
+                    case IMethodSymbol method when method.MethodKind == MethodKind.Ordinary:
+                        TryAddMethod(
+                            method,
+                            ifaceSymbol,
+                            compilation,
+                            publishAttribute,
+                            requestAttribute,
+                            subscribeAttribute,
+                            observableType,
+                            unitType,
+                            members,
+                            diagnostics);
+                        break;
+                    case IPropertySymbol property:
+                        TryAddProperty(
+                            property,
+                            compilation,
+                            publishAttribute,
+                            subscribeAttribute,
+                            observableType,
+                            members,
+                            diagnostics);
+                        break;
                 }
-
-                if (!HasNatsAttribute(ifaceSymbol, mqttAttribute))
-                {
-                    continue;
-                }
-
-                var nullable = compilation.Options.NullableContextOptions == NullableContextOptions.Enable
-                    || semanticModel.GetNullableContext(ifaceSyntax.SpanStart) == NullableContext.Enabled
-                        ? Nullability.Enabled
-                        : Nullability.Disabled;
-
-                var members = new List<NatsMemberModel>();
-                foreach (var member in ifaceSymbol.GetMembers())
-                {
-                    if (member.DeclaredAccessibility != Accessibility.Public || member.IsStatic)
-                    {
-                        continue;
-                    }
-
-                    switch (member)
-                    {
-                        case IMethodSymbol method when method.MethodKind == MethodKind.Ordinary:
-                            TryAddMethod(
-                                method,
-                                ifaceSymbol,
-                                compilation,
-                                publishAttribute,
-                                requestAttribute,
-                                subscribeAttribute,
-                                observableType,
-                                unitType,
-                                members,
-                                diagnostics);
-                            break;
-                        case IPropertySymbol property:
-                            TryAddProperty(
-                                property,
-                                compilation,
-                                publishAttribute,
-                                subscribeAttribute,
-                                observableType,
-                                members,
-                                diagnostics);
-                            break;
-                    }
-                }
-
-                if (members.Count == 0)
-                {
-                    continue;
-                }
-
-                var className = $"{ifaceSymbol.Name.TrimStart('I')}GeneratedProxy";
-                interfaces.Add(
-                    new NatsInterfaceModel(
-                        $"{className}.Nats.g.cs",
-                        className,
-                        ifaceSymbol.ToDisplayString(DisplayFormat),
-                        BackendTokens.QualifyGeneratedNamespace("Observables.Nats"),
-                        members.ToImmutableEquatableArray(),
-                        nullable));
             }
+
+            if (members.Count == 0)
+            {
+                continue;
+            }
+
+            var className = $"{ifaceSymbol.Name.TrimStart('I')}GeneratedProxy";
+            interfaces.Add(
+                new NatsInterfaceModel(
+                    $"{className}.Nats.g.cs",
+                    className,
+                    ifaceSymbol.ToDisplayString(DisplayFormat),
+                    BackendTokens.QualifyGeneratedNamespace("Observables.Nats"),
+                    members.ToImmutableEquatableArray(),
+                    nullable));
         }
 
         return (diagnostics, new ContextGenerationModel(interfaces.ToImmutableEquatableArray()));
@@ -124,7 +104,7 @@ internal static class Parser
         List<NatsMemberModel> members,
         List<Diagnostic> diagnostics)
     {
-        if (subscribeAttribute is not null && HasAttribute(method, subscribeAttribute))
+        if (subscribeAttribute is not null && IoProxyInterfaceWalk.HasAttribute(method, subscribeAttribute))
         {
             diagnostics.Add(
                 Diagnostic.Create(
@@ -134,8 +114,8 @@ internal static class Parser
             return;
         }
 
-        var hasPublish = publishAttribute is not null && HasAttribute(method, publishAttribute);
-        var hasRequest = requestAttribute is not null && HasAttribute(method, requestAttribute);
+        var hasPublish = publishAttribute is not null && IoProxyInterfaceWalk.HasAttribute(method, publishAttribute);
+        var hasRequest = requestAttribute is not null && IoProxyInterfaceWalk.HasAttribute(method, requestAttribute);
 
         if (hasPublish && hasRequest)
         {
@@ -233,7 +213,7 @@ internal static class Parser
         List<NatsMemberModel> members,
         List<Diagnostic> diagnostics)
     {
-        if (publishAttribute is not null && HasAttribute(property, publishAttribute))
+        if (publishAttribute is not null && IoProxyInterfaceWalk.HasAttribute(property, publishAttribute))
         {
             diagnostics.Add(
                 Diagnostic.Create(
@@ -244,7 +224,7 @@ internal static class Parser
         }
 
         if (compilation.GetTypeByMetadataName("Observables.Nats.NatsRequestAttribute") is { } requestAttribute
-            && HasAttribute(property, requestAttribute))
+            && IoProxyInterfaceWalk.HasAttribute(property, requestAttribute))
         {
             diagnostics.Add(
                 Diagnostic.Create(
@@ -254,7 +234,7 @@ internal static class Parser
             return;
         }
 
-        if (subscribeAttribute is null || !HasAttribute(property, subscribeAttribute))
+        if (subscribeAttribute is null || !IoProxyInterfaceWalk.HasAttribute(property, subscribeAttribute))
         {
             if (property.GetAttributes().Length > 0)
             {
@@ -434,32 +414,6 @@ internal static class Parser
         }
 
         return true;
-    }
-
-    static bool HasNatsAttribute(INamedTypeSymbol ifaceSymbol, INamedTypeSymbol mqttAttribute)
-    {
-        foreach (var attribute in ifaceSymbol.GetAttributes())
-        {
-            if (SymbolEqualityComparer.Default.Equals(attribute.AttributeClass, mqttAttribute))
-            {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    static bool HasAttribute(ISymbol symbol, INamedTypeSymbol attributeType)
-    {
-        foreach (var attribute in symbol.GetAttributes())
-        {
-            if (SymbolEqualityComparer.Default.Equals(attribute.AttributeClass, attributeType))
-            {
-                return true;
-            }
-        }
-
-        return false;
     }
 
     static bool TryGetLiteralSubjectTemplate(

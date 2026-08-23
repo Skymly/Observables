@@ -1,6 +1,7 @@
 using System.Collections.Immutable;
 using Microsoft.CodeAnalysis;
 using Observables.SourceGenerators.Shared;
+using Observables.Roslyn.Shared;
 using Observables.Nats.Generators;
 
 namespace Observables.Nats.R3.SourceGenerators;
@@ -12,7 +13,7 @@ public sealed class NatsInterfaceStubGenerator : IIncrementalGenerator
     {
         IoProxyGeneratorPipeline.RegisterForAttributeInterfaces(
             context,
-            interfaceMarkerMetadataName: "Observables.Nats.NatsAttribute",
+            domain: ProxyDomainTable.Nats,
             parse: Parser.GenerateNatsStubs,
             internalErrorDescriptor: DiagnosticDescriptors.InternalGeneratorError,
             emptyModelFactory: static () => new ContextGenerationModel(ImmutableEquatableArray.Empty<NatsInterfaceModel>()),

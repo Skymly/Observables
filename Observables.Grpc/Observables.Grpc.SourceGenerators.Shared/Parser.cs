@@ -14,7 +14,7 @@ internal static class Parser
 
     public static (List<Diagnostic> diagnostics, ContextGenerationModel model) GenerateGrpcStubs(
         CSharpCompilation compilation,
-        ImmutableArray<InterfaceDeclarationSyntax> candidateInterfaces,
+        ImmutableArray<MarkedInterfaceContext> markedInterfaces,
         CancellationToken cancellationToken)
     {
         var diagnostics = new List<Diagnostic>();
@@ -33,82 +33,62 @@ internal static class Parser
 
         var interfaces = new List<GrpcInterfaceModel>();
 
-        foreach (var group in candidateInterfaces.GroupBy(static i => i.SyntaxTree))
+        foreach (var marked in markedInterfaces)
         {
-            var semanticModel = compilation.GetSemanticModel(group.Key);
-            foreach (var ifaceSyntax in group)
+            var ifaceSymbol = marked.InterfaceSymbol;
+            var nullable = marked.Nullability;
+
+            var serviceName = GetServiceName(ifaceSymbol) ?? ifaceSymbol.Name.TrimStart('I');
+            var members = new List<GrpcMemberModel>();
+
+            foreach (var member in marked.PublicInstanceMembers)
             {
-                if (semanticModel.GetDeclaredSymbol(ifaceSyntax, cancellationToken) is not INamedTypeSymbol ifaceSymbol)
+
+                switch (member)
                 {
-                    continue;
+                    case IMethodSymbol method when method.MethodKind == MethodKind.Ordinary:
+                        TryAddMethod(
+                            method,
+                            ifaceSymbol,
+                            compilation,
+                            unaryAttribute,
+                            serverStreamAttribute,
+                            clientStreamAttribute,
+                            duplexAttribute,
+                            observableType,
+                            members,
+                            diagnostics);
+                        break;
+                    case IPropertySymbol property:
+                        if (property.GetAttributes().Length > 0)
+                        {
+                            diagnostics.Add(
+                                Diagnostic.Create(
+                                    DiagnosticDescriptors.InvalidGrpcMember,
+                                    property.Locations.FirstOrDefault(),
+                                    ifaceSymbol.Name,
+                                    property.Name));
+                        }
+
+                        break;
                 }
-
-                if (!HasAttribute(ifaceSymbol, grpcAttribute))
-                {
-                    continue;
-                }
-
-                var nullable = compilation.Options.NullableContextOptions == NullableContextOptions.Enable
-                    || semanticModel.GetNullableContext(ifaceSyntax.SpanStart) == NullableContext.Enabled
-                        ? Nullability.Enabled
-                        : Nullability.Disabled;
-
-                var serviceName = GetServiceName(ifaceSymbol) ?? ifaceSymbol.Name.TrimStart('I');
-                var members = new List<GrpcMemberModel>();
-
-                foreach (var member in ifaceSymbol.GetMembers())
-                {
-                    if (member.DeclaredAccessibility != Accessibility.Public || member.IsStatic)
-                    {
-                        continue;
-                    }
-
-                    switch (member)
-                    {
-                        case IMethodSymbol method when method.MethodKind == MethodKind.Ordinary:
-                            TryAddMethod(
-                                method,
-                                ifaceSymbol,
-                                compilation,
-                                unaryAttribute,
-                                serverStreamAttribute,
-                                clientStreamAttribute,
-                                duplexAttribute,
-                                observableType,
-                                members,
-                                diagnostics);
-                            break;
-                        case IPropertySymbol property:
-                            if (property.GetAttributes().Length > 0)
-                            {
-                                diagnostics.Add(
-                                    Diagnostic.Create(
-                                        DiagnosticDescriptors.InvalidGrpcMember,
-                                        property.Locations.FirstOrDefault(),
-                                        ifaceSymbol.Name,
-                                        property.Name));
-                            }
-
-                            break;
-                    }
-                }
-
-                if (members.Count == 0)
-                {
-                    continue;
-                }
-
-                var className = $"{ifaceSymbol.Name.TrimStart('I')}GeneratedProxy";
-                interfaces.Add(
-                    new GrpcInterfaceModel(
-                        $"{className}.Grpc.g.cs",
-                        className,
-                        ifaceSymbol.ToDisplayString(DisplayFormat),
-                        BackendTokens.QualifyGeneratedNamespace("Observables.Grpc"),
-                        serviceName,
-                        members.ToImmutableEquatableArray(),
-                        nullable));
             }
+
+            if (members.Count == 0)
+            {
+                continue;
+            }
+
+            var className = $"{ifaceSymbol.Name.TrimStart('I')}GeneratedProxy";
+            interfaces.Add(
+                new GrpcInterfaceModel(
+                    $"{className}.Grpc.g.cs",
+                    className,
+                    ifaceSymbol.ToDisplayString(DisplayFormat),
+                    BackendTokens.QualifyGeneratedNamespace("Observables.Grpc"),
+                    serviceName,
+                    members.ToImmutableEquatableArray(),
+                    nullable));
         }
 
         return (diagnostics, new ContextGenerationModel(interfaces.ToImmutableEquatableArray()));
@@ -129,22 +109,22 @@ internal static class Parser
         GrpcBoundaryKind? boundary = null;
         string rpcName = method.Name;
 
-        if (unaryAttribute is not null && HasAttribute(method, unaryAttribute))
+        if (unaryAttribute is not null && IoProxyInterfaceWalk.HasAttribute(method, unaryAttribute))
         {
             boundary = GrpcBoundaryKind.Unary;
             rpcName = GetRpcName(method, "GrpcUnaryAttribute") ?? method.Name;
         }
-        else if (serverStreamAttribute is not null && HasAttribute(method, serverStreamAttribute))
+        else if (serverStreamAttribute is not null && IoProxyInterfaceWalk.HasAttribute(method, serverStreamAttribute))
         {
             boundary = GrpcBoundaryKind.ServerStream;
             rpcName = GetRpcName(method, "GrpcServerStreamAttribute") ?? method.Name;
         }
-        else if (clientStreamAttribute is not null && HasAttribute(method, clientStreamAttribute))
+        else if (clientStreamAttribute is not null && IoProxyInterfaceWalk.HasAttribute(method, clientStreamAttribute))
         {
             boundary = GrpcBoundaryKind.ClientStream;
             rpcName = GetRpcName(method, "GrpcClientStreamAttribute") ?? method.Name;
         }
-        else if (duplexAttribute is not null && HasAttribute(method, duplexAttribute))
+        else if (duplexAttribute is not null && IoProxyInterfaceWalk.HasAttribute(method, duplexAttribute))
         {
             boundary = GrpcBoundaryKind.Duplex;
             rpcName = GetRpcName(method, "GrpcDuplexAttribute") ?? method.Name;
@@ -292,18 +272,6 @@ internal static class Parser
         return true;
     }
 
-    static bool HasAttribute(ISymbol symbol, INamedTypeSymbol attributeType)
-    {
-        foreach (var attribute in symbol.GetAttributes())
-        {
-            if (SymbolEqualityComparer.Default.Equals(attribute.AttributeClass, attributeType))
-            {
-                return true;
-            }
-        }
-
-        return false;
-    }
 
     static (List<string> declarations, List<string> names, bool hasCancellationToken) BuildParameters(
         IMethodSymbol method)

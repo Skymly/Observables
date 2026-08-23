@@ -52,6 +52,12 @@
     <Compile Include="$(MSBuildThisFileDirectory)Observables.Shared/Observables.SourceGenerators.Shared/IoProxyGeneratorPipeline.cs">
       <Link>Shared/IoProxyGeneratorPipeline.cs</Link>
     </Compile>
+    <Compile Include="$(MSBuildThisFileDirectory)Observables.Shared/Observables.SourceGenerators.Shared/IoProxyInterfaceWalk.cs">
+      <Link>Shared/IoProxyInterfaceWalk.cs</Link>
+    </Compile>
+    <Compile Include="$(MSBuildThisFileDirectory)Observables.Shared/Observables.Roslyn.Shared/ProxyDomainTable.cs">
+      <Link>Shared/ProxyDomainTable.cs</Link>
+    </Compile>
   </ItemGroup>
 
   <!-- Global using to avoid qualifying shared types -->

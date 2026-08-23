@@ -14,7 +14,7 @@ internal static class Parser
 
     public static (List<Diagnostic> diagnostics, ContextGenerationModel model) GenerateSseStubs(
         CSharpCompilation compilation,
-        ImmutableArray<InterfaceDeclarationSyntax> candidateInterfaces,
+        ImmutableArray<MarkedInterfaceContext> markedInterfaces,
         CancellationToken cancellationToken)
     {
         var diagnostics = new List<Diagnostic>();
@@ -30,67 +30,47 @@ internal static class Parser
 
         var interfaces = new List<SseInterfaceModel>();
 
-        foreach (var group in candidateInterfaces.GroupBy(static i => i.SyntaxTree))
+        foreach (var marked in markedInterfaces)
         {
-            var semanticModel = compilation.GetSemanticModel(group.Key);
-            foreach (var ifaceSyntax in group)
+            var ifaceSymbol = marked.InterfaceSymbol;
+            var nullable = marked.Nullability;
+
+            var members = new List<SseMemberModel>();
+            foreach (var member in marked.PublicInstanceMembers)
             {
-                if (semanticModel.GetDeclaredSymbol(ifaceSyntax, cancellationToken) is not INamedTypeSymbol ifaceSymbol)
+
+                switch (member)
                 {
-                    continue;
+                    case IMethodSymbol method when method.MethodKind == MethodKind.Ordinary:
+                        TryAddMethod(method, ifaceSymbol, eventAttribute, diagnostics);
+                        break;
+                    case IPropertySymbol property:
+                        TryAddProperty(
+                            property,
+                            ifaceSymbol,
+                            compilation,
+                            eventAttribute,
+                            observableType,
+                            members,
+                            diagnostics);
+                        break;
                 }
-
-                if (!HasAttribute(ifaceSymbol, sseAttribute))
-                {
-                    continue;
-                }
-
-                var nullable = compilation.Options.NullableContextOptions == NullableContextOptions.Enable
-                    || semanticModel.GetNullableContext(ifaceSyntax.SpanStart) == NullableContext.Enabled
-                        ? Nullability.Enabled
-                        : Nullability.Disabled;
-
-                var members = new List<SseMemberModel>();
-                foreach (var member in ifaceSymbol.GetMembers())
-                {
-                    if (member.DeclaredAccessibility != Accessibility.Public || member.IsStatic)
-                    {
-                        continue;
-                    }
-
-                    switch (member)
-                    {
-                        case IMethodSymbol method when method.MethodKind == MethodKind.Ordinary:
-                            TryAddMethod(method, ifaceSymbol, eventAttribute, diagnostics);
-                            break;
-                        case IPropertySymbol property:
-                            TryAddProperty(
-                                property,
-                                ifaceSymbol,
-                                compilation,
-                                eventAttribute,
-                                observableType,
-                                members,
-                                diagnostics);
-                            break;
-                    }
-                }
-
-                if (members.Count == 0)
-                {
-                    continue;
-                }
-
-                var className = $"{ifaceSymbol.Name.TrimStart('I')}GeneratedProxy";
-                interfaces.Add(
-                    new SseInterfaceModel(
-                        $"{className}.Sse.g.cs",
-                        className,
-                        ifaceSymbol.ToDisplayString(DisplayFormat),
-                        BackendTokens.QualifyGeneratedNamespace("Observables.Sse"),
-                        members.ToImmutableEquatableArray(),
-                        nullable));
             }
+
+            if (members.Count == 0)
+            {
+                continue;
+            }
+
+            var className = $"{ifaceSymbol.Name.TrimStart('I')}GeneratedProxy";
+            interfaces.Add(
+                new SseInterfaceModel(
+                    $"{className}.Sse.g.cs",
+                    className,
+                    ifaceSymbol.ToDisplayString(DisplayFormat),
+                    BackendTokens.QualifyGeneratedNamespace("Observables.Sse"),
+                    members.ToImmutableEquatableArray(),
+                    nullable));
         }
 
         return (diagnostics, new ContextGenerationModel(interfaces.ToImmutableEquatableArray()));
@@ -102,7 +82,7 @@ internal static class Parser
         INamedTypeSymbol? eventAttribute,
         List<Diagnostic> diagnostics)
     {
-        if (eventAttribute is not null && HasAttribute(method, eventAttribute))
+        if (eventAttribute is not null && IoProxyInterfaceWalk.HasAttribute(method, eventAttribute))
         {
             diagnostics.Add(
                 Diagnostic.Create(
@@ -129,7 +109,7 @@ internal static class Parser
         List<SseMemberModel> members,
         List<Diagnostic> diagnostics)
     {
-        if (eventAttribute is null || !HasAttribute(property, eventAttribute))
+        if (eventAttribute is null || !IoProxyInterfaceWalk.HasAttribute(property, eventAttribute))
         {
             if (property.GetAttributes().Length > 0)
             {
@@ -192,16 +172,4 @@ internal static class Parser
         return null;
     }
 
-    static bool HasAttribute(ISymbol symbol, INamedTypeSymbol attributeType)
-    {
-        foreach (var attribute in symbol.GetAttributes())
-        {
-            if (SymbolEqualityComparer.Default.Equals(attribute.AttributeClass, attributeType))
-            {
-                return true;
-            }
-        }
-
-        return false;
-    }
 }

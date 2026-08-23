@@ -14,7 +14,7 @@ internal static class Parser
 
     public static (List<Diagnostic> diagnostics, ContextGenerationModel model) GenerateWebSocketStubs(
         CSharpCompilation compilation,
-        ImmutableArray<InterfaceDeclarationSyntax> candidateInterfaces,
+        ImmutableArray<MarkedInterfaceContext> markedInterfaces,
         CancellationToken cancellationToken)
     {
         var diagnostics = new List<Diagnostic>();
@@ -34,81 +34,61 @@ internal static class Parser
 
         var interfaces = new List<WebSocketInterfaceModel>();
 
-        foreach (var group in candidateInterfaces.GroupBy(static i => i.SyntaxTree))
+        foreach (var marked in markedInterfaces)
         {
-            var semanticModel = compilation.GetSemanticModel(group.Key);
-            foreach (var ifaceSyntax in group)
+            var ifaceSymbol = marked.InterfaceSymbol;
+            var nullable = marked.Nullability;
+
+            var members = new List<WebSocketMemberModel>();
+            foreach (var member in marked.PublicInstanceMembers)
             {
-                if (semanticModel.GetDeclaredSymbol(ifaceSyntax, cancellationToken) is not INamedTypeSymbol ifaceSymbol)
+
+                switch (member)
                 {
-                    continue;
+                    case IMethodSymbol method when method.MethodKind == MethodKind.Ordinary:
+                        TryAddMethod(
+                            method,
+                            ifaceSymbol,
+                            compilation,
+                            sendAttribute,
+                            receiveAttribute,
+                            connectAttribute,
+                            closeAttribute,
+                            observableType,
+                            unitType,
+                            members,
+                            diagnostics);
+                        break;
+                    case IPropertySymbol property:
+                        TryAddProperty(
+                            property,
+                            ifaceSymbol,
+                            compilation,
+                            sendAttribute,
+                            receiveAttribute,
+                            connectAttribute,
+                            closeAttribute,
+                            observableType,
+                            members,
+                            diagnostics);
+                        break;
                 }
-
-                if (!HasAttribute(ifaceSymbol, wsAttribute))
-                {
-                    continue;
-                }
-
-                var nullable = compilation.Options.NullableContextOptions == NullableContextOptions.Enable
-                    || semanticModel.GetNullableContext(ifaceSyntax.SpanStart) == NullableContext.Enabled
-                        ? Nullability.Enabled
-                        : Nullability.Disabled;
-
-                var members = new List<WebSocketMemberModel>();
-                foreach (var member in ifaceSymbol.GetMembers())
-                {
-                    if (member.DeclaredAccessibility != Accessibility.Public || member.IsStatic)
-                    {
-                        continue;
-                    }
-
-                    switch (member)
-                    {
-                        case IMethodSymbol method when method.MethodKind == MethodKind.Ordinary:
-                            TryAddMethod(
-                                method,
-                                ifaceSymbol,
-                                compilation,
-                                sendAttribute,
-                                receiveAttribute,
-                                connectAttribute,
-                                closeAttribute,
-                                observableType,
-                                unitType,
-                                members,
-                                diagnostics);
-                            break;
-                        case IPropertySymbol property:
-                            TryAddProperty(
-                                property,
-                                ifaceSymbol,
-                                compilation,
-                                sendAttribute,
-                                receiveAttribute,
-                                connectAttribute,
-                                closeAttribute,
-                                observableType,
-                                members,
-                                diagnostics);
-                            break;
-                    }
-                }
-
-                if (members.Count == 0)
-                {
-                    continue;
-                }
-
-                var className = $"{ifaceSymbol.Name.TrimStart('I')}GeneratedProxy";
-                interfaces.Add(
-                    new WebSocketInterfaceModel(
-                        $"{className}.WebSocket.g.cs",
-                        className,
-                        ifaceSymbol.ToDisplayString(DisplayFormat),
-                        BackendTokens.QualifyGeneratedNamespace("Observables.WebSocket"),
-                        members.ToImmutableEquatableArray(),
-                        nullable));
             }
+
+            if (members.Count == 0)
+            {
+                continue;
+            }
+
+            var className = $"{ifaceSymbol.Name.TrimStart('I')}GeneratedProxy";
+            interfaces.Add(
+                new WebSocketInterfaceModel(
+                    $"{className}.WebSocket.g.cs",
+                    className,
+                    ifaceSymbol.ToDisplayString(DisplayFormat),
+                    BackendTokens.QualifyGeneratedNamespace("Observables.WebSocket"),
+                    members.ToImmutableEquatableArray(),
+                    nullable));
         }
 
         return (diagnostics, new ContextGenerationModel(interfaces.ToImmutableEquatableArray()));
@@ -127,7 +107,7 @@ internal static class Parser
         List<WebSocketMemberModel> members,
         List<Diagnostic> diagnostics)
     {
-        if (receiveAttribute is not null && HasAttribute(method, receiveAttribute))
+        if (receiveAttribute is not null && IoProxyInterfaceWalk.HasAttribute(method, receiveAttribute))
         {
             diagnostics.Add(
                 Diagnostic.Create(
@@ -139,15 +119,15 @@ internal static class Parser
 
         WebSocketBoundaryKind? boundary = null;
 
-        if (sendAttribute is not null && HasAttribute(method, sendAttribute))
+        if (sendAttribute is not null && IoProxyInterfaceWalk.HasAttribute(method, sendAttribute))
         {
             boundary = WebSocketBoundaryKind.Send;
         }
-        else if (connectAttribute is not null && HasAttribute(method, connectAttribute))
+        else if (connectAttribute is not null && IoProxyInterfaceWalk.HasAttribute(method, connectAttribute))
         {
             boundary = WebSocketBoundaryKind.Connect;
         }
-        else if (closeAttribute is not null && HasAttribute(method, closeAttribute))
+        else if (closeAttribute is not null && IoProxyInterfaceWalk.HasAttribute(method, closeAttribute))
         {
             boundary = WebSocketBoundaryKind.Close;
         }
@@ -253,7 +233,7 @@ internal static class Parser
             return;
         }
 
-        if (receiveAttribute is null || !HasAttribute(property, receiveAttribute))
+        if (receiveAttribute is null || !IoProxyInterfaceWalk.HasAttribute(property, receiveAttribute))
         {
             if (property.GetAttributes().Length > 0)
             {
@@ -302,23 +282,9 @@ internal static class Parser
         INamedTypeSymbol? sendAttribute,
         INamedTypeSymbol? connectAttribute,
         INamedTypeSymbol? closeAttribute) =>
-        (sendAttribute is not null && HasAttribute(property, sendAttribute))
-        || (connectAttribute is not null && HasAttribute(property, connectAttribute))
-        || (closeAttribute is not null && HasAttribute(property, closeAttribute));
-
-    static bool HasAttribute(ISymbol symbol, INamedTypeSymbol attributeType)
-    {
-        foreach (var attribute in symbol.GetAttributes())
-        {
-            if (SymbolEqualityComparer.Default.Equals(attribute.AttributeClass, attributeType))
-            {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
+        (sendAttribute is not null && IoProxyInterfaceWalk.HasAttribute(property, sendAttribute))
+        || (connectAttribute is not null && IoProxyInterfaceWalk.HasAttribute(property, connectAttribute))
+        || (closeAttribute is not null && IoProxyInterfaceWalk.HasAttribute(property, closeAttribute));
     static (List<string> declarations, List<string> names, bool hasCancellationToken) BuildParameters(
         IMethodSymbol method)
     {

@@ -1,6 +1,7 @@
 using System.Collections.Immutable;
 using Microsoft.CodeAnalysis;
 using Observables.SourceGenerators.Shared;
+using Observables.Roslyn.Shared;
 using Observables.Postgres.Generators;
 
 namespace Observables.Postgres.R3.SourceGenerators;
@@ -12,7 +13,7 @@ public sealed class PostgresInterfaceStubGenerator : IIncrementalGenerator
     {
         IoProxyGeneratorPipeline.RegisterForAttributeInterfaces(
             context,
-            interfaceMarkerMetadataName: "Observables.Postgres.PostgresAttribute",
+            domain: ProxyDomainTable.Postgres,
             parse: Parser.GeneratePostgresStubs,
             internalErrorDescriptor: DiagnosticDescriptors.InternalGeneratorError,
             emptyModelFactory: static () => new ContextGenerationModel(ImmutableEquatableArray.Empty<PostgresInterfaceModel>()),

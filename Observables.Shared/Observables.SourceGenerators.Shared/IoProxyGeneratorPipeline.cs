@@ -16,8 +16,8 @@ internal static class IoProxyGeneratorPipeline
 {
     internal static void RegisterForAttributeInterfaces<TContextModel, TInterfaceModel>(
         IncrementalGeneratorInitializationContext context,
-        string interfaceMarkerMetadataName,
-        Func<CSharpCompilation, ImmutableArray<InterfaceDeclarationSyntax>, CancellationToken, (List<Diagnostic> diagnostics, TContextModel model)> parse,
+        Observables.Roslyn.Shared.ProxyDomainTable.ProxyDomainDefinition domain,
+        Func<CSharpCompilation, ImmutableArray<MarkedInterfaceContext>, CancellationToken, (List<Diagnostic> diagnostics, TContextModel model)> parse,
         DiagnosticDescriptor internalErrorDescriptor,
         Func<TContextModel> emptyModelFactory,
         Func<TContextModel, IEnumerable<TInterfaceModel>> getInterfaces,
@@ -27,7 +27,7 @@ internal static class IoProxyGeneratorPipeline
         Action<TContextModel, Action<string, SourceText>> emitModuleInitializers)
     {
         var candidateInterfaces = context.SyntaxProvider.ForAttributeWithMetadataName(
-            interfaceMarkerMetadataName,
+            domain.InterfaceMarkerMetadataName,
             static (node, _) => node is InterfaceDeclarationSyntax,
             static (ctx, _) => (InterfaceDeclarationSyntax)ctx.TargetNode);
 
@@ -39,7 +39,15 @@ internal static class IoProxyGeneratorPipeline
         var parseStep = collected.Select(
             (input, ct) =>
                 GeneratorFailSafe.ExecuteParse(
-                    () => parse((CSharpCompilation)input.Right, input.Left, ct),
+                    () =>
+                    {
+                        var compilation = (CSharpCompilation)input.Right;
+                        var marker = compilation.GetTypeByMetadataName(domain.InterfaceMarkerMetadataName);
+                        var marked = marker is null
+                            ? ImmutableArray<MarkedInterfaceContext>.Empty
+                            : IoProxyInterfaceWalk.Collect(compilation, input.Left, marker, ct);
+                        return parse(compilation, marked, ct);
+                    },
                     internalErrorDescriptor,
                     emptyModelFactory));
 

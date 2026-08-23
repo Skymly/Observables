@@ -1,6 +1,7 @@
 using System.Collections.Immutable;
 using Microsoft.CodeAnalysis;
 using Observables.SourceGenerators.Shared;
+using Observables.Roslyn.Shared;
 using Observables.Grpc.Generators;
 
 namespace Observables.Grpc.R3.SourceGenerators;
@@ -12,7 +13,7 @@ public sealed class GrpcInterfaceStubGenerator : IIncrementalGenerator
     {
         IoProxyGeneratorPipeline.RegisterForAttributeInterfaces(
             context,
-            interfaceMarkerMetadataName: "Observables.Grpc.GrpcAttribute",
+            domain: ProxyDomainTable.Grpc,
             parse: Parser.GenerateGrpcStubs,
             internalErrorDescriptor: DiagnosticDescriptors.InternalGeneratorError,
             emptyModelFactory: static () => new ContextGenerationModel(ImmutableEquatableArray.Empty<GrpcInterfaceModel>()),

@@ -19,7 +19,7 @@ internal static class Parser
 
     public static (List<Diagnostic> diagnostics, ContextGenerationModel model) GeneratePostgresStubs(
         CSharpCompilation compilation,
-        ImmutableArray<InterfaceDeclarationSyntax> candidateInterfaces,
+        ImmutableArray<MarkedInterfaceContext> markedInterfaces,
         CancellationToken cancellationToken)
     {
         var diagnostics = new List<Diagnostic>();
@@ -37,76 +37,56 @@ internal static class Parser
 
         var interfaces = new List<PostgresInterfaceModel>();
 
-        foreach (var group in candidateInterfaces.GroupBy(static i => i.SyntaxTree))
+        foreach (var marked in markedInterfaces)
         {
-            var semanticModel = compilation.GetSemanticModel(group.Key);
-            foreach (var ifaceSyntax in group)
+            var ifaceSymbol = marked.InterfaceSymbol;
+            var nullable = marked.Nullability;
+
+            var members = new List<PostgresMemberModel>();
+            foreach (var member in marked.PublicInstanceMembers)
             {
-                if (semanticModel.GetDeclaredSymbol(ifaceSyntax, cancellationToken) is not INamedTypeSymbol ifaceSymbol)
+
+                switch (member)
                 {
-                    continue;
+                    case IMethodSymbol method when method.MethodKind == MethodKind.Ordinary:
+                        TryAddMethod(
+                            method,
+                            ifaceSymbol,
+                            compilation,
+                            notifyAttribute,
+                            listenAttribute,
+                            observableType,
+                            unitType,
+                            members,
+                            diagnostics);
+                        break;
+                    case IPropertySymbol property:
+                        TryAddProperty(
+                            property,
+                            compilation,
+                            notifyAttribute,
+                            listenAttribute,
+                            observableType,
+                            members,
+                            diagnostics);
+                        break;
                 }
-
-                if (!HasAttribute(ifaceSymbol, postgresAttribute))
-                {
-                    continue;
-                }
-
-                var nullable = compilation.Options.NullableContextOptions == NullableContextOptions.Enable
-                    || semanticModel.GetNullableContext(ifaceSyntax.SpanStart) == NullableContext.Enabled
-                        ? Nullability.Enabled
-                        : Nullability.Disabled;
-
-                var members = new List<PostgresMemberModel>();
-                foreach (var member in ifaceSymbol.GetMembers())
-                {
-                    if (member.DeclaredAccessibility != Accessibility.Public || member.IsStatic)
-                    {
-                        continue;
-                    }
-
-                    switch (member)
-                    {
-                        case IMethodSymbol method when method.MethodKind == MethodKind.Ordinary:
-                            TryAddMethod(
-                                method,
-                                ifaceSymbol,
-                                compilation,
-                                notifyAttribute,
-                                listenAttribute,
-                                observableType,
-                                unitType,
-                                members,
-                                diagnostics);
-                            break;
-                        case IPropertySymbol property:
-                            TryAddProperty(
-                                property,
-                                compilation,
-                                notifyAttribute,
-                                listenAttribute,
-                                observableType,
-                                members,
-                                diagnostics);
-                            break;
-                    }
-                }
-
-                if (members.Count == 0)
-                {
-                    continue;
-                }
-
-                var className = $"{ifaceSymbol.Name.TrimStart('I')}GeneratedProxy";
-                interfaces.Add(
-                    new PostgresInterfaceModel(
-                        $"{className}.Postgres.g.cs",
-                        className,
-                        ifaceSymbol.ToDisplayString(DisplayFormat),
-                        BackendTokens.QualifyGeneratedNamespace("Observables.Postgres"),
-                        members.ToImmutableEquatableArray(),
-                        nullable));
             }
+
+            if (members.Count == 0)
+            {
+                continue;
+            }
+
+            var className = $"{ifaceSymbol.Name.TrimStart('I')}GeneratedProxy";
+            interfaces.Add(
+                new PostgresInterfaceModel(
+                    $"{className}.Postgres.g.cs",
+                    className,
+                    ifaceSymbol.ToDisplayString(DisplayFormat),
+                    BackendTokens.QualifyGeneratedNamespace("Observables.Postgres"),
+                    members.ToImmutableEquatableArray(),
+                    nullable));
         }
 
         return (diagnostics, new ContextGenerationModel(interfaces.ToImmutableEquatableArray()));
@@ -123,7 +103,7 @@ internal static class Parser
         List<PostgresMemberModel> members,
         List<Diagnostic> diagnostics)
     {
-        if (listenAttribute is not null && HasAttribute(method, listenAttribute))
+        if (listenAttribute is not null && IoProxyInterfaceWalk.HasAttribute(method, listenAttribute))
         {
             diagnostics.Add(
                 Diagnostic.Create(
@@ -133,7 +113,7 @@ internal static class Parser
             return;
         }
 
-        if (notifyAttribute is null || !HasAttribute(method, notifyAttribute))
+        if (notifyAttribute is null || !IoProxyInterfaceWalk.HasAttribute(method, notifyAttribute))
         {
             diagnostics.Add(
                 Diagnostic.Create(
@@ -222,7 +202,7 @@ internal static class Parser
         List<PostgresMemberModel> members,
         List<Diagnostic> diagnostics)
     {
-        if (notifyAttribute is not null && HasAttribute(property, notifyAttribute))
+        if (notifyAttribute is not null && IoProxyInterfaceWalk.HasAttribute(property, notifyAttribute))
         {
             diagnostics.Add(
                 Diagnostic.Create(
@@ -232,7 +212,7 @@ internal static class Parser
             return;
         }
 
-        if (listenAttribute is null || !HasAttribute(property, listenAttribute))
+        if (listenAttribute is null || !IoProxyInterfaceWalk.HasAttribute(property, listenAttribute))
         {
             if (property.GetAttributes().Length > 0)
             {
@@ -338,20 +318,6 @@ internal static class Parser
 
     static bool IsValidChannelName(string channel) =>
         channel.Length is > 0 and <= 63 && ChannelNameRegex.IsMatch(channel);
-
-    static bool HasAttribute(ISymbol symbol, INamedTypeSymbol attributeType)
-    {
-        foreach (var attribute in symbol.GetAttributes())
-        {
-            if (SymbolEqualityComparer.Default.Equals(attribute.AttributeClass, attributeType))
-            {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
     static bool TryGetLiteralChannel(
         ISymbol member,
         string attributeClassName,

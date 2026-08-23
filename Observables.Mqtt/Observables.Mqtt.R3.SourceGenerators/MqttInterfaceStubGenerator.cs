@@ -1,6 +1,7 @@
 using System.Collections.Immutable;
 using Microsoft.CodeAnalysis;
 using Observables.SourceGenerators.Shared;
+using Observables.Roslyn.Shared;
 using Observables.Mqtt.Generators;
 
 namespace Observables.Mqtt.R3.SourceGenerators;
@@ -12,7 +13,7 @@ public sealed class MqttInterfaceStubGenerator : IIncrementalGenerator
     {
         IoProxyGeneratorPipeline.RegisterForAttributeInterfaces(
             context,
-            interfaceMarkerMetadataName: "Observables.Mqtt.MqttAttribute",
+            domain: ProxyDomainTable.Mqtt,
             parse: Parser.GenerateMqttStubs,
             internalErrorDescriptor: DiagnosticDescriptors.InternalGeneratorError,
             emptyModelFactory: static () => new ContextGenerationModel(ImmutableEquatableArray.Empty<MqttInterfaceModel>()),

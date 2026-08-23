@@ -1,6 +1,7 @@
 using System.Collections.Immutable;
 using Microsoft.CodeAnalysis;
 using Observables.SourceGenerators.Shared;
+using Observables.Roslyn.Shared;
 using Observables.WebSocket.Generators;
 
 namespace Observables.WebSocket.Reactive.SourceGenerators;
@@ -12,7 +13,7 @@ public sealed class WebSocketInterfaceStubGenerator : IIncrementalGenerator
     {
         IoProxyGeneratorPipeline.RegisterForAttributeInterfaces(
             context,
-            interfaceMarkerMetadataName: "Observables.WebSocket.WebSocketAttribute",
+            domain: ProxyDomainTable.WebSocket,
             parse: Parser.GenerateWebSocketStubs,
             internalErrorDescriptor: DiagnosticDescriptors.InternalGeneratorError,
             emptyModelFactory: static () => new ContextGenerationModel(ImmutableEquatableArray.Empty<WebSocketInterfaceModel>()),

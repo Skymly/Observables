@@ -1,6 +1,7 @@
 using System.Collections.Immutable;
 using Microsoft.CodeAnalysis;
 using Observables.SourceGenerators.Shared;
+using Observables.Roslyn.Shared;
 using Observables.SignalR.Generators;
 
 namespace Observables.SignalR.R3.SourceGenerators;
@@ -12,7 +13,7 @@ public sealed class HubInterfaceStubGenerator : IIncrementalGenerator
     {
         IoProxyGeneratorPipeline.RegisterForAttributeInterfaces(
             context,
-            interfaceMarkerMetadataName: "Observables.SignalR.HubAttribute",
+            domain: ProxyDomainTable.SignalR,
             parse: Parser.GenerateHubStubs,
             internalErrorDescriptor: DiagnosticDescriptors.InternalGeneratorError,
             emptyModelFactory: static () => new ContextGenerationModel(ImmutableEquatableArray.Empty<HubInterfaceModel>()),

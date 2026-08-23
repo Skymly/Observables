@@ -1,6 +1,7 @@
 using System.Collections.Immutable;
 using Microsoft.CodeAnalysis;
 using Observables.SourceGenerators.Shared;
+using Observables.Roslyn.Shared;
 using Observables.Sse.Generators;
 
 namespace Observables.Sse.R3.SourceGenerators;
@@ -12,7 +13,7 @@ public sealed class SseInterfaceStubGenerator : IIncrementalGenerator
     {
         IoProxyGeneratorPipeline.RegisterForAttributeInterfaces(
             context,
-            interfaceMarkerMetadataName: "Observables.Sse.SseAttribute",
+            domain: ProxyDomainTable.Sse,
             parse: Parser.GenerateSseStubs,
             internalErrorDescriptor: DiagnosticDescriptors.InternalGeneratorError,
             emptyModelFactory: static () => new ContextGenerationModel(ImmutableEquatableArray.Empty<SseInterfaceModel>()),

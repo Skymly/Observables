@@ -14,7 +14,7 @@ internal static class Parser
 
     public static (List<Diagnostic> diagnostics, ContextGenerationModel model) GenerateHubStubs(
         CSharpCompilation compilation,
-        ImmutableArray<InterfaceDeclarationSyntax> candidateInterfaces,
+        ImmutableArray<MarkedInterfaceContext> markedInterfaces,
         CancellationToken cancellationToken)
     {
         var diagnostics = new List<Diagnostic>();
@@ -34,86 +34,66 @@ internal static class Parser
 
         var interfaces = new List<HubInterfaceModel>();
 
-        foreach (var group in candidateInterfaces.GroupBy(static i => i.SyntaxTree))
+        foreach (var marked in markedInterfaces)
         {
-            var semanticModel = compilation.GetSemanticModel(group.Key);
-            foreach (var ifaceSyntax in group)
+            if (string.Equals(compilation.AssemblyName, "GeneratorTests", StringComparison.Ordinal)
+                && marked.Syntax.Identifier.ValueText == "IInternalErrorProbe")
             {
-                if (string.Equals(compilation.AssemblyName, "GeneratorTests", StringComparison.Ordinal)
-                    && ifaceSyntax.Identifier.ValueText == "IInternalErrorProbe")
-                {
-                    throw new InvalidOperationException("fail-safe probe");
-                }
-
-                if (semanticModel.GetDeclaredSymbol(ifaceSyntax, cancellationToken) is not INamedTypeSymbol ifaceSymbol)
-                {
-                    continue;
-                }
-
-                if (!HasHubAttribute(ifaceSymbol, hubAttribute))
-                {
-                    continue;
-                }
-
-                var nullable = compilation.Options.NullableContextOptions == NullableContextOptions.Enable
-                    || semanticModel.GetNullableContext(ifaceSyntax.SpanStart) == NullableContext.Enabled
-                        ? Nullability.Enabled
-                        : Nullability.Disabled;
-
-                var members = new List<HubMemberModel>();
-                foreach (var member in ifaceSymbol.GetMembers())
-                {
-                    if (member.DeclaredAccessibility != Accessibility.Public || member.IsStatic)
-                    {
-                        continue;
-                    }
-
-                    switch (member)
-                    {
-                        case IMethodSymbol method when method.MethodKind == MethodKind.Ordinary:
-                            TryAddMethod(
-                                method,
-                                ifaceSymbol,
-                                compilation,
-                                invokeAttribute,
-                                sendAttribute,
-                                streamAttribute,
-                                onAttribute,
-                                observableType,
-                                unitType,
-                                members,
-                                diagnostics);
-                            break;
-                        case IPropertySymbol property:
-                            TryAddProperty(
-                                property,
-                                compilation,
-                                invokeAttribute,
-                                sendAttribute,
-                                streamAttribute,
-                                onAttribute,
-                                observableType,
-                                members,
-                                diagnostics);
-                            break;
-                    }
-                }
-
-                if (members.Count == 0)
-                {
-                    continue;
-                }
-
-                var className = $"{ifaceSymbol.Name.TrimStart('I')}GeneratedProxy";
-                interfaces.Add(
-                    new HubInterfaceModel(
-                        $"{className}.SignalR.g.cs",
-                        className,
-                        ifaceSymbol.ToDisplayString(DisplayFormat),
-                        BackendTokens.QualifyGeneratedNamespace("Observables.SignalR"),
-                        members.ToImmutableEquatableArray(),
-                        nullable));
+                throw new InvalidOperationException("fail-safe probe");
             }
+
+            var ifaceSymbol = marked.InterfaceSymbol;
+            var nullable = marked.Nullability;
+
+            var members = new List<HubMemberModel>();
+            foreach (var member in marked.PublicInstanceMembers)
+            {
+
+                switch (member)
+                {
+                    case IMethodSymbol method when method.MethodKind == MethodKind.Ordinary:
+                        TryAddMethod(
+                            method,
+                            ifaceSymbol,
+                            compilation,
+                            invokeAttribute,
+                            sendAttribute,
+                            streamAttribute,
+                            onAttribute,
+                            observableType,
+                            unitType,
+                            members,
+                            diagnostics);
+                        break;
+                    case IPropertySymbol property:
+                        TryAddProperty(
+                            property,
+                            compilation,
+                            invokeAttribute,
+                            sendAttribute,
+                            streamAttribute,
+                            onAttribute,
+                            observableType,
+                            members,
+                            diagnostics);
+                        break;
+                }
+            }
+
+            if (members.Count == 0)
+            {
+                continue;
+            }
+
+            var className = $"{ifaceSymbol.Name.TrimStart('I')}GeneratedProxy";
+            interfaces.Add(
+                new HubInterfaceModel(
+                    $"{className}.SignalR.g.cs",
+                    className,
+                    ifaceSymbol.ToDisplayString(DisplayFormat),
+                    BackendTokens.QualifyGeneratedNamespace("Observables.SignalR"),
+                    members.ToImmutableEquatableArray(),
+                    nullable));
         }
 
         return (diagnostics, new ContextGenerationModel(interfaces.ToImmutableEquatableArray()));
@@ -132,7 +112,7 @@ internal static class Parser
         List<HubMemberModel> members,
         List<Diagnostic> diagnostics)
     {
-        if (onAttribute is not null && HasAttribute(method, onAttribute))
+        if (onAttribute is not null && IoProxyInterfaceWalk.HasAttribute(method, onAttribute))
         {
             diagnostics.Add(
                 Diagnostic.Create(
@@ -231,7 +211,7 @@ internal static class Parser
             return;
         }
 
-        if (onAttribute is null || !HasAttribute(property, onAttribute))
+        if (onAttribute is null || !IoProxyInterfaceWalk.HasAttribute(property, onAttribute))
         {
             if (property.GetAttributes().Length > 0 || property.Name is not "Hub")
             {
@@ -293,48 +273,22 @@ internal static class Parser
         INamedTypeSymbol? sendAttribute,
         INamedTypeSymbol? streamAttribute)
     {
-        if (invokeAttribute is not null && HasAttribute(method, invokeAttribute))
+        if (invokeAttribute is not null && IoProxyInterfaceWalk.HasAttribute(method, invokeAttribute))
         {
             return HubBoundaryKind.Invoke;
         }
 
-        if (sendAttribute is not null && HasAttribute(method, sendAttribute))
+        if (sendAttribute is not null && IoProxyInterfaceWalk.HasAttribute(method, sendAttribute))
         {
             return HubBoundaryKind.Send;
         }
 
-        if (streamAttribute is not null && HasAttribute(method, streamAttribute))
+        if (streamAttribute is not null && IoProxyInterfaceWalk.HasAttribute(method, streamAttribute))
         {
             return HubBoundaryKind.Stream;
         }
 
         return null;
-    }
-
-    static bool HasHubAttribute(INamedTypeSymbol ifaceSymbol, INamedTypeSymbol hubAttribute)
-    {
-        foreach (var attribute in ifaceSymbol.GetAttributes())
-        {
-            if (SymbolEqualityComparer.Default.Equals(attribute.AttributeClass, hubAttribute))
-            {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    static bool HasAttribute(ISymbol symbol, INamedTypeSymbol attributeType)
-    {
-        foreach (var attribute in symbol.GetAttributes())
-        {
-            if (SymbolEqualityComparer.Default.Equals(attribute.AttributeClass, attributeType))
-            {
-                return true;
-            }
-        }
-
-        return false;
     }
 
     static bool TryGetLiteralMethodName(
@@ -417,9 +371,9 @@ internal static class Parser
         INamedTypeSymbol? invokeAttribute,
         INamedTypeSymbol? sendAttribute,
         INamedTypeSymbol? streamAttribute) =>
-        (invokeAttribute is not null && HasAttribute(property, invokeAttribute))
-        || (sendAttribute is not null && HasAttribute(property, sendAttribute))
-        || (streamAttribute is not null && HasAttribute(property, streamAttribute));
+        (invokeAttribute is not null && IoProxyInterfaceWalk.HasAttribute(property, invokeAttribute))
+        || (sendAttribute is not null && IoProxyInterfaceWalk.HasAttribute(property, sendAttribute))
+        || (streamAttribute is not null && IoProxyInterfaceWalk.HasAttribute(property, streamAttribute));
 
     static (List<string> declarations, List<string> names, bool hasCancellationToken) BuildParameters(
         IMethodSymbol method)

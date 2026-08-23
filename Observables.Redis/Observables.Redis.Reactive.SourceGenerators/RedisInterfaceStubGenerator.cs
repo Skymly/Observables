@@ -1,6 +1,7 @@
 using System.Collections.Immutable;
 using Microsoft.CodeAnalysis;
 using Observables.SourceGenerators.Shared;
+using Observables.Roslyn.Shared;
 using Observables.Redis.Generators;
 
 namespace Observables.Redis.Reactive.SourceGenerators;
@@ -12,7 +13,7 @@ public sealed class RedisInterfaceStubGenerator : IIncrementalGenerator
     {
         IoProxyGeneratorPipeline.RegisterForAttributeInterfaces(
             context,
-            interfaceMarkerMetadataName: "Observables.Redis.RedisAttribute",
+            domain: ProxyDomainTable.Redis,
             parse: Parser.GenerateRedisStubs,
             internalErrorDescriptor: DiagnosticDescriptors.InternalGeneratorError,
             emptyModelFactory: static () => new ContextGenerationModel(ImmutableEquatableArray.Empty<RedisInterfaceModel>()),

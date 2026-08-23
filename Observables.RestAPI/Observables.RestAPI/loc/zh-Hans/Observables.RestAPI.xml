@@ -1631,7 +1631,20 @@
             <param name="client">用于发送请求的 <see cref="T:System.Net.Http.HttpClient" />。</param>
             <param name="request">预构建的 <see cref="T:System.Net.Http.HttpRequestMessage" />。</param>
             <param name="settings">REST API 设置。</param>
-            <param name="isApiResponse">返回类型是否为 <see cref="T:Observables.RestAPI.IApiResponse`1" />。</param>
+            <param name="isApiResponse">已忽略。包装器所有权由 <typeparamref name="T" /> 推断。</param>
+            <param name="bodyBuffered">请求正文是否应在发送前缓冲。</param>
+            <param name="cancellationToken">取消令牌。</param>
+            <returns>反序列化的响应；如果适用，则为 <see cref="T:Observables.RestAPI.ApiResponse`1" /> 包装器。</returns>
+        </member>
+<member name="M:Observables.RestAPI.RestApiBridge.SendAsync``2(System.Net.Http.HttpClient,System.Net.Http.HttpRequestMessage,Observables.RestAPI.RestApiSettings,System.Boolean,System.Threading.CancellationToken)">
+            <summary>
+            发送 HTTP 请求并返回反序列化的响应正文。供返回 <see cref="T:System.Threading.Tasks.Task`1" /> 或 <see cref="T:System.Threading.Tasks.ValueTask`1" /> 的生成代理方法使用。
+            </summary>
+            <typeparam name="T">结果类型（例如 <c>Task&lt;T&gt;</c> 中的 <c>T</c>）。</typeparam>
+            <typeparam name="TBody">要将响应内容反序列化为的类型。</typeparam>
+            <param name="client">用于发送请求的 <see cref="T:System.Net.Http.HttpClient" />。</param>
+            <param name="request">预构建的 <see cref="T:System.Net.Http.HttpRequestMessage" />。</param>
+            <param name="settings">REST API 设置。</param>
             <param name="bodyBuffered">请求正文是否应在发送前缓冲。</param>
             <param name="cancellationToken">取消令牌。</param>
             <returns>反序列化的响应；如果适用，则为 <see cref="T:Observables.RestAPI.ApiResponse`1" /> 包装器。</returns>
@@ -1866,13 +1879,6 @@
             <param name="writer">写入器。</param>
             <param name="objectToWrite">要写入的对象。</param>
             <param name="options">选项。</param>
-        </member>
-        <member name="M:Observables.RestAPI.UniqueName.GetServiceKeySuffix(System.Object)">
-            <summary>
-            返回要添加到给定类型唯一名称中的服务键后缀。
-            </summary>
-            <param name="serviceKey">用于创建后缀的服务键。</param>
-            <returns>要添加到给定类型唯一名称中的后缀。</returns>
         </member>
         <member name="T:Observables.RestAPI.ValidationApiException">
             <summary>

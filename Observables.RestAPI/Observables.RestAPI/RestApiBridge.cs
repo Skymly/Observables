@@ -60,11 +60,11 @@ namespace Observables.RestAPI
         /// <param name="client">The <see cref="HttpClient"/> to send the request with.</param>
         /// <param name="request">The pre-built <see cref="HttpRequestMessage"/>.</param>
         /// <param name="settings">REST API settings.</param>
-        /// <param name="isApiResponse">Whether the return type is <see cref="IApiResponse{T}"/>.</param>
+        /// <param name="isApiResponse">Ignored. Wrapper ownership is inferred from <typeparamref name="T"/>.</param>
         /// <param name="bodyBuffered">Whether the request body should be buffered before sending.</param>
         /// <param name="cancellationToken">Cancellation token.</param>
         /// <returns>The deserialized response, or an <see cref="ApiResponse{T}"/> wrapper if applicable.</returns>
-        public static async Task<T?> SendAsync<T, TBody>(
+        public static Task<T?> SendAsync<T, TBody>(
             HttpClient client,
             HttpRequestMessage request,
             RestApiSettings settings,
@@ -73,9 +73,34 @@ namespace Observables.RestAPI
             CancellationToken cancellationToken
         )
         {
+            _ = isApiResponse;
+            return SendAsync<T, TBody>(client, request, settings, bodyBuffered, cancellationToken);
+        }
+
+        /// <summary>
+        /// Sends an HTTP request and returns the deserialized response body.
+        /// Used by generated proxy methods that return <see cref="Task{T}"/> or <see cref="ValueTask{T}"/>.
+        /// </summary>
+        /// <typeparam name="T">The result type (e.g. the <c>T</c> in <c>Task&lt;T&gt;</c>).</typeparam>
+        /// <typeparam name="TBody">The type to deserialize the response content to.</typeparam>
+        /// <param name="client">The <see cref="HttpClient"/> to send the request with.</param>
+        /// <param name="request">The pre-built <see cref="HttpRequestMessage"/>.</param>
+        /// <param name="settings">REST API settings.</param>
+        /// <param name="bodyBuffered">Whether the request body should be buffered before sending.</param>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        /// <returns>The deserialized response, or an <see cref="ApiResponse{T}"/> wrapper if applicable.</returns>
+        public static async Task<T?> SendAsync<T, TBody>(
+            HttpClient client,
+            HttpRequestMessage request,
+            RestApiSettings settings,
+            bool bodyBuffered,
+            CancellationToken cancellationToken
+        )
+        {
             HttpResponseMessage? response = null;
             HttpContent? content = null;
-            var disposeResponse = ShouldDisposeResponse(typeof(TBody));
+            var isApiResponse = IsRestApiResponseWrapper(typeof(T));
+            var disposeResponse = !isApiResponse && ShouldDisposeResponse(typeof(TBody));
             try
             {
                 if (request.Content != null && bodyBuffered)
@@ -547,6 +572,11 @@ namespace Observables.RestAPI
                 .FromHttpContentAsync<T>(content, cancellationToken)
                 .ConfigureAwait(false);
         }
+
+        static bool IsRestApiResponseWrapper(Type returnType) =>
+            returnType.IsGenericType
+            && (returnType.GetGenericTypeDefinition() == typeof(IApiResponse<>)
+                || returnType.GetGenericTypeDefinition() == typeof(ApiResponse<>));
 
         static bool ShouldDisposeResponse(Type deserializedType) =>
             deserializedType != typeof(HttpResponseMessage)

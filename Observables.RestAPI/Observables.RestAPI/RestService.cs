@@ -16,7 +16,6 @@ namespace Observables.RestAPI
 #endif
     public static class RestService
     {
-        static readonly ConcurrentDictionary<Type, Type> TypeMapping = new();
         static readonly ConcurrentDictionary<Type, Func<HttpClient, RestApiSettings?, object>> GeneratedFactories = new();
 
         /// <summary>
@@ -148,17 +147,11 @@ namespace Observables.RestAPI
                 return factory(client, settings);
             }
 
-#if NET8_0_OR_GREATER
-            var generatedType = TypeMapping.GetOrAdd(
-                interfaceType,
-                static ([DynamicallyAccessedMembers(
-                    DynamicallyAccessedMemberTypes.PublicMethods |
-                    DynamicallyAccessedMemberTypes.PublicProperties)] Type type) => GetGeneratedType(type));
-#else
-            var generatedType = TypeMapping.GetOrAdd(interfaceType, GetGeneratedType);
-#endif
-
-            return Activator.CreateInstance(generatedType, client, settings)!;
+            throw new InvalidOperationException(
+                interfaceType.Name
+                + " does not have a generated REST API client. Ensure the interface has at least one "
+                + "method with a Rest API HTTP method attribute, Observables.RestAPI source generators "
+                + "are referenced, and the project was rebuilt.");
         }
 
         /// <summary>
@@ -263,45 +256,5 @@ namespace Observables.RestAPI
             };
         }
 
-#if NET8_0_OR_GREATER
-        [return: DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)]
-        static Type GetGeneratedType(
-            [DynamicallyAccessedMembers(
-                DynamicallyAccessedMemberTypes.PublicMethods |
-                DynamicallyAccessedMemberTypes.PublicProperties
-            )] Type interfaceType
-        )
-#else
-        static Type GetGeneratedType(Type interfaceType)
-#endif
-        {
-            var typeName = UniqueName.ForType(interfaceType);
-
-            var generatedType = GetGeneratedImplementationType(typeName);
-
-            if (generatedType == null)
-            {
-                var message =
-                    interfaceType.Name
-                    + " doesn't look like a Rest API interface. Make sure it has at least one "
-                    + "method with a Rest API HTTP method attribute, the Observables.RestAPI source generator is installed in the project, "
-                    + "and your build produced the generated client. For Native AOT or trimmed apps, prefer generated clients "
-                    + "plus source-generated System.Text.Json metadata.";
-
-                throw new InvalidOperationException(message);
-            }
-
-            return generatedType;
-        }
-
-#if NET8_0_OR_GREATER
-        [return: DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)]
-        [UnconditionalSuppressMessage(
-            "Trimming",
-            "IL2057:UnrecognizedTypeName",
-            Justification = "Type name is produced by the Observables.RestAPI source generator for the interface.")]
-#endif
-        static Type? GetGeneratedImplementationType(string typeName) =>
-            Type.GetType(typeName, throwOnError: false);
     }
 }

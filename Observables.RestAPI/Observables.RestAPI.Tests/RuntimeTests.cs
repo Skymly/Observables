@@ -160,6 +160,19 @@ public sealed class RuntimeTests
         Assert.Equal("nope", response.Error.InnerException!.Message);
     }
 
+    [Fact]
+    public void For_without_generated_factory_throws()
+    {
+        using var client = new HttpClient();
+        var ex = Assert.Throws<InvalidOperationException>(() => RestService.For<INotGeneratedApi>(client));
+        Assert.Contains("does not have a generated REST API client", ex.Message, StringComparison.Ordinal);
+    }
+
+    public interface INotGeneratedApi
+    {
+        Task<int> Ping();
+    }
+
     public interface IUserApi
     {
         [Get("/users/{id}")]

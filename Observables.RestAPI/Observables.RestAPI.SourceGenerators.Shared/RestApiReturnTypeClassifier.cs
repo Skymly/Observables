@@ -22,7 +22,7 @@ internal static class RestApiReturnTypeClassifier
         List<Diagnostic> diagnostics)
     {
         var info = ClassifyKind(returnType, methodSymbol, wellKnownTypes, diagnostics);
-        var (returnResultType, deserializedResultType, isApiResponse) = Extract(returnType, info);
+        var (returnResultType, deserializedResultType, isApiResponse) = Extract(returnType, info, wellKnownTypes);
         return new RestApiReturnClassification(info, returnResultType, deserializedResultType, isApiResponse);
     }
 
@@ -97,7 +97,8 @@ internal static class RestApiReturnTypeClassifier
 
     static (string ReturnResultType, string DeserializedResultType, bool IsApiResponse) Extract(
         ITypeSymbol returnType,
-        ReturnTypeInfo returnTypeInfo)
+        ReturnTypeInfo returnTypeInfo,
+        WellKnownTypes wellKnownTypes)
     {
         if (returnTypeInfo is ReturnTypeInfo.SyncVoid or ReturnTypeInfo.AsyncVoid)
         {
@@ -118,8 +119,7 @@ internal static class RestApiReturnTypeClassifier
 
         var innerDisplay = innerType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
         var isApiResponse = innerType is INamedTypeSymbol innerNamed
-            && (innerNamed.Name == "ApiResponse" || innerNamed.Name == "IApiResponse")
-            && innerNamed.IsGenericType;
+            && IsRestApiResponseWrapper(innerNamed, wellKnownTypes);
 
         if (isApiResponse && innerType is INamedTypeSymbol apiResponseNamed)
         {
@@ -129,5 +129,19 @@ internal static class RestApiReturnTypeClassifier
         }
 
         return (innerDisplay, innerDisplay, false);
+    }
+
+    static bool IsRestApiResponseWrapper(INamedTypeSymbol type, WellKnownTypes wellKnownTypes)
+    {
+        if (!type.IsGenericType)
+        {
+            return false;
+        }
+
+        var definition = type.OriginalDefinition;
+        var apiResponse = wellKnownTypes.TryGet("Observables.RestAPI.IApiResponse`1");
+        var apiResponseImpl = wellKnownTypes.TryGet("Observables.RestAPI.ApiResponse`1");
+        return (apiResponse is not null && SymbolEqualityComparer.Default.Equals(definition, apiResponse))
+            || (apiResponseImpl is not null && SymbolEqualityComparer.Default.Equals(definition, apiResponseImpl));
     }
 }

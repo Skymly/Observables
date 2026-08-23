@@ -163,13 +163,13 @@ internal static class Parser
         {
             if (method.IsStatic || method.MethodKind == MethodKind.PropertyGet
                 || method.MethodKind == MethodKind.PropertySet || !method.IsAbstract) continue;
-            nonHttpMethodModelList.Add(ParseNonHttpMethod(method, diagnostics, isDerived: false));
+            nonHttpMethodModelList.Add(ParseNonHttpMethod(method, wellKnownTypes, diagnostics, isDerived: false));
         }
         foreach (var method in derivedNonHttpMethods)
         {
             if (method.IsStatic || method.MethodKind == MethodKind.PropertyGet
                 || method.MethodKind == MethodKind.PropertySet || !method.IsAbstract) continue;
-            nonHttpMethodModelList.Add(ParseNonHttpMethod(method, diagnostics, isDerived: true));
+            nonHttpMethodModelList.Add(ParseNonHttpMethod(method, wellKnownTypes, diagnostics, isDerived: true));
         }
 
         var constraints = GenerateConstraints(interfaceSymbol.TypeParameters, false);
@@ -184,7 +184,11 @@ internal static class Parser
             httpMethodsArray, derivedHttpMethodsArray, nullability, disposeMethod != null);
     }
 
-    static MethodModel ParseNonHttpMethod(IMethodSymbol methodSymbol, List<Diagnostic> diagnostics, bool isDerived)
+    static MethodModel ParseNonHttpMethod(
+        IMethodSymbol methodSymbol,
+        WellKnownTypes wellKnownTypes,
+        List<Diagnostic> diagnostics,
+        bool isDerived)
     {
         foreach (var location in methodSymbol.Locations)
         {
@@ -208,20 +212,21 @@ internal static class Parser
         }
 
         var returnType = methodSymbol.ReturnType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
-        var returnTypeInfo = methodSymbol.ReturnType.MetadataName switch
-        {
-            "Task" => ReturnTypeInfo.AsyncVoid,
-            "Task`1" or "ValueTask`1" => ReturnTypeInfo.AsyncResult,
-            "Void" => ReturnTypeInfo.SyncVoid,
-            _ => ReturnTypeInfo.Return,
-        };
+        var returnClassification = RestApiReturnTypeClassifier.Classify(
+            methodSymbol.ReturnType,
+            methodSymbol,
+            wellKnownTypes,
+            diagnostics);
 
         var parameters = methodSymbol.Parameters.Select(ParseParameter).ToImmutableEquatableArray();
         var isExplicit = isDerived || explicitImpl is not null;
         var constraints = GenerateConstraints(methodSymbol.TypeParameters, isExplicit);
 
         return new MethodModel(methodSymbol.Name, returnType, containingType, declaredBaseName,
-            returnTypeInfo, parameters, constraints, isExplicit);
+            returnClassification.Info, parameters, constraints, isExplicit,
+            IsApiResponse: returnClassification.IsApiResponse,
+            ReturnResultType: returnClassification.ReturnResultType,
+            DeserializedResultType: returnClassification.DeserializedResultType);
     }
 
     static bool IsHttpMethodAttribute(IMethodSymbol? methodSymbol, INamedTypeSymbol httpMethodAttribute) =>

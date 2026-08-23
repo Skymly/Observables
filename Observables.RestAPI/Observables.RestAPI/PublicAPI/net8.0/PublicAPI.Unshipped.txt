@@ -1,1 +1,2 @@
 #nullable enable
+static Observables.RestAPI.RestApiBridge.SendAsync<T, TBody>(System.Net.Http.HttpClient! client, System.Net.Http.HttpRequestMessage! request, Observables.RestAPI.RestApiSettings! settings, bool bodyBuffered, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<T?>!

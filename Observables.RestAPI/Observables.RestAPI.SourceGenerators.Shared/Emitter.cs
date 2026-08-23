@@ -195,12 +195,12 @@ internal static class Emitter
         }
         else if (methodModel.ReturnTypeMetadata == ReturnTypeInfo.AsyncResult)
         {
-            source.WriteLine($"{@return}global::Observables.RestAPI.RestApiBridge.SendAsync<{methodModel.ReturnResultType}, {methodModel.DeserializedResultType}>(Client, ______request, _settings, {(methodModel.IsApiResponse ? "true" : "false")}, {bodyBufferedExpression}, {ctVar}){configureAwait};");
+            source.WriteLine($"{@return}global::Observables.RestAPI.RestApiBridge.SendAsync<{methodModel.ReturnResultType}, {methodModel.DeserializedResultType}>(Client, ______request, _settings, {bodyBufferedExpression}, {ctVar}){configureAwait};");
         }
         else if (methodModel.ReturnTypeMetadata == ReturnTypeInfo.Return)
         {
             // Synchronous return — block on the async call
-            source.WriteLine($"{@return}global::Observables.RestAPI.RestApiBridge.SendAsync<{methodModel.ReturnResultType}, {methodModel.DeserializedResultType}>(Client, ______request, _settings, {(methodModel.IsApiResponse ? "true" : "false")}, {bodyBufferedExpression}, {ctVar}).GetAwaiter().GetResult();");
+            source.WriteLine($"{@return}global::Observables.RestAPI.RestApiBridge.SendAsync<{methodModel.ReturnResultType}, {methodModel.DeserializedResultType}>(Client, ______request, _settings, {bodyBufferedExpression}, {ctVar}).GetAwaiter().GetResult();");
         }
     }
 
@@ -219,7 +219,7 @@ internal static class Emitter
         WriteRequestBuilding(source, methodModel);
 
         // Send
-        source.WriteLine($"return await global::Observables.RestAPI.RestApiBridge.SendAsync<{methodModel.ReturnResultType}, {methodModel.DeserializedResultType}>(Client, ______request, _settings, {(methodModel.IsApiResponse ? "true" : "false")}, {GetBodyBufferedExpression(methodModel)}, ______ct).ConfigureAwait(false);");
+        source.WriteLine($"return await global::Observables.RestAPI.RestApiBridge.SendAsync<{methodModel.ReturnResultType}, {methodModel.DeserializedResultType}>(Client, ______request, _settings, {GetBodyBufferedExpression(methodModel)}, ______ct).ConfigureAwait(false);");
 
         source.Indentation--;
         source.WriteLine("});");

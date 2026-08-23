@@ -66,7 +66,7 @@ public class CoreGeneratorTests
             """);
 
         Assert.Contains(
-            ", false, _settings.Buffered, ______ct)",
+            ", _settings.Buffered, ______ct)",
             GeneratorTestHarness.ToSnapshot(output),
             StringComparison.Ordinal);
         return Task.CompletedTask;

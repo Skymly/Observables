@@ -1,4 +1,4 @@
-﻿Diagnostics:
+Diagnostics:
   <none>
 
 Generated Sources:
@@ -70,7 +70,7 @@ namespace Observables.RestAPI.Implementation
                 var ______path = "/users/" + global::Observables.RestAPI.RestApiBridge.FormatPathParameter(@id, _settings);
                 var ______request = new global::System.Net.Http.HttpRequestMessage { Method = global::System.Net.Http.HttpMethod.Get };
                 ______request.RequestUri = new global::System.Uri(______path, global::System.UriKind.Relative);
-                return await global::Observables.RestAPI.RestApiBridge.SendAsync<global::User, global::User>(Client, ______request, _settings, false, false, ______ct).ConfigureAwait(false);
+                return await global::Observables.RestAPI.RestApiBridge.SendAsync<global::User, global::User>(Client, ______request, _settings, false, ______ct).ConfigureAwait(false);
             });
         }
     }

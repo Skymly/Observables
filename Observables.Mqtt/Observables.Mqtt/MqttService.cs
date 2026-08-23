@@ -1,4 +1,3 @@
-using System.Collections.Concurrent;
 using System.ComponentModel;
 using MQTTnet.Client;
 #if NET8_0_OR_GREATER
@@ -10,8 +9,6 @@ namespace Observables.Mqtt;
 /// <summary>Creates source-generated MQTT topic proxy implementations.</summary>
 public static class MqttService
 {
-    static readonly ConcurrentDictionary<Type, Func<IMqttClient, object>> GeneratedFactories = new();
-
     /// <summary>Registers a source-generated topic proxy factory.</summary>
     [EditorBrowsable(EditorBrowsableState.Never)]
 #if NET8_0_OR_GREATER
@@ -19,23 +16,12 @@ public static class MqttService
         [DynamicallyAccessedMembers(
             DynamicallyAccessedMemberTypes.PublicMethods | DynamicallyAccessedMemberTypes.PublicProperties
         )] Type mqttInterfaceType,
-        Func<IMqttClient, object> factory)
+        Func<IMqttClient, object> factory) =>
+        global::Observables.GeneratedProxyFactoryRegistry<IMqttClient>.Register(mqttInterfaceType, factory);
 #else
-    public static void RegisterGeneratedFactory(Type mqttInterfaceType, Func<IMqttClient, object> factory)
+    public static void RegisterGeneratedFactory(Type mqttInterfaceType, Func<IMqttClient, object> factory) =>
+        global::Observables.GeneratedProxyFactoryRegistry<IMqttClient>.Register(mqttInterfaceType, factory);
 #endif
-    {
-        if (mqttInterfaceType is null)
-        {
-            throw new ArgumentNullException(nameof(mqttInterfaceType));
-        }
-
-        if (factory is null)
-        {
-            throw new ArgumentNullException(nameof(factory));
-        }
-
-        GeneratedFactories[mqttInterfaceType] = factory;
-    }
 
 #if NET8_0_OR_GREATER
     public static T For<
@@ -62,17 +48,9 @@ public static class MqttService
             throw new ArgumentNullException(nameof(mqttInterfaceType));
         }
 
-        if (client is null)
-        {
-            throw new ArgumentNullException(nameof(client));
-        }
-
-        if (GeneratedFactories.TryGetValue(mqttInterfaceType, out var factory))
-        {
-            return factory(client);
-        }
-
-        throw new InvalidOperationException(
+        return global::Observables.GeneratedProxyFactoryRegistry<IMqttClient>.Create(
+            mqttInterfaceType,
+            client,
             mqttInterfaceType.Name
             + " does not have a generated MQTT proxy. Ensure the interface is marked with [Mqtt], "
             + "Observables.Mqtt source generators are referenced, and the project was rebuilt.");

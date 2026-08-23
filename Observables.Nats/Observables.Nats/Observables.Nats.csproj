@@ -14,4 +14,8 @@
     <PackageReference Include="R3" />
   </ItemGroup>
 
+
+  <ItemGroup>
+    <Compile Include="..\..\Observables.Shared\Observables.Core\GeneratedProxyFactoryRegistry.cs" Link="Shared/GeneratedProxyFactoryRegistry.cs" />
+  </ItemGroup>
 </Project>

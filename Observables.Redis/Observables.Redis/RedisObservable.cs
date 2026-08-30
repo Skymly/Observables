@@ -23,12 +23,7 @@ public static class RedisObservable
         Observable.FromAsync(async ct =>
         {
             using var linked = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, ct);
-            linked.Token.ThrowIfCancellationRequested();
-            var subscriber = multiplexer.GetSubscriber();
-            await subscriber
-                .PublishAsync(RedisChannel.Literal(channel), payload ?? Array.Empty<byte>())
-                .WaitAsync(linked.Token)
-                .ConfigureAwait(false);
+            await RedisProtocol.PublishAsync(multiplexer, channel, payload, linked.Token).ConfigureAwait(false);
             return Unit.Default;
         });
 
@@ -48,14 +43,14 @@ public static class RedisObservable
     [RequiresDynamicCode(RedisTrimAnnotations.JsonPayload)]
 #endif
     public static Observable<T> FromSubscribe<T>(IConnectionMultiplexer multiplexer, string channel) =>
-        CreateSubscribe(multiplexer, RedisChannel.Literal(channel), static message => DeserializePayload<T>(message));
+        CreateSubscribe(multiplexer, RedisChannel.Literal(channel), static message => RedisProtocol.DeserializePayload<T>(message));
 
 #if NET8_0_OR_GREATER
     [RequiresUnreferencedCode(RedisTrimAnnotations.JsonPayload)]
     [RequiresDynamicCode(RedisTrimAnnotations.JsonPayload)]
 #endif
     public static Observable<T> FromPatternSubscribe<T>(IConnectionMultiplexer multiplexer, string pattern) =>
-        CreateSubscribe(multiplexer, RedisChannel.Pattern(pattern), static message => DeserializePayload<T>(message));
+        CreateSubscribe(multiplexer, RedisChannel.Pattern(pattern), static message => RedisProtocol.DeserializePayload<T>(message));
 
 #if NET8_0_OR_GREATER
     [RequiresUnreferencedCode(RedisTrimAnnotations.JsonPayload)]
@@ -67,7 +62,7 @@ public static class RedisObservable
         CreateSubscribe(
             multiplexer,
             RedisChannel.Literal(channel),
-            static message => ToRedisMessage<T>(message));
+            static message => RedisProtocol.ToRedisMessage<T>(message));
 
 #if NET8_0_OR_GREATER
     [RequiresUnreferencedCode(RedisTrimAnnotations.JsonPayload)]
@@ -79,21 +74,7 @@ public static class RedisObservable
         CreateSubscribe(
             multiplexer,
             RedisChannel.Pattern(pattern),
-            static message => ToRedisMessage<T>(message));
-
-#if NET8_0_OR_GREATER
-    [RequiresUnreferencedCode(RedisTrimAnnotations.JsonPayload)]
-    [RequiresDynamicCode(RedisTrimAnnotations.JsonPayload)]
-#endif
-    static T DeserializePayload<T>(ChannelMessage message) =>
-        RedisPayload.Deserialize<T>((byte[]?)message.Message ?? Array.Empty<byte>());
-
-#if NET8_0_OR_GREATER
-    [RequiresUnreferencedCode(RedisTrimAnnotations.JsonPayload)]
-    [RequiresDynamicCode(RedisTrimAnnotations.JsonPayload)]
-#endif
-    static RedisMessage<T> ToRedisMessage<T>(ChannelMessage message) =>
-        new(message.Channel.ToString(), DeserializePayload<T>(message));
+            static message => RedisProtocol.ToRedisMessage<T>(message));
 
 #if NET8_0_OR_GREATER
     [RequiresUnreferencedCode(RedisTrimAnnotations.JsonPayload)]
@@ -105,37 +86,15 @@ public static class RedisObservable
         Func<ChannelMessage, T> map) =>
         Observable.Create<T>(async (observer, ct) =>
         {
-            ChannelMessageQueue? queue = null;
             try
             {
-                var subscriber = multiplexer.GetSubscriber();
-                queue = await subscriber.SubscribeAsync(channel).ConfigureAwait(false);
-
-                // ChannelMessageQueue enumeration is sequential (SER OnMessage / queue path).
-                await foreach (var message in queue.WithCancellation(ct).ConfigureAwait(false))
-                {
-                    observer.OnNext(map(message));
-                }
-
-                observer.OnCompleted();
+                await RedisProtocol
+                    .SubscribeAsync(multiplexer, channel, map, observer.OnNext, observer.OnCompleted, ct)
+                    .ConfigureAwait(false);
             }
             catch (Exception ex) when (ex is not OperationCanceledException)
             {
                 observer.OnErrorResume(ex);
-            }
-            finally
-            {
-                if (queue is not null)
-                {
-                    try
-                    {
-                        await queue.UnsubscribeAsync().ConfigureAwait(false);
-                    }
-                    catch (Exception)
-                    {
-                        // best-effort unsubscribe on dispose / fault
-                    }
-                }
             }
         });
 }

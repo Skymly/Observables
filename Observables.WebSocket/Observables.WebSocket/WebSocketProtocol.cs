@@ -20,8 +20,6 @@ internal readonly struct WebSocketReceivedMessage
     internal byte[] Payload { get; }
     internal WebSocketMessageType MessageType { get; }
 }
-
-/// <summary>Feature protocol bridge for WebSocket (connect / close / send / receive / payload map).</summary>
 internal static class WebSocketProtocol
 {
 #if NETSTANDARD2_0
@@ -69,8 +67,6 @@ internal static class WebSocketProtocol
         CancellationToken userToken,
         CancellationToken pumpToken) =>
         SendAsync(socket, Encoding.UTF8.GetBytes(text), WebSocketMessageType.Text, userToken, pumpToken);
-
-    /// <summary>Reads one assembled message, or <see langword="null"/> on close.</summary>
     internal static async Task<WebSocketReceivedMessage?> ReceiveMessageAsync(
         ClientWebSocket socket,
         CancellationToken cancellationToken)

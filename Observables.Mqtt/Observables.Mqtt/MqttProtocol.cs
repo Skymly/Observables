@@ -6,8 +6,6 @@ using System.Diagnostics.CodeAnalysis;
 #endif
 
 namespace Observables.Mqtt;
-
-/// <summary>Feature protocol bridge for MQTT (subscribe / unsubscribe / publish / payload map).</summary>
 internal static class MqttProtocol
 {
     internal static async Task PublishAsync(

@@ -1,6 +1,7 @@
 using Grpc.Core;
 
 namespace Observables.Grpc;
+
 internal static class GrpcProtocol
 {
     internal static async Task<TResponse> UnaryAsync<TRequest, TResponse>(

@@ -1,8 +1,6 @@
 using Grpc.Core;
 
 namespace Observables.Grpc;
-
-/// <summary>Feature protocol bridge for gRPC (unary / server stream / request write).</summary>
 internal static class GrpcProtocol
 {
     internal static async Task<TResponse> UnaryAsync<TRequest, TResponse>(

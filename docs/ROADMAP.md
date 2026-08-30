@@ -1,16 +1,16 @@
 # Observables 路线图
 
-本文件描述 Observables 从预览版走向 **`0.1.0` 稳定版** 的里程碑规划（M1–M7 已全部完成；当前 nuget.org 稳定版 **`0.2.0`** = Shared IO 生成器加深，仍为 20 包）。它是规划层文档：每个里程碑的工程标准（中央包管理、警告策略、诊断治理等）以 [`AGENTS.md`](../AGENTS.md) 为权威，本文件只排序与拆解。
+本文件描述 Observables 从预览版走向 **`0.1.0` 稳定版** 的里程碑规划（M1–M7 已全部完成；当前 nuget.org 稳定版 **`0.2.1`** = RestAPI/`IApiResponse` 生命周期 + IO 订阅释放修复 + 协议桥加深，仍为 20 包）。它是规划层文档：每个里程碑的工程标准（中央包管理、警告策略、诊断治理等）以 [`AGENTS.md`](../AGENTS.md) 为权威，本文件只排序与拆解。
 
 > 版本号、tag、发版均须维护者明确批准；本文件中的版本号（如 `preview5`）为规划占位，不构成自动发版授权。
 
-## 现状基线（`0.2.0` 已发 nuget.org）
+## 现状基线（`0.2.1` 已发 nuget.org）
 
 | 维度 | 现状 |
 |------|------|
 | 已实现域 | **Events**、**RestAPI**、**SignalR**、**Mqtt**、**WebSocket**、**Grpc**、**Sse**、**Nats**、**Postgres**、**Redis**（运行时 + 双路生成器 + 测试） |
 | 共享层 | `Observables.Core`、`Observables.SourceGenerators.Shared`、`Observables.CodeFixes`、`Observables.Analyzers`；`ProxyDomainTable` / `IoProxyGeneratorPipeline` / `ProxyRegistrationEmitter` |
-| nuget.org 已发 | **`0.2.0`** — **20 包**（`v0.2.0` tag + GitHub Release） |
+| nuget.org 已发 | **`0.2.1`** — **20 包**（`v0.2.1` tag + GitHub Release） |
 | 构建 | 主仓 Nuke `Ci` / `CiPack` / `Publish`；`PackVerify` + `eng/nuget-smoke`（manifest **20** 包） |
 | 示例仓 CI | `Observables.Samples` Nuke `Ci`（对齐库版本；Redis Samples 见跨仓 companion） |
 
@@ -169,6 +169,7 @@ Grpc 两包已于 **`0.1.0`**（`v0.1.0-preview6` tag）发布至 nuget.org 与 
 | `0.1.8` | 仅 tag：Redis 发版准备已合入；Publish 因 `cursor[bot]` 不在 allowlist 被跳过；由 **`0.1.9`** 取代 |
 | `0.1.9` | 稳定版：第十域 **Redis** Pub/Sub（**20 包** + **20 snupkg**；OBS11xxx；ADR-002 #2） |
 | `0.2.0` | 稳定维护版：Shared 代理域目录统一 + `ProxyRegistrationEmitter` + `IoProxyGeneratorPipeline`（**20 包** + **20 snupkg**） |
+| `0.2.1` | 补丁：RestAPI `IApiResponse` 生命周期、IO Reactive 订阅/取消/释放竞态、MQTT `#` 匹配、Feature 协议桥加深（**20 包** + **20 snupkg**） |
 
 ## Post-1.0 Follow-up（按需，不绑定版本）
 

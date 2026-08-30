@@ -4,8 +4,6 @@ using System.Text.RegularExpressions;
 using Npgsql;
 
 namespace Observables.Postgres;
-
-/// <summary>Feature protocol bridge for PostgreSQL LISTEN/NOTIFY.</summary>
 internal static class PostgresProtocol
 {
     static readonly Regex ChannelNameRegex = new(

@@ -68,12 +68,13 @@ Stable packages are published to [nuget.org](https://www.nuget.org/profiles/Skym
 | **0.1.8** | Tag only — Redis release prep on `main`; Publish skipped (`cursor[bot]` not allowlisted). Superseded by **0.1.9**. |
 | **0.1.9** | Stable release — tenth domain **Redis** Pub/Sub: `Observables.Redis.R3` / `.Reactive` (+2 → **20** packages); OBS11xxx; PackVerify / nuget-smoke / Public API baselines. |
 | **0.2.0** | Stable maintenance — Shared proxy domain catalog (Analyzers/CodeFixes); `ProxyRegistrationEmitter` + `IoProxyGeneratorPipeline` for ForAttribute IO domains; still **20** packages. |
+| **0.2.1** | Patch — RestAPI `IApiResponse` lifetime; IO Reactive subscribe/cancel/dispose races; MQTT hash match; Shared protocol-bridge deepening; still **20** packages. |
 
 Preview builds (`0.1.0-preview*`, `0.1.1-preview*`) were published to NuGet with tags only (no GitHub Release). Details and milestone planning: [docs/ROADMAP.md](docs/ROADMAP.md).
 
 ### Package set
 
-**nuget.org (`0.2.0`)**: twenty packages — ten domains, each as `Observables.<Feature>.R3` and `Observables.<Feature>.Reactive`.
+**nuget.org (`0.2.1`)**: twenty packages — ten domains, each as `Observables.<Feature>.R3` and `Observables.<Feature>.Reactive`.
 
 | Package ID | Domain |
 |------------|--------|

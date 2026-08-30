@@ -287,6 +287,7 @@ static Observables.RestAPI.RestApiBridge.BuildRelativePath(string! path, System.
 static Observables.RestAPI.RestApiBridge.CreateFormUrlEncodedContent(object! value, Observables.RestAPI.RestApiSettings! settings) -> System.Net.Http.HttpContent!
 static Observables.RestAPI.RestApiBridge.FormatPathParameter(object? value, Observables.RestAPI.RestApiSettings! settings) -> string!
 static Observables.RestAPI.RestApiBridge.FormatQueryValue(object? value, Observables.RestAPI.RestApiSettings! settings) -> string?
+static Observables.RestAPI.RestApiBridge.SendAsync<T, TBody>(System.Net.Http.HttpClient! client, System.Net.Http.HttpRequestMessage! request, Observables.RestAPI.RestApiSettings! settings, bool bodyBuffered, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<T?>!
 static Observables.RestAPI.RestApiBridge.SendAsync<T, TBody>(System.Net.Http.HttpClient! client, System.Net.Http.HttpRequestMessage! request, Observables.RestAPI.RestApiSettings! settings, bool isApiResponse, bool bodyBuffered, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<T?>!
 static Observables.RestAPI.RestApiBridge.SendVoidAsync(System.Net.Http.HttpClient! client, System.Net.Http.HttpRequestMessage! request, Observables.RestAPI.RestApiSettings! settings, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task!
 static Observables.RestAPI.RestApiBridge.SerializeBody<T>(T value, Observables.RestAPI.RestApiSettings! settings, int bodySerializationMethod = 0) -> System.Net.Http.HttpContent!

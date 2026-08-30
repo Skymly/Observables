@@ -4,6 +4,7 @@ using System.Diagnostics.CodeAnalysis;
 #endif
 
 namespace Observables.Nats;
+
 internal static class NatsProtocol
 {
     internal static async Task PublishEmptyAsync(

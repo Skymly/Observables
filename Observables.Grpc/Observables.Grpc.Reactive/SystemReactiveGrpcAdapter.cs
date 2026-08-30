@@ -1,5 +1,6 @@
 using System.Reactive.Linq;
 using Grpc.Core;
+using Observables.Grpc;
 
 namespace Observables.Grpc.Reactive;
 
@@ -14,15 +15,7 @@ public static class SystemReactiveGrpcAdapter
         where TRequest : class
         where TResponse : class =>
         Observable.FromAsync(async ct =>
-        {
-            using var linked = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, ct);
-            var call = invoker.AsyncUnaryCall(
-                method,
-                host: null,
-                options: new CallOptions(cancellationToken: linked.Token),
-                request);
-            return await call.ResponseAsync.ConfigureAwait(false);
-        });
+            await GrpcProtocol.UnaryAsync(invoker, method, request, cancellationToken, ct).ConfigureAwait(false));
 
     public static IObservable<TResponse> FromServerStreaming<TRequest, TResponse>(
         CallInvoker invoker,
@@ -33,21 +26,11 @@ public static class SystemReactiveGrpcAdapter
         where TResponse : class =>
         Observable.Create<TResponse>(async (observer, ct) =>
         {
-            using var linked = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, ct);
             try
             {
-                using var call = invoker.AsyncServerStreamingCall(
-                    method,
-                    host: null,
-                    options: new CallOptions(cancellationToken: linked.Token),
-                    request);
-
-                while (await call.ResponseStream.MoveNext(linked.Token).ConfigureAwait(false))
-                {
-                    observer.OnNext(call.ResponseStream.Current);
-                }
-
-                observer.OnCompleted();
+                await GrpcProtocol
+                    .ReadServerStreamAsync(invoker, method, request, observer.OnNext, observer.OnCompleted, cancellationToken, ct)
+                    .ConfigureAwait(false);
             }
             catch (OperationCanceledException)
             {

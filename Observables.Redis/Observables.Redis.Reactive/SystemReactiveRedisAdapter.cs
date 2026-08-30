@@ -1,4 +1,5 @@
 using System.Reactive.Linq;
+using Observables.Redis;
 using StackExchange.Redis;
 #if NET8_0_OR_GREATER
 using System.Diagnostics.CodeAnalysis;
@@ -23,18 +24,13 @@ public static class SystemReactiveRedisAdapter
         Observable.FromAsync(async ct =>
         {
             using var linked = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, ct);
-            linked.Token.ThrowIfCancellationRequested();
-            var subscriber = multiplexer.GetSubscriber();
-            await subscriber
-                .PublishAsync(RedisChannel.Literal(channel), payload ?? Array.Empty<byte>())
-                .WaitAsync(linked.Token)
-                .ConfigureAwait(false);
+            await RedisProtocol.PublishAsync(multiplexer, channel, payload, linked.Token).ConfigureAwait(false);
             return System.Reactive.Unit.Default;
         });
 
 #if NET8_0_OR_GREATER
-    [RequiresUnreferencedCode("JSON payload serialization uses System.Text.Json reflection. Preserve payload type members when trimming.")]
-    [RequiresDynamicCode("JSON payload serialization uses System.Text.Json reflection.")]
+    [RequiresUnreferencedCode(RedisTrimAnnotations.JsonPayload)]
+    [RequiresDynamicCode(RedisTrimAnnotations.JsonPayload)]
 #endif
     public static IObservable<System.Reactive.Unit> FromPublish<T>(
         IConnectionMultiplexer multiplexer,
@@ -44,22 +40,22 @@ public static class SystemReactiveRedisAdapter
         FromPublish(multiplexer, channel, RedisPayloadSerializers.Serialize(payload), cancellationToken);
 
 #if NET8_0_OR_GREATER
-    [RequiresUnreferencedCode("JSON payload serialization uses System.Text.Json reflection. Preserve payload type members when trimming.")]
-    [RequiresDynamicCode("JSON payload serialization uses System.Text.Json reflection.")]
+    [RequiresUnreferencedCode(RedisTrimAnnotations.JsonPayload)]
+    [RequiresDynamicCode(RedisTrimAnnotations.JsonPayload)]
 #endif
     public static IObservable<T> FromSubscribe<T>(IConnectionMultiplexer multiplexer, string channel) =>
-        CreateSubscribe(multiplexer, RedisChannel.Literal(channel), static message => DeserializePayload<T>(message));
+        CreateSubscribe(multiplexer, RedisChannel.Literal(channel), static message => RedisProtocol.DeserializePayload<T>(message));
 
 #if NET8_0_OR_GREATER
-    [RequiresUnreferencedCode("JSON payload serialization uses System.Text.Json reflection. Preserve payload type members when trimming.")]
-    [RequiresDynamicCode("JSON payload serialization uses System.Text.Json reflection.")]
+    [RequiresUnreferencedCode(RedisTrimAnnotations.JsonPayload)]
+    [RequiresDynamicCode(RedisTrimAnnotations.JsonPayload)]
 #endif
     public static IObservable<T> FromPatternSubscribe<T>(IConnectionMultiplexer multiplexer, string pattern) =>
-        CreateSubscribe(multiplexer, RedisChannel.Pattern(pattern), static message => DeserializePayload<T>(message));
+        CreateSubscribe(multiplexer, RedisChannel.Pattern(pattern), static message => RedisProtocol.DeserializePayload<T>(message));
 
 #if NET8_0_OR_GREATER
-    [RequiresUnreferencedCode("JSON payload serialization uses System.Text.Json reflection. Preserve payload type members when trimming.")]
-    [RequiresDynamicCode("JSON payload serialization uses System.Text.Json reflection.")]
+    [RequiresUnreferencedCode(RedisTrimAnnotations.JsonPayload)]
+    [RequiresDynamicCode(RedisTrimAnnotations.JsonPayload)]
 #endif
     public static IObservable<RedisMessage<T>> FromSubscribeMessage<T>(
         IConnectionMultiplexer multiplexer,
@@ -67,11 +63,11 @@ public static class SystemReactiveRedisAdapter
         CreateSubscribe(
             multiplexer,
             RedisChannel.Literal(channel),
-            static message => ToRedisMessage<T>(message));
+            static message => RedisProtocol.ToRedisMessage<T>(message));
 
 #if NET8_0_OR_GREATER
-    [RequiresUnreferencedCode("JSON payload serialization uses System.Text.Json reflection. Preserve payload type members when trimming.")]
-    [RequiresDynamicCode("JSON payload serialization uses System.Text.Json reflection.")]
+    [RequiresUnreferencedCode(RedisTrimAnnotations.JsonPayload)]
+    [RequiresDynamicCode(RedisTrimAnnotations.JsonPayload)]
 #endif
     public static IObservable<RedisMessage<T>> FromPatternSubscribeMessage<T>(
         IConnectionMultiplexer multiplexer,
@@ -79,25 +75,11 @@ public static class SystemReactiveRedisAdapter
         CreateSubscribe(
             multiplexer,
             RedisChannel.Pattern(pattern),
-            static message => ToRedisMessage<T>(message));
+            static message => RedisProtocol.ToRedisMessage<T>(message));
 
 #if NET8_0_OR_GREATER
-    [RequiresUnreferencedCode("JSON payload serialization uses System.Text.Json reflection. Preserve payload type members when trimming.")]
-    [RequiresDynamicCode("JSON payload serialization uses System.Text.Json reflection.")]
-#endif
-    static T DeserializePayload<T>(ChannelMessage message) =>
-        RedisPayloadSerializers.Deserialize<T>((byte[]?)message.Message ?? Array.Empty<byte>());
-
-#if NET8_0_OR_GREATER
-    [RequiresUnreferencedCode("JSON payload serialization uses System.Text.Json reflection. Preserve payload type members when trimming.")]
-    [RequiresDynamicCode("JSON payload serialization uses System.Text.Json reflection.")]
-#endif
-    static RedisMessage<T> ToRedisMessage<T>(ChannelMessage message) =>
-        new(message.Channel.ToString(), DeserializePayload<T>(message));
-
-#if NET8_0_OR_GREATER
-    [RequiresUnreferencedCode("JSON payload serialization uses System.Text.Json reflection. Preserve payload type members when trimming.")]
-    [RequiresDynamicCode("JSON payload serialization uses System.Text.Json reflection.")]
+    [RequiresUnreferencedCode(RedisTrimAnnotations.JsonPayload)]
+    [RequiresDynamicCode(RedisTrimAnnotations.JsonPayload)]
 #endif
     static IObservable<T> CreateSubscribe<T>(
         IConnectionMultiplexer multiplexer,
@@ -105,37 +87,15 @@ public static class SystemReactiveRedisAdapter
         Func<ChannelMessage, T> map) =>
         Observable.Create<T>(async (observer, ct) =>
         {
-            ChannelMessageQueue? queue = null;
             try
             {
-                var subscriber = multiplexer.GetSubscriber();
-                queue = await subscriber.SubscribeAsync(channel).ConfigureAwait(false);
-
-                // ChannelMessageQueue enumeration is sequential (SER OnMessage / queue path).
-                await foreach (var message in queue.WithCancellation(ct).ConfigureAwait(false))
-                {
-                    observer.OnNext(map(message));
-                }
-
-                observer.OnCompleted();
+                await RedisProtocol
+                    .SubscribeAsync(multiplexer, channel, map, observer.OnNext, observer.OnCompleted, ct)
+                    .ConfigureAwait(false);
             }
             catch (Exception ex) when (ex is not OperationCanceledException)
             {
                 observer.OnError(ex);
-            }
-            finally
-            {
-                if (queue is not null)
-                {
-                    try
-                    {
-                        await queue.UnsubscribeAsync().ConfigureAwait(false);
-                    }
-                    catch (Exception)
-                    {
-                        // best-effort unsubscribe on dispose / fault
-                    }
-                }
             }
         });
 }

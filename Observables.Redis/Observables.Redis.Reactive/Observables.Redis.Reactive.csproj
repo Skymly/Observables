@@ -13,4 +13,9 @@
     <PackageReference Include="System.Reactive" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Compile Include="..\Observables.Redis\RedisProtocol.cs" Link="RedisProtocol.cs" />
+    <Compile Include="..\Observables.Redis\RedisTrimAnnotations.cs" Link="RedisTrimAnnotations.cs" />
+  </ItemGroup>
+
 </Project>

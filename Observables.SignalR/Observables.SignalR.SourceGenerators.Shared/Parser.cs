@@ -17,14 +17,7 @@ internal static class Parser
         ImmutableArray<MarkedInterfaceContext> markedInterfaces,
         CancellationToken cancellationToken)
     {
-        var diagnostics = new List<Diagnostic>();
         var hubAttribute = compilation.GetTypeByMetadataName("Observables.SignalR.HubAttribute");
-        if (hubAttribute is null)
-        {
-            diagnostics.Add(Diagnostic.Create(DiagnosticDescriptors.SignalRCoreNotReferenced, null));
-            return (diagnostics, new ContextGenerationModel(ImmutableEquatableArray.Empty<HubInterfaceModel>()));
-        }
-
         var invokeAttribute = compilation.GetTypeByMetadataName("Observables.SignalR.HubInvokeAttribute");
         var sendAttribute = compilation.GetTypeByMetadataName("Observables.SignalR.HubSendAttribute");
         var streamAttribute = compilation.GetTypeByMetadataName("Observables.SignalR.HubStreamAttribute");
@@ -32,71 +25,50 @@ internal static class Parser
         var observableType = compilation.GetTypeByMetadataName(BackendTokens.ObservableMetadataName);
         var unitType = compilation.GetTypeByMetadataName(BackendTokens.UnitMetadataName);
 
-        var interfaces = new List<HubInterfaceModel>();
-
-        foreach (var marked in markedInterfaces)
-        {
-            if (string.Equals(compilation.AssemblyName, "GeneratorTests", StringComparison.Ordinal)
-                && marked.Syntax.Identifier.ValueText == "IInternalErrorProbe")
+        return IoProxyModelAssembly.Parse<HubMemberModel, HubInterfaceModel, ContextGenerationModel>(
+            markedInterfaces,
+            cancellationToken,
+            coreReferenced: hubAttribute is not null,
+            coreNotReferenced: DiagnosticDescriptors.SignalRCoreNotReferenced,
+            emptyModel: static () => new ContextGenerationModel(ImmutableEquatableArray.Empty<HubInterfaceModel>()),
+            tryAddMethod: (marked, method, members, diagnostics) => TryAddMethod(
+                method,
+                marked.InterfaceSymbol,
+                compilation,
+                invokeAttribute,
+                sendAttribute,
+                streamAttribute,
+                onAttribute,
+                observableType,
+                unitType,
+                members,
+                diagnostics),
+            tryAddProperty: (marked, property, members, diagnostics) => TryAddProperty(
+                property,
+                compilation,
+                invokeAttribute,
+                sendAttribute,
+                streamAttribute,
+                onAttribute,
+                observableType,
+                members,
+                diagnostics),
+            createInterface: static (marked, className, members) => new HubInterfaceModel(
+                $"{className}.SignalR.g.cs",
+                className,
+                marked.InterfaceSymbol.ToDisplayString(DisplayFormat),
+                BackendTokens.QualifyGeneratedNamespace("Observables.SignalR"),
+                members,
+                marked.Nullability),
+            createContext: static interfaces => new ContextGenerationModel(interfaces),
+            onMarkedInterface: marked =>
             {
-                throw new InvalidOperationException("fail-safe probe");
-            }
-
-            var ifaceSymbol = marked.InterfaceSymbol;
-            var nullable = marked.Nullability;
-
-            var members = new List<HubMemberModel>();
-            foreach (var member in marked.PublicInstanceMembers)
-            {
-
-                switch (member)
+                if (string.Equals(compilation.AssemblyName, "GeneratorTests", StringComparison.Ordinal)
+                    && marked.Syntax.Identifier.ValueText == "IInternalErrorProbe")
                 {
-                    case IMethodSymbol method when method.MethodKind == MethodKind.Ordinary:
-                        TryAddMethod(
-                            method,
-                            ifaceSymbol,
-                            compilation,
-                            invokeAttribute,
-                            sendAttribute,
-                            streamAttribute,
-                            onAttribute,
-                            observableType,
-                            unitType,
-                            members,
-                            diagnostics);
-                        break;
-                    case IPropertySymbol property:
-                        TryAddProperty(
-                            property,
-                            compilation,
-                            invokeAttribute,
-                            sendAttribute,
-                            streamAttribute,
-                            onAttribute,
-                            observableType,
-                            members,
-                            diagnostics);
-                        break;
+                    throw new InvalidOperationException("fail-safe probe");
                 }
-            }
-
-            if (members.Count == 0)
-            {
-                continue;
-            }
-
-            var className = $"{ifaceSymbol.Name.TrimStart('I')}GeneratedProxy";
-            interfaces.Add(
-                new HubInterfaceModel(
-                    $"{className}.SignalR.g.cs",
-                    className,
-                    ifaceSymbol.ToDisplayString(DisplayFormat),
-                    BackendTokens.QualifyGeneratedNamespace("Observables.SignalR"),
-                    members.ToImmutableEquatableArray(),
-                    nullable));
-        }
-
-        return (diagnostics, new ContextGenerationModel(interfaces.ToImmutableEquatableArray()));
+            });
     }
 
     static void TryAddMethod(

@@ -26,50 +26,25 @@ internal static class Emitter
                     m.ClassName)).ToArray(),
             addSource);
     }
-    public static SourceText EmitInterface(SseInterfaceModel model)
-    {
-        var writer = new SourceWriter();
-        GeneratedSourceHeader.WritePrefix(writer, model.Nullability);
-
-        writer.WriteLine(
-            $$"""
-            namespace {{model.GeneratedNamespace}}
-            {
-                [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
-                [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-            #if NET8_0_OR_GREATER
-                [global::System.Diagnostics.CodeAnalysis.RequiresUnreferencedCode("SSE payload deserialization uses System.Text.Json reflection. Preserve payload type members when trimming.")]
-                [global::System.Diagnostics.CodeAnalysis.RequiresDynamicCode("SSE payload deserialization uses System.Text.Json reflection.")]
-            #endif
-                internal sealed class {{model.ClassName}} : {{model.InterfaceDisplayName}}
-                {
-                    private readonly global::Observables.Sse.SseConnection _connection;
-
-                    public {{model.ClassName}}(global::Observables.Sse.SseConnection connection)
-                    {
-                        _connection = connection;
-                    }
-
-            """);
-
-        foreach (var member in model.Members.AsArray())
-        {
-            writer.WriteLine(
+    public static SourceText EmitInterface(SseInterfaceModel model) =>
+        ProxyClassEmitter.Emit(
+            model.Nullability,
+            model.GeneratedNamespace,
+            model.ClassName,
+            model.InterfaceDisplayName,
+            new ProxyClassEmitter.ClientField(
+                "global::Observables.Sse.SseConnection",
+                "_connection",
+                "connection"),
+            model.Members.AsArray(),
+            (writer, member) => writer.WriteLine(
                 $$"""
                     private {{member.ReturnTypeDisplay}}? _{{member.MemberName}};
                     public {{member.ReturnTypeDisplay}} {{member.MemberName}} =>
                         _{{member.MemberName}} ??= {{BridgeType}}.FromEvent<{{member.ResultTypeDisplay}}>(_connection, "{{member.EventName}}");
 
-                """);
-        }
-
-        writer.WriteLine(
-            """
-                }
-            }
-            #pragma warning restore
-            """);
-
-        return writer.ToSourceText();
-    }
+                """),
+            trim: new ProxyClassEmitter.TrimWarnings(
+                "SSE payload deserialization uses System.Text.Json reflection. Preserve payload type members when trimming.",
+                "SSE payload deserialization uses System.Text.Json reflection."));
 }

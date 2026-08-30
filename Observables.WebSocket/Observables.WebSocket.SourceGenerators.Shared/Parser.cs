@@ -17,14 +17,7 @@ internal static class Parser
         ImmutableArray<MarkedInterfaceContext> markedInterfaces,
         CancellationToken cancellationToken)
     {
-        var diagnostics = new List<Diagnostic>();
         var wsAttribute = compilation.GetTypeByMetadataName("Observables.WebSocket.WebSocketAttribute");
-        if (wsAttribute is null)
-        {
-            diagnostics.Add(Diagnostic.Create(DiagnosticDescriptors.WebSocketCoreNotReferenced, null));
-            return (diagnostics, new ContextGenerationModel(ImmutableEquatableArray.Empty<WebSocketInterfaceModel>()));
-        }
-
         var sendAttribute = compilation.GetTypeByMetadataName("Observables.WebSocket.WebSocketSendAttribute");
         var receiveAttribute = compilation.GetTypeByMetadataName("Observables.WebSocket.WebSocketReceiveAttribute");
         var connectAttribute = compilation.GetTypeByMetadataName("Observables.WebSocket.WebSocketConnectAttribute");
@@ -32,66 +25,43 @@ internal static class Parser
         var observableType = compilation.GetTypeByMetadataName(BackendTokens.ObservableMetadataName);
         var unitType = compilation.GetTypeByMetadataName(BackendTokens.UnitMetadataName);
 
-        var interfaces = new List<WebSocketInterfaceModel>();
-
-        foreach (var marked in markedInterfaces)
-        {
-            var ifaceSymbol = marked.InterfaceSymbol;
-            var nullable = marked.Nullability;
-
-            var members = new List<WebSocketMemberModel>();
-            foreach (var member in marked.PublicInstanceMembers)
-            {
-
-                switch (member)
-                {
-                    case IMethodSymbol method when method.MethodKind == MethodKind.Ordinary:
-                        TryAddMethod(
-                            method,
-                            ifaceSymbol,
-                            compilation,
-                            sendAttribute,
-                            receiveAttribute,
-                            connectAttribute,
-                            closeAttribute,
-                            observableType,
-                            unitType,
-                            members,
-                            diagnostics);
-                        break;
-                    case IPropertySymbol property:
-                        TryAddProperty(
-                            property,
-                            ifaceSymbol,
-                            compilation,
-                            sendAttribute,
-                            receiveAttribute,
-                            connectAttribute,
-                            closeAttribute,
-                            observableType,
-                            members,
-                            diagnostics);
-                        break;
-                }
-            }
-
-            if (members.Count == 0)
-            {
-                continue;
-            }
-
-            var className = $"{ifaceSymbol.Name.TrimStart('I')}GeneratedProxy";
-            interfaces.Add(
-                new WebSocketInterfaceModel(
-                    $"{className}.WebSocket.g.cs",
-                    className,
-                    ifaceSymbol.ToDisplayString(DisplayFormat),
-                    BackendTokens.QualifyGeneratedNamespace("Observables.WebSocket"),
-                    members.ToImmutableEquatableArray(),
-                    nullable));
-        }
-
-        return (diagnostics, new ContextGenerationModel(interfaces.ToImmutableEquatableArray()));
+        return IoProxyModelAssembly.Parse<WebSocketMemberModel, WebSocketInterfaceModel, ContextGenerationModel>(
+            markedInterfaces,
+            cancellationToken,
+            coreReferenced: wsAttribute is not null,
+            coreNotReferenced: DiagnosticDescriptors.WebSocketCoreNotReferenced,
+            emptyModel: static () => new ContextGenerationModel(ImmutableEquatableArray.Empty<WebSocketInterfaceModel>()),
+            tryAddMethod: (marked, method, members, diagnostics) => TryAddMethod(
+                method,
+                marked.InterfaceSymbol,
+                compilation,
+                sendAttribute,
+                receiveAttribute,
+                connectAttribute,
+                closeAttribute,
+                observableType,
+                unitType,
+                members,
+                diagnostics),
+            tryAddProperty: (marked, property, members, diagnostics) => TryAddProperty(
+                property,
+                marked.InterfaceSymbol,
+                compilation,
+                sendAttribute,
+                receiveAttribute,
+                connectAttribute,
+                closeAttribute,
+                observableType,
+                members,
+                diagnostics),
+            createInterface: static (marked, className, members) => new WebSocketInterfaceModel(
+                $"{className}.WebSocket.g.cs",
+                className,
+                marked.InterfaceSymbol.ToDisplayString(DisplayFormat),
+                BackendTokens.QualifyGeneratedNamespace("Observables.WebSocket"),
+                members,
+                marked.Nullability),
+            createContext: static interfaces => new ContextGenerationModel(interfaces));
     }
 
     static void TryAddMethod(

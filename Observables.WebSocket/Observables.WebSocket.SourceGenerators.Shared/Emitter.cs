@@ -26,46 +26,21 @@ internal static class Emitter
                     m.ClassName)).ToArray(),
             addSource);
     }
-    public static SourceText EmitInterface(WebSocketInterfaceModel model)
-    {
-        var writer = new SourceWriter();
-        GeneratedSourceHeader.WritePrefix(writer, model.Nullability);
-
-        writer.WriteLine(
-            $$"""
-            namespace {{model.GeneratedNamespace}}
-            {
-                [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
-                [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-            #if NET8_0_OR_GREATER
-                [global::System.Diagnostics.CodeAnalysis.RequiresUnreferencedCode("WebSocket payload serialization uses System.Text.Json reflection. Preserve payload type members when trimming.")]
-                [global::System.Diagnostics.CodeAnalysis.RequiresDynamicCode("WebSocket payload serialization uses System.Text.Json reflection.")]
-            #endif
-                internal sealed class {{model.ClassName}} : {{model.InterfaceDisplayName}}
-                {
-                    private readonly global::System.Net.WebSockets.ClientWebSocket _socket;
-
-                    public {{model.ClassName}}(global::System.Net.WebSockets.ClientWebSocket socket)
-                    {
-                        _socket = socket;
-                    }
-
-            """);
-
-        foreach (var member in model.Members.AsArray())
-        {
-            EmitMember(writer, member);
-        }
-
-        writer.WriteLine(
-            """
-                }
-            }
-            #pragma warning restore
-            """);
-
-        return writer.ToSourceText();
-    }
+    public static SourceText EmitInterface(WebSocketInterfaceModel model) =>
+        ProxyClassEmitter.Emit(
+            model.Nullability,
+            model.GeneratedNamespace,
+            model.ClassName,
+            model.InterfaceDisplayName,
+            new ProxyClassEmitter.ClientField(
+                "global::System.Net.WebSockets.ClientWebSocket",
+                "_socket",
+                "socket"),
+            model.Members.AsArray(),
+            EmitMember,
+            trim: new ProxyClassEmitter.TrimWarnings(
+                "WebSocket payload serialization uses System.Text.Json reflection. Preserve payload type members when trimming.",
+                "WebSocket payload serialization uses System.Text.Json reflection."));
 
     static void EmitMember(SourceWriter writer, WebSocketMemberModel member)
     {

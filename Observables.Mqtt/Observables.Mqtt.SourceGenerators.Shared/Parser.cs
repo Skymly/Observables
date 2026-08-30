@@ -20,74 +20,44 @@ internal static class Parser
         ImmutableArray<MarkedInterfaceContext> markedInterfaces,
         CancellationToken cancellationToken)
     {
-        var diagnostics = new List<Diagnostic>();
         var mqttAttribute = compilation.GetTypeByMetadataName("Observables.Mqtt.MqttAttribute");
-        if (mqttAttribute is null)
-        {
-            diagnostics.Add(Diagnostic.Create(DiagnosticDescriptors.MqttCoreNotReferenced, null));
-            return (diagnostics, new ContextGenerationModel(ImmutableEquatableArray.Empty<MqttInterfaceModel>()));
-        }
-
         var publishAttribute = compilation.GetTypeByMetadataName("Observables.Mqtt.MqttPublishAttribute");
         var subscribeAttribute = compilation.GetTypeByMetadataName("Observables.Mqtt.MqttSubscribeAttribute");
         var observableType = compilation.GetTypeByMetadataName(BackendTokens.ObservableMetadataName);
         var unitType = compilation.GetTypeByMetadataName(BackendTokens.UnitMetadataName);
 
-        var interfaces = new List<MqttInterfaceModel>();
-
-        foreach (var marked in markedInterfaces)
-        {
-            var ifaceSymbol = marked.InterfaceSymbol;
-            var nullable = marked.Nullability;
-
-            var members = new List<MqttMemberModel>();
-            foreach (var member in marked.PublicInstanceMembers)
-            {
-
-                switch (member)
-                {
-                    case IMethodSymbol method when method.MethodKind == MethodKind.Ordinary:
-                        TryAddMethod(
-                            method,
-                            ifaceSymbol,
-                            compilation,
-                            publishAttribute,
-                            subscribeAttribute,
-                            observableType,
-                            unitType,
-                            members,
-                            diagnostics);
-                        break;
-                    case IPropertySymbol property:
-                        TryAddProperty(
-                            property,
-                            compilation,
-                            publishAttribute,
-                            subscribeAttribute,
-                            observableType,
-                            members,
-                            diagnostics);
-                        break;
-                }
-            }
-
-            if (members.Count == 0)
-            {
-                continue;
-            }
-
-            var className = $"{ifaceSymbol.Name.TrimStart('I')}GeneratedProxy";
-            interfaces.Add(
-                new MqttInterfaceModel(
-                    $"{className}.Mqtt.g.cs",
-                    className,
-                    ifaceSymbol.ToDisplayString(DisplayFormat),
-                    BackendTokens.QualifyGeneratedNamespace("Observables.Mqtt"),
-                    members.ToImmutableEquatableArray(),
-                    nullable));
-        }
-
-        return (diagnostics, new ContextGenerationModel(interfaces.ToImmutableEquatableArray()));
+        return IoProxyModelAssembly.Parse<MqttMemberModel, MqttInterfaceModel, ContextGenerationModel>(
+            markedInterfaces,
+            cancellationToken,
+            coreReferenced: mqttAttribute is not null,
+            coreNotReferenced: DiagnosticDescriptors.MqttCoreNotReferenced,
+            emptyModel: static () => new ContextGenerationModel(ImmutableEquatableArray.Empty<MqttInterfaceModel>()),
+            tryAddMethod: (marked, method, members, diagnostics) => TryAddMethod(
+                method,
+                marked.InterfaceSymbol,
+                compilation,
+                publishAttribute,
+                subscribeAttribute,
+                observableType,
+                unitType,
+                members,
+                diagnostics),
+            tryAddProperty: (marked, property, members, diagnostics) => TryAddProperty(
+                property,
+                compilation,
+                publishAttribute,
+                subscribeAttribute,
+                observableType,
+                members,
+                diagnostics),
+            createInterface: static (marked, className, members) => new MqttInterfaceModel(
+                $"{className}.Mqtt.g.cs",
+                className,
+                marked.InterfaceSymbol.ToDisplayString(DisplayFormat),
+                BackendTokens.QualifyGeneratedNamespace("Observables.Mqtt"),
+                members,
+                marked.Nullability),
+            createContext: static interfaces => new ContextGenerationModel(interfaces));
     }
 
     static void TryAddMethod(

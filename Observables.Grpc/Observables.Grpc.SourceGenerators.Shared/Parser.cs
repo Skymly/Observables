@@ -17,81 +17,51 @@ internal static class Parser
         ImmutableArray<MarkedInterfaceContext> markedInterfaces,
         CancellationToken cancellationToken)
     {
-        var diagnostics = new List<Diagnostic>();
         var grpcAttribute = compilation.GetTypeByMetadataName("Observables.Grpc.GrpcAttribute");
-        if (grpcAttribute is null)
-        {
-            diagnostics.Add(Diagnostic.Create(DiagnosticDescriptors.GrpcCoreNotReferenced, null));
-            return (diagnostics, new ContextGenerationModel(ImmutableEquatableArray.Empty<GrpcInterfaceModel>()));
-        }
-
         var unaryAttribute = compilation.GetTypeByMetadataName("Observables.Grpc.GrpcUnaryAttribute");
         var serverStreamAttribute = compilation.GetTypeByMetadataName("Observables.Grpc.GrpcServerStreamAttribute");
         var clientStreamAttribute = compilation.GetTypeByMetadataName("Observables.Grpc.GrpcClientStreamAttribute");
         var duplexAttribute = compilation.GetTypeByMetadataName("Observables.Grpc.GrpcDuplexAttribute");
         var observableType = compilation.GetTypeByMetadataName(BackendTokens.ObservableMetadataName);
 
-        var interfaces = new List<GrpcInterfaceModel>();
-
-        foreach (var marked in markedInterfaces)
-        {
-            var ifaceSymbol = marked.InterfaceSymbol;
-            var nullable = marked.Nullability;
-
-            var serviceName = GetServiceName(ifaceSymbol) ?? ifaceSymbol.Name.TrimStart('I');
-            var members = new List<GrpcMemberModel>();
-
-            foreach (var member in marked.PublicInstanceMembers)
+        return IoProxyModelAssembly.Parse<GrpcMemberModel, GrpcInterfaceModel, ContextGenerationModel>(
+            markedInterfaces,
+            cancellationToken,
+            coreReferenced: grpcAttribute is not null,
+            coreNotReferenced: DiagnosticDescriptors.GrpcCoreNotReferenced,
+            emptyModel: static () => new ContextGenerationModel(ImmutableEquatableArray.Empty<GrpcInterfaceModel>()),
+            tryAddMethod: (marked, method, members, diagnostics) => TryAddMethod(
+                method,
+                marked.InterfaceSymbol,
+                compilation,
+                unaryAttribute,
+                serverStreamAttribute,
+                clientStreamAttribute,
+                duplexAttribute,
+                observableType,
+                members,
+                diagnostics),
+            tryAddProperty: (marked, property, members, diagnostics) =>
             {
-
-                switch (member)
+                if (property.GetAttributes().Length > 0)
                 {
-                    case IMethodSymbol method when method.MethodKind == MethodKind.Ordinary:
-                        TryAddMethod(
-                            method,
-                            ifaceSymbol,
-                            compilation,
-                            unaryAttribute,
-                            serverStreamAttribute,
-                            clientStreamAttribute,
-                            duplexAttribute,
-                            observableType,
-                            members,
-                            diagnostics);
-                        break;
-                    case IPropertySymbol property:
-                        if (property.GetAttributes().Length > 0)
-                        {
-                            diagnostics.Add(
-                                Diagnostic.Create(
-                                    DiagnosticDescriptors.InvalidGrpcMember,
-                                    property.Locations.FirstOrDefault(),
-                                    ifaceSymbol.Name,
-                                    property.Name));
-                        }
-
-                        break;
+                    diagnostics.Add(
+                        Diagnostic.Create(
+                            DiagnosticDescriptors.InvalidGrpcMember,
+                            property.Locations.FirstOrDefault(),
+                            marked.InterfaceSymbol.Name,
+                            property.Name));
                 }
-            }
-
-            if (members.Count == 0)
-            {
-                continue;
-            }
-
-            var className = $"{ifaceSymbol.Name.TrimStart('I')}GeneratedProxy";
-            interfaces.Add(
-                new GrpcInterfaceModel(
-                    $"{className}.Grpc.g.cs",
-                    className,
-                    ifaceSymbol.ToDisplayString(DisplayFormat),
-                    BackendTokens.QualifyGeneratedNamespace("Observables.Grpc"),
-                    serviceName,
-                    members.ToImmutableEquatableArray(),
-                    nullable));
-        }
-
-        return (diagnostics, new ContextGenerationModel(interfaces.ToImmutableEquatableArray()));
+            },
+            createInterface: static (marked, className, members) => new GrpcInterfaceModel(
+                $"{className}.Grpc.g.cs",
+                className,
+                marked.InterfaceSymbol.ToDisplayString(DisplayFormat),
+                BackendTokens.QualifyGeneratedNamespace("Observables.Grpc"),
+                GetServiceName(marked.InterfaceSymbol) ?? marked.InterfaceSymbol.Name.TrimStart('I'),
+                members,
+                marked.Nullability),
+            createContext: static interfaces => new ContextGenerationModel(interfaces));
     }
 
     static void TryAddMethod(

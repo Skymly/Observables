@@ -4,6 +4,7 @@ using System.Text.RegularExpressions;
 using Npgsql;
 
 namespace Observables.Postgres;
+
 internal static class PostgresProtocol
 {
     static readonly Regex ChannelNameRegex = new(

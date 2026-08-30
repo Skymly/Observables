@@ -6,6 +6,7 @@ using System.Diagnostics.CodeAnalysis;
 #endif
 
 namespace Observables.Mqtt;
+
 internal static class MqttProtocol
 {
     internal static async Task PublishAsync(

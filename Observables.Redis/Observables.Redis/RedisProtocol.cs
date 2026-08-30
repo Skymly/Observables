@@ -4,8 +4,6 @@ using System.Diagnostics.CodeAnalysis;
 #endif
 
 namespace Observables.Redis;
-
-/// <summary>Feature protocol bridge for Redis Pub/Sub (subscribe / unsubscribe / publish / payload map).</summary>
 internal static class RedisProtocol
 {
     internal static async Task PublishAsync(

@@ -4,6 +4,7 @@ using System.Diagnostics.CodeAnalysis;
 #endif
 
 namespace Observables.Redis;
+
 internal static class RedisProtocol
 {
     internal static async Task PublishAsync(

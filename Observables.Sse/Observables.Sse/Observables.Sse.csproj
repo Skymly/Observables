@@ -7,6 +7,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <InternalsVisibleTo Include="Observables.Sse.Reactive" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="R3" />
   </ItemGroup>
 

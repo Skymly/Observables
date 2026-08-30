@@ -1,4 +1,5 @@
 using System.IO;
+using System.Net.Http;
 using System.Text;
 #if NETSTANDARD2_0
 #else
@@ -145,5 +146,47 @@ public static class SseProtocol
         }
 
         return new SseEvent(string.IsNullOrEmpty(eventName) ? "message" : eventName!, payload, id);
+    }
+
+#if NET8_0_OR_GREATER
+    [RequiresUnreferencedCode("JSON payload deserialization uses System.Text.Json reflection. Preserve payload type members when trimming.")]
+    [RequiresDynamicCode("JSON payload deserialization uses System.Text.Json reflection.")]
+#endif
+    internal static async Task SubscribeAsync<T>(
+        SseConnection connection,
+        string eventName,
+        Action<T> onNext,
+        Action onCompleted,
+        CancellationToken cancellationToken)
+    {
+        using var request = new HttpRequestMessage(HttpMethod.Get, connection.Endpoint);
+        request.Headers.Accept.ParseAdd("text/event-stream");
+
+        using var response = await connection.HttpClient
+            .SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancellationToken)
+            .ConfigureAwait(false);
+        response.EnsureSuccessStatusCode();
+
+#if NET8_0_OR_GREATER
+        using var stream = await response.Content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false);
+#else
+        using var stream = await response.Content.ReadAsStreamAsync().ConfigureAwait(false);
+#endif
+        using var reader = new StreamReader(stream, Encoding.UTF8);
+
+        while (!cancellationToken.IsCancellationRequested)
+        {
+            var sseEvent = await ReadEventAsync(reader).ConfigureAwait(false);
+            if (sseEvent is null)
+            {
+                onCompleted();
+                return;
+            }
+
+            if (sseEvent.Value.EventName == eventName)
+            {
+                onNext(Deserialize<T>(sseEvent.Value.Data));
+            }
+        }
     }
 }

@@ -1,6 +1,3 @@
-using System.IO;
-using System.Net.Http;
-using System.Text;
 using R3;
 #if NET8_0_OR_GREATER
 using System.Diagnostics.CodeAnalysis;
@@ -24,35 +21,9 @@ public static class SseObservable
         {
             try
             {
-                using var request = new HttpRequestMessage(HttpMethod.Get, connection.Endpoint);
-                request.Headers.Accept.ParseAdd("text/event-stream");
-
-                using var response = await connection.HttpClient
-                    .SendAsync(request, HttpCompletionOption.ResponseHeadersRead, ct)
+                await SseProtocol
+                    .SubscribeAsync<T>(connection, eventName, observer.OnNext, observer.OnCompleted, ct)
                     .ConfigureAwait(false);
-                response.EnsureSuccessStatusCode();
-
-#if NET8_0_OR_GREATER
-                using var stream = await response.Content.ReadAsStreamAsync(ct).ConfigureAwait(false);
-#else
-                using var stream = await response.Content.ReadAsStreamAsync().ConfigureAwait(false);
-#endif
-                using var reader = new StreamReader(stream, Encoding.UTF8);
-
-                while (!ct.IsCancellationRequested)
-                {
-                    var sseEvent = await SseProtocol.ReadEventAsync(reader).ConfigureAwait(false);
-                    if (sseEvent is null)
-                    {
-                        observer.OnCompleted();
-                        return;
-                    }
-
-                    if (sseEvent.Value.EventName == eventName)
-                    {
-                        observer.OnNext(SseProtocol.Deserialize<T>(sseEvent.Value.Data));
-                    }
-                }
             }
             catch (OperationCanceledException)
             {

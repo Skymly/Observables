@@ -8,6 +8,10 @@
 
 
   <ItemGroup>
+    <InternalsVisibleTo Include="Observables.WebSocket.Reactive" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="R3" />
   </ItemGroup>
 

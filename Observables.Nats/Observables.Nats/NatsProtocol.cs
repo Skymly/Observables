@@ -4,8 +4,6 @@ using System.Diagnostics.CodeAnalysis;
 #endif
 
 namespace Observables.Nats;
-
-/// <summary>Feature protocol bridge for NATS (publish / subscribe / request).</summary>
 internal static class NatsProtocol
 {
     internal static async Task PublishEmptyAsync(

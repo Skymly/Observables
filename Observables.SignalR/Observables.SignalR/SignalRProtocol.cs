@@ -1,8 +1,6 @@
 using Microsoft.AspNetCore.SignalR.Client;
 
 namespace Observables.SignalR;
-
-/// <summary>Feature protocol bridge for SignalR (invoke / send / stream / On).</summary>
 internal static class SignalRProtocol
 {
     internal static async Task<T> InvokeAsync<T>(

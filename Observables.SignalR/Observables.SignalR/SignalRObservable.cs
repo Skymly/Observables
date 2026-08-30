@@ -18,12 +18,7 @@ public static class SignalRObservable
         object?[] args,
         CancellationToken cancellationToken = default) =>
         Observable.FromAsync(async ct =>
-        {
-            using var linked = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, ct);
-            return await HubConnectionArgs
-                .InvokeAsync<T>(connection, methodName, args, linked.Token)
-                .ConfigureAwait(false);
-        });
+            await SignalRProtocol.InvokeAsync<T>(connection, methodName, args, cancellationToken, ct).ConfigureAwait(false));
 
     public static Observable<Unit> FromSend(
         HubConnection connection,
@@ -38,8 +33,7 @@ public static class SignalRObservable
         CancellationToken cancellationToken = default) =>
         Observable.FromAsync(async ct =>
         {
-            using var linked = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, ct);
-            await HubConnectionArgs.SendAsync(connection, methodName, args, linked.Token).ConfigureAwait(false);
+            await SignalRProtocol.SendAsync(connection, methodName, args, cancellationToken, ct).ConfigureAwait(false);
             return Unit.Default;
         });
 
@@ -56,28 +50,15 @@ public static class SignalRObservable
         CancellationToken cancellationToken = default) =>
         Observable.Create<T>(async (observer, ct) =>
         {
-            using var linked = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, ct);
-            await foreach (var item in HubConnectionArgs
-                               .StreamAsync<T>(connection, methodName, args, linked.Token)
-                               .ConfigureAwait(false))
-            {
-                observer.OnNext(item);
-            }
-
-            observer.OnCompleted();
+            await SignalRProtocol
+                .StreamAsync<T>(connection, methodName, args, observer.OnNext, observer.OnCompleted, cancellationToken, ct)
+                .ConfigureAwait(false);
         });
 
     public static Observable<T> FromOn<T>(HubConnection connection, string methodName) =>
         Observable.Create<T>(async (observer, ct) =>
         {
-            var subscription = connection.On<T>(methodName, observer.OnNext);
-            try
-            {
-                await Task.Delay(Timeout.Infinite, ct).ConfigureAwait(false);
-            }
-            finally
-            {
-                subscription.Dispose();
-            }
+            using var subscription = SignalRProtocol.SubscribeOn<T>(connection, methodName, observer.OnNext);
+            await Task.Delay(Timeout.Infinite, ct).ConfigureAwait(false);
         });
 }

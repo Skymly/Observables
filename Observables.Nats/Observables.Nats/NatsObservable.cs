@@ -22,17 +22,7 @@ public static class NatsObservable
         CancellationToken cancellationToken = default) =>
         Observable.FromAsync(async ct =>
         {
-            using var linked = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, ct);
-            if (payload.IsEmpty)
-            {
-                await connection.PublishAsync(subject, string.Empty, cancellationToken: linked.Token)
-                    .ConfigureAwait(false);
-            }
-            else
-            {
-                await connection.PublishAsync(subject, payload, cancellationToken: linked.Token).ConfigureAwait(false);
-            }
-
+            await NatsProtocol.PublishBytesAsync(connection, subject, payload, cancellationToken, ct).ConfigureAwait(false);
             return Unit.Default;
         });
 
@@ -47,8 +37,7 @@ public static class NatsObservable
         CancellationToken cancellationToken = default) =>
         Observable.FromAsync(async ct =>
         {
-            using var linked = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, ct);
-            await connection.PublishAsync(subject, payload, cancellationToken: linked.Token).ConfigureAwait(false);
+            await NatsProtocol.PublishAsync(connection, subject, payload, cancellationToken, ct).ConfigureAwait(false);
             return Unit.Default;
         });
 
@@ -61,12 +50,9 @@ public static class NatsObservable
         {
             try
             {
-                await foreach (var msg in connection.SubscribeAsync<T>(subject, cancellationToken: ct).ConfigureAwait(false))
-                {
-                    observer.OnNext(msg.Data!);
-                }
-
-                observer.OnCompleted();
+                await NatsProtocol
+                    .SubscribeAsync<T>(connection, subject, observer.OnNext, observer.OnCompleted, ct)
+                    .ConfigureAwait(false);
             }
             catch (Exception ex) when (ex is not OperationCanceledException)
             {
@@ -84,11 +70,6 @@ public static class NatsObservable
         TRequest request,
         CancellationToken cancellationToken = default) =>
         Observable.FromAsync(async ct =>
-        {
-            using var linked = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, ct);
-            var reply = await connection
-                .RequestAsync<TRequest, TResponse>(subject, request, cancellationToken: linked.Token)
-                .ConfigureAwait(false);
-            return reply.Data ?? throw new InvalidOperationException("NATS request returned null payload.");
-        });
+            await NatsProtocol.RequestAsync<TRequest, TResponse>(connection, subject, request, cancellationToken, ct)
+                .ConfigureAwait(false));
 }

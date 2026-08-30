@@ -20,76 +20,46 @@ internal static class Parser
         ImmutableArray<MarkedInterfaceContext> markedInterfaces,
         CancellationToken cancellationToken)
     {
-        var diagnostics = new List<Diagnostic>();
         var redisAttribute = compilation.GetTypeByMetadataName("Observables.Redis.RedisAttribute");
-        if (redisAttribute is null)
-        {
-            diagnostics.Add(Diagnostic.Create(DiagnosticDescriptors.RedisCoreNotReferenced, null));
-            return (diagnostics, new ContextGenerationModel(ImmutableEquatableArray.Empty<RedisInterfaceModel>()));
-        }
-
         var publishAttribute = compilation.GetTypeByMetadataName("Observables.Redis.RedisPublishAttribute");
         var subscribeAttribute = compilation.GetTypeByMetadataName("Observables.Redis.RedisSubscribeAttribute");
         var redisMessageType = compilation.GetTypeByMetadataName("Observables.Redis.RedisMessage`1");
         var observableType = compilation.GetTypeByMetadataName(BackendTokens.ObservableMetadataName);
         var unitType = compilation.GetTypeByMetadataName(BackendTokens.UnitMetadataName);
 
-        var interfaces = new List<RedisInterfaceModel>();
-
-        foreach (var marked in markedInterfaces)
-        {
-            var ifaceSymbol = marked.InterfaceSymbol;
-            var nullable = marked.Nullability;
-
-            var members = new List<RedisMemberModel>();
-            foreach (var member in marked.PublicInstanceMembers)
-            {
-
-                switch (member)
-                {
-                    case IMethodSymbol method when method.MethodKind == MethodKind.Ordinary:
-                        TryAddMethod(
-                            method,
-                            ifaceSymbol,
-                            compilation,
-                            publishAttribute,
-                            subscribeAttribute,
-                            observableType,
-                            unitType,
-                            members,
-                            diagnostics);
-                        break;
-                    case IPropertySymbol property:
-                        TryAddProperty(
-                            property,
-                            compilation,
-                            publishAttribute,
-                            subscribeAttribute,
-                            observableType,
-                            redisMessageType,
-                            members,
-                            diagnostics);
-                        break;
-                }
-            }
-
-            if (members.Count == 0)
-            {
-                continue;
-            }
-
-            var className = $"{ifaceSymbol.Name.TrimStart('I')}GeneratedProxy";
-            interfaces.Add(
-                new RedisInterfaceModel(
-                    $"{className}.Redis.g.cs",
-                    className,
-                    ifaceSymbol.ToDisplayString(DisplayFormat),
-                    BackendTokens.QualifyGeneratedNamespace("Observables.Redis"),
-                    members.ToImmutableEquatableArray(),
-                    nullable));
-        }
-
-        return (diagnostics, new ContextGenerationModel(interfaces.ToImmutableEquatableArray()));
+        return IoProxyModelAssembly.Parse<RedisMemberModel, RedisInterfaceModel, ContextGenerationModel>(
+            markedInterfaces,
+            cancellationToken,
+            coreReferenced: redisAttribute is not null,
+            coreNotReferenced: DiagnosticDescriptors.RedisCoreNotReferenced,
+            emptyModel: static () => new ContextGenerationModel(ImmutableEquatableArray.Empty<RedisInterfaceModel>()),
+            tryAddMethod: (marked, method, members, diagnostics) => TryAddMethod(
+                method,
+                marked.InterfaceSymbol,
+                compilation,
+                publishAttribute,
+                subscribeAttribute,
+                observableType,
+                unitType,
+                members,
+                diagnostics),
+            tryAddProperty: (marked, property, members, diagnostics) => TryAddProperty(
+                property,
+                compilation,
+                publishAttribute,
+                subscribeAttribute,
+                observableType,
+                redisMessageType,
+                members,
+                diagnostics),
+            createInterface: static (marked, className, members) => new RedisInterfaceModel(
+                $"{className}.Redis.g.cs",
+                className,
+                marked.InterfaceSymbol.ToDisplayString(DisplayFormat),
+                BackendTokens.QualifyGeneratedNamespace("Observables.Redis"),
+                members,
+                marked.Nullability),
+            createContext: static interfaces => new ContextGenerationModel(interfaces));
     }
 
     static void TryAddMethod(

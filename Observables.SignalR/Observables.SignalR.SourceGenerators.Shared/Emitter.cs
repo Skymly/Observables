@@ -26,46 +26,21 @@ internal static class Emitter
                     m.ClassName)).ToArray(),
             addSource);
     }
-    public static SourceText EmitInterface(HubInterfaceModel model)
-    {
-        var writer = new SourceWriter();
-        GeneratedSourceHeader.WritePrefix(writer, model.Nullability);
-
-        writer.WriteLine(
-            $$"""
-            namespace {{model.GeneratedNamespace}}
-            {
-                [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
-                [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-            #if NET8_0_OR_GREATER
-                [global::System.Diagnostics.CodeAnalysis.RequiresUnreferencedCode("SignalR hub proxy uses reflection for method invocation and serialization. Preserve required members when trimming.")]
-                [global::System.Diagnostics.CodeAnalysis.RequiresDynamicCode("SignalR hub proxy uses reflection for method invocation and serialization.")]
-            #endif
-                internal sealed class {{model.ClassName}} : {{model.InterfaceDisplayName}}
-                {
-                    private readonly global::Microsoft.AspNetCore.SignalR.Client.HubConnection _connection;
-
-                    public {{model.ClassName}}(global::Microsoft.AspNetCore.SignalR.Client.HubConnection connection)
-                    {
-                        _connection = connection;
-                    }
-
-            """);
-
-        foreach (var member in model.Members.AsArray())
-        {
-            EmitMember(writer, member);
-        }
-
-        writer.WriteLine(
-            """
-                }
-            }
-            #pragma warning restore
-            """);
-
-        return writer.ToSourceText();
-    }
+    public static SourceText EmitInterface(HubInterfaceModel model) =>
+        ProxyClassEmitter.Emit(
+            model.Nullability,
+            model.GeneratedNamespace,
+            model.ClassName,
+            model.InterfaceDisplayName,
+            new ProxyClassEmitter.ClientField(
+                "global::Microsoft.AspNetCore.SignalR.Client.HubConnection",
+                "_connection",
+                "connection"),
+            model.Members.AsArray(),
+            EmitMember,
+            trim: new ProxyClassEmitter.TrimWarnings(
+                "SignalR hub proxy uses reflection for method invocation and serialization. Preserve required members when trimming.",
+                "SignalR hub proxy uses reflection for method invocation and serialization."));
 
     static void EmitMember(SourceWriter writer, HubMemberModel member)
     {

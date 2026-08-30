@@ -17,63 +17,34 @@ internal static class Parser
         ImmutableArray<MarkedInterfaceContext> markedInterfaces,
         CancellationToken cancellationToken)
     {
-        var diagnostics = new List<Diagnostic>();
         var sseAttribute = compilation.GetTypeByMetadataName("Observables.Sse.SseAttribute");
-        if (sseAttribute is null)
-        {
-            diagnostics.Add(Diagnostic.Create(DiagnosticDescriptors.SseCoreNotReferenced, null));
-            return (diagnostics, new ContextGenerationModel(ImmutableEquatableArray.Empty<SseInterfaceModel>()));
-        }
-
         var eventAttribute = compilation.GetTypeByMetadataName("Observables.Sse.SseEventAttribute");
         var observableType = compilation.GetTypeByMetadataName(BackendTokens.ObservableMetadataName);
 
-        var interfaces = new List<SseInterfaceModel>();
-
-        foreach (var marked in markedInterfaces)
-        {
-            var ifaceSymbol = marked.InterfaceSymbol;
-            var nullable = marked.Nullability;
-
-            var members = new List<SseMemberModel>();
-            foreach (var member in marked.PublicInstanceMembers)
-            {
-
-                switch (member)
-                {
-                    case IMethodSymbol method when method.MethodKind == MethodKind.Ordinary:
-                        TryAddMethod(method, ifaceSymbol, eventAttribute, diagnostics);
-                        break;
-                    case IPropertySymbol property:
-                        TryAddProperty(
-                            property,
-                            ifaceSymbol,
-                            compilation,
-                            eventAttribute,
-                            observableType,
-                            members,
-                            diagnostics);
-                        break;
-                }
-            }
-
-            if (members.Count == 0)
-            {
-                continue;
-            }
-
-            var className = $"{ifaceSymbol.Name.TrimStart('I')}GeneratedProxy";
-            interfaces.Add(
-                new SseInterfaceModel(
-                    $"{className}.Sse.g.cs",
-                    className,
-                    ifaceSymbol.ToDisplayString(DisplayFormat),
-                    BackendTokens.QualifyGeneratedNamespace("Observables.Sse"),
-                    members.ToImmutableEquatableArray(),
-                    nullable));
-        }
-
-        return (diagnostics, new ContextGenerationModel(interfaces.ToImmutableEquatableArray()));
+        return IoProxyModelAssembly.Parse<SseMemberModel, SseInterfaceModel, ContextGenerationModel>(
+            markedInterfaces,
+            cancellationToken,
+            coreReferenced: sseAttribute is not null,
+            coreNotReferenced: DiagnosticDescriptors.SseCoreNotReferenced,
+            emptyModel: static () => new ContextGenerationModel(ImmutableEquatableArray.Empty<SseInterfaceModel>()),
+            tryAddMethod: (marked, method, members, diagnostics) =>
+                TryAddMethod(method, marked.InterfaceSymbol, eventAttribute, diagnostics),
+            tryAddProperty: (marked, property, members, diagnostics) => TryAddProperty(
+                property,
+                marked.InterfaceSymbol,
+                compilation,
+                eventAttribute,
+                observableType,
+                members,
+                diagnostics),
+            createInterface: static (marked, className, members) => new SseInterfaceModel(
+                $"{className}.Sse.g.cs",
+                className,
+                marked.InterfaceSymbol.ToDisplayString(DisplayFormat),
+                BackendTokens.QualifyGeneratedNamespace("Observables.Sse"),
+                members,
+                marked.Nullability),
+            createContext: static interfaces => new ContextGenerationModel(interfaces));
     }
 
     static void TryAddMethod(

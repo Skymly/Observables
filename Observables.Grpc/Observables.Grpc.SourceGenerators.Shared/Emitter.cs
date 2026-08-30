@@ -26,53 +26,30 @@ internal static class Emitter
                     m.ClassName)).ToArray(),
             addSource);
     }
-    public static SourceText EmitInterface(GrpcInterfaceModel model)
-    {
-        var writer = new SourceWriter();
-        GeneratedSourceHeader.WritePrefix(writer, model.Nullability);
-
-        writer.WriteLine(
-            $$"""
-            namespace {{model.GeneratedNamespace}}
+    public static SourceText EmitInterface(GrpcInterfaceModel model) =>
+        ProxyClassEmitter.Emit(
+            model.Nullability,
+            model.GeneratedNamespace,
+            model.ClassName,
+            model.InterfaceDisplayName,
+            new ProxyClassEmitter.ClientField(
+                "global::Grpc.Core.CallInvoker",
+                "_invoker",
+                "invoker"),
+            model.Members.AsArray(),
+            EmitMember,
+            trim: new ProxyClassEmitter.TrimWarnings(
+                "gRPC proxy uses reflection for message marshalling and method invocation. Preserve required members when trimming.",
+                "gRPC proxy uses reflection for message marshalling and method invocation."),
+            emitBeforeMembers: writer =>
             {
-                [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
-                [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-            #if NET8_0_OR_GREATER
-                [global::System.Diagnostics.CodeAnalysis.RequiresUnreferencedCode("gRPC proxy uses reflection for message marshalling and method invocation. Preserve required members when trimming.")]
-                [global::System.Diagnostics.CodeAnalysis.RequiresDynamicCode("gRPC proxy uses reflection for message marshalling and method invocation.")]
-            #endif
-                internal sealed class {{model.ClassName}} : {{model.InterfaceDisplayName}}
+                foreach (var member in model.Members.AsArray())
                 {
-                    private readonly global::Grpc.Core.CallInvoker _invoker;
-
-                    public {{model.ClassName}}(global::Grpc.Core.CallInvoker invoker)
-                    {
-                        _invoker = invoker;
-                    }
-
-            """);
-
-        foreach (var member in model.Members.AsArray())
-        {
-            EmitMethodField(writer, member, model.ServiceName);
-        }
-
-        writer.WriteLine(string.Empty);
-
-        foreach (var member in model.Members.AsArray())
-        {
-            EmitMember(writer, member);
-        }
-
-        writer.WriteLine(
-            """
+                    EmitMethodField(writer, member, model.ServiceName);
                 }
-            }
-            #pragma warning restore
-            """);
 
-        return writer.ToSourceText();
-    }
+                writer.WriteLine(string.Empty);
+            });
 
     static void EmitMethodField(SourceWriter writer, GrpcMemberModel member, string serviceName)
     {

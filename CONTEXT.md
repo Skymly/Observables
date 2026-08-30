@@ -19,3 +19,11 @@ _Avoid_: generator host, stub framework
 **Proxy registration emitter**:
 The shared emitter of ModuleInitializer factory registration for single-client `*Service.RegisterGeneratedFactory` Features.
 _Avoid_: module initializer helper (when meaning this registration template)
+
+**Feature protocol bridge**:
+The Feature-local subscribe / unsubscribe / cancel / dispose / payload-map module that both R3 and System.Reactive adapters sit on.
+_Avoid_: shared pump, subscribe pump (when meaning this Feature-local module)
+
+**Proxy class emitter**:
+The shared emitter of the sealed generated proxy class shell for single-client IO Features.
+_Avoid_: class template, proxy shell helper (when meaning this shared emitter)

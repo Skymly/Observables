@@ -49,11 +49,17 @@
     <Compile Include="$(MSBuildThisFileDirectory)Observables.Shared/Observables.SourceGenerators.Shared/ProxyRegistrationEmitter.cs">
       <Link>Shared/ProxyRegistrationEmitter.cs</Link>
     </Compile>
+    <Compile Include="$(MSBuildThisFileDirectory)Observables.Shared/Observables.SourceGenerators.Shared/ProxyClassEmitter.cs">
+      <Link>Shared/ProxyClassEmitter.cs</Link>
+    </Compile>
     <Compile Include="$(MSBuildThisFileDirectory)Observables.Shared/Observables.SourceGenerators.Shared/IoProxyGeneratorPipeline.cs">
       <Link>Shared/IoProxyGeneratorPipeline.cs</Link>
     </Compile>
     <Compile Include="$(MSBuildThisFileDirectory)Observables.Shared/Observables.SourceGenerators.Shared/IoProxyInterfaceWalk.cs">
       <Link>Shared/IoProxyInterfaceWalk.cs</Link>
+    </Compile>
+    <Compile Include="$(MSBuildThisFileDirectory)Observables.Shared/Observables.SourceGenerators.Shared/IoProxyModelAssembly.cs">
+      <Link>Shared/IoProxyModelAssembly.cs</Link>
     </Compile>
     <Compile Include="$(MSBuildThisFileDirectory)Observables.Shared/Observables.Roslyn.Shared/ProxyDomainTable.cs">
       <Link>Shared/ProxyDomainTable.cs</Link>

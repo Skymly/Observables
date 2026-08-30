@@ -26,46 +26,21 @@ internal static class Emitter
                     m.ClassName)).ToArray(),
             addSource);
     }
-    public static SourceText EmitInterface(RedisInterfaceModel model)
-    {
-        var writer = new SourceWriter();
-        GeneratedSourceHeader.WritePrefix(writer, model.Nullability);
-
-        writer.WriteLine(
-            $$"""
-            namespace {{model.GeneratedNamespace}}
-            {
-                [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
-                [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-            #if NET8_0_OR_GREATER
-                [global::System.Diagnostics.CodeAnalysis.RequiresUnreferencedCode("Redis payload serialization uses reflection. Preserve payload type members when trimming.")]
-                [global::System.Diagnostics.CodeAnalysis.RequiresDynamicCode("Redis payload serialization uses reflection.")]
-            #endif
-                internal sealed class {{model.ClassName}} : {{model.InterfaceDisplayName}}
-                {
-                    private readonly global::StackExchange.Redis.IConnectionMultiplexer _multiplexer;
-
-                    public {{model.ClassName}}(global::StackExchange.Redis.IConnectionMultiplexer multiplexer)
-                    {
-                        _multiplexer = multiplexer;
-                    }
-
-            """);
-
-        foreach (var member in model.Members.AsArray())
-        {
-            EmitMember(writer, member);
-        }
-
-        writer.WriteLine(
-            """
-                }
-            }
-            #pragma warning restore
-            """);
-
-        return writer.ToSourceText();
-    }
+    public static SourceText EmitInterface(RedisInterfaceModel model) =>
+        ProxyClassEmitter.Emit(
+            model.Nullability,
+            model.GeneratedNamespace,
+            model.ClassName,
+            model.InterfaceDisplayName,
+            new ProxyClassEmitter.ClientField(
+                "global::StackExchange.Redis.IConnectionMultiplexer",
+                "_multiplexer",
+                "multiplexer"),
+            model.Members.AsArray(),
+            EmitMember,
+            trim: new ProxyClassEmitter.TrimWarnings(
+                "Redis payload serialization uses reflection. Preserve payload type members when trimming.",
+                "Redis payload serialization uses reflection."));
 
     static void EmitMember(SourceWriter writer, RedisMemberModel member)
     {

@@ -25,42 +25,18 @@ internal static class Emitter
                     m.ClassName)).ToArray(),
             addSource);
     }
-    public static SourceText EmitInterface(PostgresInterfaceModel model)
-    {
-        var writer = new SourceWriter();
-        GeneratedSourceHeader.WritePrefix(writer, model.Nullability);
-
-        writer.WriteLine(
-            $$"""
-            namespace {{model.GeneratedNamespace}}
-            {
-                [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
-                [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-                internal sealed class {{model.ClassName}} : {{model.InterfaceDisplayName}}
-                {
-                    private readonly global::Npgsql.NpgsqlConnection _connection;
-
-                    public {{model.ClassName}}(global::Npgsql.NpgsqlConnection connection)
-                    {
-                        _connection = connection;
-                    }
-
-            """);
-
-        foreach (var member in model.Members.AsArray())
-        {
-            EmitMember(writer, member);
-        }
-
-        writer.WriteLine(
-            """
-                }
-            }
-            #pragma warning restore
-            """);
-
-        return writer.ToSourceText();
-    }
+    public static SourceText EmitInterface(PostgresInterfaceModel model) =>
+        ProxyClassEmitter.Emit(
+            model.Nullability,
+            model.GeneratedNamespace,
+            model.ClassName,
+            model.InterfaceDisplayName,
+            new ProxyClassEmitter.ClientField(
+                "global::Npgsql.NpgsqlConnection",
+                "_connection",
+                "connection"),
+            model.Members.AsArray(),
+            EmitMember);
 
     static void EmitMember(SourceWriter writer, PostgresMemberModel member)
     {

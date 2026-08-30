@@ -22,74 +22,44 @@ internal static class Parser
         ImmutableArray<MarkedInterfaceContext> markedInterfaces,
         CancellationToken cancellationToken)
     {
-        var diagnostics = new List<Diagnostic>();
         var postgresAttribute = compilation.GetTypeByMetadataName("Observables.Postgres.PostgresAttribute");
-        if (postgresAttribute is null)
-        {
-            diagnostics.Add(Diagnostic.Create(DiagnosticDescriptors.PostgresCoreNotReferenced, null));
-            return (diagnostics, new ContextGenerationModel(ImmutableEquatableArray.Empty<PostgresInterfaceModel>()));
-        }
-
         var notifyAttribute = compilation.GetTypeByMetadataName("Observables.Postgres.NotifyAttribute");
         var listenAttribute = compilation.GetTypeByMetadataName("Observables.Postgres.ListenAttribute");
         var observableType = compilation.GetTypeByMetadataName(BackendTokens.ObservableMetadataName);
         var unitType = compilation.GetTypeByMetadataName(BackendTokens.UnitMetadataName);
 
-        var interfaces = new List<PostgresInterfaceModel>();
-
-        foreach (var marked in markedInterfaces)
-        {
-            var ifaceSymbol = marked.InterfaceSymbol;
-            var nullable = marked.Nullability;
-
-            var members = new List<PostgresMemberModel>();
-            foreach (var member in marked.PublicInstanceMembers)
-            {
-
-                switch (member)
-                {
-                    case IMethodSymbol method when method.MethodKind == MethodKind.Ordinary:
-                        TryAddMethod(
-                            method,
-                            ifaceSymbol,
-                            compilation,
-                            notifyAttribute,
-                            listenAttribute,
-                            observableType,
-                            unitType,
-                            members,
-                            diagnostics);
-                        break;
-                    case IPropertySymbol property:
-                        TryAddProperty(
-                            property,
-                            compilation,
-                            notifyAttribute,
-                            listenAttribute,
-                            observableType,
-                            members,
-                            diagnostics);
-                        break;
-                }
-            }
-
-            if (members.Count == 0)
-            {
-                continue;
-            }
-
-            var className = $"{ifaceSymbol.Name.TrimStart('I')}GeneratedProxy";
-            interfaces.Add(
-                new PostgresInterfaceModel(
-                    $"{className}.Postgres.g.cs",
-                    className,
-                    ifaceSymbol.ToDisplayString(DisplayFormat),
-                    BackendTokens.QualifyGeneratedNamespace("Observables.Postgres"),
-                    members.ToImmutableEquatableArray(),
-                    nullable));
-        }
-
-        return (diagnostics, new ContextGenerationModel(interfaces.ToImmutableEquatableArray()));
+        return IoProxyModelAssembly.Parse<PostgresMemberModel, PostgresInterfaceModel, ContextGenerationModel>(
+            markedInterfaces,
+            cancellationToken,
+            coreReferenced: postgresAttribute is not null,
+            coreNotReferenced: DiagnosticDescriptors.PostgresCoreNotReferenced,
+            emptyModel: static () => new ContextGenerationModel(ImmutableEquatableArray.Empty<PostgresInterfaceModel>()),
+            tryAddMethod: (marked, method, members, diagnostics) => TryAddMethod(
+                method,
+                marked.InterfaceSymbol,
+                compilation,
+                notifyAttribute,
+                listenAttribute,
+                observableType,
+                unitType,
+                members,
+                diagnostics),
+            tryAddProperty: (marked, property, members, diagnostics) => TryAddProperty(
+                property,
+                compilation,
+                notifyAttribute,
+                listenAttribute,
+                observableType,
+                members,
+                diagnostics),
+            createInterface: static (marked, className, members) => new PostgresInterfaceModel(
+                $"{className}.Postgres.g.cs",
+                className,
+                marked.InterfaceSymbol.ToDisplayString(DisplayFormat),
+                BackendTokens.QualifyGeneratedNamespace("Observables.Postgres"),
+                members,
+                marked.Nullability),
+            createContext: static interfaces => new ContextGenerationModel(interfaces));
     }
 
     static void TryAddMethod(

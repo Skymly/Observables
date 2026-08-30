@@ -19,11 +19,7 @@ public static class SystemReactiveSignalRAdapter
         object?[] args,
         CancellationToken cancellationToken = default) =>
         Observable.FromAsync(async ct =>
-        {
-            using var linked = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, ct);
-            return await HubConnectionArgs.InvokeAsync<T>(connection, methodName, args, linked.Token)
-                .ConfigureAwait(false);
-        });
+            await SignalRProtocol.InvokeAsync<T>(connection, methodName, args, cancellationToken, ct).ConfigureAwait(false));
 
     public static IObservable<System.Reactive.Unit> FromSend(
         HubConnection connection,
@@ -38,8 +34,7 @@ public static class SystemReactiveSignalRAdapter
         CancellationToken cancellationToken = default) =>
         Observable.FromAsync(async ct =>
         {
-            using var linked = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, ct);
-            await HubConnectionArgs.SendAsync(connection, methodName, args, linked.Token).ConfigureAwait(false);
+            await SignalRProtocol.SendAsync(connection, methodName, args, cancellationToken, ct).ConfigureAwait(false);
             return System.Reactive.Unit.Default;
         });
 
@@ -56,17 +51,11 @@ public static class SystemReactiveSignalRAdapter
         CancellationToken cancellationToken = default) =>
         Observable.Create<T>(async (observer, ct) =>
         {
-            using var linked = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, ct);
             try
             {
-                await foreach (var item in HubConnectionArgs
-                                   .StreamAsync<T>(connection, methodName, args, linked.Token)
-                                   .ConfigureAwait(false))
-                {
-                    observer.OnNext(item);
-                }
-
-                observer.OnCompleted();
+                await SignalRProtocol
+                    .StreamAsync<T>(connection, methodName, args, observer.OnNext, observer.OnCompleted, cancellationToken, ct)
+                    .ConfigureAwait(false);
             }
             catch (OperationCanceledException)
             {
@@ -80,7 +69,7 @@ public static class SystemReactiveSignalRAdapter
     public static IObservable<T> FromOn<T>(HubConnection connection, string methodName) =>
         Observable.Create<T>(observer =>
         {
-            var subscription = connection.On<T>(methodName, observer.OnNext);
+            var subscription = SignalRProtocol.SubscribeOn<T>(connection, methodName, observer.OnNext);
             return System.Reactive.Disposables.Disposable.Create(subscription.Dispose);
         });
 }

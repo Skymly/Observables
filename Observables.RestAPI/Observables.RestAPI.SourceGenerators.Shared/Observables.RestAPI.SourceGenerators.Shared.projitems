@@ -24,7 +24,13 @@
     <Compile Include="$(MSBuildThisFileDirectory)Models\TypeConstraint.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Models\WellKnownTypes.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Parser.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Parser.Http.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Models\RestApiMethodSpecModel.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)..\Observables.RestAPI\RestApiPathTemplate.cs">
+      <Link>Shared\RestApiPathTemplate.cs</Link>
+    </Compile>
     <Compile Include="$(MSBuildThisFileDirectory)RestApiReturnTypeClassifier.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Polyfills\IndexRange.cs" />
   </ItemGroup>
 </Project>
+

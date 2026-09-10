@@ -113,7 +113,7 @@ public sealed class BoundaryGeneratorTests
 
         var snapshot = GeneratorTestHarness.ToSnapshot(output);
         Assert.Contains(
-            "SendAsync<global::Observables.RestAPI.IApiResponse<global::User>, global::User>(Client, ______request, _settings, false, ______ct)",
+            "SendAsync<global::Observables.RestAPI.IApiResponse<global::User>, global::User>(Client, _settings, in ______spec0, ______ct, @id)",
             snapshot,
             StringComparison.Ordinal);
         Assert.DoesNotContain(", true, ", snapshot, StringComparison.Ordinal);

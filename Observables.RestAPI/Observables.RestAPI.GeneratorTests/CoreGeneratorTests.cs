@@ -65,10 +65,9 @@ public class CoreGeneratorTests
             }
             """);
 
-        Assert.Contains(
-            ", _settings.Buffered, ______ct)",
-            GeneratorTestHarness.ToSnapshot(output),
-            StringComparison.Ordinal);
+        var snapshot = GeneratorTestHarness.ToSnapshot(output);
+        Assert.Contains("SendAsync<global::User, global::User>(Client, _settings, in ______spec0, ______ct, @user)", snapshot, StringComparison.Ordinal);
+        Assert.DoesNotContain("_settings.Buffered", snapshot, StringComparison.Ordinal);
         return Task.CompletedTask;
     }
 
@@ -153,8 +152,8 @@ public class CoreGeneratorTests
             """);
 
         var snapshot = GeneratorTestHarness.ToSnapshot(output);
-        Assert.Contains("(global::System.UriFormat)1", snapshot, StringComparison.Ordinal);
-        Assert.DoesNotContain("(global::System.UriFormat)0", snapshot, StringComparison.Ordinal);
+        Assert.DoesNotContain("queryUriFormat: 0", snapshot, StringComparison.Ordinal);
+        Assert.DoesNotContain("queryUriFormat: 2", snapshot, StringComparison.Ordinal);
         return Task.CompletedTask;
     }
 

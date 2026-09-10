@@ -7,7 +7,7 @@ using Microsoft.CodeAnalysis.Text;
 
 namespace Observables.RestAPI.Generators;
 
-internal static class Parser
+internal static partial class Parser
 {
     public static (
         List<Diagnostic> diagnostics,
@@ -223,6 +223,7 @@ internal static class Parser
 
         return new MethodModel(methodSymbol.Name, returnType, containingType, declaredBaseName,
             returnClassification.Info, parameters, constraints, isExplicit,
+            Spec: RestApiMethodSpecModel.Empty,
             IsApiResponse: returnClassification.IsApiResponse,
             ReturnResultType: returnClassification.ReturnResultType,
             DeserializedResultType: returnClassification.DeserializedResultType);
@@ -230,41 +231,6 @@ internal static class Parser
 
     static bool IsHttpMethodAttribute(IMethodSymbol? methodSymbol, INamedTypeSymbol httpMethodAttribute) =>
         methodSymbol?.GetAttributes().Any(ad => ad.AttributeClass?.InheritsFromOrEquals(httpMethodAttribute) == true) == true;
-
-    /// <summary>
-    /// Validates that path template placeholders match exactly the parameters classified as
-    /// <see cref="ParameterKind.Path"/> by <see cref="ParseHttpSemantics"/>. Must be called
-    /// AFTER classification so that [Body]/[Query]/[Header] etc. parameters are excluded.
-    /// </summary>
-    static void ValidatePathTemplate(IMethodSymbol methodSymbol, HttpSemantics httpSemantics, List<Diagnostic> diagnostics)
-    {
-        if (string.IsNullOrEmpty(httpSemantics.RawPath)) return;
-
-        var placeholders = ExtractPathPlaceholders(httpSemantics.RawPath);
-        var pathParamNames = new HashSet<string>(StringComparer.Ordinal);
-        foreach (var classification in httpSemantics.ParameterClassifications)
-            if (classification.Kind == ParameterKind.Path)
-                pathParamNames.Add(methodSymbol.Parameters[classification.Index].Name);
-
-        if (!placeholders.SetEquals(pathParamNames))
-            diagnostics.Add(Diagnostic.Create(DiagnosticDescriptors.PathParameterMismatch,
-                methodSymbol.Locations.FirstOrDefault(), methodSymbol.Name));
-    }
-
-    static HashSet<string> ExtractPathPlaceholders(string path)
-    {
-        var placeholders = new HashSet<string>(StringComparer.Ordinal);
-        for (var i = 0; i < path.Length; i++)
-        {
-            if (path[i] != '{') continue;
-            var close = path.IndexOf('}', i + 1);
-            if (close < 0) break;
-            var name = path.Substring(i + 1, close - i - 1);
-            if (!string.IsNullOrEmpty(name)) placeholders.Add(name);
-            i = close;
-        }
-        return placeholders;
-    }
 
     static bool IsCancellationTokenParameter(IParameterSymbol parameter) =>
         parameter.Type.Name == "CancellationToken"
@@ -333,329 +299,17 @@ internal static class Parser
             wellKnownTypes,
             diagnostics);
 
-        var httpSemantics = ParseHttpSemantics(methodSymbol, httpMethodBaseAttributeSymbol);
-        ValidatePathTemplate(methodSymbol, httpSemantics, diagnostics);
-
-        var parameters = methodSymbol.Parameters
-            .Select((p, i) => ParseParameterWithKind(p, i, httpSemantics))
-            .ToImmutableEquatableArray();
+        var http = ParseHttpMethod(methodSymbol, httpMethodBaseAttributeSymbol, diagnostics);
 
         var isExplicit = explicitImpl is not null;
         var constraints = GenerateConstraints(methodSymbol.TypeParameters, isExplicit || !isImplicitInterface);
 
         return new MethodModel(methodSymbol.Name, returnType, containingType, declaredBaseName,
-            returnClassification.Info, parameters, constraints, isExplicit,
-            HttpMethod: httpSemantics.HttpMethod,
-            PathFragments: httpSemantics.PathFragments,
-            CancellationTokenIndex: httpSemantics.CancellationTokenIndex,
-            BodyParameterIndex: httpSemantics.BodyParameterIndex,
-            BodySerializationMethod: httpSemantics.BodySerializationMethod,
-            BodyBuffered: httpSemantics.BodyBuffered,
-            Headers: httpSemantics.Headers,
-            IsMultipart: httpSemantics.IsMultipart,
-            MultipartBoundary: httpSemantics.MultipartBoundary,
-            QueryUriFormat: httpSemantics.QueryUriFormat,
+            returnClassification.Info, http.Parameters, constraints, isExplicit,
+            Spec: http.Spec,
+            CancellationTokenIndex: http.CancellationTokenIndex,
             IsApiResponse: returnClassification.IsApiResponse,
             ReturnResultType: returnClassification.ReturnResultType,
             DeserializedResultType: returnClassification.DeserializedResultType);
-    }
-
-    // ─── HTTP semantic parsing ───────────────────────────────────────────
-
-    class HttpSemantics
-    {
-        public string HttpMethod { get; set; } = "";
-        public string RawPath { get; set; } = "";
-        public ImmutableEquatableArray<PathFragmentModel> PathFragments { get; set; } = ImmutableEquatableArray<PathFragmentModel>.Empty;
-        public List<ParameterClassification> ParameterClassifications { get; set; } = new();
-        public int? CancellationTokenIndex { get; set; }
-        public int? BodyParameterIndex { get; set; }
-        public int BodySerializationMethod { get; set; }
-        public bool? BodyBuffered { get; set; }
-        public ImmutableEquatableArray<string> Headers { get; set; } = ImmutableEquatableArray<string>.Empty;
-        public bool IsMultipart { get; set; }
-        public string MultipartBoundary { get; set; } = "----MyGreatBoundary";
-        public int QueryUriFormat { get; set; } = (int)UriFormat.UriEscaped;
-    }
-
-    class ParameterClassification
-    {
-        public int Index { get; set; }
-        public ParameterKind Kind { get; set; } = ParameterKind.None;
-        public string? AliasAs { get; set; }
-        public string? HeaderName { get; set; }
-        public string? AuthorizeScheme { get; set; }
-        public string? PropertyKey { get; set; }
-        public string? QueryFormat { get; set; }
-        public string? QueryPrefix { get; set; }
-        public string QueryDelimiter { get; set; } = ".";
-        public bool QueryTreatAsString { get; set; }
-        public int QueryCollectionFormat { get; set; }
-        public bool QueryIsCollectionFormatSpecified { get; set; }
-        public BodySerializationMethod BodySerializationMethod { get; set; } = BodySerializationMethod.Default;
-        public bool? BodyBuffered { get; set; }
-    }
-
-    static HttpSemantics ParseHttpSemantics(IMethodSymbol methodSymbol, INamedTypeSymbol httpMethodBaseAttributeSymbol)
-    {
-        var semantics = new HttpSemantics();
-
-        AttributeData? httpAttr = null;
-        foreach (var attr in methodSymbol.GetAttributes())
-        {
-            if (attr.AttributeClass?.InheritsFromOrEquals(httpMethodBaseAttributeSymbol) == true) { httpAttr = attr; break; }
-        }
-
-        if (httpAttr != null && httpAttr.ConstructorArguments is { Length: >= 1 } args && args[0].Value is string path)
-        {
-            semantics.HttpMethod = ExtractHttpMethodName(httpAttr.AttributeClass!);
-            semantics.RawPath = path;
-            semantics.PathFragments = ParsePathFragments(path, methodSymbol).ToImmutableEquatableArray();
-        }
-
-        // MultipartAttribute
-        foreach (var attr in methodSymbol.GetAttributes())
-        {
-            if (attr.AttributeClass?.Name == "MultipartAttribute" && attr.AttributeClass?.ContainingNamespace?.ToDisplayString() == "Observables.RestAPI")
-            {
-                semantics.IsMultipart = true;
-                if (attr.ConstructorArguments is { Length: >= 1 } cargs && cargs[0].Value is string boundary)
-                    semantics.MultipartBoundary = boundary;
-                break;
-            }
-        }
-
-        // Headers (interface + method level)
-        var headersList = new List<string>();
-        foreach (var attr in methodSymbol.ContainingType.GetAttributes())
-        {
-            if (attr.AttributeClass?.Name == "HeadersAttribute" && attr.AttributeClass?.ContainingNamespace?.ToDisplayString() == "Observables.RestAPI"
-                && attr.ConstructorArguments is { Length: >= 1 } cargs)
-            {
-                foreach (var h in cargs[0].Values)
-                    if (h.Value is string hs) headersList.Add(hs);
-            }
-        }
-        foreach (var attr in methodSymbol.GetAttributes())
-        {
-            if (attr.AttributeClass?.Name == "HeadersAttribute" && attr.AttributeClass?.ContainingNamespace?.ToDisplayString() == "Observables.RestAPI"
-                && attr.ConstructorArguments is { Length: >= 1 } cargs)
-            {
-                foreach (var h in cargs[0].Values)
-                    if (h.Value is string hs) headersList.Add(hs);
-                break;
-            }
-        }
-        semantics.Headers = headersList.ToImmutableEquatableArray();
-
-        // QueryUriFormatAttribute
-        foreach (var attr in methodSymbol.GetAttributes())
-        {
-            if (attr.AttributeClass?.Name == "QueryUriFormatAttribute" && attr.AttributeClass?.ContainingNamespace?.ToDisplayString() == "Observables.RestAPI"
-                && attr.ConstructorArguments is { Length: >= 1 } cargs && cargs[0].Value is int uriFormat)
-            {
-                semantics.QueryUriFormat = uriFormat;
-                break;
-            }
-        }
-
-        // Classify parameters
-        var pathParamIndices = new HashSet<int>();
-        foreach (var frag in semantics.PathFragments)
-            if (!frag.IsConstant) pathParamIndices.Add(frag.ParameterIndex);
-
-        for (var i = 0; i < methodSymbol.Parameters.Length; i++)
-        {
-            var param = methodSymbol.Parameters[i];
-            var classification = ClassifyParameter(param, i);
-
-            // If parameter is in path and not explicitly classified, mark as Path
-            if (classification.Kind == ParameterKind.None && pathParamIndices.Contains(i))
-                classification.Kind = ParameterKind.Path;
-
-            // If multipart and not classified and not in path, mark as Multipart
-            if (semantics.IsMultipart && classification.Kind == ParameterKind.None && !pathParamIndices.Contains(i))
-                classification.Kind = ParameterKind.Multipart;
-
-            // If not multipart, not classified, not in path, not cancellation token → default to Query
-            if (!semantics.IsMultipart && classification.Kind == ParameterKind.None && !pathParamIndices.Contains(i))
-                classification.Kind = ParameterKind.Query;
-
-            semantics.ParameterClassifications.Add(classification);
-
-            if (classification.Kind == ParameterKind.Body)
-            {
-                semantics.BodyParameterIndex = i;
-                semantics.BodySerializationMethod = (int)classification.BodySerializationMethod;
-                semantics.BodyBuffered = classification.BodyBuffered;
-            }
-            if (classification.Kind == ParameterKind.CancellationToken)
-                semantics.CancellationTokenIndex = i;
-        }
-
-        return semantics;
-    }
-
-    static string ExtractHttpMethodName(INamedTypeSymbol attrClass) => attrClass.Name switch
-    {
-        "GetAttribute" => "GET",
-        "PostAttribute" => "POST",
-        "PutAttribute" => "PUT",
-        "DeleteAttribute" => "DELETE",
-        "PatchAttribute" => "PATCH",
-        "OptionsAttribute" => "OPTIONS",
-        "HeadAttribute" => "HEAD",
-        _ => "GET",
-    };
-
-    static List<PathFragmentModel> ParsePathFragments(string path, IMethodSymbol methodSymbol)
-    {
-        var fragments = new List<PathFragmentModel>();
-        var paramNames = new Dictionary<string, int>(StringComparer.Ordinal);
-        for (var i = 0; i < methodSymbol.Parameters.Length; i++)
-            paramNames[methodSymbol.Parameters[i].Name] = i;
-
-        var sb = new StringBuilder();
-        for (var i = 0; i < path.Length; i++)
-        {
-            if (path[i] == '{')
-            {
-                if (sb.Length > 0) { fragments.Add(PathFragmentModel.Constant(sb.ToString())); sb.Clear(); }
-                var close = path.IndexOf('}', i + 1);
-                if (close < 0) { sb.Append(path.Substring(i)); break; }
-                var name = path.Substring(i + 1, close - i - 1);
-                if (paramNames.TryGetValue(name, out var idx))
-                    fragments.Add(PathFragmentModel.Parameter(idx));
-                else
-                    sb.Append('{').Append(name).Append('}');
-                i = close;
-            }
-            else
-            {
-                sb.Append(path[i]);
-            }
-        }
-        if (sb.Length > 0) fragments.Add(PathFragmentModel.Constant(sb.ToString()));
-        return fragments;
-    }
-
-    static ParameterModel ParseParameterWithKind(IParameterSymbol param, int paramIndex, HttpSemantics httpSemantics)
-    {
-        var baseParam = ParseParameter(param);
-        var classification = httpSemantics.ParameterClassifications.FirstOrDefault(c => c.Index == paramIndex);
-
-        return baseParam with
-        {
-            Kind = classification.Kind,
-            AliasAs = classification.AliasAs,
-            HeaderName = classification.HeaderName,
-            AuthorizeScheme = classification.AuthorizeScheme,
-            PropertyKey = classification.PropertyKey,
-            QueryFormat = classification.QueryFormat,
-            QueryPrefix = classification.QueryPrefix,
-            QueryDelimiter = classification.QueryDelimiter,
-            QueryTreatAsString = classification.QueryTreatAsString,
-            QueryCollectionFormat = classification.QueryCollectionFormat,
-            QueryIsCollectionFormatSpecified = classification.QueryIsCollectionFormatSpecified,
-        };
-    }
-
-    static ParameterClassification ClassifyParameter(IParameterSymbol param, int index)
-    {
-        var result = new ParameterClassification { Index = index };
-
-        if (IsCancellationTokenParameter(param))
-        {
-            result.Kind = ParameterKind.CancellationToken;
-            return result;
-        }
-
-        foreach (var attr in param.GetAttributes())
-        {
-            var attrName = attr.AttributeClass?.Name;
-            var attrNs = attr.AttributeClass?.ContainingNamespace?.ToDisplayString();
-
-            if (attrName == "BodyAttribute" && attrNs == "Observables.RestAPI")
-            {
-                result.Kind = ParameterKind.Body;
-                if (attr.ConstructorArguments is { Length: >= 1 } cargs)
-                {
-                    if (cargs[0].Value is int serMethod) result.BodySerializationMethod = (BodySerializationMethod)serMethod;
-                    else if (cargs[0].Value is bool buffered) result.BodyBuffered = buffered;
-                }
-                if (attr.ConstructorArguments is { Length: >= 2 } cargs2 && cargs2[1].Value is bool buffered2)
-                    result.BodyBuffered = buffered2;
-                return result;
-            }
-
-            if (attrName == "HeaderAttribute" && attrNs == "Observables.RestAPI")
-            {
-                result.Kind = ParameterKind.Header;
-                if (attr.ConstructorArguments is { Length: >= 1 } cargs && cargs[0].Value is string header)
-                    result.HeaderName = header;
-                return result;
-            }
-
-            if (attrName == "HeaderCollectionAttribute" && attrNs == "Observables.RestAPI")
-            {
-                result.Kind = ParameterKind.HeaderCollection;
-                return result;
-            }
-
-            if (attrName == "AuthorizeAttribute" && attrNs == "Observables.RestAPI")
-            {
-                result.Kind = ParameterKind.Authorize;
-                if (attr.ConstructorArguments is { Length: >= 1 } cargs && cargs[0].Value is string scheme)
-                    result.AuthorizeScheme = scheme;
-                return result;
-            }
-
-            if (attrName == "PropertyAttribute" && attrNs == "Observables.RestAPI")
-            {
-                result.Kind = ParameterKind.Property;
-                if (attr.ConstructorArguments is { Length: >= 1 } cargs && cargs[0].Value is string key)
-                    result.PropertyKey = key;
-                return result;
-            }
-
-            if (attrName == "AliasAsAttribute" && attrNs == "Observables.RestAPI")
-            {
-                if (attr.ConstructorArguments is { Length: >= 1 } cargs && cargs[0].Value is string alias)
-                    result.AliasAs = alias;
-            }
-
-            if (attrName == "QueryAttribute" && attrNs == "Observables.RestAPI")
-            {
-                result.Kind = ParameterKind.Query;
-                foreach (var namedArg in attr.NamedArguments)
-                {
-                    if (namedArg.Key == "Format" && namedArg.Value.Value is string format) result.QueryFormat = format;
-                    if (namedArg.Key == "Prefix" && namedArg.Value.Value is string prefix) result.QueryPrefix = prefix;
-                    if (namedArg.Key == "TreatAsString" && namedArg.Value.Value is bool treatAsString) result.QueryTreatAsString = treatAsString;
-                    if (namedArg.Key == "CollectionFormat" && namedArg.Value.Value is int cf)
-                    {
-                        result.QueryCollectionFormat = cf;
-                        result.QueryIsCollectionFormatSpecified = true;
-                    }
-                }
-                if (attr.ConstructorArguments is { Length: >= 1 } cargs)
-                {
-                    if (cargs[0].Value is string delimiter) result.QueryDelimiter = delimiter;
-                    else if (cargs[0].Value is int cf)
-                    {
-                        result.QueryCollectionFormat = cf;
-                        result.QueryIsCollectionFormatSpecified = true;
-                    }
-                }
-                if (attr.ConstructorArguments is { Length: >= 2 } cargs2 && cargs2[1].Value is string prefix2)
-                    result.QueryPrefix = prefix2;
-                if (attr.ConstructorArguments is { Length: >= 3 } cargs3 && cargs3[2].Value is string format2)
-                    result.QueryFormat = format2;
-                return result;
-            }
-        }
-
-        result.Kind = ParameterKind.None;
-        return result;
     }
 }

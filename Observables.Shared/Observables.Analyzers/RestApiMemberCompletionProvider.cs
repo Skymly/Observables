@@ -99,9 +99,11 @@ public sealed class RestApiMemberCompletionProvider : CompletionProvider
 
     static IEnumerable<CompletionItem> CreatePathPlaceholderItems(MethodDeclarationSyntax method)
     {
-        foreach (var name in RestApiPathSuggestions.GetNonCancellationParameterNames(method))
+        foreach (var slot in RestApiSyntaxSlots.From(method))
         {
-            yield return CompletionItemFactory.Create($"{{{name}}}", sortText: name);
+            if (slot.DeclaredKind != Observables.RestAPI.RestApiDeclaredKind.None)
+                continue;
+            yield return CompletionItemFactory.Create($"{{{slot.Name}}}", sortText: slot.Name);
         }
     }
 

@@ -6,6 +6,8 @@ using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Editing;
+using Observables.Analyzers;
+using Observables.RestAPI;
 using Observables.Roslyn.Shared;
 
 namespace Observables.CodeFixes;
@@ -41,8 +43,7 @@ public sealed class SyncPathTemplateWithParametersCodeFixProvider : CodeFixProvi
         }
 
         var currentPath = literal.Token.ValueText;
-        var parameterNames = CodeFixSyntaxHelper.GetNonCancellationParameterNames(method);
-        var syncedPath = PathTemplateSync.SyncPathWithParameters(currentPath, parameterNames);
+        var syncedPath = RestApiPathTemplate.Parse(currentPath).Sync(RestApiSyntaxSlots.From(method));
         if (string.Equals(currentPath, syncedPath, StringComparison.Ordinal))
         {
             return;

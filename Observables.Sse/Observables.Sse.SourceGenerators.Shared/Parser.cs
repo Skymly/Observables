@@ -82,16 +82,12 @@ internal static class Parser
     {
         if (eventAttribute is null || !IoProxyInterfaceWalk.HasAttribute(property, eventAttribute))
         {
-            if (property.GetAttributes().Length > 0)
-            {
-                diagnostics.Add(
-                    Diagnostic.Create(
-                        DiagnosticDescriptors.InvalidSseMember,
-                        property.Locations.FirstOrDefault(),
-                        ifaceSymbol.Name,
-                        property.Name));
-            }
-
+            diagnostics.Add(
+                Diagnostic.Create(
+                    DiagnosticDescriptors.InvalidSseMember,
+                    property.Locations.FirstOrDefault(),
+                    ifaceSymbol.Name,
+                    property.Name));
             return;
         }
 

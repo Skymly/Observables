@@ -163,6 +163,42 @@ public sealed class SseInterfaceGeneratorTests
             $"Expected cache miss (Modified/New), got {reason}");
     }
 
+
+    [Fact]
+    public void Unattributed_property_reports_OBS8001()
+    {
+        const string userSource =
+            """
+            [Sse]
+            public interface IFeed
+            {
+                Observable<int> Bare { get; }
+            }
+            """;
+
+        var output = GeneratorTestHarness.Run(userSource);
+        var snapshot = GeneratorTestHarness.ToSnapshot(output);
+        Assert.Contains("OBS8001", snapshot, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Event_name_with_quotes_is_escaped()
+    {
+        const string userSource =
+            """
+            [Sse]
+            public interface IFeed
+            {
+                [SseEvent("a\"b")]
+                Observable<string> Odd { get; }
+            }
+            """;
+
+        var output = GeneratorTestHarness.Run(userSource);
+        var snapshot = GeneratorTestHarness.ToSnapshot(output);
+        Assert.Contains(@"FromEvent<global::System.String>(_connection, ""a\""b"")", snapshot, StringComparison.Ordinal);
+    }
+
     [Fact]
     public Task Sse_interface_with_keyword_property_name_generates_valid_code()
     {

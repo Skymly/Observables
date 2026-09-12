@@ -29,6 +29,7 @@ internal static class IoProxyInterfaceWalk
             return ImmutableArray<MarkedInterfaceContext>.Empty;
         }
 
+        var seen = new HashSet<INamedTypeSymbol>(SymbolEqualityComparer.Default);
         var builder = ImmutableArray.CreateBuilder<MarkedInterfaceContext>();
         foreach (var group in candidateInterfaces.GroupBy(static syntax => syntax.SyntaxTree))
         {
@@ -46,14 +47,21 @@ internal static class IoProxyInterfaceWalk
                     continue;
                 }
 
-                var nullability = compilation.Options.NullableContextOptions == NullableContextOptions.Enable
-                    || semanticModel.GetNullableContext(interfaceSyntax.SpanStart) == NullableContext.Enabled
-                        ? Nullability.Enabled
-                        : Nullability.Disabled;
+                // Open generics cannot become a closed proxy class (CS0246). Skip here;
+                // OpenGenericProxyInterfaceAnalyzer reports OBS0002.
+                if (interfaceSymbol.TypeParameters.Length > 0)
+                {
+                    continue;
+                }
 
-                var members = interfaceSymbol.GetMembers()
-                    .Where(static member => member.DeclaredAccessibility == Accessibility.Public && !member.IsStatic)
-                    .ToImmutableArray();
+                if (!seen.Add(interfaceSymbol))
+                {
+                    continue;
+                }
+
+                var nullability = semanticModel.GetNullableContext(interfaceSyntax.SpanStart) == NullableContext.Enabled
+                    ? Nullability.Enabled
+                    : Nullability.Disabled;
 
                 builder.Add(
                     new MarkedInterfaceContext(
@@ -61,11 +69,48 @@ internal static class IoProxyInterfaceWalk
                         interfaceSyntax,
                         semanticModel,
                         nullability,
-                        members));
+                        CollectPublicInstanceMembers(interfaceSymbol)));
             }
         }
 
         return builder.ToImmutable();
+    }
+
+    internal static ImmutableArray<ISymbol> CollectPublicInstanceMembers(INamedTypeSymbol interfaceSymbol)
+    {
+        var seen = new HashSet<ISymbol>(SymbolEqualityComparer.Default);
+        var members = ImmutableArray.CreateBuilder<ISymbol>();
+        AddPublicInstanceMembers(interfaceSymbol, seen, members);
+        foreach (var inherited in interfaceSymbol.AllInterfaces)
+        {
+            AddPublicInstanceMembers(inherited, seen, members);
+        }
+
+        return members.ToImmutable();
+    }
+
+    static void AddPublicInstanceMembers(
+        INamedTypeSymbol type,
+        HashSet<ISymbol> seen,
+        ImmutableArray<ISymbol>.Builder members)
+    {
+        foreach (var member in type.GetMembers())
+        {
+            if (member.DeclaredAccessibility != Accessibility.Public || member.IsStatic)
+            {
+                continue;
+            }
+
+            if (member is not (IMethodSymbol { MethodKind: MethodKind.Ordinary } or IPropertySymbol))
+            {
+                continue;
+            }
+
+            if (seen.Add(member))
+            {
+                members.Add(member);
+            }
+        }
     }
 
     internal static bool HasAttribute(ISymbol symbol, INamedTypeSymbol attributeType)

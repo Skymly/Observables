@@ -5,12 +5,10 @@ using Microsoft.CodeAnalysis.Diagnostics;
 namespace Observables.Analyzers;
 
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
-public sealed class EmptyProxyInterfaceAnalyzer : DiagnosticAnalyzer
+public sealed class OpenGenericProxyInterfaceAnalyzer : DiagnosticAnalyzer
 {
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics { get; } =
-        ProxyDomainCatalog.InterfaceProxyDomains
-            .Select(domain => domain.EmptyInterfaceDescriptor)
-            .ToImmutableArray();
+        ImmutableArray.Create(DiagnosticDescriptors.OpenGenericProxyInterface);
 
     public override void Initialize(AnalysisContext context)
     {
@@ -21,12 +19,7 @@ public sealed class EmptyProxyInterfaceAnalyzer : DiagnosticAnalyzer
 
     static void AnalyzeInterface(SymbolAnalysisContext context)
     {
-        if (context.Symbol is not INamedTypeSymbol { TypeKind: TypeKind.Interface } interfaceSymbol)
-        {
-            return;
-        }
-
-        if (interfaceSymbol.TypeParameters.Length > 0)
+        if (context.Symbol is not INamedTypeSymbol { TypeKind: TypeKind.Interface, TypeParameters.Length: > 0 } interfaceSymbol)
         {
             return;
         }
@@ -37,14 +30,9 @@ public sealed class EmptyProxyInterfaceAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        if (ProxyDomainCatalog.CountPublicInstanceMembers(interfaceSymbol) > 0)
-        {
-            return;
-        }
-
         var location = interfaceSymbol.Locations.FirstOrDefault() ?? Location.None;
         context.ReportDiagnostic(Diagnostic.Create(
-            domain.EmptyInterfaceDescriptor,
+            DiagnosticDescriptors.OpenGenericProxyInterface,
             location,
             interfaceSymbol.Name));
     }

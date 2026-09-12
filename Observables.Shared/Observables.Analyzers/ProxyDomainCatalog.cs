@@ -79,8 +79,19 @@ internal static class ProxyDomainCatalog
 
     internal static int CountPublicInstanceMembers(INamedTypeSymbol interfaceSymbol)
     {
+        var count = CountDeclaredPublicInstanceMembers(interfaceSymbol);
+        foreach (var inherited in interfaceSymbol.AllInterfaces)
+        {
+            count += CountDeclaredPublicInstanceMembers(inherited);
+        }
+
+        return count;
+    }
+
+    static int CountDeclaredPublicInstanceMembers(INamedTypeSymbol type)
+    {
         var count = 0;
-        foreach (var member in interfaceSymbol.GetMembers())
+        foreach (var member in type.GetMembers())
         {
             if (member.DeclaredAccessibility != Accessibility.Public || member.IsStatic)
             {

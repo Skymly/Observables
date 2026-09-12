@@ -17,6 +17,17 @@ internal static class DiagnosticDescriptors
             helpLinkUri: DiagnosticHelpLink.For("OBS0001"),
             customTags: [WellKnownDiagnosticTags.CompilationEnd]);
 
+    public static readonly DiagnosticDescriptor OpenGenericProxyInterface =
+        new(
+            "OBS0002",
+            "Open generic proxy interfaces are not supported",
+            "Interface '{0}' is a generic type. Observables proxy generators only support non-generic interfaces.",
+            "Observables",
+            DiagnosticSeverity.Error,
+            isEnabledByDefault: true,
+            description: "Marked proxy interfaces cannot be open generic types.",
+            helpLinkUri: DiagnosticHelpLink.For("OBS0002"));
+
     public static readonly DiagnosticDescriptor EmptyHubInterface =
         new(
             "OBS4007",

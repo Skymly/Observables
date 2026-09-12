@@ -103,6 +103,121 @@ public sealed class IoProxyPipelineTests
         Assert.Contains(diagnostics, static diagnostic => diagnostic.Id == "TEST001");
     }
 
+
+    [Fact]
+    public void Walk_collects_inherited_public_instance_members()
+    {
+        const string source =
+            """
+            using Observables.Mqtt;
+
+            public interface IBase
+            {
+                [MqttSubscribe("base")]
+                int BaseMember { get; }
+            }
+
+            [Mqtt]
+            public interface ISub : IBase
+            {
+            }
+            """;
+
+        var (compilation, interfaces) = CompileInterfaces(source);
+        var marker = compilation.GetTypeByMetadataName(ProxyDomainTable.Mqtt.InterfaceMarkerMetadataName);
+        Assert.NotNull(marker);
+
+        var marked = IoProxyInterfaceWalk.Collect(compilation, interfaces, marker!, CancellationToken.None);
+        var sub = Assert.Single(marked, static m => m.InterfaceSymbol.Name == "ISub");
+        Assert.Contains(sub.PublicInstanceMembers, static member => member.Name == "BaseMember");
+    }
+
+    [Fact]
+    public void Walk_dedupes_partial_interface_declarations()
+    {
+        const string source =
+            """
+            using Observables.Mqtt;
+
+            [Mqtt]
+            public partial interface IFeed
+            {
+                [MqttPublish("a")]
+                void A();
+            }
+
+            public partial interface IFeed
+            {
+                [MqttPublish("b")]
+                void B();
+            }
+            """;
+
+        var (compilation, interfaces) = CompileInterfaces(source);
+        var marker = compilation.GetTypeByMetadataName(ProxyDomainTable.Mqtt.InterfaceMarkerMetadataName);
+        Assert.NotNull(marker);
+
+        var marked = IoProxyInterfaceWalk.Collect(compilation, interfaces, marker!, CancellationToken.None);
+        Assert.Single(marked);
+        Assert.Contains(marked[0].PublicInstanceMembers, static member => member.Name == "A");
+        Assert.Contains(marked[0].PublicInstanceMembers, static member => member.Name == "B");
+    }
+
+    [Fact]
+    public void Walk_skips_open_generic_interfaces()
+    {
+        const string source =
+            """
+            using Observables.Mqtt;
+
+            [Mqtt]
+            public interface IFoo<T>
+            {
+                [MqttPublish("x")]
+                void X();
+            }
+            """;
+
+        var (compilation, interfaces) = CompileInterfaces(source);
+        var marker = compilation.GetTypeByMetadataName(ProxyDomainTable.Mqtt.InterfaceMarkerMetadataName);
+        Assert.NotNull(marker);
+
+        var marked = IoProxyInterfaceWalk.Collect(compilation, interfaces, marker!, CancellationToken.None);
+        Assert.Empty(marked);
+    }
+
+    [Fact]
+    public void GeneratedProxyClassName_strips_single_leading_I_before_uppercase()
+    {
+        const string source =
+            """
+            public interface IInvoice {}
+            public interface Invoice {}
+            public interface Ifeed {}
+            """;
+
+        var (compilation, _) = CompileInterfaces(source);
+        Assert.Equal("InvoiceGeneratedProxy", IoProxyModelAssembly.GeneratedProxyClassName(compilation.GetTypeByMetadataName("IInvoice")!));
+        Assert.Equal("InvoiceGeneratedProxy", IoProxyModelAssembly.GeneratedProxyClassName(compilation.GetTypeByMetadataName("Invoice")!));
+        Assert.Equal("IfeedGeneratedProxy", IoProxyModelAssembly.GeneratedProxyClassName(compilation.GetTypeByMetadataName("Ifeed")!));
+    }
+
+    [Fact]
+    public void GeneratedHintName_includes_namespace()
+    {
+        const string source =
+            """
+            namespace A { public interface ISub {} }
+            namespace B { public interface ISub {} }
+            """;
+
+        var (compilation, _) = CompileInterfaces(source);
+        var a = compilation.GetTypeByMetadataName("A.ISub")!;
+        var b = compilation.GetTypeByMetadataName("B.ISub")!;
+        Assert.Equal("A_ISub.Mqtt.g.cs", IoProxyModelAssembly.GeneratedHintName(a, "Mqtt"));
+        Assert.Equal("B_ISub.Mqtt.g.cs", IoProxyModelAssembly.GeneratedHintName(b, "Mqtt"));
+    }
+
     static (CSharpCompilation compilation, ImmutableArray<InterfaceDeclarationSyntax> interfaces) CompileInterfaces(string source)
     {
         var tree = CSharpSyntaxTree.ParseText(source);

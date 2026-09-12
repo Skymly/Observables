@@ -89,16 +89,15 @@ public sealed class BoundaryAttributeCompletionProvider : CompletionProvider
 
         foreach (var suggestion in suggestions)
         {
-            context.AddItem(CreateItem(suggestion, memberName));
+            context.AddItem(CompletionItemFactory.Create(ToCommitText(suggestion, memberName)));
         }
     }
 
-    static CompletionItem CreateItem(ProxyDomainTable.BoundaryAttributeSuggestion suggestion, string memberName)
+    internal static string ToCommitText(ProxyDomainTable.BoundaryAttributeSuggestion suggestion, string memberName)
     {
-        var insertText = suggestion.InsertText.Contains('(')
+        // DisplayText is inserted on commit. Do not append ']': the editor auto-closes the '['.
+        return suggestion.InsertText.Contains('(')
             ? suggestion.InsertText
-            : $"{suggestion.InsertText}(\"{memberName}\")]";
-
-        return CompletionItemFactory.Create(insertText);
+            : $"{suggestion.InsertText}(\"{memberName}\")";
     }
 }

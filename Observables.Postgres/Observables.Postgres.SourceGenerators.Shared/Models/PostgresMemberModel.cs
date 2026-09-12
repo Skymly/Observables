@@ -8,6 +8,6 @@ internal sealed record PostgresMemberModel(
     string ReturnTypeDisplay,
     string ResultTypeDisplay,
     ImmutableEquatableArray<string> ParameterDeclarations,
-    bool HasCancellationToken,
+    string? CancellationTokenParameterName,
     string? PayloadParameterName,
     string? PayloadTypeDisplay);

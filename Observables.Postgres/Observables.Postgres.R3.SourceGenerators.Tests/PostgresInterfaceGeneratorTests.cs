@@ -206,4 +206,58 @@ public sealed class PostgresInterfaceGeneratorTests
             reason is IncrementalStepRunReason.Modified or IncrementalStepRunReason.New,
             $"Expected cache miss (Modified/New), got {reason}");
     }
+
+    [Fact]
+    public void Unattributed_property_reports_OBS10001()
+    {
+        const string userSource =
+            """
+            [Postgres]
+            public interface IFeed
+            {
+                Observable<int> Bare { get; }
+            }
+            """;
+
+        var output = GeneratorTestHarness.Run(userSource);
+        var snapshot = GeneratorTestHarness.ToSnapshot(output);
+        Assert.Contains("OBS10001", snapshot, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Renamed_cancellation_token_is_passed_through()
+    {
+        const string userSource =
+            """
+            [Postgres]
+            public interface IHub
+            {
+                [Notify("ping")]
+                Observable<Unit> Ping(CancellationToken ct);
+            }
+            """;
+
+        var output = GeneratorTestHarness.Run(userSource);
+        var snapshot = GeneratorTestHarness.ToSnapshot(output);
+        Assert.Contains("ct)", snapshot, StringComparison.Ordinal);
+        Assert.DoesNotContain("cancellationToken)", snapshot, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Non_trailing_cancellation_token_reports_OBS10001()
+    {
+        const string userSource =
+            """
+            [Postgres]
+            public interface IHub
+            {
+                [Notify("ping")]
+                Observable<Unit> Ping(CancellationToken ct, string payload);
+            }
+            """;
+
+        var output = GeneratorTestHarness.Run(userSource);
+        var snapshot = GeneratorTestHarness.ToSnapshot(output);
+        Assert.Contains("OBS10001", snapshot, StringComparison.Ordinal);
+    }
 }

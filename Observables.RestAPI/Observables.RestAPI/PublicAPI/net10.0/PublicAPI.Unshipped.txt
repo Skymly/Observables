@@ -1,1 +1,2 @@
 #nullable enable
+static Observables.RestAPI.RestService.OwnsHttpClient(System.Net.Http.HttpClient! client) -> bool

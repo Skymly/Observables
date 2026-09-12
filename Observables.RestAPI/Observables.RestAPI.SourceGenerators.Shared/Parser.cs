@@ -47,8 +47,7 @@ internal static class Parser
                 if (!IsHttpMethodAttribute(methodSymbol, httpMethodBaseAttributeSymbol))
                     continue;
 
-                var isAnnotated = compilation.Options.NullableContextOptions == NullableContextOptions.Enable
-                    || model.GetNullableContext(method.SpanStart) == NullableContext.Enabled;
+                var isAnnotated = model.GetNullableContext(method.SpanStart) == NullableContext.Enabled;
                 interfaceToNullableEnabledMap[methodSymbol!.ContainingType] = isAnnotated;
                 methodSymbols.Add(methodSymbol!);
             }
@@ -376,7 +375,7 @@ internal static class Parser
         public ImmutableEquatableArray<string> Headers { get; set; } = ImmutableEquatableArray<string>.Empty;
         public bool IsMultipart { get; set; }
         public string MultipartBoundary { get; set; } = "----MyGreatBoundary";
-        public int QueryUriFormat { get; set; }
+        public int QueryUriFormat { get; set; } = (int)UriFormat.UriEscaped;
     }
 
     class ParameterClassification

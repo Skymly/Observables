@@ -1,6 +1,7 @@
 using System.Collections.Concurrent;
 using System.ComponentModel;
 using System.Net.Http;
+using System.Runtime.CompilerServices;
 #if NET8_0_OR_GREATER
 using System.Diagnostics.CodeAnalysis;
 #endif
@@ -17,6 +18,8 @@ namespace Observables.RestAPI
     public static class RestService
     {
         static readonly ConcurrentDictionary<Type, Func<HttpClient, RestApiSettings?, object>> GeneratedFactories = new();
+        static readonly ConditionalWeakTable<HttpClient, object> OwnedHttpClients = new();
+        static readonly object OwnedHttpClientSentinel = new();
 
         /// <summary>
         /// Registers a source-generated REST API client implementation factory.
@@ -46,6 +49,22 @@ namespace Observables.RestAPI
 
             GeneratedFactories[interfaceType] = factory;
         }
+
+        /// <summary>
+        /// True when <paramref name="client"/> was created by <see cref="For{T}(string)"/> / host-url overloads.
+        /// Generated <see cref="IDisposable"/> proxies dispose the client only in that case.
+        /// </summary>
+        [EditorBrowsable(EditorBrowsableState.Never)]
+        public static bool OwnsHttpClient(HttpClient client)
+        {
+            if (client is null)
+                throw new ArgumentNullException(nameof(client));
+
+            return OwnedHttpClients.TryGetValue(client, out _);
+        }
+
+        static void MarkHttpClientOwned(HttpClient client) =>
+            OwnedHttpClients.Add(client, OwnedHttpClientSentinel);
 
         /// <summary>
         /// Generate a REST API client implementation of the specified interface.
@@ -99,6 +118,7 @@ namespace Observables.RestAPI
 #endif
         {
             var client = CreateHttpClient(hostUrl, settings);
+            MarkHttpClientOwned(client);
             return For<T>(client, settings);
         }
 
@@ -194,6 +214,7 @@ namespace Observables.RestAPI
 #endif
         {
             var client = CreateHttpClient(hostUrl, settings);
+            MarkHttpClientOwned(client);
             return For(interfaceType, client, settings);
         }
 

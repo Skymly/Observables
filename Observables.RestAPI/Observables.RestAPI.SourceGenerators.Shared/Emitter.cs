@@ -211,7 +211,7 @@ internal static class Emitter
 #elif RESTAPI_REACTIVE
         source.WriteLine($"return global::Observables.RestAPI.Reactive.SystemReactiveObservableAdapter.FromAsync(async ______ct =>");
 #else
-        source.WriteLine($"return global::R3.Observable.FromAsync(async ______ct =>");
+#error Observables.RestAPI generator requires RESTAPI_R3 or RESTAPI_REACTIVE
 #endif
         source.WriteLine("{");
         source.Indentation++;
@@ -409,7 +409,8 @@ internal static class Emitter
             /// <inheritdoc />
             void global::System.IDisposable.Dispose()
             {
-                    Client?.Dispose();
+                    if (global::Observables.RestAPI.RestService.OwnsHttpClient(Client))
+                        Client?.Dispose();
             }
             """
         );

@@ -141,6 +141,24 @@ public class CoreGeneratorTests
     }
 
     [Fact]
+    public Task Query_defaults_to_UriEscaped()
+    {
+        GeneratorRunOutput output = GeneratorTestHarness.Run(
+            """
+            public interface ISearchApi
+            {
+                [Get("/search")]
+                Task<string> Search([Query] string q);
+            }
+            """);
+
+        var snapshot = GeneratorTestHarness.ToSnapshot(output);
+        Assert.Contains("(global::System.UriFormat)1", snapshot, StringComparison.Ordinal);
+        Assert.DoesNotContain("(global::System.UriFormat)0", snapshot, StringComparison.Ordinal);
+        return Task.CompletedTask;
+    }
+
+    [Fact]
     public Task Path_with_query_parameter_does_not_report_OBS3004()
     {
         GeneratorRunOutput output = GeneratorTestHarness.Run(

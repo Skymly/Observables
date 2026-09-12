@@ -168,6 +168,92 @@ public sealed class RuntimeTests
         Assert.Contains("does not have a generated REST API client", ex.Message, StringComparison.Ordinal);
     }
 
+    [Fact]
+    public async Task Query_values_are_uri_escaped_by_default()
+    {
+        string? requestUri = null;
+        var mockHttp = new MockHttpMessageHandler();
+        mockHttp.When(HttpMethod.Get, "https://api.example.com/search*")
+            .Respond(req =>
+            {
+                requestUri = req.RequestUri!.OriginalString;
+                return new HttpResponseMessage(HttpStatusCode.OK)
+                {
+                    Content = new StringContent("\"ok\"", Encoding.UTF8, "application/json"),
+                };
+            });
+
+        var client = mockHttp.ToHttpClient();
+        client.BaseAddress = new Uri("https://api.example.com");
+        var api = RestService.For<IUserApi>(client);
+
+        await api.Search("a&b=c #", TestContext.Current.CancellationToken);
+
+        Assert.NotNull(requestUri);
+        Assert.Contains("q=a%26b%3Dc%20%23", requestUri, StringComparison.Ordinal);
+        Assert.DoesNotContain("q=a&b=c", requestUri, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task SendAsync_disposes_request_when_not_returning_IApiResponse()
+    {
+        using var handler = new TrackingJsonHandler();
+        using var client = new HttpClient(handler) { BaseAddress = new Uri("https://api.example.com") };
+        var content = new TrackingContent();
+        var request = new HttpRequestMessage(HttpMethod.Get, "/users/1") { Content = content };
+
+        await RestApiBridge.SendAsync<User, User>(
+            client,
+            request,
+            new RestApiSettings(),
+            bodyBuffered: false,
+            cancellationToken: TestContext.Current.CancellationToken);
+
+        Assert.True(content.IsDisposed);
+    }
+
+    [Fact]
+    public async Task SendAsync_does_not_dispose_request_for_IApiResponse()
+    {
+        using var handler = new TrackingJsonHandler();
+        using var client = new HttpClient(handler) { BaseAddress = new Uri("https://api.example.com") };
+        var content = new TrackingContent();
+        var request = new HttpRequestMessage(HttpMethod.Get, "/users/1") { Content = content };
+
+        var response = await RestApiBridge.SendAsync<IApiResponse<User>, User>(
+            client,
+            request,
+            new RestApiSettings(),
+            bodyBuffered: false,
+            cancellationToken: TestContext.Current.CancellationToken);
+
+        Assert.False(content.IsDisposed);
+        response!.Dispose();
+    }
+
+    [Fact]
+    public void Dispose_does_not_dispose_external_HttpClient()
+    {
+        using var handler = new TrackingJsonHandler();
+        using var client = new HttpClient(handler) { BaseAddress = new Uri("https://api.example.com") };
+        var api = RestService.For<IDisposableUserApi>(client);
+
+        Assert.False(RestService.OwnsHttpClient(client));
+        api.Dispose();
+        Assert.NotNull(client.BaseAddress);
+    }
+
+    [Fact]
+    public void Dispose_disposes_hostUrl_created_HttpClient()
+    {
+        var api = RestService.For<IDisposableUserApi>("https://api.example.com");
+        var client = (HttpClient)api.GetType().GetProperty("Client")!.GetValue(api)!;
+
+        Assert.True(RestService.OwnsHttpClient(client));
+        api.Dispose();
+        Assert.Throws<ObjectDisposedException>(() => client.Timeout = TimeSpan.FromSeconds(1));
+    }
+
     public interface INotGeneratedApi
     {
         Task<int> Ping();
@@ -183,6 +269,15 @@ public sealed class RuntimeTests
 
         [Get("/users/{id}")]
         Observable<User> GetUserObservable(int id);
+
+        [Get("/search")]
+        Task<string> Search([Query] string q, CancellationToken cancellationToken = default);
+    }
+
+    public interface IDisposableUserApi : IDisposable
+    {
+        [Get("/users/{id}")]
+        Task<User> GetUser(int id);
     }
 
     public sealed class User

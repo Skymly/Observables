@@ -124,6 +124,8 @@ public static class GeneratorTestRunner
 
     public static string ToSnapshot(GeneratorRunOutput output, SnapshotOptions options)
     {
+        ThrowIfCompilerErrors(output);
+
         IEnumerable<Diagnostic> diagnostics = output.Diagnostics
             .Where(diagnostic => diagnostic.Id.StartsWith(options.DiagnosticPrefix, StringComparison.Ordinal));
 
@@ -197,6 +199,31 @@ public static class GeneratorTestRunner
         }
 
         return references.ToArray();
+    }
+
+    static void ThrowIfCompilerErrors(GeneratorRunOutput output)
+    {
+        Diagnostic[] compilerErrors = output.Diagnostics
+            .Where(static diagnostic =>
+                diagnostic.Severity == DiagnosticSeverity.Error
+                && diagnostic.Id.StartsWith("CS", StringComparison.Ordinal))
+            .OrderBy(static diagnostic => diagnostic.Id, StringComparer.Ordinal)
+            .ThenBy(static diagnostic => diagnostic.GetMessage(), StringComparer.Ordinal)
+            .ToArray();
+
+        if (compilerErrors.Length == 0)
+        {
+            return;
+        }
+
+        var builder = new StringBuilder();
+        builder.AppendLine("Generated compilation produced CS errors:");
+        foreach (Diagnostic diagnostic in compilerErrors)
+        {
+            builder.AppendLine($"  {diagnostic.Id}: {diagnostic.GetMessage()}");
+        }
+
+        throw new InvalidOperationException(builder.ToString().TrimEnd());
     }
 
     static void ThrowGeneratorExceptions(GeneratorDriverRunResult runResult)

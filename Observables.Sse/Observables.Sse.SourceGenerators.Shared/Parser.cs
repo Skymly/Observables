@@ -3,6 +3,7 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Observables.SourceGenerators.Shared.Diagnostics;
+using Observables.SourceGenerators.Shared.Extensions;
 
 namespace Observables.Sse.Generators;
 
@@ -38,7 +39,7 @@ internal static class Parser
                 members,
                 diagnostics),
             createInterface: static (marked, className, members) => new SseInterfaceModel(
-                $"{className}.Sse.g.cs",
+                $"{marked.InterfaceSymbol.GetSafeHintName()}.Sse.g.cs",
                 className,
                 marked.InterfaceSymbol.ToDisplayString(DisplayFormat),
                 BackendTokens.QualifyGeneratedNamespace("Observables.Sse"),

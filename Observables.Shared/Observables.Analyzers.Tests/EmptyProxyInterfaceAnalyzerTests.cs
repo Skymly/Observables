@@ -291,6 +291,55 @@ public sealed class EmptyProxyInterfaceAnalyzerTests
             ProxyDomainCatalog.InterfaceProxyDomains.Select(d => d.EmptyInterfaceDescriptor.Id).OrderBy(id => id, StringComparer.Ordinal));
     }
 
+
+    [Fact]
+    public void No_OBS5007_when_mqtt_interface_only_inherits_members()
+    {
+        const string source =
+            """
+            using Observables.Mqtt;
+
+            public interface IBase
+            {
+                [MqttSubscribe("base")]
+                int BaseMember { get; }
+            }
+
+            [Mqtt]
+            public interface ISub : IBase
+            {
+            }
+            """;
+
+        var diagnostics = AnalyzerTestHarness.RunAnalyzers(
+            source,
+            additionalReferences: [AnalyzerTestHarness.CreateReference<global::Observables.Mqtt.MqttAttribute>()],
+            new EmptyProxyInterfaceAnalyzer());
+
+        Assert.DoesNotContain(diagnostics, d => d.Id == "OBS5007");
+    }
+
+    [Fact]
+    public void No_OBS5007_on_open_generic_mqtt_interface()
+    {
+        const string source =
+            """
+            using Observables.Mqtt;
+
+            [Mqtt]
+            public interface IFoo<T>
+            {
+            }
+            """;
+
+        var diagnostics = AnalyzerTestHarness.RunAnalyzers(
+            source,
+            additionalReferences: [AnalyzerTestHarness.CreateReference<global::Observables.Mqtt.MqttAttribute>()],
+            new EmptyProxyInterfaceAnalyzer());
+
+        Assert.DoesNotContain(diagnostics, d => d.Id == "OBS5007");
+    }
+
     static string BuildSource(string body, params string[] usings)
     {
         var usingLines = string.Join('\n', usings.Select(u => $"using {u};"));

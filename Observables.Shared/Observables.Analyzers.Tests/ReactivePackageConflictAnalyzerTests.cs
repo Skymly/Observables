@@ -16,7 +16,7 @@ public sealed class ReactivePackageConflictAnalyzerTests
     }
 
     [Fact]
-    public void OBS0001_when_r3_and_signalr_reactive_are_referenced()
+    public void No_OBS0001_when_r3_library_and_signalr_reactive_are_referenced()
     {
         var diagnostics = AnalyzerTestHarness.RunAnalyzers(
             """
@@ -32,13 +32,33 @@ public sealed class ReactivePackageConflictAnalyzerTests
             ],
             new ReactivePackageConflictAnalyzer());
 
+        Assert.DoesNotContain(diagnostics, d => d.Id == "OBS0001");
+    }
+
+    [Fact]
+    public void OBS0001_when_r3_generated_namespace_and_signalr_reactive_are_referenced()
+    {
+        var diagnostics = AnalyzerTestHarness.RunAnalyzers(
+            """
+            namespace Observables.SignalR.Generated
+            {
+                internal sealed class Marker { }
+            }
+            """,
+            additionalReferences:
+            [
+                AnalyzerTestHarness.CreateReferenceFromAssemblyOf(typeof(global::Observables.SignalR.HubAttribute)),
+                AnalyzerTestHarness.CreateReferenceFromAssemblyOf(typeof(global::Observables.SignalR.Reactive.SystemReactiveSignalRAdapter)),
+            ],
+            new ReactivePackageConflictAnalyzer());
+
         Assert.Contains(
             diagnostics,
             d => d.Id == "OBS0001" && d.GetMessage().Contains("SignalR", StringComparison.Ordinal));
     }
 
     [Fact]
-    public void OBS0001_when_r3_and_redis_reactive_are_referenced()
+    public void No_OBS0001_when_r3_library_and_redis_reactive_are_referenced()
     {
         var diagnostics = AnalyzerTestHarness.RunAnalyzers(
             """
@@ -54,13 +74,11 @@ public sealed class ReactivePackageConflictAnalyzerTests
             ],
             new ReactivePackageConflictAnalyzer());
 
-        Assert.Contains(
-            diagnostics,
-            d => d.Id == "OBS0001" && d.GetMessage().Contains("Redis", StringComparison.Ordinal));
+        Assert.DoesNotContain(diagnostics, d => d.Id == "OBS0001");
     }
 
     [Fact]
-    public void OBS0001_when_r3_and_sse_reactive_are_referenced()
+    public void No_OBS0001_when_r3_library_and_sse_reactive_are_referenced()
     {
         var diagnostics = AnalyzerTestHarness.RunAnalyzers(
             """
@@ -76,9 +94,7 @@ public sealed class ReactivePackageConflictAnalyzerTests
             ],
             new ReactivePackageConflictAnalyzer());
 
-        Assert.Contains(
-            diagnostics,
-            d => d.Id == "OBS0001" && d.GetMessage().Contains("Sse", StringComparison.Ordinal));
+        Assert.DoesNotContain(diagnostics, d => d.Id == "OBS0001");
     }
 
     [Fact]

@@ -12,21 +12,21 @@ public sealed class ReactivePackageConflictAnalyzer : DiagnosticAnalyzer
 
     public override void Initialize(AnalysisContext context)
     {
-        context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
+        context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.Analyze | GeneratedCodeAnalysisFlags.ReportDiagnostics);
         context.EnableConcurrentExecution();
         context.RegisterCompilationAction(AnalyzeCompilation);
     }
 
     static void AnalyzeCompilation(CompilationAnalysisContext context)
     {
-        if (!ReactivePackageConflictDetection.HasR3Reference(context.Compilation))
-        {
-            return;
-        }
-
         foreach (var domain in ProxyDomainCatalog.ReactiveConflictDomains)
         {
             if (!ReactivePackageConflictDetection.HasReactiveBridgeReference(context.Compilation, domain))
+            {
+                continue;
+            }
+
+            if (!ReactivePackageConflictDetection.HasObservablesR3Backend(context.Compilation, domain))
             {
                 continue;
             }

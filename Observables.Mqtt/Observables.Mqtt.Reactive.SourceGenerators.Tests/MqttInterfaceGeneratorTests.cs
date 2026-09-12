@@ -82,4 +82,38 @@ public sealed class MqttInterfaceGeneratorTests
             reason is IncrementalStepRunReason.Modified or IncrementalStepRunReason.New,
             $"Expected cache miss (Modified/New), got {reason}");
     }
-}
+
+    [Fact]
+    public void Unattributed_property_reports_OBS5001()
+    {
+        const string userSource =
+            """
+            [Mqtt]
+            public interface IFeed
+            {
+                IObservable<int> Bare { get; }
+            }
+            """;
+
+        var output = GeneratorTestHarness.Run(userSource);
+        var snapshot = GeneratorTestHarness.ToSnapshot(output);
+        Assert.Contains("OBS5001", snapshot, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Topic_literal_with_quotes_is_escaped()
+    {
+        const string userSource =
+            """
+            [Mqtt]
+            public interface ISensorTopics
+            {
+                [MqttSubscribe("a\"b")]
+                IObservable<string> Odd { get; }
+            }
+            """;
+
+        var output = GeneratorTestHarness.Run(userSource);
+        var snapshot = GeneratorTestHarness.ToSnapshot(output);
+        Assert.Contains(@"FromSubscribe<global::System.String>(_client, ""a\""b"")", snapshot, StringComparison.Ordinal);
+    }}

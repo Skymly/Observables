@@ -137,6 +137,78 @@ public sealed class MqttInterfaceGeneratorTests
             $"Expected cache miss (Modified/New), got {reason}");
     }
 
+
+    [Fact]
+    public void Unattributed_property_reports_OBS5001()
+    {
+        const string userSource =
+            """
+            [Mqtt]
+            public interface IFeed
+            {
+                Observable<int> Bare { get; }
+            }
+            """;
+
+        var output = GeneratorTestHarness.Run(userSource);
+        var snapshot = GeneratorTestHarness.ToSnapshot(output);
+        Assert.Contains("OBS5001", snapshot, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Renamed_cancellation_token_is_passed_through()
+    {
+        const string userSource =
+            """
+            [Mqtt]
+            public interface ISensorTopics
+            {
+                [MqttPublish("ping")]
+                Observable<Unit> Ping(CancellationToken ct);
+            }
+            """;
+
+        var output = GeneratorTestHarness.Run(userSource);
+        var snapshot = GeneratorTestHarness.ToSnapshot(output);
+        Assert.Contains(", ct)", snapshot, StringComparison.Ordinal);
+        Assert.DoesNotContain(", cancellationToken)", snapshot, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Non_trailing_cancellation_token_reports_OBS5001()
+    {
+        const string userSource =
+            """
+            [Mqtt]
+            public interface ISensorTopics
+            {
+                [MqttPublish("commands/{deviceId}/restart")]
+                Observable<Unit> Restart(CancellationToken ct, string deviceId);
+            }
+            """;
+
+        var output = GeneratorTestHarness.Run(userSource);
+        var snapshot = GeneratorTestHarness.ToSnapshot(output);
+        Assert.Contains("OBS5001", snapshot, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Topic_literal_with_quotes_is_escaped()
+    {
+        const string userSource =
+            """
+            [Mqtt]
+            public interface ISensorTopics
+            {
+                [MqttSubscribe("a\"b")]
+                Observable<string> Odd { get; }
+            }
+            """;
+
+        var output = GeneratorTestHarness.Run(userSource);
+        var snapshot = GeneratorTestHarness.ToSnapshot(output);
+        Assert.Contains(@"FromSubscribe<global::System.String>(_client, ""a\""b"")", snapshot, StringComparison.Ordinal);
+    }
     [Fact]
     public Task Mqtt_interface_with_keyword_parameter_names_generates_valid_code()
     {

@@ -366,10 +366,12 @@ public sealed partial class ObservableEventsGenerator
                                && (useWpf || useAvalonia):
                 routedHandlers.Add(receiverType);
                 return true;
-            case var name when name == ObservableEventsConstants.AttachedRoutedEventEntryMethodName:
+            case var name when name == ObservableEventsConstants.AttachedRoutedEventEntryMethodName
+                               && useAvalonia:
                 attachedRoutedEvents.Add(receiverType);
                 return true;
-            case var name when name == ObservableEventsConstants.AttachedRoutedEventHandlerEntryMethodName:
+            case var name when name == ObservableEventsConstants.AttachedRoutedEventHandlerEntryMethodName
+                               && useAvalonia:
                 attachedRoutedHandlers.Add(receiverType);
                 return true;
             default:

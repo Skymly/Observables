@@ -58,6 +58,9 @@ public sealed partial class ObservableEventsGenerator
                 SyntaxFactory.TypeParameterList(
                     SyntaxFactory.SeparatedList(
                         type.TypeParameters.Select(static tp => SyntaxFactory.TypeParameter(tp.Name)))));
+            var clauses = CreateSourceTypeConstraintClauses(type);
+            if (clauses.Count > 0)
+                iface = iface.WithConstraintClauses(clauses);
         }
 
         var bases = descriptor.ParentTypes
@@ -139,6 +142,7 @@ public sealed partial class ObservableEventsGenerator
         };
 
         TypeParameterListSyntax? extensionTypeParams = null;
+        var extensionConstraints = CreateSourceTypeConstraintClauses(type);
         if (type.IsGenericType)
         {
             extensionTypeParams = SyntaxFactory.TypeParameterList(
@@ -159,6 +163,7 @@ public sealed partial class ObservableEventsGenerator
                     SyntaxFactory.ParseTypeName(qualifiedSender),
                     SyntaxFactory.ParseTypeName(implRef),
                     extensionTypeParams,
+                    constraintClauses: extensionConstraints,
                     objectCreationArguments: ObservableEventsSyntaxFactory.AvaloniaRoutedImplConstructorArguments()));
             extensionMembers.Add(
                 ObservableEventsSyntaxFactory.CreateAvaloniaRoutedExtensionMethod(
@@ -175,7 +180,8 @@ public sealed partial class ObservableEventsGenerator
                     SyntaxFactory.ParseTypeName(interfaceRef),
                     SyntaxFactory.ParseTypeName(qualifiedSender),
                     SyntaxFactory.ParseTypeName(implRef),
-                    extensionTypeParams));
+                    extensionTypeParams,
+                    constraintClauses: extensionConstraints));
         }
 
         var extensionClass = ObservableEventsSyntaxFactory.BootstrapExtensionsClassDeclaration()
@@ -215,6 +221,9 @@ public sealed partial class ObservableEventsGenerator
                 SyntaxFactory.TypeParameterList(
                     SyntaxFactory.SeparatedList(
                         type.TypeParameters.Select(static tp => SyntaxFactory.TypeParameter(tp.Name)))));
+            var clauses = CreateSourceTypeConstraintClauses(type);
+            if (clauses.Count > 0)
+                classDecl = classDecl.WithConstraintClauses(clauses);
         }
 
         var senderType = SyntaxFactory.ParseTypeName(ObservableEventsConstants.QualifiedType(type));
@@ -351,7 +360,7 @@ public sealed partial class ObservableEventsGenerator
             System.StringComparer.Ordinal);
         var result = new Dictionary<string, (IEventSymbol, ExpressionSyntax)>(System.StringComparer.Ordinal);
         if (hierarchy.TryGetValue(callSiteType, out var desc))
-            CollectEventsRecursive(desc, hierarchy, accessible, result);
+            CollectEventsRecursive(desc, hierarchy, accessible, result, callSiteType);
         return result.Values.OrderBy(static x => x.Item1.Name, System.StringComparer.Ordinal);
     }
 
@@ -359,23 +368,32 @@ public sealed partial class ObservableEventsGenerator
         EventInterfaceDescriptor desc,
         Dictionary<INamedTypeSymbol, EventInterfaceDescriptor> hierarchy,
         System.Collections.Generic.HashSet<string> accessible,
-        Dictionary<string, (IEventSymbol, ExpressionSyntax)> result)
+        Dictionary<string, (IEventSymbol, ExpressionSyntax)> result,
+        INamedTypeSymbol constructedType)
     {
         foreach (var evt in desc.ExclusiveEvents)
         {
             if (result.ContainsKey(evt.Name)) continue;
-            var accessor = accessible.Contains(evt.Name)
-                ? ObservableEventsSyntaxFactory.SenderMemberAccess(evt.Name)
+            var mapped = MapEventToConstructedType(evt, constructedType);
+            var accessor = accessible.Contains(mapped.Name)
+                ? ObservableEventsSyntaxFactory.SenderMemberAccess(mapped.Name)
                 : ObservableEventsSyntaxFactory.CastSenderMemberAccess(
-                    SyntaxFactory.ParseTypeName(ObservableEventsConstants.QualifiedType(evt.ContainingType)),
-                    evt.Name);
-            result[evt.Name] = (evt, accessor);
+                    SyntaxFactory.ParseTypeName(ObservableEventsConstants.QualifiedType(mapped.ContainingType)),
+                    mapped.Name);
+            result[mapped.Name] = (mapped, accessor);
         }
 
         foreach (var parentType in desc.ParentTypes)
         {
-            if (hierarchy.TryGetValue(parentType, out var pd))
-                CollectEventsRecursive(pd, hierarchy, accessible, result);
+            if (hierarchy.TryGetValue(HierarchyKey(parentType), out var pd))
+                CollectEventsRecursive(pd, hierarchy, accessible, result, parentType);
         }
+    }
+
+    private static IEventSymbol MapEventToConstructedType(IEventSymbol evt, INamedTypeSymbol constructedType)
+    {
+        foreach (var member in constructedType.GetMembers(evt.Name).OfType<IEventSymbol>())
+            return member;
+        return evt;
     }
 }

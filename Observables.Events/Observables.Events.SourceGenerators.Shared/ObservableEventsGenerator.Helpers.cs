@@ -17,6 +17,39 @@ public sealed partial class ObservableEventsGenerator
         $"GenericConstraints_{ToIdentifier(target.Key)}";
 
 
+    private static SyntaxList<TypeParameterConstraintClauseSyntax> CreateSourceTypeConstraintClauses(INamedTypeSymbol type)
+    {
+        if (!type.IsGenericType)
+            return default;
+
+        var clauses = new List<TypeParameterConstraintClauseSyntax>();
+        foreach (var tp in type.TypeParameters)
+        {
+            var constraints = new List<TypeParameterConstraintSyntax>();
+            if (tp.HasReferenceTypeConstraint)
+                constraints.Add(SyntaxFactory.ClassOrStructConstraint(SyntaxKind.ClassConstraint));
+            if (tp.HasValueTypeConstraint)
+                constraints.Add(SyntaxFactory.ClassOrStructConstraint(SyntaxKind.StructConstraint));
+            if (tp.HasNotNullConstraint)
+                constraints.Add(SyntaxFactory.TypeConstraint(SyntaxFactory.IdentifierName("notnull")));
+            if (tp.HasUnmanagedTypeConstraint)
+                constraints.Add(SyntaxFactory.TypeConstraint(SyntaxFactory.IdentifierName("unmanaged")));
+            foreach (var constraintType in tp.ConstraintTypes)
+                constraints.Add(SyntaxFactory.TypeConstraint(SyntaxFactory.ParseTypeName(ObservableEventsConstants.QualifiedType(constraintType))));
+            if (tp.HasConstructorConstraint)
+                constraints.Add(SyntaxFactory.ConstructorConstraint());
+
+            if (constraints.Count == 0)
+                continue;
+
+            clauses.Add(
+                SyntaxFactory.TypeParameterConstraintClause(tp.Name)
+                    .WithConstraints(SyntaxFactory.SeparatedList(constraints)));
+        }
+
+        return SyntaxFactory.List(clauses);
+    }
+
     private static TypeParameterConstraintClauseSyntax CreateGenericConstraintClauseSyntax(GenericConstraintTarget target) =>
         SyntaxFactory.TypeParameterConstraintClause("TSource")
             .WithConstraints(

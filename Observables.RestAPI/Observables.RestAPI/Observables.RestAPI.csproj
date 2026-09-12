@@ -8,6 +8,10 @@
 
 
   <ItemGroup>
+    <InternalsVisibleTo Include="Observables.RestAPI.Tests" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="R3" />
   </ItemGroup>
 

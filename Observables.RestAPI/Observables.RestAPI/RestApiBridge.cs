@@ -19,7 +19,7 @@ namespace Observables.RestAPI
     [RequiresUnreferencedCode(RestTrimAnnotations.Reflection)]
     [RequiresDynamicCode(RestTrimAnnotations.Dynamic)]
 #endif
-    public static class RestApiBridge
+    public static partial class RestApiBridge
     {
         /// <summary>
         /// Formats a parameter value for inclusion in a URL path segment.
@@ -645,3 +645,4 @@ namespace Observables.RestAPI
         }
     }
 }
+

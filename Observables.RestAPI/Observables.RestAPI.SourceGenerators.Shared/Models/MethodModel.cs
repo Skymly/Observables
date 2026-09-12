@@ -11,17 +11,8 @@ internal sealed record MethodModel(
     ImmutableEquatableArray<ParameterModel> Parameters,
     ImmutableEquatableArray<TypeConstraint> Constraints,
     bool IsExplicitInterface,
-    // HTTP semantic fields (Path B compile-time generation)
-    string HttpMethod = "",
-    ImmutableEquatableArray<PathFragmentModel> PathFragments = default!,
+    RestApiMethodSpecModel Spec,
     int? CancellationTokenIndex = null,
-    int? BodyParameterIndex = null,
-    int BodySerializationMethod = 0,
-    bool? BodyBuffered = null,
-    ImmutableEquatableArray<string> Headers = default!,
-    bool IsMultipart = false,
-    string MultipartBoundary = "----MyGreatBoundary",
-    int QueryUriFormat = 1,
     bool IsApiResponse = false,
     string ReturnResultType = "",
     string DeserializedResultType = ""

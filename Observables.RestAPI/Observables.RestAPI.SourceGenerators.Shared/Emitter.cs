@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using Microsoft.CodeAnalysis.Text;
@@ -112,11 +113,17 @@ internal static class Emitter
 
         source.Indentation++;
 
+        var specIndex = 0;
         foreach (var method in model.HttpMethods)
-            WriteHttpMethod(source, method, true);
-
+            WriteSpecField(source, method, specIndex++);
         foreach (var method in model.DerivedHttpMethods)
-            WriteHttpMethod(source, method, false);
+            WriteSpecField(source, method, specIndex++);
+
+        specIndex = 0;
+        foreach (var method in model.HttpMethods)
+            WriteHttpMethod(source, method, true, specIndex++);
+        foreach (var method in model.DerivedHttpMethods)
+            WriteHttpMethod(source, method, false, specIndex++);
 
         foreach (var method in model.NonHttpMethods)
             WriteNonHttpMethod(source, method);
@@ -137,15 +144,120 @@ internal static class Emitter
         return source.ToSourceText();
     }
 
-    /// <summary>
-    /// Generates the body of a REST method that directly builds and sends an HttpRequestMessage.
-    /// </summary>
+
+    static string SpecFieldName(int index) => "______spec" + index;
+
+    static void WriteSpecField(SourceWriter source, MethodModel methodModel, int index)
+    {
+        if (methodModel.ReturnTypeMetadata == ReturnTypeInfo.Unsupported)
+            return;
+
+        var spec = methodModel.Spec;
+        source.WriteLine($"static readonly global::Observables.RestAPI.RestApiBridge.MethodSpec {SpecFieldName(index)} =");
+        source.Indentation++;
+        var flags = FormatFlags(spec);
+        var bindings = FormatBindings(spec);
+        if (flags == null)
+            source.WriteLine($"new(\"{EscapeString(spec.HttpMethod)}\", \"{EscapeString(spec.PathTemplate)}\", {bindings});");
+        else
+            source.WriteLine($"new(\"{EscapeString(spec.HttpMethod)}\", \"{EscapeString(spec.PathTemplate)}\", {bindings}, {flags});");
+        source.Indentation--;
+        source.WriteLine();
+    }
+
+    static string FormatBindings(RestApiMethodSpecModel spec)
+    {
+        if (spec.Bindings.Count == 0)
+            return "null";
+
+        var items = new List<string>();
+        foreach (var binding in spec.Bindings)
+        {
+            var kind = $"global::Observables.RestAPI.RestApiBridge.SlotKind.{binding.Kind}";
+            var parts = new List<string>
+            {
+                kind,
+                binding.ArgIndex.ToString(),
+                $"\"{EscapeString(binding.Name)}\"",
+            };
+            if (binding.HeaderName != null)
+                parts.Add($"headerName: \"{EscapeString(binding.HeaderName)}\"");
+            if (binding.AuthorizeScheme != null)
+                parts.Add($"authorizeScheme: \"{EscapeString(binding.AuthorizeScheme)}\"");
+            if (binding.PropertyKey != null)
+                parts.Add($"propertyKey: \"{EscapeString(binding.PropertyKey)}\"");
+            var query = FormatQueryOptions(binding);
+            if (query != null)
+                parts.Add($"query: {query}");
+            items.Add($"new({string.Join(", ", parts)})");
+        }
+
+        return "new global::Observables.RestAPI.RestApiBridge.Binding[] { " + string.Join(", ", items) + " }";
+    }
+
+    static string? FormatQueryOptions(RestApiBindingModel binding)
+    {
+        if (binding.Kind != RestApiSlotKind.Query)
+            return null;
+
+        var inits = new List<string>();
+        if (binding.QueryFormat != null)
+            inits.Add($"format: \"{EscapeString(binding.QueryFormat)}\"");
+        if (binding.QueryPrefix != null)
+            inits.Add($"prefix: \"{EscapeString(binding.QueryPrefix)}\"");
+        if (!string.IsNullOrEmpty(binding.QueryDelimiter) && binding.QueryDelimiter != ".")
+            inits.Add($"delimiter: \"{EscapeString(binding.QueryDelimiter)}\"");
+        if (binding.QueryTreatAsString)
+            inits.Add("treatAsString: true");
+        if (binding.QueryIsCollectionFormatSpecified)
+        {
+            inits.Add($"collectionFormat: {binding.QueryCollectionFormat}");
+            inits.Add("collectionFormatSpecified: true");
+        }
+
+        if (inits.Count == 0)
+            return null;
+        return "new global::Observables.RestAPI.RestApiBridge.QueryOptions(" + string.Join(", ", inits) + ")";
+    }
+
+    static string? FormatFlags(RestApiMethodSpecModel spec)
+    {
+        var inits = new List<string>();
+        if (spec.IsMultipart)
+        {
+            inits.Add("isMultipart: true");
+            if (!string.IsNullOrEmpty(spec.MultipartBoundary) && spec.MultipartBoundary != "----MyGreatBoundary")
+                inits.Add($"multipartBoundary: \"{EscapeString(spec.MultipartBoundary)}\"");
+        }
+        if (spec.QueryUriFormat != 1)
+            inits.Add($"queryUriFormat: {spec.QueryUriFormat}");
+        if (spec.BodySerializationMethod != 0)
+            inits.Add($"bodySerializationMethod: {spec.BodySerializationMethod}");
+        if (spec.BodyBuffered == true)
+            inits.Add("bodyBuffered: true");
+        else if (spec.BodyBuffered == false)
+            inits.Add("bodyBuffered: false");
+        if (spec.StaticHeaders.Count > 0)
+        {
+            var headers = string.Join(", ", spec.StaticHeaders.Select(h => $"\"{EscapeString(h)}\""));
+            inits.Add($"staticHeaders: new string[] {{ {headers} }}");
+        }
+
+        if (inits.Count == 0)
+            return null;
+        return "new global::Observables.RestAPI.RestApiBridge.MethodFlags(" + string.Join(", ", inits) + ")";
+    }
+
     static void WriteHttpMethod(
         SourceWriter source,
         MethodModel methodModel,
-        bool isTopLevel
+        bool isTopLevel,
+        int specIndex
     )
     {
+        if (methodModel.ReturnTypeMetadata == ReturnTypeInfo.Unsupported)
+            return;
+
         var (isAsync, @return, configureAwait) = methodModel.ReturnTypeMetadata switch
         {
             ReturnTypeInfo.AsyncVoid => (true, "await ", ".ConfigureAwait(false)"),
@@ -161,60 +273,38 @@ internal static class Emitter
         var isExplicit = methodModel.IsExplicitInterface || !isTopLevel;
         WriteMethodOpening(source, methodModel, isExplicit, isExplicit, isAsync);
 
-        // Generate the request body
         var needsAsyncWrapper = methodModel.ReturnTypeMetadata is ReturnTypeInfo.R3Observable or ReturnTypeInfo.SystemReactiveObservable;
         if (needsAsyncWrapper)
-        {
-            WriteObservableBody(source, methodModel);
-        }
+            WriteObservableBody(source, methodModel, specIndex);
         else
-        {
-            WriteDirectBody(source, methodModel, @return, configureAwait);
-        }
+            WriteDirectBody(source, methodModel, @return, configureAwait, specIndex);
 
         WriteMethodClosing(source);
     }
 
-    static void WriteDirectBody(SourceWriter source, MethodModel methodModel, string @return, string configureAwait)
+    static void WriteDirectBody(SourceWriter source, MethodModel methodModel, string @return, string configureAwait, int specIndex)
     {
         var ctVar = "______ct";
         var ctParamIndex = methodModel.CancellationTokenIndex;
-
-        // Extract cancellation token
         if (ctParamIndex.HasValue)
-        {
             source.WriteLine($"var {ctVar} = @{methodModel.Parameters[ctParamIndex.Value].MetadataName};");
-        }
         else
-        {
             source.WriteLine($"var {ctVar} = global::System.Threading.CancellationToken.None;");
-        }
 
-        WriteRequestBuilding(source, methodModel);
+        var args = FormatSendArgs(methodModel);
+        var specField = SpecFieldName(specIndex);
 
-        var bodyBufferedExpression = GetBodyBufferedExpression(methodModel);
-
-        // Send and handle response
         if (methodModel.ReturnTypeMetadata == ReturnTypeInfo.AsyncVoid)
-        {
-            source.WriteLine($"await global::Observables.RestAPI.RestApiBridge.SendVoidAsync(Client, ______request, _settings, {ctVar}){configureAwait};");
-        }
+            source.WriteLine($"await global::Observables.RestAPI.RestApiBridge.SendVoidAsync(Client, _settings, in {specField}, {ctVar}{args}){configureAwait};");
         else if (methodModel.ReturnTypeMetadata == ReturnTypeInfo.SyncVoid)
-        {
-            source.WriteLine($"global::Observables.RestAPI.RestApiBridge.SendVoidAsync(Client, ______request, _settings, {ctVar}).GetAwaiter().GetResult();");
-        }
+            source.WriteLine($"global::Observables.RestAPI.RestApiBridge.SendVoidAsync(Client, _settings, in {specField}, {ctVar}{args}).GetAwaiter().GetResult();");
         else if (methodModel.ReturnTypeMetadata == ReturnTypeInfo.AsyncResult)
-        {
-            source.WriteLine($"{@return}global::Observables.RestAPI.RestApiBridge.SendAsync<{methodModel.ReturnResultType}, {methodModel.DeserializedResultType}>(Client, ______request, _settings, {bodyBufferedExpression}, {ctVar}){configureAwait};");
-        }
+            source.WriteLine($"{@return}global::Observables.RestAPI.RestApiBridge.SendAsync<{methodModel.ReturnResultType}, {methodModel.DeserializedResultType}>(Client, _settings, in {specField}, {ctVar}{args}){configureAwait};");
         else if (methodModel.ReturnTypeMetadata == ReturnTypeInfo.Return)
-        {
-            // Synchronous return — block on the async call
-            source.WriteLine($"{@return}global::Observables.RestAPI.RestApiBridge.SendAsync<{methodModel.ReturnResultType}, {methodModel.DeserializedResultType}>(Client, ______request, _settings, {bodyBufferedExpression}, {ctVar}).GetAwaiter().GetResult();");
-        }
+            source.WriteLine($"{@return}global::Observables.RestAPI.RestApiBridge.SendAsync<{methodModel.ReturnResultType}, {methodModel.DeserializedResultType}>(Client, _settings, in {specField}, {ctVar}{args}).GetAwaiter().GetResult();");
     }
 
-    static void WriteObservableBody(SourceWriter source, MethodModel methodModel)
+    static void WriteObservableBody(SourceWriter source, MethodModel methodModel, int specIndex)
     {
 #if RESTAPI_R3
         source.WriteLine($"return global::R3.Observable.FromAsync(async ______ct =>");
@@ -225,175 +315,27 @@ internal static class Emitter
 #endif
         source.WriteLine("{");
         source.Indentation++;
-
-        WriteRequestBuilding(source, methodModel);
-
-        // Send
-        source.WriteLine($"return await global::Observables.RestAPI.RestApiBridge.SendAsync<{methodModel.ReturnResultType}, {methodModel.DeserializedResultType}>(Client, ______request, _settings, {GetBodyBufferedExpression(methodModel)}, ______ct).ConfigureAwait(false);");
-
+        var args = FormatSendArgs(methodModel);
+        var specField = SpecFieldName(specIndex);
+        source.WriteLine($"return await global::Observables.RestAPI.RestApiBridge.SendAsync<{methodModel.ReturnResultType}, {methodModel.DeserializedResultType}>(Client, _settings, in {specField}, ______ct{args}).ConfigureAwait(false);");
         source.Indentation--;
         source.WriteLine("});");
     }
 
-    static string GetBodyBufferedExpression(MethodModel methodModel) =>
-        methodModel.BodyBuffered.HasValue
-            ? (methodModel.BodyBuffered.Value ? "true" : "false")
-            : (methodModel.BodyParameterIndex.HasValue || methodModel.IsMultipart ? "_settings.Buffered" : "false");
-
-    /// <summary>
-    /// Emits the common request-building statements shared by direct and observable method bodies:
-    /// BaseAddress check, path construction, query parameters, request message creation,
-    /// multipart setup, headers, parameter processing, and RequestUri assignment.
-    /// </summary>
-    static void WriteRequestBuilding(SourceWriter source, MethodModel methodModel)
+    static string FormatSendArgs(MethodModel methodModel)
     {
-        // BaseAddress check
-        source.WriteLine("""if (Client.BaseAddress == null) throw new global::System.InvalidOperationException("BaseAddress must be set on the HttpClient instance");""");
-
-        // Build path
-        source.WriteLine("var ______path = " + BuildPathExpression(methodModel) + ";");
-
-        // Build query params
-        WriteQueryParameters(source, methodModel);
-
-        // Create request
-        source.WriteLine($"var ______request = new global::System.Net.Http.HttpRequestMessage {{ Method = {GetHttpMethodExpression(methodModel.HttpMethod)} }};");
-
-        // Multipart content
-        if (methodModel.IsMultipart)
-        {
-            source.WriteLine($"var ______multipart = new global::System.Net.Http.MultipartFormDataContent(\"{EscapeString(methodModel.MultipartBoundary)}\");");
-            source.WriteLine("______request.Content = ______multipart;");
-        }
-
-        // Add headers
-        WriteHeaders(source, methodModel.Headers);
-
-        // Process parameters: headers, authorize, property, body, multipart
-        WriteParameters(source, methodModel);
-
-        // Set RequestUri
-        source.WriteLine("______request.RequestUri = new global::System.Uri(______path, global::System.UriKind.Relative);");
-    }
-
-    static void WriteQueryParameters(SourceWriter source, MethodModel methodModel)
-    {
-        var hasQuery = methodModel.Parameters.Any(p => p.Kind == ParameterKind.Query);
-        if (!hasQuery)
-            return;
-
-        source.WriteLine("var ______queryParams = new global::System.Collections.Generic.List<global::System.Collections.Generic.KeyValuePair<string, string?>>();");
+        var names = new List<string>();
         foreach (var param in methodModel.Parameters)
         {
-            if (param.Kind == ParameterKind.Query)
-            {
-                var key = param.AliasAs ?? param.MetadataName;
-                var prefix = EscapeString(param.QueryPrefix ?? "");
-                var delimiter = EscapeString(param.QueryDelimiter);
-                var format = EscapeString(param.QueryFormat ?? "");
-                source.WriteLine($"global::Observables.RestAPI.RestApiBridge.AddQueryParameter(______queryParams, \"{EscapeString(key)}\", @{param.MetadataName}, _settings, prefix: \"{prefix}\", delimiter: \"{delimiter}\", format: \"{format}\", treatAsString: {(param.QueryTreatAsString ? "true" : "false")}, collectionFormat: {param.QueryCollectionFormat}, isCollectionFormatSpecified: {(param.QueryIsCollectionFormatSpecified ? "true" : "false")});");
-            }
+            if (param.Kind == ParameterKind.CancellationToken)
+                continue;
+            names.Add("@" + param.MetadataName);
         }
-        source.WriteLine($"______path = global::Observables.RestAPI.RestApiBridge.BuildRelativePath(______path, ______queryParams, (global::System.UriFormat){methodModel.QueryUriFormat});");
+
+        if (names.Count == 0)
+            return "";
+        return ", " + string.Join(", ", names);
     }
-
-    static void WriteHeaders(SourceWriter source, ImmutableEquatableArray<string> headers)
-    {
-        foreach (var header in headers)
-        {
-            var colonIdx = header.IndexOf(':');
-            if (colonIdx > 0)
-            {
-                var hKey = header.Substring(0, colonIdx).Trim();
-                var hVal = colonIdx + 1 < header.Length ? header.Substring(colonIdx + 1).Trim() : "";
-                source.WriteLine($"______request.Headers.TryAddWithoutValidation(\"{EscapeString(hKey)}\", \"{EscapeString(hVal)}\");");
-            }
-        }
-    }
-
-    static void WriteParameters(SourceWriter source, MethodModel methodModel)
-    {
-        foreach (var param in methodModel.Parameters)
-        {
-            switch (param.Kind)
-            {
-                case ParameterKind.Header:
-                    var headerName = param.HeaderName ?? param.MetadataName;
-                    source.WriteLine($"______request.Headers.TryAddWithoutValidation(\"{EscapeString(headerName)}\", global::Observables.RestAPI.RestApiBridge.FormatQueryValue(@{param.MetadataName}, _settings));");
-                    break;
-                case ParameterKind.HeaderCollection:
-                    source.WriteLine($"if (@{param.MetadataName} != null) foreach (var ______hdr in @{param.MetadataName}) ______request.Headers.TryAddWithoutValidation(______hdr.Key, ______hdr.Value);");
-                    break;
-                case ParameterKind.Authorize:
-                    var scheme = param.AuthorizeScheme ?? "Bearer";
-                    source.WriteLine($"______request.Headers.TryAddWithoutValidation(\"Authorization\", \"{scheme} \" + @{param.MetadataName});");
-                    break;
-                case ParameterKind.Property:
-                    var propKey = param.PropertyKey ?? param.MetadataName;
-                    source.WriteLine("#if NET6_0_OR_GREATER");
-                    source.WriteLine($"______request.Options.Set(new global::System.Net.Http.HttpRequestOptionsKey<object>(\"{EscapeString(propKey)}\"), @{param.MetadataName}!);");
-                    source.WriteLine("#else");
-                    source.WriteLine($"______request.Properties[\"{EscapeString(propKey)}\"] = @{param.MetadataName}!;");
-                    source.WriteLine("#endif");
-                    break;
-                case ParameterKind.Body:
-                    WriteBodyContent(source, methodModel, param);
-                    break;
-                case ParameterKind.Multipart:
-                    source.WriteLine($"global::Observables.RestAPI.RestApiBridge.AddMultipartItem(______multipart, \"{EscapeString(param.MetadataName)}\", \"{EscapeString(param.MetadataName)}\", @{param.MetadataName}, _settings);");
-                    break;
-            }
-        }
-    }
-
-    static void WriteBodyContent(SourceWriter source, MethodModel methodModel, ParameterModel param)
-    {
-        var bodySerMethod = (BodySerializationMethod)methodModel.BodySerializationMethod;
-
-        if (bodySerMethod == BodySerializationMethod.UrlEncoded)
-        {
-            source.WriteLine($"______request.Content = global::Observables.RestAPI.RestApiBridge.CreateFormUrlEncodedContent(@{param.MetadataName}!, _settings);");
-        }
-        else
-        {
-            source.WriteLine($"______request.Content = global::Observables.RestAPI.RestApiBridge.SerializeBody(@{param.MetadataName}!, _settings, {methodModel.BodySerializationMethod});");
-        }
-    }
-
-    static string BuildPathExpression(MethodModel methodModel)
-    {
-        if (methodModel.PathFragments.Count == 0)
-            return "\"\"";
-
-        var parts = new List<string>();
-        foreach (var frag in methodModel.PathFragments)
-        {
-            if (frag.IsConstant)
-            {
-                parts.Add($"\"{EscapeString(frag.ConstantValue!)}\"");
-            }
-            else
-            {
-                var paramName = methodModel.Parameters[frag.ParameterIndex].MetadataName;
-                parts.Add($"global::Observables.RestAPI.RestApiBridge.FormatPathParameter(@{paramName}, _settings)");
-            }
-        }
-
-        if (parts.Count == 1) return parts[0];
-        return string.Join(" + ", parts);
-    }
-
-    static string GetHttpMethodExpression(string httpMethod) => httpMethod switch
-    {
-        "GET" => "global::System.Net.Http.HttpMethod.Get",
-        "POST" => "global::System.Net.Http.HttpMethod.Post",
-        "PUT" => "global::System.Net.Http.HttpMethod.Put",
-        "DELETE" => "global::System.Net.Http.HttpMethod.Delete",
-        "HEAD" => "global::System.Net.Http.HttpMethod.Head",
-        "PATCH" => "new global::System.Net.Http.HttpMethod(\"PATCH\")",
-        "OPTIONS" => "new global::System.Net.Http.HttpMethod(\"OPTIONS\")",
-        _ => "global::System.Net.Http.HttpMethod.Get",
-    };
 
     static string EscapeString(string s) => s
         .Replace("\\", "\\\\")
@@ -509,3 +451,4 @@ internal static class Emitter
             source.WriteLine($"where {typeParameter.TypeName} : {string.Join(", ", parameters)}");
     }
 }
+

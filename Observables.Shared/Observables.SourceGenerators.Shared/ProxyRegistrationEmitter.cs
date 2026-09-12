@@ -67,15 +67,25 @@ internal static class ProxyRegistrationEmitter
                     {
                 #if NET5_0_OR_GREATER
                 {{dependencyAttributes}}
-                        [System.Runtime.CompilerServices.ModuleInitializer]
                         [global::System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessage("ILLink", "IL2026", Justification = "Factory registration only; the proxy is invoked by user code that declares RequiresUnreferencedCode.")]
+                #endif
+                        [global::System.Runtime.CompilerServices.ModuleInitializer]
                         internal static void Initialize()
                         {
                 {{registrationCalls}}
                         }
-                #endif
                     }
                 }
+
+                #if !NET5_0_OR_GREATER
+                namespace System.Runtime.CompilerServices
+                {
+                    [global::System.AttributeUsage(global::System.AttributeTargets.Method, Inherited = false)]
+                    internal sealed partial class ModuleInitializerAttribute : global::System.Attribute
+                    {
+                    }
+                }
+                #endif
                 """));
     }
 

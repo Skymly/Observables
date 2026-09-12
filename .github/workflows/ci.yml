@@ -220,6 +220,14 @@ jobs:
           path: TestResults/
           if-no-files-found: warn
 
+  # Domain matrix truth table (dorny/paths-filter):
+  #   domain == 'true'  -> that folder (or slnx) changed
+  #   shared == 'true'  -> Shared/eng/build/workflow/etc. changed
+  #   unchanged domain is the string 'false', NOT empty
+  # test-domain runs when (domain changed OR shared changed).
+  # Do not AND with `domain != 'false'` — that cancels the shared OR.
+  # pack-domain uses the same shared-or-domain rule, still gated by
+  # push / workflow_dispatch / PR `pack` label.
   test-domain:
     name: Test ${{ matrix.domain }}
     needs: changes
@@ -231,9 +239,8 @@ jobs:
     steps:
       - name: Skip if domain not changed and not shared
         if: |
-          (needs.changes.outputs[matrix.domain] == 'true'
-           || needs.changes.outputs.shared == 'true')
-          && needs.changes.outputs[matrix.domain] != 'false'
+          needs.changes.outputs[matrix.domain] == 'true'
+          || needs.changes.outputs.shared == 'true'
         id: gate
         run: echo "Proceeding with ${{ matrix.domain }}"
 
@@ -289,9 +296,10 @@ jobs:
       matrix:
         domain: [events, restapi, signalr, mqtt, websocket, grpc, sse, nats, postgres, redis]
     steps:
-      - name: Skip if domain not changed, push event skipped, or PR missing pack label
+      - name: Skip if domain not changed, not shared, or pack not requested
         if: |
-          needs.changes.outputs[matrix.domain] == 'true'
+          (needs.changes.outputs[matrix.domain] == 'true'
+           || needs.changes.outputs.shared == 'true')
           && (github.event_name == 'push' || github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'pack')))
         id: gate
         run: echo "Proceeding with pack ${{ matrix.domain }}"

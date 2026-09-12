@@ -6,7 +6,7 @@ namespace Observables.Analyzers.Tests;
 public sealed class RestApiPathSuggestionsTests
 {
     [Fact]
-    public void SuggestPath_uses_parameter_placeholders()
+    public void SuggestPath_uses_unmarked_parameter_placeholders()
     {
         const string source =
             """
@@ -39,5 +39,24 @@ public sealed class RestApiPathSuggestionsTests
         var path = RestApiPathSuggestions.SuggestPath(method);
 
         Assert.Equal("/getusers", path);
+    }
+
+    [Fact]
+    public void SuggestPath_excludes_body_parameter()
+    {
+        const string source =
+            """
+            public interface IApi
+            {
+                void Create([Body] User dto);
+            }
+            """;
+
+        var tree = CSharpSyntaxTree.ParseText(source, cancellationToken: TestContext.Current.CancellationToken);
+        var method = tree.GetRoot(TestContext.Current.CancellationToken).DescendantNodes().OfType<MethodDeclarationSyntax>().Single();
+        var path = RestApiPathSuggestions.SuggestPath(method);
+
+        Assert.Equal("/create", path);
+        Assert.DoesNotContain("{dto}", path, StringComparison.Ordinal);
     }
 }

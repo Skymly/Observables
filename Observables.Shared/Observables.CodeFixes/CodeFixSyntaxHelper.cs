@@ -2,6 +2,8 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Editing;
+using Observables.Analyzers;
+using Observables.RestAPI;
 using Observables.Roslyn.Shared;
 using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 
@@ -86,16 +88,8 @@ internal static class CodeFixSyntaxHelper
     internal static string NormalizeAttributeName(string name) =>
         name.EndsWith("Attribute", StringComparison.Ordinal) ? name : name + "Attribute";
 
-    internal static string SuggestRestApiPath(MethodDeclarationSyntax method)
-    {
-        var parameters = GetNonCancellationParameterNames(method);
-        if (parameters.Count == 0)
-        {
-            return "/" + method.Identifier.Text.ToLowerInvariant();
-        }
-
-        return "/" + string.Join("/", parameters.Select(p => "{" + p + "}"));
-    }
+    internal static string SuggestRestApiPath(MethodDeclarationSyntax method) =>
+        RestApiPathTemplate.Suggest(method.Identifier.Text, RestApiSyntaxSlots.From(method));
 
     internal static AttributeListSyntax CreateAttributeList(string attributeSource)
     {

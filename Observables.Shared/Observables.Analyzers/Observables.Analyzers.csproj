@@ -30,6 +30,9 @@
     <Compile Include="..\Observables.Roslyn.Shared\ProxyDomainTable.cs">
       <Link>Shared/ProxyDomainTable.cs</Link>
     </Compile>
+    <Compile Include="..\..\Observables.RestAPI\Observables.RestAPI\RestApiPathTemplate.cs">
+      <Link>Shared/RestApiPathTemplate.cs</Link>
+    </Compile>
   </ItemGroup>
 
   <ItemGroup>
@@ -37,3 +40,4 @@
   </ItemGroup>
 
 </Project>
+

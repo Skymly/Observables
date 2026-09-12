@@ -143,6 +143,79 @@ public sealed class NatsInterfaceGeneratorTests
             $"Expected cache miss (Modified/New), got {reason}");
     }
 
+
+    [Fact]
+    public void Unattributed_property_reports_OBS9001()
+    {
+        const string userSource =
+            """
+            [Nats]
+            public interface IFeed
+            {
+                Observable<int> Bare { get; }
+            }
+            """;
+
+        var output = GeneratorTestHarness.Run(userSource);
+        var snapshot = GeneratorTestHarness.ToSnapshot(output);
+        Assert.Contains("OBS9001", snapshot, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Renamed_cancellation_token_is_passed_through()
+    {
+        const string userSource =
+            """
+            [Nats]
+            public interface IHub
+            {
+                [NatsPublish("ping")]
+                Observable<Unit> Ping(CancellationToken ct);
+            }
+            """;
+
+        var output = GeneratorTestHarness.Run(userSource);
+        var snapshot = GeneratorTestHarness.ToSnapshot(output);
+        Assert.Contains(", ct)", snapshot, StringComparison.Ordinal);
+        Assert.DoesNotContain(", cancellationToken)", snapshot, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Non_trailing_cancellation_token_reports_OBS9001()
+    {
+        const string userSource =
+            """
+            [Nats]
+            public interface IHub
+            {
+                [NatsPublish("commands.{id}.restart")]
+                Observable<Unit> Restart(CancellationToken ct, string id);
+            }
+            """;
+
+        var output = GeneratorTestHarness.Run(userSource);
+        var snapshot = GeneratorTestHarness.ToSnapshot(output);
+        Assert.Contains("OBS9001", snapshot, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Subject_literal_with_quotes_is_escaped()
+    {
+        const string userSource =
+            """
+            [Nats]
+            public interface IHub
+            {
+                [NatsSubscribe("a\"b")]
+                Observable<string> Odd { get; }
+            }
+            """;
+
+        var output = GeneratorTestHarness.Run(userSource);
+        var snapshot = GeneratorTestHarness.ToSnapshot(output);
+        Assert.Contains(@"FromSubscribe<global::System.String>(_connection, ""a\""b"")", snapshot, StringComparison.Ordinal);
+    }
+
     [Fact]
     public Task Nats_interface_with_keyword_parameter_names_generates_valid_code()
     {

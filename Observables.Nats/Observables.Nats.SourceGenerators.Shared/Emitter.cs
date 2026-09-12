@@ -50,14 +50,14 @@ internal static class Emitter
                 $$"""
                     private {{member.ReturnTypeDisplay}}? _{{member.MemberName}};
                     public {{member.ReturnTypeDisplay}} {{member.MemberName}} =>
-                        _{{member.MemberName}} ??= {{BridgeType}}.FromSubscribe<{{member.ResultTypeDisplay}}>(_connection, "{{member.SubjectTemplate}}");
+                        _{{member.MemberName}} ??= {{BridgeType}}.FromSubscribe<{{member.ResultTypeDisplay}}>(_connection, {{FormatLiteral(member.SubjectTemplate)}});
 
                 """);
             return;
         }
 
         var subjectExpression = BuildSubjectExpression(member);
-        var cancellation = member.HasCancellationToken ? ", cancellationToken" : ", default";
+        var cancellation = member.CancellationTokenParameterName is { } ctName ? $", {ctName}" : ", default";
         var bridgeCall = BuildBridgeCall(member, subjectExpression, cancellation);
 
         var parameterList = member.ParameterDeclarations.Count == 0
@@ -93,12 +93,22 @@ internal static class Emitter
     {
         if (member.SubjectParameterNames.Count == 0)
         {
-            return $"\"{member.SubjectTemplate}\"";
+            return FormatLiteral(member.SubjectTemplate);
         }
 
         var args = string.Join(
             ", ",
-            member.SubjectParameterNames.AsArray().Select(static n => $"\"{n}\", {IdentifierHelper.Escape(n)}"));
-        return $"global::Observables.Nats.NatsSubject.Format(\"{member.SubjectTemplate}\", {args})";
+            member.SubjectParameterNames.AsArray().Select(static n => $"{FormatLiteral(n)}, {IdentifierHelper.Escape(n)}"));
+        return $"global::Observables.Nats.NatsSubject.Format({FormatLiteral(member.SubjectTemplate)}, {args})";
+    }
+
+    static string FormatLiteral(string value)
+    {
+        return "\u0022" + value
+            .Replace("\\", "\\\\")
+            .Replace("\u0022", "\\\u0022")
+            .Replace("\r", "\\r")
+            .Replace("\n", "\\n")
+            .Replace("\t", "\\t") + "\u0022";
     }
 }

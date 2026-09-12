@@ -39,12 +39,22 @@ internal static class Emitter
             model.Members.AsArray(),
             (writer, member) => writer.WriteLine(
                 $$"""
-                    private {{member.ReturnTypeDisplay}}? _{{member.MemberName}};
+                    private {{member.ReturnTypeDisplay}}? {{IdentifierHelper.BackingFieldName(member.MemberName)}};
                     public {{member.ReturnTypeDisplay}} {{member.MemberName}} =>
-                        _{{member.MemberName}} ??= {{BridgeType}}.FromEvent<{{member.ResultTypeDisplay}}>(_connection, "{{member.EventName}}");
+                        {{IdentifierHelper.BackingFieldName(member.MemberName)}} ??= {{BridgeType}}.FromEvent<{{member.ResultTypeDisplay}}>(_connection, {{FormatLiteral(member.EventName)}});
 
                 """),
             trim: new ProxyClassEmitter.TrimWarnings(
                 "SSE payload deserialization uses System.Text.Json reflection. Preserve payload type members when trimming.",
                 "SSE payload deserialization uses System.Text.Json reflection."));
+
+    static string FormatLiteral(string value)
+    {
+        return "\u0022" + value
+            .Replace("\\", "\\\\")
+            .Replace("\u0022", "\\\u0022")
+            .Replace("\r", "\\r")
+            .Replace("\n", "\\n")
+            .Replace("\t", "\\t") + "\u0022";
+    }
 }

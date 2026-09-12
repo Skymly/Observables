@@ -9,4 +9,4 @@ internal sealed record HubMemberModel(
     string ResultTypeDisplay,
     ImmutableEquatableArray<string> ParameterDeclarations,
     ImmutableEquatableArray<string> ParameterNames,
-    bool HasCancellationToken);
+    string? CancellationTokenParameterName);

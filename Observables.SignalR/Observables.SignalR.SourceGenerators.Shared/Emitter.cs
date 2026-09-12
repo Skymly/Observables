@@ -48,9 +48,9 @@ internal static class Emitter
         {
             writer.WriteLine(
                 $$"""
-                    private {{member.ReturnTypeDisplay}}? _{{member.MemberName}};
+                    private {{member.ReturnTypeDisplay}}? {{IdentifierHelper.BackingFieldName(member.MemberName)}};
                     public {{member.ReturnTypeDisplay}} {{member.MemberName}} =>
-                        _{{member.MemberName}} ??= {{BridgeType}}.FromOn<{{member.ResultTypeDisplay}}>(_connection, "{{member.HubMethodName}}");
+                        {{IdentifierHelper.BackingFieldName(member.MemberName)}} ??= {{BridgeType}}.FromOn<{{member.ResultTypeDisplay}}>(_connection, {{FormatLiteral(member.HubMethodName)}});
 
                 """);
             return;
@@ -60,16 +60,17 @@ internal static class Emitter
             ? "global::System.Array.Empty<object?>()"
             : "new object?[] { " + string.Join(", ", member.ParameterNames.AsArray()) + " }";
 
-        var cancellation = member.HasCancellationToken ? ", cancellationToken" : ", default";
+        var cancellation = member.CancellationTokenParameterName is { } ctName ? $", {ctName}" : ", default";
+        var methodName = FormatLiteral(member.HubMethodName);
 
         var bridgeCall = member.BoundaryKind switch
         {
             HubBoundaryKind.Invoke =>
-                $"{BridgeType}.FromInvoke<{member.ResultTypeDisplay}>(_connection, \"{member.HubMethodName}\", {argsExpression}{cancellation})",
+                $"{BridgeType}.FromInvoke<{member.ResultTypeDisplay}>(_connection, {methodName}, {argsExpression}{cancellation})",
             HubBoundaryKind.Send =>
-                $"{BridgeType}.FromSend(_connection, \"{member.HubMethodName}\", {argsExpression}{cancellation})",
+                $"{BridgeType}.FromSend(_connection, {methodName}, {argsExpression}{cancellation})",
             HubBoundaryKind.Stream =>
-                $"{BridgeType}.FromStream<{member.ResultTypeDisplay}>(_connection, \"{member.HubMethodName}\", {argsExpression}{cancellation})",
+                $"{BridgeType}.FromStream<{member.ResultTypeDisplay}>(_connection, {methodName}, {argsExpression}{cancellation})",
             _ => throw new InvalidOperationException("Unexpected boundary for method."),
         };
 
@@ -83,5 +84,15 @@ internal static class Emitter
                     {{bridgeCall}};
 
             """);
+    }
+
+    static string FormatLiteral(string value)
+    {
+        return "\u0022" + value
+            .Replace("\\", "\\\\")
+            .Replace("\u0022", "\\\u0022")
+            .Replace("\r", "\\r")
+            .Replace("\n", "\\n")
+            .Replace("\t", "\\t") + "\u0022";
     }
 }

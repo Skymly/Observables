@@ -3,7 +3,7 @@
   <!--
     ILLink trim-analysis smoke project.
 
-    References all 7 domain runtimes + their R3 source generators so that
+    References all 9 IO domain runtimes + their R3 source generators so that
     source-generated proxy implementations are produced and analysed by the
     trim analyser during `dotnet build` (compile-time IL2xxx warnings) and
     `dotnet publish -r <rid>` (ILLink cross-assembly analysis).
@@ -49,6 +49,8 @@
     <ProjectReference Include="..\..\Observables.WebSocket\Observables.WebSocket\Observables.WebSocket.csproj" />
     <ProjectReference Include="..\..\Observables.Grpc\Observables.Grpc\Observables.Grpc.csproj" />
     <ProjectReference Include="..\..\Observables.Sse\Observables.Sse\Observables.Sse.csproj" />
+    <ProjectReference Include="..\..\Observables.Postgres\Observables.Postgres\Observables.Postgres.csproj" />
+    <ProjectReference Include="..\..\Observables.Redis\Observables.Redis\Observables.Redis.csproj" />
   </ItemGroup>
 
   <!-- R3 source generators (analyzer references → generate proxy implementations) -->
@@ -66,6 +68,10 @@
     <ProjectReference Include="..\..\Observables.Grpc\Observables.Grpc.R3.SourceGenerators\Observables.Grpc.R3.SourceGenerators.csproj"
                       OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
     <ProjectReference Include="..\..\Observables.Sse\Observables.Sse.R3.SourceGenerators\Observables.Sse.R3.SourceGenerators.csproj"
+                      OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+    <ProjectReference Include="..\..\Observables.Postgres\Observables.Postgres.R3.SourceGenerators\Observables.Postgres.R3.SourceGenerators.csproj"
+                      OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+    <ProjectReference Include="..\..\Observables.Redis\Observables.Redis.R3.SourceGenerators\Observables.Redis.R3.SourceGenerators.csproj"
                       OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
   </ItemGroup>
 

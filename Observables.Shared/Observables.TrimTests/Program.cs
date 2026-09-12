@@ -1,7 +1,7 @@
 // ILLink trim-analysis smoke project.
 //
 // This program is never executed. Its sole purpose is to compile, trigger
-// the R3 source generators for all 7 domains, and let ILLink verify that
+// the R3 source generators for all 9 IO domains, and let ILLink verify that
 // RequiresUnreferencedCode / RequiresDynamicCode / DynamicallyAccessedMembers
 // annotations are correct under <PublishTrimmed>true</PublishTrimmed> +
 // <TrimMode>full</TrimMode>.
@@ -21,11 +21,15 @@ using NATS.Client.Core;
 using Observables.Grpc;
 using Observables.Mqtt;
 using Observables.Nats;
+using Observables.Postgres;
+using Observables.Redis;
 using Observables.RestAPI;
 using Observables.SignalR;
 using Observables.Sse;
 using Observables.WebSocket;
+using Npgsql;
 using R3;
+using StackExchange.Redis;
 
 // ── Program entry point ──────────────────────────────────────────────────
 
@@ -85,6 +89,14 @@ internal static class TrimProgram
                 new HttpClient(),
                 new Uri("https://trim.example.com/events")));
         _ = sse;
+
+        // Postgres — LISTEN/NOTIFY proxy annotations.
+        var postgres = PostgresService.For<Observables.TrimTests.Postgres.ITrimPostgres>(null!);
+        _ = postgres;
+
+        // Redis — Pub/Sub proxy annotations.
+        var redis = RedisService.For<Observables.TrimTests.Redis.ITrimRedis>(null!);
+        _ = redis;
     }
 }
 
@@ -197,5 +209,31 @@ namespace Observables.TrimTests.Sse
 
         [SseEvent("tick")]
         Observable<TrimTick> Ticks { get; }
+    }
+}
+
+namespace Observables.TrimTests.Postgres
+{
+    [Postgres]
+    public interface ITrimPostgres
+    {
+        [Listen("trim")]
+        Observable<string> Ticks { get; }
+
+        [Notify("trim")]
+        Observable<Unit> NotifyTick();
+    }
+}
+
+namespace Observables.TrimTests.Redis
+{
+    [Redis]
+    public interface ITrimRedis
+    {
+        [RedisSubscribe("trim.ping")]
+        Observable<string> Ping { get; }
+
+        [RedisPublish("trim.ping")]
+        Observable<Unit> PublishPing();
     }
 }

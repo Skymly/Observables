@@ -14,3 +14,11 @@ OBS8007 | Observables.Sse | Warning | Empty SSE proxy interface
 OBS9007 | Observables.Nats | Warning | Empty NATS proxy interface
 OBS10007 | Observables.Postgres | Warning | Empty Postgres proxy interface
 OBS11007 | Observables.Redis | Warning | Empty Redis proxy interface
+
+## Release 1.1
+
+### New Rules
+
+Rule ID | Category | Severity | Notes
+--------|----------|----------|-------
+OBS0002 | Observables | Error | Open generic proxy interfaces are not supported

@@ -18,3 +18,11 @@ OBS7006 | Observables.Grpc | Error | Unsupported Grpc option
 Rule ID | Category | Severity | Notes
 --------|----------|----------|-------
 OBS7008 | Observables.Grpc | Error | Internal source generator error
+
+## Release 1.2
+
+### New Rules
+
+Rule ID | Category | Severity | Notes
+--------|----------|----------|-------
+OBS7009 | Observables.Grpc | Error | Request/response type is not string or IMessage<T>

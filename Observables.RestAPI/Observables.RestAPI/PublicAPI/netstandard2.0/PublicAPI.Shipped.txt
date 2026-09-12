@@ -288,3 +288,50 @@ Observables.RestAPI.RestApiAttribute
 Observables.RestAPI.RestApiAttribute.RestApiAttribute() -> void
 Observables.RestAPI.RestApiDefaults
 const Observables.RestAPI.RestApiDefaults.MultipartBoundary = "----MyGreatBoundary" -> string!
+Observables.RestAPI.RestApiBridge.Binding
+Observables.RestAPI.RestApiBridge.Binding.Binding() -> void
+Observables.RestAPI.RestApiBridge.Binding.ArgIndex.get -> int
+Observables.RestAPI.RestApiBridge.Binding.AuthorizeScheme.get -> string?
+Observables.RestAPI.RestApiBridge.Binding.Binding(Observables.RestAPI.RestApiBridge.SlotKind kind, int argIndex, string! name, string? headerName = null, string? authorizeScheme = null, string? propertyKey = null, Observables.RestAPI.RestApiBridge.QueryOptions query = default(Observables.RestAPI.RestApiBridge.QueryOptions)) -> void
+Observables.RestAPI.RestApiBridge.Binding.HeaderName.get -> string?
+Observables.RestAPI.RestApiBridge.Binding.Kind.get -> Observables.RestAPI.RestApiBridge.SlotKind
+Observables.RestAPI.RestApiBridge.Binding.Name.get -> string!
+Observables.RestAPI.RestApiBridge.Binding.PropertyKey.get -> string?
+Observables.RestAPI.RestApiBridge.Binding.Query.get -> Observables.RestAPI.RestApiBridge.QueryOptions
+Observables.RestAPI.RestApiBridge.MethodFlags
+Observables.RestAPI.RestApiBridge.MethodFlags.BodyBuffered.get -> bool?
+Observables.RestAPI.RestApiBridge.MethodFlags.BodySerializationMethod.get -> int
+Observables.RestAPI.RestApiBridge.MethodFlags.IsMultipart.get -> bool
+Observables.RestAPI.RestApiBridge.MethodFlags.MethodFlags() -> void
+Observables.RestAPI.RestApiBridge.MethodFlags.MethodFlags(bool isMultipart = false, string? multipartBoundary = null, int queryUriFormat = 1, int bodySerializationMethod = 0, bool? bodyBuffered = null, string![]? staticHeaders = null) -> void
+Observables.RestAPI.RestApiBridge.MethodFlags.MultipartBoundary.get -> string?
+Observables.RestAPI.RestApiBridge.MethodFlags.QueryUriFormat.get -> int
+Observables.RestAPI.RestApiBridge.MethodFlags.StaticHeaders.get -> string![]?
+Observables.RestAPI.RestApiBridge.MethodSpec
+Observables.RestAPI.RestApiBridge.MethodSpec.MethodSpec() -> void
+Observables.RestAPI.RestApiBridge.MethodSpec.Bindings.get -> Observables.RestAPI.RestApiBridge.Binding[]!
+Observables.RestAPI.RestApiBridge.MethodSpec.Flags.get -> Observables.RestAPI.RestApiBridge.MethodFlags
+Observables.RestAPI.RestApiBridge.MethodSpec.HttpMethod.get -> string!
+Observables.RestAPI.RestApiBridge.MethodSpec.MethodSpec(string! httpMethod, string! pathTemplate, Observables.RestAPI.RestApiBridge.Binding[]? bindings, Observables.RestAPI.RestApiBridge.MethodFlags flags = default(Observables.RestAPI.RestApiBridge.MethodFlags)) -> void
+Observables.RestAPI.RestApiBridge.MethodSpec.PathTemplate.get -> string!
+Observables.RestAPI.RestApiBridge.QueryOptions
+Observables.RestAPI.RestApiBridge.QueryOptions.CollectionFormat.get -> int
+Observables.RestAPI.RestApiBridge.QueryOptions.CollectionFormatSpecified.get -> bool
+Observables.RestAPI.RestApiBridge.QueryOptions.Delimiter.get -> string?
+Observables.RestAPI.RestApiBridge.QueryOptions.Format.get -> string?
+Observables.RestAPI.RestApiBridge.QueryOptions.Prefix.get -> string?
+Observables.RestAPI.RestApiBridge.QueryOptions.QueryOptions() -> void
+Observables.RestAPI.RestApiBridge.QueryOptions.QueryOptions(string? format = null, string? prefix = null, string? delimiter = null, bool treatAsString = false, int collectionFormat = 0, bool collectionFormatSpecified = false) -> void
+Observables.RestAPI.RestApiBridge.QueryOptions.TreatAsString.get -> bool
+Observables.RestAPI.RestApiBridge.SlotKind
+Observables.RestAPI.RestApiBridge.SlotKind.Authorize = 5 -> Observables.RestAPI.RestApiBridge.SlotKind
+Observables.RestAPI.RestApiBridge.SlotKind.Body = 7 -> Observables.RestAPI.RestApiBridge.SlotKind
+Observables.RestAPI.RestApiBridge.SlotKind.Header = 3 -> Observables.RestAPI.RestApiBridge.SlotKind
+Observables.RestAPI.RestApiBridge.SlotKind.HeaderCollection = 4 -> Observables.RestAPI.RestApiBridge.SlotKind
+Observables.RestAPI.RestApiBridge.SlotKind.Multipart = 8 -> Observables.RestAPI.RestApiBridge.SlotKind
+Observables.RestAPI.RestApiBridge.SlotKind.Path = 1 -> Observables.RestAPI.RestApiBridge.SlotKind
+Observables.RestAPI.RestApiBridge.SlotKind.Property = 6 -> Observables.RestAPI.RestApiBridge.SlotKind
+Observables.RestAPI.RestApiBridge.SlotKind.Query = 2 -> Observables.RestAPI.RestApiBridge.SlotKind
+static Observables.RestAPI.RestApiBridge.SendAsync<T, TBody>(System.Net.Http.HttpClient! client, Observables.RestAPI.RestApiSettings! settings, in Observables.RestAPI.RestApiBridge.MethodSpec spec, System.Threading.CancellationToken cancellationToken, params object?[]! args) -> System.Threading.Tasks.Task<T?>!
+static Observables.RestAPI.RestApiBridge.SendVoidAsync(System.Net.Http.HttpClient! client, Observables.RestAPI.RestApiSettings! settings, in Observables.RestAPI.RestApiBridge.MethodSpec spec, System.Threading.CancellationToken cancellationToken, params object?[]! args) -> System.Threading.Tasks.Task!
+static Observables.RestAPI.RestService.OwnsHttpClient(System.Net.Http.HttpClient! client) -> bool

@@ -9,7 +9,7 @@ internal sealed record RedisMemberModel(
     string ResultTypeDisplay,
     ImmutableEquatableArray<string> ParameterDeclarations,
     ImmutableEquatableArray<string> ChannelParameterNames,
-    bool HasCancellationToken,
+    string? CancellationTokenParameterName,
     string? PayloadParameterName,
     string? PayloadTypeDisplay,
     bool IsPatternSubscribe = false,

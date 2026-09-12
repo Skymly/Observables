@@ -249,4 +249,76 @@ public sealed class RedisInterfaceGeneratorTests
 
         Assert.Contains("OBS11006", snapshot, StringComparison.Ordinal);
     }
+
+    [Fact]
+    public void Unattributed_property_reports_OBS11001()
+    {
+        const string userSource =
+            """
+            [Redis]
+            public interface IFeed
+            {
+                Observable<int> Bare { get; }
+            }
+            """;
+
+        var output = GeneratorTestHarness.Run(userSource);
+        var snapshot = GeneratorTestHarness.ToSnapshot(output);
+        Assert.Contains("OBS11001", snapshot, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Renamed_cancellation_token_is_passed_through()
+    {
+        const string userSource =
+            """
+            [Redis]
+            public interface IHub
+            {
+                [RedisPublish("ping")]
+                Observable<Unit> Ping(CancellationToken ct);
+            }
+            """;
+
+        var output = GeneratorTestHarness.Run(userSource);
+        var snapshot = GeneratorTestHarness.ToSnapshot(output);
+        Assert.Contains(", ct)", snapshot, StringComparison.Ordinal);
+        Assert.DoesNotContain(", cancellationToken)", snapshot, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Non_trailing_cancellation_token_reports_OBS11001()
+    {
+        const string userSource =
+            """
+            [Redis]
+            public interface IHub
+            {
+                [RedisPublish("commands/{id}")]
+                Observable<Unit> Publish(CancellationToken ct, string id);
+            }
+            """;
+
+        var output = GeneratorTestHarness.Run(userSource);
+        var snapshot = GeneratorTestHarness.ToSnapshot(output);
+        Assert.Contains("OBS11001", snapshot, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Channel_literal_with_quotes_is_escaped()
+    {
+        const string userSource =
+            """
+            [Redis]
+            public interface IHub
+            {
+                [RedisSubscribe("a\"b")]
+                Observable<string> Odd { get; }
+            }
+            """;
+
+        var output = GeneratorTestHarness.Run(userSource);
+        var snapshot = GeneratorTestHarness.ToSnapshot(output);
+        Assert.Contains(@"FromSubscribe<global::System.String>(_multiplexer, ""a\""b"")", snapshot, StringComparison.Ordinal);
+    }
 }

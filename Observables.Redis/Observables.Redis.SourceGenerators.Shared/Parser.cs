@@ -4,6 +4,7 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Observables.SourceGenerators.Shared.Diagnostics;
+using Observables.SourceGenerators.Shared.Extensions;
 
 namespace Observables.Redis.Generators;
 
@@ -53,7 +54,7 @@ internal static class Parser
                 members,
                 diagnostics),
             createInterface: static (marked, className, members) => new RedisInterfaceModel(
-                $"{className}.Redis.g.cs",
+                $"{marked.InterfaceSymbol.GetSafeHintName()}.Redis.g.cs",
                 className,
                 marked.InterfaceSymbol.ToDisplayString(DisplayFormat),
                 BackendTokens.QualifyGeneratedNamespace("Observables.Redis"),
@@ -151,7 +152,18 @@ internal static class Parser
             return;
         }
 
-        var (declarations, hasCt) = BuildParameters(method);
+        if (HasNonTrailingCancellationToken(method))
+        {
+            diagnostics.Add(
+                Diagnostic.Create(
+                    DiagnosticDescriptors.InvalidRedisMember,
+                    method.Locations.FirstOrDefault(),
+                    ifaceSymbol.Name,
+                    method.Name));
+            return;
+        }
+
+        var (declarations, ctName) = BuildParameters(method);
         members.Add(
             new RedisMemberModel(
                 IdentifierHelper.Escape(method.Name),
@@ -162,7 +174,7 @@ internal static class Parser
                 resultType,
                 declarations.ToImmutableEquatableArray(),
                 channelParameterNames.ToImmutableEquatableArray(),
-                hasCt,
+                ctName,
                 payloadParameterName,
                 payloadTypeDisplay,
                 IsPatternSubscribe: false,
@@ -191,16 +203,12 @@ internal static class Parser
 
         if (subscribeAttribute is null || !IoProxyInterfaceWalk.HasAttribute(property, subscribeAttribute))
         {
-            if (property.GetAttributes().Length > 0)
-            {
-                diagnostics.Add(
-                    Diagnostic.Create(
-                        DiagnosticDescriptors.InvalidRedisMember,
-                        property.Locations.FirstOrDefault(),
-                        property.ContainingType.Name,
-                        property.Name));
-            }
-
+            diagnostics.Add(
+                Diagnostic.Create(
+                    DiagnosticDescriptors.InvalidRedisMember,
+                    property.Locations.FirstOrDefault(),
+                    property.ContainingType.Name,
+                    property.Name));
             return;
         }
 
@@ -260,7 +268,7 @@ internal static class Parser
                 resultType,
                 ImmutableEquatableArray.Empty<string>(),
                 ImmutableEquatableArray.Empty<string>(),
-                false,
+                null,
                 null,
                 null,
                 IsPatternSubscribe: isPattern,
@@ -425,29 +433,51 @@ internal static class Parser
         return false;
     }
 
-    static (List<string> declarations, bool hasCancellationToken) BuildParameters(IMethodSymbol method)
+    static (List<string> declarations, string? cancellationTokenParameterName) BuildParameters(IMethodSymbol method)
     {
         var declarations = new List<string>();
-        var hasCt = false;
+        string? ctName = null;
 
         for (var i = 0; i < method.Parameters.Length; i++)
         {
             var parameter = method.Parameters[i];
             if (i == method.Parameters.Length - 1 && IsCancellationToken(parameter.Type))
             {
-                hasCt = true;
+                ctName = IdentifierHelper.Escape(parameter.Name);
                 declarations.Add(
-                    $"{parameter.Type.ToDisplayString(DisplayFormat)} {IdentifierHelper.Escape(parameter.Name)} = default");
+                    $"{parameter.Type.ToDisplayString(DisplayFormat)} {ctName} = default");
                 continue;
             }
 
             declarations.Add($"{parameter.Type.ToDisplayString(DisplayFormat)} {IdentifierHelper.Escape(parameter.Name)}");
         }
 
-        return (declarations, hasCt);
+        return (declarations, ctName);
     }
 
-    static bool IsCancellationToken(ITypeSymbol type) =>
-        type.Name == "CancellationToken"
-        && type.ContainingNamespace?.ToDisplayString() == "System.Threading";
+    static bool HasNonTrailingCancellationToken(IMethodSymbol method)
+    {
+        for (var i = 0; i < method.Parameters.Length - 1; i++)
+        {
+            if (IsCancellationToken(method.Parameters[i].Type))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    static bool IsCancellationToken(ITypeSymbol type)
+    {
+        if (type is INamedTypeSymbol named
+            && named.OriginalDefinition.SpecialType == SpecialType.System_Nullable_T
+            && named.TypeArguments.Length == 1)
+        {
+            type = named.TypeArguments[0];
+        }
+
+        return type.Name == "CancellationToken"
+            && type.ContainingNamespace?.ToDisplayString() == "System.Threading";
+    }
 }

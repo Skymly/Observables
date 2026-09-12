@@ -13,15 +13,25 @@ namespace Observables.Grpc.Generated
     {
 #if NET5_0_OR_GREATER
                     [global::System.Diagnostics.CodeAnalysis.DynamicDependency(global::System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.PublicConstructors | global::System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.PublicMethods | global::System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.PublicProperties, typeof(Observables.Grpc.Generated.EchoServiceGeneratedProxy))]
-        [System.Runtime.CompilerServices.ModuleInitializer]
         [global::System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessage("ILLink", "IL2026", Justification = "Factory registration only; the proxy is invoked by user code that declares RequiresUnreferencedCode.")]
+#endif
+        [global::System.Runtime.CompilerServices.ModuleInitializer]
         internal static void Initialize()
         {
             global::Observables.Grpc.GrpcService.RegisterGeneratedFactory(typeof(global::IEchoService), static c => new Observables.Grpc.Generated.EchoServiceGeneratedProxy(c));
         }
-#endif
     }
 }
+
+#if !NET5_0_OR_GREATER
+namespace System.Runtime.CompilerServices
+{
+    [global::System.AttributeUsage(global::System.AttributeTargets.Method, Inherited = false)]
+    internal sealed partial class ModuleInitializerAttribute : global::System.Attribute
+    {
+    }
+}
+#endif
 #pragma warning restore
 
 --- IEchoService.Grpc.g.cs ---

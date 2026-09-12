@@ -92,9 +92,9 @@ CallInvoker → remote gRPC service
 
 ## 6. 序列化（Marshaller）边界
 
-- **Protobuf 消息**：`GrpcMarshallers.ForMessage<T>()`，其中 `T : IMessage<T>, new()`。
+- **Protobuf 消息**：`GrpcMarshallers.ForMessage<T>()`，其中 `T : class, IMessage<T>, new()`。
 - **字符串载荷**：`GrpcMarshallers.String`（UTF-8），用于简单场景与测试。
-- 不支持的类型在 marshaller 创建时以 `NotSupportedException` 失败。
+- **其它类型**：生成器报告 **OBS7009** 并跳过该成员，不 emit 无法编译的 `ForMessage<T>`。
 
 生成的代理在编译期从请求/响应类型符号解析 marshaller。
 
@@ -122,6 +122,8 @@ CallInvoker → remote gRPC service
 | OBS7005 | Error | `IObservable<T>` 但未引用 `Observables.Grpc.Reactive` |
 | OBS7006 | Error | 不支持的参数组合 |
 | OBS7007 | Warning | 空 `[Grpc]` 接口（`Observables.Analyzers`） |
+| OBS7008 | Error | 生成器内部错误 |
+| OBS7009 | Error | 请求/响应类型不是 `string` 或 `IMessage<T>` |
 
 ## 9. 入口
 

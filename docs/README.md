@@ -7,7 +7,7 @@
 | 文档 | 说明 |
 |------|------|
 | [DOCUMENTATION.md](DOCUMENTATION.md) | 文档约定（ADR、Design Doc、同步规则） |
-| [../CONTRIBUTING.md](../CONTRIBUTING.md) | 贡献流程、发版历史、16 包清单 |
+| [../CONTRIBUTING.md](../CONTRIBUTING.md) | 贡献流程、发版历史、20 包清单 |
 | [design/architecture.md](design/architecture.md) | 架构总览（双后端、生成器管道、CI） |
 | [design/contributor.md](design/contributor.md) | 人类贡献者指南（新增域、测试、文档流程） |
 | [ROADMAP.md](ROADMAP.md) | 里程碑 M1–M7、Post-1.0 backlog |
@@ -31,6 +31,8 @@
 | Grpc | [design/grpc.md](design/grpc.md) | [grpc](https://skymly.github.io/Observables.Docs/grpc.html) |
 | Sse | [design/sse.md](design/sse.md) | [sse](https://skymly.github.io/Observables.Docs/sse.html) |
 | Nats | [design/nats.md](design/nats.md) | [nats](https://skymly.github.io/Observables.Docs/nats.html) |
+| Postgres | [design/postgres.md](design/postgres.md) | [postgres](https://skymly.github.io/Observables.Docs/postgres.html) |
+| Redis | [design/redis.md](design/redis.md) | [redis](https://skymly.github.io/Observables.Docs/redis.html) |
 
 ## 横切工程文档
 

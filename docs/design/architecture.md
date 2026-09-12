@@ -36,7 +36,7 @@ Observables.<Feature>/
 
 **Events 例外**：无双后端 shproj；R3 与 Reactive 各一套生成器源码，诊断 OBS2xxx 在域内 `DiagnosticDescriptors.cs`。
 
-**NuGet 面**：每域仅两个包 ID — `Observables.<Feature>.R3`、`Observables.<Feature>.Reactive`（共 16 包）。
+**NuGet 面**：每域仅两个包 ID — `Observables.<Feature>.R3`、`Observables.<Feature>.Reactive`（共 20 包，10 域）。
 
 ## 3. 双后端（R3 / System.Reactive）
 
@@ -93,7 +93,7 @@ flowchart LR
 
 ## 6. 构建与 CI
 
-- **Nuke**（`build/Program.cs`）：`Ci` → 域矩阵测试；`PackVerify` → 16 包结构断言；`Publish` → tag 触发。
+- **Nuke**（`build/Program.cs`）：`Ci` → 域矩阵测试；`PackVerify` → 20 包结构断言；`Publish` → tag 触发。
 - **清单**：`eng/Observables.BuildManifest.json`（pack / test / smoke 单一真相源）。
 - **CI 增量**：`dorny/paths-filter` — Shared 改动跑全域；单域改动只跑该域 test/pack job。
 - **Smoke**：`eng/nuget-smoke/<Feature>.{R3,Reactive}.Consumer` 用本地 nupkg 验证引用链。

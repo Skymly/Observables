@@ -6,10 +6,10 @@ Observables locks the **NuGet `lib/` runtime surface** with [`Microsoft.CodeAnal
 
 | Included | Excluded |
 |----------|----------|
-| 7 domain runtimes (`Observables.<Feature>/Observables.<Feature>/`) | Events packages (DevelopmentDependency; no consumer `lib/`) |
-| 7 Reactive bridges (`Observables.<Feature>.Reactive/`) | Source generators, Analyzers, CodeFixes, tests |
+| 9 domain runtimes (`Observables.<Feature>/Observables.<Feature>/`) | Events packages (DevelopmentDependency; no consumer `lib/`) |
+| 9 Reactive bridges (`Observables.<Feature>.Reactive/`) | Source generators, Analyzers, CodeFixes, tests |
 | Attributes, services, adapters shipped in meta-packages | `.Package` traversal/pack projects, `nuget-smoke` |
-| | `Observables.RestAPI.HttpClientFactory` (optional; not in 16-pack manifest) |
+| | `Observables.RestAPI.HttpClientFactory` (optional; not in 20-pack manifest) |
 
 Enforcement is wired in [`eng/Observables.PublicApi.props`](../eng/Observables.PublicApi.props) and imported from [`eng/Observables.ProjectDefaults.props`](../eng/Observables.ProjectDefaults.props) when `_ObsIsDomainRuntimeProject=true`.
 
@@ -40,7 +40,7 @@ Some members exist only on newer TFMs (for example `JsonNatsPayloadSerializer`, 
 ## Regenerating a baseline (maintainers)
 
 1. Ensure packages restore (`dotnet restore`).
-2. Run [`eng/scripts/bootstrap-public-api.ps1`](../eng/scripts/bootstrap-public-api.ps1) (all 14 runtime projects) or pass `-ProjectRelativePaths` for a subset.
+2. Run [`eng/scripts/bootstrap-public-api.ps1`](../eng/scripts/bootstrap-public-api.ps1) (all 18 runtime projects) or pass `-ProjectRelativePaths` for a subset.
 3. The script seeds `PublicAPI/<tfm>/` files, runs `dotnet format analyzers --framework <tfm> --diagnostics RS0016` for each TFM, then moves everything into `Shipped` (M7 freeze semantics).
 4. Verify: `dotnet run --project build/_build.csproj -- --target Ci` and `--target CiPack`.
 

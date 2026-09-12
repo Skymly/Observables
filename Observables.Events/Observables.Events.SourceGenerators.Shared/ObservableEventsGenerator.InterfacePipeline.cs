@@ -82,12 +82,20 @@ public sealed partial class ObservableEventsGenerator
         var parentTypes = new List<INamedTypeSymbol>();
         foreach (var parent in GetDirectBaseTypes(type))
         {
-            var parentDef = parent.IsGenericType ? (INamedTypeSymbol)parent.OriginalDefinition : parent;
+            var parentDef = HierarchyKey(parent);
             var contribution = ExpandForInterfaces(parentDef, result, entryKind, compilation, useWpf);
-            foreach (var c in contribution)
+            if (result.ContainsKey(parentDef))
             {
-                if (!parentTypes.Contains(c, SymbolEqualityComparer.Default))
-                    parentTypes.Add(c);
+                if (!parentTypes.Contains(parent, SymbolEqualityComparer.Default))
+                    parentTypes.Add(parent);
+            }
+            else
+            {
+                foreach (var c in contribution)
+                {
+                    if (!parentTypes.Contains(c, SymbolEqualityComparer.Default))
+                        parentTypes.Add(c);
+                }
             }
         }
 
@@ -105,7 +113,7 @@ public sealed partial class ObservableEventsGenerator
         var parentEventNames = new System.Collections.Generic.HashSet<string>(System.StringComparer.Ordinal);
         foreach (var pt in parentTypes)
         {
-            if (result.TryGetValue(pt, out var pd))
+            if (result.TryGetValue(HierarchyKey(pt), out var pd))
                 CollectAllInterfaceEventNames(pd, result, parentEventNames);
         }
 
@@ -121,6 +129,9 @@ public sealed partial class ObservableEventsGenerator
         result[type] = new EventInterfaceDescriptor(type, ifaceName, exclusiveEvents, parentTypes.ToImmutableArray());
         return ImmutableArray.Create(type);
     }
+
+    private static INamedTypeSymbol HierarchyKey(INamedTypeSymbol type) =>
+        type.IsGenericType ? (INamedTypeSymbol)type.OriginalDefinition : type;
 
     private static IEnumerable<INamedTypeSymbol> GetDirectBaseTypes(INamedTypeSymbol type)
     {
@@ -143,7 +154,7 @@ public sealed partial class ObservableEventsGenerator
             names.Add(evt.Name);
         foreach (var parentType in descriptor.ParentTypes)
         {
-            if (hierarchy.TryGetValue(parentType, out var pd))
+            if (hierarchy.TryGetValue(HierarchyKey(parentType), out var pd))
                 CollectAllInterfaceEventNames(pd, hierarchy, names);
         }
     }

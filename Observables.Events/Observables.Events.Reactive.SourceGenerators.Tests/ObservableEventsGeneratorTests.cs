@@ -413,6 +413,96 @@ public sealed class ObservableEventsGeneratorTests
         Assert.DoesNotContain("IButtonRoutedEvents", snapshot);
     }
 
+
+    [Fact]
+    public void Parent_event_interface_uses_constructed_type_arguments()
+    {
+        const string source = """
+            namespace Demo;
+
+            public class Bar<T>
+            {
+                public event System.Action<T>? BaseChanged;
+            }
+
+            public class Foo : Bar<int>
+            {
+                public event System.Action? FooChanged;
+            }
+
+            public static class Usage
+            {
+                public static void Run(Foo foo) => _ = foo.Events().FooChanged;
+            }
+            """;
+
+        GeneratorRunOutput output = GeneratorTestHarness.Run(
+            source,
+            generators: [new ObservableEventsGenerator()]);
+        string snapshot = GeneratorTestHarness.ToSnapshot(output);
+
+        Assert.Empty(output.Diagnostics.Where(static d => d.Severity == DiagnosticSeverity.Error));
+        Assert.Contains("IFooEvents : IBarEvents<", snapshot);
+        Assert.DoesNotContain("IFooEvents : IBarEvents<T>", snapshot);
+    }
+
+    [Fact]
+    public void Copies_source_type_parameter_constraints()
+    {
+        const string source = """
+            namespace Demo;
+
+            public class Foo<T> where T : class
+            {
+                public event System.Action<T>? ValueChanged;
+            }
+
+            public static class Usage
+            {
+                public static void Run(Foo<string> foo) => _ = foo.Events().ValueChanged;
+            }
+            """;
+
+        GeneratorRunOutput output = GeneratorTestHarness.Run(
+            source,
+            generators: [new ObservableEventsGenerator()]);
+        string snapshot = GeneratorTestHarness.ToSnapshot(output);
+
+        Assert.Empty(output.Diagnostics.Where(static d => d.Severity == DiagnosticSeverity.Error));
+        Assert.Contains("where T : class", snapshot);
+    }
+
+    [Fact]
+    public void Does_not_emit_AttachedRouted_without_Avalonia()
+    {
+        const string source = WpfStubs + """
+            namespace Demo
+            {
+                public static class Usage
+                {
+                    public static void Run(System.Windows.Controls.Button button)
+                    {
+                        _ = button.AttachedRoutedEvent();
+                        _ = button.AttachedRoutedEventHandler();
+                    }
+                }
+            }
+            """;
+
+        GeneratorRunOutput output = GeneratorTestHarness.Run(
+            source,
+            generators: [new ObservableEventsGenerator()],
+            useWpf: true,
+            observableRoutedEvents: true);
+
+        string snapshot = GeneratorTestHarness.ToSnapshot(output);
+
+        Assert.DoesNotContain("global::Avalonia.", snapshot);
+        Assert.DoesNotContain(
+            output.GeneratedSources,
+            static s => s.HintName.Contains("AttachedRoutedEvent", StringComparison.Ordinal));
+    }
+
     [Fact]
     public void Does_not_emit_routed_events_when_ObservableRoutedEvents_false()
     {

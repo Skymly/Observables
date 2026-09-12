@@ -71,6 +71,17 @@ internal static class DiagnosticDescriptors
             description: "Unsupported parameter combination or option on a gRPC member.",
             helpLinkUri: DiagnosticHelpLink.For("OBS7006"));
 
+    public static readonly DiagnosticDescriptor UnsupportedMessageType =
+        new(
+            "OBS7009",
+            "Unsupported gRPC message type",
+            "Type '{0}' on member '{1}.{2}' is not string or Google.Protobuf.IMessage<T>",
+            "Observables.Grpc",
+            DiagnosticSeverity.Error,
+            isEnabledByDefault: true,
+            description: "gRPC request or response types must be string or a protobuf IMessage<T> with a public parameterless constructor.",
+            helpLinkUri: DiagnosticHelpLink.For("OBS7009"));
+
     public static readonly DiagnosticDescriptor InternalGeneratorError =
         new(
             "OBS7008",

@@ -20,7 +20,8 @@ internal static class GeneratorTestHarness
                 typeof(global::System.Reactive.Unit),
                 typeof(global::Observables.Grpc.GrpcService),
                 typeof(global::Observables.Grpc.Reactive.SystemReactiveGrpcAdapter),
-                typeof(global::Grpc.Core.CallInvoker)),
+                typeof(global::Grpc.Core.CallInvoker),
+                typeof(global::Google.Protobuf.WellKnownTypes.Empty)),
             static () => [new GrpcInterfaceStubGenerator()],
             SnapshotOptionsFactory.ForDomain("OBS7")));
 

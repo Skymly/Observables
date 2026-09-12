@@ -114,6 +114,75 @@ public sealed class GrpcInterfaceGeneratorTests
     }
 
 
+
+    [Fact]
+    public void Protobuf_empty_still_emits_ForMessage()
+    {
+        const string userSource =
+            """
+            [Grpc("echo.Echo")]
+            public interface IEcho
+            {
+                [GrpcUnary("UnaryEcho")]
+                Observable<Google.Protobuf.WellKnownTypes.Empty> UnaryEcho(
+                    Google.Protobuf.WellKnownTypes.Empty request);
+            }
+            """;
+
+        var output = GeneratorTestHarness.Run(userSource);
+        var snapshot = GeneratorTestHarness.ToSnapshot(output);
+
+        Assert.DoesNotContain("OBS7009", snapshot, StringComparison.Ordinal);
+        Assert.Contains("ForMessage<global::Google.Protobuf.WellKnownTypes.Empty>()", snapshot, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Int_request_and_response_report_OBS7009_without_ForMessage()
+    {
+        const string userSource =
+            """
+            [Grpc]
+            public interface INumbers
+            {
+                [GrpcUnary]
+                Observable<int> Next(int n);
+            }
+            """;
+
+        var output = GeneratorTestHarness.Run(userSource);
+        var snapshot = GeneratorTestHarness.ToSnapshot(output);
+
+        Assert.Contains("OBS7009", snapshot, StringComparison.Ordinal);
+        Assert.DoesNotContain("ForMessage<int>", snapshot, StringComparison.Ordinal);
+        Assert.DoesNotContain("ForMessage<global::System.Int32>", snapshot, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Poco_request_and_response_report_OBS7009_without_ForMessage()
+    {
+        const string userSource =
+            """
+            public sealed class NumbersPoco
+            {
+                public int N { get; set; }
+            }
+
+            [Grpc]
+            public interface INumbers
+            {
+                [GrpcUnary]
+                Observable<NumbersPoco> Next(NumbersPoco n);
+            }
+            """;
+
+        var output = GeneratorTestHarness.Run(userSource);
+        var snapshot = GeneratorTestHarness.ToSnapshot(output);
+
+        Assert.Contains("OBS7009", snapshot, StringComparison.Ordinal);
+        Assert.DoesNotContain("ForMessage<NumbersPoco>", snapshot, StringComparison.Ordinal);
+        Assert.DoesNotContain("ForMessage<global::NumbersPoco>", snapshot, StringComparison.Ordinal);
+    }
+
     [Fact]
     public void Unattributed_property_reports_OBS7001()
     {

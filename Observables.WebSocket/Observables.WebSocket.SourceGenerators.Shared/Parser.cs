@@ -3,6 +3,7 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Observables.SourceGenerators.Shared.Diagnostics;
+using Observables.SourceGenerators.Shared.Extensions;
 
 namespace Observables.WebSocket.Generators;
 
@@ -55,7 +56,7 @@ internal static class Parser
                 members,
                 diagnostics),
             createInterface: static (marked, className, members) => new WebSocketInterfaceModel(
-                $"{className}.WebSocket.g.cs",
+                $"{marked.InterfaceSymbol.GetSafeHintName()}.WebSocket.g.cs",
                 className,
                 marked.InterfaceSymbol.ToDisplayString(DisplayFormat),
                 BackendTokens.QualifyGeneratedNamespace("Observables.WebSocket"),

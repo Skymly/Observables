@@ -23,7 +23,8 @@ internal static class GeneratorTestHarness
                 options.IncludeCoreReference
                     ? typeof(global::Observables.Grpc.GrpcService)
                     : null,
-                typeof(global::Grpc.Core.CallInvoker)),
+                typeof(global::Grpc.Core.CallInvoker),
+                typeof(global::Google.Protobuf.WellKnownTypes.Empty)),
             static () => [new GrpcInterfaceStubGenerator()],
             SnapshotOptionsFactory.ForDomain("OBS7")));
 

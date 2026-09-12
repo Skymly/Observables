@@ -129,6 +129,8 @@ internal static class Parser
         var nonCtParams = method.Parameters.Where(static p => !IsCancellationToken(p.Type)).ToList();
         string? requestType = null;
         string? streamRequestType = null;
+        ITypeSymbol? requestSymbol = null;
+        ITypeSymbol? streamRequestSymbol = null;
 
         switch (boundary)
         {
@@ -145,13 +147,18 @@ internal static class Parser
                     return;
                 }
 
-                requestType = nonCtParams[0].Type.ToDisplayString(DisplayFormat);
+                requestSymbol = nonCtParams[0].Type;
+                requestType = requestSymbol.ToDisplayString(DisplayFormat);
                 break;
 
             case GrpcBoundaryKind.ClientStream:
             case GrpcBoundaryKind.Duplex:
                 if (nonCtParams.Count != 1
-                    || !TryGetObservableElementType(nonCtParams[0].Type, observableType, out streamRequestType))
+                    || !TryGetObservableElementType(
+                        nonCtParams[0].Type,
+                        observableType,
+                        out streamRequestType,
+                        out streamRequestSymbol))
                 {
                     diagnostics.Add(
                         Diagnostic.Create(
@@ -173,6 +180,36 @@ internal static class Parser
                     method.Locations.FirstOrDefault(),
                     ifaceSymbol.Name,
                     method.Name));
+            return;
+        }
+
+        var messageInterface = compilation.GetTypeByMetadataName("Google.Protobuf.IMessage`1");
+        if (!TryGetObservableElementType(method.ReturnType, observableType, out _, out var responseSymbol)
+            || responseSymbol is null)
+        {
+            diagnostics.Add(
+                Diagnostic.Create(
+                    DiagnosticDescriptors.UnsupportedReturnType,
+                    method.Locations.FirstOrDefault(),
+                    returnDisplay));
+            return;
+        }
+
+        if (!IsSupportedMarshallerType(responseSymbol, messageInterface))
+        {
+            ReportUnsupportedMessageType(diagnostics, method, ifaceSymbol, responseSymbol);
+            return;
+        }
+
+        if (requestSymbol is not null && !IsSupportedMarshallerType(requestSymbol, messageInterface))
+        {
+            ReportUnsupportedMessageType(diagnostics, method, ifaceSymbol, requestSymbol);
+            return;
+        }
+
+        if (streamRequestSymbol is not null && !IsSupportedMarshallerType(streamRequestSymbol, messageInterface))
+        {
+            ReportUnsupportedMessageType(diagnostics, method, ifaceSymbol, streamRequestSymbol);
             return;
         }
 
@@ -236,9 +273,11 @@ internal static class Parser
     static bool TryGetObservableElementType(
         ITypeSymbol type,
         INamedTypeSymbol? observableType,
-        out string elementTypeDisplay)
+        out string elementTypeDisplay,
+        out ITypeSymbol? elementType)
     {
         elementTypeDisplay = string.Empty;
+        elementType = null;
         if (observableType is null
             || type is not INamedTypeSymbol { IsGenericType: true } named
             || named.TypeArguments.Length != 1
@@ -247,8 +286,66 @@ internal static class Parser
             return false;
         }
 
-        elementTypeDisplay = named.TypeArguments[0].ToDisplayString(DisplayFormat);
+        elementType = named.TypeArguments[0];
+        elementTypeDisplay = elementType.ToDisplayString(DisplayFormat);
         return true;
+    }
+
+    static void ReportUnsupportedMessageType(
+        List<Diagnostic> diagnostics,
+        IMethodSymbol method,
+        INamedTypeSymbol ifaceSymbol,
+        ITypeSymbol type)
+    {
+        diagnostics.Add(
+            Diagnostic.Create(
+                DiagnosticDescriptors.UnsupportedMessageType,
+                method.Locations.FirstOrDefault(),
+                type.ToDisplayString(DisplayFormat),
+                ifaceSymbol.Name,
+                method.Name));
+    }
+
+    static bool IsSupportedMarshallerType(ITypeSymbol type, INamedTypeSymbol? messageInterface)
+    {
+        type = UnwrapNullable(type);
+        if (type.SpecialType == SpecialType.System_String)
+        {
+            return true;
+        }
+
+        if (messageInterface is null || type is not INamedTypeSymbol named)
+        {
+            return false;
+        }
+
+        if (named.IsValueType || named.IsAbstract || named.TypeKind is TypeKind.Interface or TypeKind.Enum)
+        {
+            return false;
+        }
+
+        var constructed = messageInterface.Construct(named);
+        if (!named.AllInterfaces.Any(i => SymbolEqualityComparer.Default.Equals(i, constructed)))
+        {
+            return false;
+        }
+
+        return named.InstanceConstructors.Any(static ctor =>
+            !ctor.IsStatic
+            && ctor.Parameters.Length == 0
+            && ctor.DeclaredAccessibility == Accessibility.Public);
+    }
+
+    static ITypeSymbol UnwrapNullable(ITypeSymbol type)
+    {
+        if (type is INamedTypeSymbol named
+            && named.OriginalDefinition.SpecialType == SpecialType.System_Nullable_T
+            && named.TypeArguments.Length == 1)
+        {
+            return named.TypeArguments[0];
+        }
+
+        return type.WithNullableAnnotation(NullableAnnotation.None);
     }
 
 

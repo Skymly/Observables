@@ -1,4 +1,4 @@
-Diagnostics:
+﻿Diagnostics:
   <none>
 
 Generated Sources:
@@ -16,15 +16,25 @@ namespace Observables.RestAPI.Implementation
     internal static partial class Generated
     {
 #if NET5_0_OR_GREATER
-        [System.Runtime.CompilerServices.ModuleInitializer]
         [global::System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessage("ILLink", "IL2026", Justification = "Factory registration only; the proxy is invoked by user code that declares RequiresUnreferencedCode.")]
+#endif
+        [global::System.Runtime.CompilerServices.ModuleInitializer]
         public static void Initialize()
         {
                         global::Observables.RestAPI.RestService.RegisterGeneratedFactory(typeof(global::IUserApi), static (client, settings) => new global::Observables.RestAPI.Implementation.Generated.IUserApi(client, settings));
         }
-#endif
     }
 }
+
+#if !NET5_0_OR_GREATER
+namespace System.Runtime.CompilerServices
+{
+    [global::System.AttributeUsage(global::System.AttributeTargets.Method, Inherited = false)]
+    internal sealed partial class ModuleInitializerAttribute : global::System.Attribute
+    {
+    }
+}
+#endif
 #pragma warning restore
 
 --- IUserApi.g.cs ---

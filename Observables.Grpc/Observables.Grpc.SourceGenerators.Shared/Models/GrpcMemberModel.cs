@@ -10,4 +10,4 @@ internal sealed record GrpcMemberModel(
     string? StreamRequestTypeDisplay,
     ImmutableEquatableArray<string> ParameterDeclarations,
     ImmutableEquatableArray<string> ParameterNames,
-    bool HasCancellationToken);
+    string? CancellationTokenParameterName);

@@ -72,14 +72,14 @@ internal static class Emitter
         writer.WriteLine(
             $$"""
                     private static readonly global::Grpc.Core.Method<{{requestType}}, {{responseType}}> {{member.MemberName}}Method =
-                        new({{methodType}}, "{{serviceName}}", "{{member.RpcName}}", {{requestMarshaller}}, {{responseMarshaller}});
+                        new({{methodType}}, {{FormatLiteral(serviceName)}}, {{FormatLiteral(member.RpcName)}}, {{requestMarshaller}}, {{responseMarshaller}});
 
             """);
     }
 
     static void EmitMember(SourceWriter writer, GrpcMemberModel member)
     {
-        var cancellation = member.HasCancellationToken ? ", cancellationToken" : ", default";
+        var cancellation = member.CancellationTokenParameterName is { } ctName ? $", {ctName}" : ", default";
         var parameterList = member.ParameterDeclarations.Count == 0
             ? string.Empty
             : string.Join(", ", member.ParameterDeclarations.AsArray());
@@ -106,4 +106,14 @@ internal static class Emitter
         typeDisplay is "global::System.String" or "string"
             ? "global::Observables.Grpc.GrpcMarshallers.String"
             : $"global::Observables.Grpc.GrpcMarshallers.ForMessage<{typeDisplay}>()";
+
+    static string FormatLiteral(string value)
+    {
+        return "\u0022" + value
+            .Replace("\\", "\\\\")
+            .Replace("\u0022", "\\\u0022")
+            .Replace("\r", "\\r")
+            .Replace("\n", "\\n")
+            .Replace("\t", "\\t") + "\u0022";
+    }
 }

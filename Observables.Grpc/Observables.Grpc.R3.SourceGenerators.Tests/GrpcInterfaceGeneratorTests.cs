@@ -113,6 +113,79 @@ public sealed class GrpcInterfaceGeneratorTests
             $"Expected cache miss (Modified/New), got {reason}");
     }
 
+
+    [Fact]
+    public void Unattributed_property_reports_OBS7001()
+    {
+        const string userSource =
+            """
+            [Grpc("echo.Echo")]
+            public interface IEcho
+            {
+                Observable<int> Bare { get; }
+            }
+            """;
+
+        var output = GeneratorTestHarness.Run(userSource);
+        var snapshot = GeneratorTestHarness.ToSnapshot(output);
+        Assert.Contains("OBS7001", snapshot, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Renamed_cancellation_token_is_passed_through()
+    {
+        const string userSource =
+            """
+            [Grpc("echo.Echo")]
+            public interface IEcho
+            {
+                [GrpcUnary("UnaryEcho")]
+                Observable<string> UnaryEcho(string request, CancellationToken ct);
+            }
+            """;
+
+        var output = GeneratorTestHarness.Run(userSource);
+        var snapshot = GeneratorTestHarness.ToSnapshot(output);
+        Assert.Contains(", ct)", snapshot, StringComparison.Ordinal);
+        Assert.DoesNotContain(", cancellationToken)", snapshot, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Non_trailing_cancellation_token_reports_OBS7001()
+    {
+        const string userSource =
+            """
+            [Grpc("echo.Echo")]
+            public interface IEcho
+            {
+                [GrpcUnary("UnaryEcho")]
+                Observable<string> UnaryEcho(CancellationToken ct, string request);
+            }
+            """;
+
+        var output = GeneratorTestHarness.Run(userSource);
+        var snapshot = GeneratorTestHarness.ToSnapshot(output);
+        Assert.Contains("OBS7001", snapshot, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Rpc_name_with_quotes_is_escaped()
+    {
+        const string userSource =
+            """
+            [Grpc("echo.Echo")]
+            public interface IEcho
+            {
+                [GrpcUnary("a\"b")]
+                Observable<string> UnaryEcho(string request);
+            }
+            """;
+
+        var output = GeneratorTestHarness.Run(userSource);
+        var snapshot = GeneratorTestHarness.ToSnapshot(output);
+        Assert.Contains(@"new(global::Grpc.Core.MethodType.Unary, ""echo.Echo"", ""a\""b""", snapshot, StringComparison.Ordinal);
+    }
+
     [Fact]
     public Task Grpc_interface_with_keyword_parameter_names_generates_valid_code()
     {

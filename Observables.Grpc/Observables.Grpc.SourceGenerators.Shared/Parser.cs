@@ -3,6 +3,7 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Observables.SourceGenerators.Shared.Diagnostics;
+using Observables.SourceGenerators.Shared.Extensions;
 
 namespace Observables.Grpc.Generators;
 
@@ -51,7 +52,7 @@ internal static class Parser
                         property.Name));
             },
             createInterface: static (marked, className, members) => new GrpcInterfaceModel(
-                $"{className}.Grpc.g.cs",
+                $"{marked.InterfaceSymbol.GetSafeHintName()}.Grpc.g.cs",
                 className,
                 marked.InterfaceSymbol.ToDisplayString(DisplayFormat),
                 BackendTokens.QualifyGeneratedNamespace("Observables.Grpc"),

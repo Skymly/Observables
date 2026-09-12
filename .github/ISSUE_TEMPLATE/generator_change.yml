@@ -21,6 +21,10 @@ body:
         - WebSocket
         - Mqtt
         - Grpc
+        - Sse
+        - Nats
+        - Postgres
+        - Redis
     validations:
       required: true
 

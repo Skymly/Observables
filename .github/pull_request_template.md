@@ -17,6 +17,10 @@ Closes #
 - [ ] WebSocket
 - [ ] Mqtt
 - [ ] Grpc
+- [ ] Sse
+- [ ] Nats
+- [ ] Postgres
+- [ ] Redis
 - [ ] Solution Items only
 
 ## Type of change

@@ -9,5 +9,5 @@ public sealed class MqttTestBrokerFixture : IAsyncLifetime, IAsyncDisposable
     public async ValueTask DisposeAsync() => await Broker.DisposeAsync().ConfigureAwait(false);
 }
 
-[CollectionDefinition(nameof(MqttTestBrokerCollection))]
+[CollectionDefinition(nameof(MqttTestBrokerCollection), DisableParallelization = true)]
 public sealed class MqttTestBrokerCollection : ICollectionFixture<MqttTestBrokerFixture>;

@@ -9,4 +9,4 @@ internal sealed record MqttMemberModel(
     string ResultTypeDisplay,
     ImmutableEquatableArray<string> ParameterDeclarations,
     ImmutableEquatableArray<string> TopicParameterNames,
-    bool HasCancellationToken);
+    string? CancellationTokenParameterName);

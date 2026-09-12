@@ -3,6 +3,7 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Observables.SourceGenerators.Shared.Diagnostics;
+using Observables.SourceGenerators.Shared.Extensions;
 
 namespace Observables.Grpc.Generators;
 
@@ -43,18 +44,15 @@ internal static class Parser
                 diagnostics),
             tryAddProperty: (marked, property, members, diagnostics) =>
             {
-                if (property.GetAttributes().Length > 0)
-                {
-                    diagnostics.Add(
-                        Diagnostic.Create(
-                            DiagnosticDescriptors.InvalidGrpcMember,
-                            property.Locations.FirstOrDefault(),
-                            marked.InterfaceSymbol.Name,
-                            property.Name));
-                }
+                diagnostics.Add(
+                    Diagnostic.Create(
+                        DiagnosticDescriptors.InvalidGrpcMember,
+                        property.Locations.FirstOrDefault(),
+                        marked.InterfaceSymbol.Name,
+                        property.Name));
             },
             createInterface: static (marked, className, members) => new GrpcInterfaceModel(
-                $"{className}.Grpc.g.cs",
+                $"{marked.InterfaceSymbol.GetSafeHintName()}.Grpc.g.cs",
                 className,
                 marked.InterfaceSymbol.ToDisplayString(DisplayFormat),
                 BackendTokens.QualifyGeneratedNamespace("Observables.Grpc"),
@@ -167,7 +165,18 @@ internal static class Parser
                 break;
         }
 
-        var (declarations, names, hasCt) = BuildParameters(method);
+        if (HasNonTrailingCancellationToken(method))
+        {
+            diagnostics.Add(
+                Diagnostic.Create(
+                    DiagnosticDescriptors.InvalidGrpcMember,
+                    method.Locations.FirstOrDefault(),
+                    ifaceSymbol.Name,
+                    method.Name));
+            return;
+        }
+
+        var (declarations, names, ctName) = BuildParameters(method);
         members.Add(
             new GrpcMemberModel(
                 IdentifierHelper.Escape(method.Name),
@@ -179,7 +188,7 @@ internal static class Parser
                 streamRequestType,
                 declarations.ToImmutableEquatableArray(),
                 names.ToImmutableEquatableArray(),
-                hasCt));
+                ctName));
     }
 
     static string? GetServiceName(INamedTypeSymbol ifaceSymbol)
@@ -243,21 +252,21 @@ internal static class Parser
     }
 
 
-    static (List<string> declarations, List<string> names, bool hasCancellationToken) BuildParameters(
+    static (List<string> declarations, List<string> names, string? cancellationTokenParameterName) BuildParameters(
         IMethodSymbol method)
     {
         var declarations = new List<string>();
         var names = new List<string>();
-        var hasCt = false;
+        string? ctName = null;
 
         for (var i = 0; i < method.Parameters.Length; i++)
         {
             var parameter = method.Parameters[i];
             if (i == method.Parameters.Length - 1 && IsCancellationToken(parameter.Type))
             {
-                hasCt = true;
+                ctName = IdentifierHelper.Escape(parameter.Name);
                 declarations.Add(
-                    $"{parameter.Type.ToDisplayString(DisplayFormat)} {IdentifierHelper.Escape(parameter.Name)} = default");
+                    $"{parameter.Type.ToDisplayString(DisplayFormat)} {ctName} = default");
                 continue;
             }
 
@@ -265,10 +274,32 @@ internal static class Parser
             declarations.Add($"{parameter.Type.ToDisplayString(DisplayFormat)} {IdentifierHelper.Escape(parameter.Name)}");
         }
 
-        return (declarations, names, hasCt);
+        return (declarations, names, ctName);
     }
 
-    static bool IsCancellationToken(ITypeSymbol type) =>
-        type.Name == "CancellationToken"
-        && type.ContainingNamespace?.ToDisplayString() == "System.Threading";
+    static bool HasNonTrailingCancellationToken(IMethodSymbol method)
+    {
+        for (var i = 0; i < method.Parameters.Length - 1; i++)
+        {
+            if (IsCancellationToken(method.Parameters[i].Type))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    static bool IsCancellationToken(ITypeSymbol type)
+    {
+        if (type is INamedTypeSymbol named
+            && named.OriginalDefinition.SpecialType == SpecialType.System_Nullable_T
+            && named.TypeArguments.Length == 1)
+        {
+            type = named.TypeArguments[0];
+        }
+
+        return type.Name == "CancellationToken"
+            && type.ContainingNamespace?.ToDisplayString() == "System.Threading";
+    }
 }

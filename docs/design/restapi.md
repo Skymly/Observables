@@ -36,7 +36,7 @@ RestAPI 域的运行时部分包含由 [Refit](https://github.com/reactiveui/ref
 - **返回类型**：HTTP 方法经域内 `RestApiReturnTypeClassifier`（`Classify` → `RestApiReturnClassification`）分类；Observable / `IObservable` 分支读 `BackendTokens.IsR3`（不并入共享 `ObservableReturnTypeParser`，见 ROADMAP C1）。
 - **Emitter** 直接生成 `HttpRequestMessage` 构建代码与 `RestApiBridge` 调用，生成代码是直观的命令式方法体。
 - **运行时**不再反射接口元数据；`RestApiBridge` 仅提供静态助手（路径/查询格式化、请求发送、序列化）。
-- **代理注册**通过 `ModuleInitializer` + `RestService.RegisterGeneratedFactory` 自动注册（.NET 5+）；旧路径 `Type.GetType` + `Activator.CreateInstance` 保留为回退。
+- **代理注册**通过 `ModuleInitializer` + `RestService.RegisterGeneratedFactory` 自动注册（所有消费者 TFM）。ns2.0 由生成器发出 `partial ModuleInitializerAttribute` polyfill；无 `Type.GetType` / `Activator.CreateInstance` 回退。
 
 ### 2.3 收益
 
@@ -92,7 +92,7 @@ public static class RestService
 }
 ```
 
-`For<T>` 优先查找 `GeneratedFactories` 字典；未命中则回退到 `Type.GetType` + `Activator.CreateInstance`（非 .NET 5+ 场景）。
+`For<T>` 只查找 `GeneratedFactories` 字典。未命中则抛 `InvalidOperationException`（接口未生成或 `ModuleInitializer` 未运行）。
 
 ### 3.4 配置（`RestApiSettings`）
 
@@ -198,6 +198,8 @@ Reactive 包对应为 `Observables.RestAPI.Reactive.SystemReactiveObservableAdap
 internal static partial class Generated
 {
 #if NET5_0_OR_GREATER
+    [UnconditionalSuppressMessage(...)]
+#endif
     [ModuleInitializer]
     public static void Initialize()
     {
@@ -205,8 +207,15 @@ internal static partial class Generated
             typeof(global::IUserApi),
             static (client, settings) => new Generated.IUserApi(client, settings));
     }
-#endif
 }
+
+#if !NET5_0_OR_GREATER
+namespace System.Runtime.CompilerServices
+{
+    [AttributeUsage(AttributeTargets.Method, Inherited = false)]
+    internal sealed partial class ModuleInitializerAttribute : Attribute { }
+}
+#endif
 ```
 
 ### 4.3 路径模板
@@ -231,6 +240,8 @@ internal enum ParameterKind : byte
 Parser 按特性与路径模板占位符匹配确定每个参数的 `ParameterKind`，Emitter 据此生成对应的请求构建代码。
 
 ### 4.5 netstandard2.0 兼容性
+
+工厂注册不依赖 `NET5_0_OR_GREATER`：生成 `Initialize` + `ModuleInitializerAttribute` polyfill，由 C# 9+ 编译器在模块加载时调用。
 
 `Property` 参数绑定使用 `#if NET6_0_OR_GREATER` 条件编译：.NET 6+ 用 `HttpRequestMessage.Options.Set(new HttpRequestOptionsKey<T>(...))`，旧框架用 `HttpRequestMessage.Properties[...]`。生成代码内嵌 `#if`，由消费者编译器选择路径。
 
@@ -319,7 +330,7 @@ Observables.RestAPI/
 |------|------|
 | **Path B 编译期生成** | 消除运行时反射，AOT/trim 友好，生成代码可读 |
 | **`RestApiBridge` 静态助手** | 复杂逻辑集中在运行时，生成代码只做「编译期已知信息的拼接」 |
-| **`ModuleInitializer` 注册** | .NET 5+ 自动注册，AOT 友好；保留反射回退兼容旧框架 |
+| **`ModuleInitializer` 注册** | 所有 TFM 自动注册（ns2.0 polyfill）；无反射回退 |
 | **`BodySerializationMethod` 镜像枚举** | 生成器（netstandard2.0）不引用运行时项目，用 internal 镜像枚举 + `int` 传递 |
 | **`#if NET6_0_OR_GREATER` 嵌入生成代码** | `HttpRequestMessage.Options` vs `Properties` 由消费者编译器选择 |
 | **`BackendTokens.IsR3` + `#if RESTAPI_R3`（Emitter）** | 返回类型分类与 IO 域共用 compile-time backend seam；Emitter 仍用域级 `#if` 切换发射文本 |

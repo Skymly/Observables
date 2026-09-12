@@ -73,4 +73,51 @@ public sealed class GrpcClientReactiveE2ETests(GrpcTestHostFixture fixture)
         Assert.Equal(0, Volatile.Read(ref completed));
         Assert.Equal(0, Volatile.Read(ref errored));
     }
+
+    [Fact]
+    public async Task ClientStreamEcho_sends_multiple_requests()
+    {
+        using var channel = GrpcTestChannel.Create(fixture.Host);
+        var client = GrpcService.For<IE2EReactiveHub>(channel.CreateCallInvoker());
+
+        using var cts = new CancellationTokenSource(DefaultTimeout);
+        var requests = new[]
+        {
+            new EchoRequest { Text = "a" },
+            new EchoRequest { Text = "b" },
+            new EchoRequest { Text = "c" },
+        }.ToObservable();
+
+        var reply = await client
+            .ClientStreamEcho(requests, cts.Token)
+            .Timeout(DefaultTimeout)
+            .FirstAsync()
+            .ToTask();
+
+        Assert.Equal("a,b,c", reply.Text);
+    }
+
+    [Fact]
+    public async Task DuplexEcho_reads_while_client_is_still_writing()
+    {
+        using var channel = GrpcTestChannel.Create(fixture.Host);
+        var client = GrpcService.For<IE2EReactiveHub>(channel.CreateCallInvoker());
+
+        using var cts = new CancellationTokenSource(DefaultTimeout);
+        var requests = new[]
+        {
+            new EchoRequest { Text = "one" },
+            new EchoRequest { Text = "two" },
+            new EchoRequest { Text = "three" },
+        }.ToObservable();
+
+        var replies = await client
+            .DuplexEcho(requests, cts.Token)
+            .Take(3)
+            .ToArray()
+            .Timeout(DefaultTimeout)
+            .ToTask();
+
+        Assert.Equal(["one-ack", "two-ack", "three-ack"], replies.Select(r => r.Text).ToArray());
+    }
 }

@@ -40,11 +40,7 @@ internal static class GrpcProtocol
             options: new CallOptions(cancellationToken: linked.Token),
             request);
 
-        while (await call.ResponseStream.MoveNext(linked.Token).ConfigureAwait(false))
-        {
-            onNext(call.ResponseStream.Current);
-        }
-
+        await ReadResponsesAsync(call.ResponseStream, onNext, linked.Token).ConfigureAwait(false);
         onCompleted();
     }
 
@@ -58,5 +54,80 @@ internal static class GrpcProtocol
 #else
         await stream.WriteAsync(item, cancellationToken).ConfigureAwait(false);
 #endif
+    }
+
+    internal static async Task ReadResponsesAsync<TResponse>(
+        IAsyncStreamReader<TResponse> stream,
+        Action<TResponse> onNext,
+        CancellationToken cancellationToken)
+    {
+        while (await stream.MoveNext(cancellationToken).ConfigureAwait(false))
+        {
+            onNext(stream.Current);
+        }
+    }
+
+    internal static void ObserveWrite(Task write, TaskCompletionSource<bool> writeCompleted)
+    {
+        if (write.IsCompleted)
+        {
+            if (write.IsFaulted)
+            {
+                writeCompleted.TrySetException(write.Exception!.GetBaseException());
+            }
+
+            return;
+        }
+
+        write.ContinueWith(
+            static (task, state) =>
+            {
+                var tcs = (TaskCompletionSource<bool>)state!;
+                if (task.IsFaulted)
+                {
+                    tcs.TrySetException(task.Exception!.GetBaseException());
+                }
+            },
+            writeCompleted,
+            CancellationToken.None,
+            TaskContinuationOptions.OnlyOnFaulted | TaskContinuationOptions.ExecuteSynchronously,
+            TaskScheduler.Default);
+    }
+}
+
+internal sealed class SerializedClientStreamWriter<TRequest>
+{
+    readonly IClientStreamWriter<TRequest> stream;
+    readonly object gate = new();
+    Task pending = Task.CompletedTask;
+
+    internal SerializedClientStreamWriter(IClientStreamWriter<TRequest> stream) => this.stream = stream;
+
+    internal Task WriteAsync(TRequest item, CancellationToken cancellationToken)
+    {
+        lock (gate)
+        {
+            pending = WriteAfterAsync(pending, item, cancellationToken);
+            return pending;
+        }
+    }
+
+    internal async Task CompleteAsync()
+    {
+        Task toAwait;
+        lock (gate)
+        {
+            toAwait = pending;
+        }
+
+        await toAwait.ConfigureAwait(false);
+        await stream.CompleteAsync().ConfigureAwait(false);
+    }
+
+    async Task WriteAfterAsync(Task previous, TRequest item, CancellationToken cancellationToken)
+    {
+        await previous.ConfigureAwait(false);
+        cancellationToken.ThrowIfCancellationRequested();
+        await GrpcProtocol.WriteRequestAsync(stream, item, cancellationToken).ConfigureAwait(false);
     }
 }

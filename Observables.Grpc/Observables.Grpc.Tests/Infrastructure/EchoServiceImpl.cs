@@ -36,4 +36,30 @@ public sealed class EchoServiceImpl : Echo.EchoBase
                 .ConfigureAwait(false);
         }
     }
+
+    public override async Task<EchoReply> ClientStreamEcho(
+        IAsyncStreamReader<EchoRequest> requestStream,
+        ServerCallContext context)
+    {
+        var parts = new List<string>();
+        while (await requestStream.MoveNext(context.CancellationToken).ConfigureAwait(false))
+        {
+            parts.Add(requestStream.Current.Text);
+        }
+
+        return new EchoReply { Text = string.Join(",", parts) };
+    }
+
+    public override async Task DuplexEcho(
+        IAsyncStreamReader<EchoRequest> requestStream,
+        IServerStreamWriter<EchoReply> responseStream,
+        ServerCallContext context)
+    {
+        while (await requestStream.MoveNext(context.CancellationToken).ConfigureAwait(false))
+        {
+            await responseStream
+                .WriteAsync(new EchoReply { Text = requestStream.Current.Text + "-ack" })
+                .ConfigureAwait(false);
+        }
+    }
 }

@@ -11,4 +11,10 @@ public interface IE2EReactiveHub
 
     [GrpcServerStream("ServerStreamEcho")]
     IObservable<EchoReply> ServerStreamEcho(EchoRequest request, CancellationToken cancellationToken = default);
+
+    [GrpcClientStream("ClientStreamEcho")]
+    IObservable<EchoReply> ClientStreamEcho(IObservable<EchoRequest> requests, CancellationToken cancellationToken = default);
+
+    [GrpcDuplex("DuplexEcho")]
+    IObservable<EchoReply> DuplexEcho(IObservable<EchoRequest> requests, CancellationToken cancellationToken = default);
 }

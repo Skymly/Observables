@@ -35,6 +35,9 @@ public static class SystemReactiveGrpcAdapter
             catch (OperationCanceledException)
             {
             }
+            catch (RpcException ex) when (ex.StatusCode == StatusCode.Cancelled)
+            {
+            }
             catch (Exception ex)
             {
                 observer.OnError(ex);
@@ -56,15 +59,17 @@ public static class SystemReactiveGrpcAdapter
                 host: null,
                 options: new CallOptions(cancellationToken: linked.Token));
 
+            var writer = new SerializedClientStreamWriter<TRequest>(call.RequestStream);
             var writeCompleted = new TaskCompletionSource<bool>(
                 TaskCreationOptions.RunContinuationsAsynchronously);
+            using var cancelReg = linked.Token.Register(() => writeCompleted.TrySetCanceled(linked.Token));
             using var subscription = requests.Subscribe(
-                item => WriteRequest(call.RequestStream, item),
+                item => GrpcProtocol.ObserveWrite(writer.WriteAsync(item, linked.Token), writeCompleted),
                 ex => writeCompleted.TrySetException(ex),
                 () => writeCompleted.TrySetResult(true));
 
             await writeCompleted.Task.ConfigureAwait(false);
-            await call.RequestStream.CompleteAsync().ConfigureAwait(false);
+            await writer.CompleteAsync().ConfigureAwait(false);
             return await call.ResponseAsync.ConfigureAwait(false);
         });
 
@@ -85,18 +90,25 @@ public static class SystemReactiveGrpcAdapter
                     host: null,
                     options: new CallOptions(cancellationToken: linked.Token));
 
+                var writer = new SerializedClientStreamWriter<TRequest>(call.RequestStream);
+                var writeCompleted = new TaskCompletionSource<bool>(
+                    TaskCreationOptions.RunContinuationsAsynchronously);
+                using var cancelReg = linked.Token.Register(() => writeCompleted.TrySetCanceled(linked.Token));
                 using var subscription = requests.Subscribe(
-                    item => WriteRequest(call.RequestStream, item),
-                    () => _ = call.RequestStream.CompleteAsync());
+                    item => GrpcProtocol.ObserveWrite(writer.WriteAsync(item, linked.Token), writeCompleted),
+                    ex => writeCompleted.TrySetException(ex),
+                    () => writeCompleted.TrySetResult(true));
 
-                while (await call.ResponseStream.MoveNext(linked.Token).ConfigureAwait(false))
-                {
-                    observer.OnNext(call.ResponseStream.Current);
-                }
-
+                var readTask = GrpcProtocol.ReadResponsesAsync(call.ResponseStream, observer.OnNext, linked.Token);
+                await writeCompleted.Task.ConfigureAwait(false);
+                await writer.CompleteAsync().ConfigureAwait(false);
+                await readTask.ConfigureAwait(false);
                 observer.OnCompleted();
             }
             catch (OperationCanceledException)
+            {
+            }
+            catch (RpcException ex) when (ex.StatusCode == StatusCode.Cancelled)
             {
             }
             catch (Exception ex)
@@ -104,7 +116,4 @@ public static class SystemReactiveGrpcAdapter
                 observer.OnError(ex);
             }
         });
-
-    static void WriteRequest<TRequest>(IClientStreamWriter<TRequest> stream, TRequest item) =>
-        _ = stream.WriteAsync(item);
 }

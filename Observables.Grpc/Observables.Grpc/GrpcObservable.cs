@@ -35,6 +35,10 @@ public static class GrpcObservable
             {
                 return;
             }
+            catch (RpcException ex) when (ex.StatusCode == StatusCode.Cancelled)
+            {
+                return;
+            }
             catch (Exception ex)
             {
                 observer.OnErrorResume(ex);
@@ -56,15 +60,18 @@ public static class GrpcObservable
                 host: null,
                 options: new CallOptions(cancellationToken: linked.Token));
 
+            var writer = new SerializedClientStreamWriter<TRequest>(call.RequestStream);
             var writeCompleted = new TaskCompletionSource<bool>(
                 TaskCreationOptions.RunContinuationsAsynchronously);
+            using var cancelReg = linked.Token.Register(() => writeCompleted.TrySetCanceled(linked.Token));
             using var subscription = requests.Subscribe(
-                (Action<TRequest>)(item => _ = GrpcProtocol.WriteRequestAsync(call.RequestStream, item, linked.Token)),
+                (Action<TRequest>)(item =>
+                    GrpcProtocol.ObserveWrite(writer.WriteAsync(item, linked.Token), writeCompleted)),
                 (Action<Exception>)(ex => writeCompleted.TrySetException(ex)),
                 (Action<Result>)(_ => writeCompleted.TrySetResult(true)));
 
             await writeCompleted.Task.ConfigureAwait(false);
-            await call.RequestStream.CompleteAsync().ConfigureAwait(false);
+            await writer.CompleteAsync().ConfigureAwait(false);
             return await call.ResponseAsync.ConfigureAwait(false);
         });
 
@@ -83,26 +90,29 @@ public static class GrpcObservable
                 host: null,
                 options: new CallOptions(cancellationToken: linked.Token));
 
+            var writer = new SerializedClientStreamWriter<TRequest>(call.RequestStream);
             var writeCompleted = new TaskCompletionSource<bool>(
                 TaskCreationOptions.RunContinuationsAsynchronously);
+            using var cancelReg = linked.Token.Register(() => writeCompleted.TrySetCanceled(linked.Token));
             using var subscription = requests.Subscribe(
-                (Action<TRequest>)(item => _ = GrpcProtocol.WriteRequestAsync(call.RequestStream, item, linked.Token)),
+                (Action<TRequest>)(item =>
+                    GrpcProtocol.ObserveWrite(writer.WriteAsync(item, linked.Token), writeCompleted)),
                 (Action<Exception>)(ex => writeCompleted.TrySetException(ex)),
                 (Action<Result>)(_ => writeCompleted.TrySetResult(true)));
 
+            var readTask = GrpcProtocol.ReadResponsesAsync(call.ResponseStream, observer.OnNext, linked.Token);
             try
             {
                 await writeCompleted.Task.ConfigureAwait(false);
-                await call.RequestStream.CompleteAsync().ConfigureAwait(false);
-
-                while (await call.ResponseStream.MoveNext(linked.Token).ConfigureAwait(false))
-                {
-                    observer.OnNext(call.ResponseStream.Current);
-                }
-
+                await writer.CompleteAsync().ConfigureAwait(false);
+                await readTask.ConfigureAwait(false);
                 observer.OnCompleted();
             }
             catch (OperationCanceledException)
+            {
+                return;
+            }
+            catch (RpcException ex) when (ex.StatusCode == StatusCode.Cancelled)
             {
                 return;
             }

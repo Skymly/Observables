@@ -7,6 +7,8 @@ package echo;
 service Echo {
   rpc UnaryEcho (EchoRequest) returns (EchoReply);
   rpc ServerStreamEcho (EchoRequest) returns (stream EchoReply);
+  rpc ClientStreamEcho (stream EchoRequest) returns (EchoReply);
+  rpc DuplexEcho (stream EchoRequest) returns (stream EchoReply);
 }
 
 message EchoRequest {

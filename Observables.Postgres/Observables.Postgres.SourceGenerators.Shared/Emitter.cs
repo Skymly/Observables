@@ -49,9 +49,9 @@ internal static class Emitter
 
             writer.WriteLine(
                 $$"""
-                    private {{member.ReturnTypeDisplay}}? _{{member.MemberName}};
+                    private {{member.ReturnTypeDisplay}}? {{IdentifierHelper.BackingFieldName(member.MemberName)}};
                     public {{member.ReturnTypeDisplay}} {{member.MemberName}} =>
-                        _{{member.MemberName}} ??= {{listenCall}};
+                        {{IdentifierHelper.BackingFieldName(member.MemberName)}} ??= {{listenCall}};
 
                 """);
             return;

@@ -216,40 +216,21 @@ sealed class Build : NukeBuild
                     && e.EndsWith(".dll", StringComparison.OrdinalIgnoreCase));
                 Assert.True(hasAnalyzer, $"{packageId}: missing analyzer DLL under analyzers/dotnet/roslyn4.12/cs/");
 
-                if (packageId.StartsWith("Observables.RestAPI.", StringComparison.Ordinal)
-                    || packageId.StartsWith("Observables.SignalR.", StringComparison.Ordinal)
-                    || packageId.StartsWith("Observables.Mqtt.", StringComparison.Ordinal)
-                    || packageId.StartsWith("Observables.WebSocket.", StringComparison.Ordinal)
-                    || packageId.StartsWith("Observables.Grpc.", StringComparison.Ordinal)
-                    || packageId.StartsWith("Observables.Sse.", StringComparison.Ordinal)
-                    || packageId.StartsWith("Observables.Nats.", StringComparison.Ordinal)
-                    || packageId.StartsWith("Observables.Postgres.", StringComparison.Ordinal)
-                    || packageId.StartsWith("Observables.Redis.", StringComparison.Ordinal))
-                {
-                    Assert.True(
-                        entries.Contains("analyzers/dotnet/roslyn4.12/cs/Observables.CodeFixes.dll"),
-                        $"{packageId}: missing Observables.CodeFixes.dll under analyzers/dotnet/roslyn4.12/cs/");
-                    Assert.True(
-                        entries.Contains("analyzers/dotnet/roslyn4.12/cs/Observables.Analyzers.dll"),
-                        $"{packageId}: missing Observables.Analyzers.dll under analyzers/dotnet/roslyn4.12/cs/");
-                }
+                Assert.True(
+                    entries.Contains("analyzers/dotnet/roslyn4.12/cs/Observables.CodeFixes.dll"),
+                    $"{packageId}: missing Observables.CodeFixes.dll under analyzers/dotnet/roslyn4.12/cs/");
+                Assert.True(
+                    entries.Contains("analyzers/dotnet/roslyn4.12/cs/Observables.Analyzers.dll"),
+                    $"{packageId}: missing Observables.Analyzers.dll under analyzers/dotnet/roslyn4.12/cs/");
 
-                if (packageId.StartsWith("Observables.Events.", StringComparison.Ordinal))
+                bool isEvents = packageId.StartsWith("Observables.Events.", StringComparison.Ordinal);
+                if (isEvents)
                 {
                     Assert.True(
                         entries.Contains("buildTransitive/observables.events.props"),
                         $"{packageId}: missing buildTransitive/observables.events.props");
                 }
-
-                if (packageId.StartsWith("Observables.RestAPI.", StringComparison.Ordinal)
-                    || packageId.StartsWith("Observables.SignalR.", StringComparison.Ordinal)
-                    || packageId.StartsWith("Observables.Mqtt.", StringComparison.Ordinal)
-                    || packageId.StartsWith("Observables.WebSocket.", StringComparison.Ordinal)
-                    || packageId.StartsWith("Observables.Grpc.", StringComparison.Ordinal)
-                    || packageId.StartsWith("Observables.Sse.", StringComparison.Ordinal)
-                    || packageId.StartsWith("Observables.Nats.", StringComparison.Ordinal)
-                    || packageId.StartsWith("Observables.Postgres.", StringComparison.Ordinal)
-                    || packageId.StartsWith("Observables.Redis.", StringComparison.Ordinal))
+                else
                 {
                     bool hasLib = entries.Any(e => e.StartsWith("lib/", StringComparison.OrdinalIgnoreCase)
                         && e.EndsWith(".dll", StringComparison.OrdinalIgnoreCase));

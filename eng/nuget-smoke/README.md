@@ -16,4 +16,4 @@ Uses `nuget.config.local` pointing at `artifacts/package/`.
 dotnet run --project build/_build.csproj -- --target NuGetConsumerSmokePublished --configuration Release
 ```
 
-Uses the default NuGet.org source and `ObservablesConsumerPackageVersion` (default `0.1.2`).
+Uses the default NuGet.org source. `ObservablesConsumerPackageVersion` is **required** (Nuke injects `PackageVersion` from `eng/Observables.Package.props`; a manual build must pass `-p:ObservablesConsumerPackageVersion=...`).

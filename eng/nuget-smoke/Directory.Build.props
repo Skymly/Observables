@@ -3,6 +3,9 @@
     <TargetFramework>net8.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <ObservablesConsumerPackageVersion Condition="'$(ObservablesConsumerPackageVersion)' == ''">0.1.2</ObservablesConsumerPackageVersion>
   </PropertyGroup>
+  <Target Name="RequireObservablesConsumerPackageVersion" BeforeTargets="CollectPackageReferences;Restore">
+    <Error Condition="'$(ObservablesConsumerPackageVersion)' == ''"
+           Text="Set ObservablesConsumerPackageVersion (Nuke NuGetConsumerSmoke injects PackageVersion from eng/Observables.Package.props)." />
+  </Target>
 </Project>

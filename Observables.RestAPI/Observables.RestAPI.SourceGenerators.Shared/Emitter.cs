@@ -40,15 +40,25 @@ internal static class Emitter
                     internal static partial class Generated
                     {
                 #if NET5_0_OR_GREATER
-                        [System.Runtime.CompilerServices.ModuleInitializer]
                         [global::System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessage("ILLink", "IL2026", Justification = "Factory registration only; the proxy is invoked by user code that declares RequiresUnreferencedCode.")]
+                #endif
+                        [global::System.Runtime.CompilerServices.ModuleInitializer]
                         public static void Initialize()
                         {
                 {{generatedFactoryRegistrations}}
                         }
-                #endif
                     }
                 }
+
+                #if !NET5_0_OR_GREATER
+                namespace System.Runtime.CompilerServices
+                {
+                    [global::System.AttributeUsage(global::System.AttributeTargets.Method, Inherited = false)]
+                    internal sealed partial class ModuleInitializerAttribute : global::System.Attribute
+                    {
+                    }
+                }
+                #endif
                 """));
     }
 

@@ -4,6 +4,7 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Observables.SourceGenerators.Shared.Diagnostics;
+using Observables.SourceGenerators.Shared.Extensions;
 
 namespace Observables.Mqtt.Generators;
 
@@ -51,7 +52,7 @@ internal static class Parser
                 members,
                 diagnostics),
             createInterface: static (marked, className, members) => new MqttInterfaceModel(
-                $"{className}.Mqtt.g.cs",
+                $"{marked.InterfaceSymbol.GetSafeHintName()}.Mqtt.g.cs",
                 className,
                 marked.InterfaceSymbol.ToDisplayString(DisplayFormat),
                 BackendTokens.QualifyGeneratedNamespace("Observables.Mqtt"),

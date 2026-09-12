@@ -101,7 +101,7 @@ internal static class Emitter
         var args = string.Join(
             ", ",
             member.ChannelParameterNames.AsArray().Select(static n =>
-                $"({FormatLiteral(n)}, {IdentifierHelper.Escape(n)})"));
+                $"({FormatLiteral(n)}, global::System.Convert.ToString((object?){IdentifierHelper.Escape(n)}, global::System.Globalization.CultureInfo.InvariantCulture))"));
         return $"global::Observables.Redis.RedisChannelTemplate.Format({FormatLiteral(member.ChannelTemplate)}, {args})";
     }
 

@@ -24,7 +24,7 @@ namespace Observables.Redis.Reactive.Generated
         }
 
     public global::System.IObservable<global::System.Reactive.Unit> Publish(global::System.String topic, global::System.String payload) =>
-        global::Observables.Redis.Reactive.SystemReactiveRedisAdapter.FromPublish<global::System.String>(_multiplexer, global::Observables.Redis.RedisChannelTemplate.Format("news.{topic}", ("topic", topic)), payload, default);
+        global::Observables.Redis.Reactive.SystemReactiveRedisAdapter.FromPublish<global::System.String>(_multiplexer, global::Observables.Redis.RedisChannelTemplate.Format("news.{topic}", ("topic", global::System.Convert.ToString((object?)topic, global::System.Globalization.CultureInfo.InvariantCulture))), payload, default);
 
     private global::System.IObservable<global::System.String>? _Alerts;
     public global::System.IObservable<global::System.String> Alerts =>

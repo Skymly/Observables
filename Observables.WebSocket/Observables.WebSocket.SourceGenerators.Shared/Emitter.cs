@@ -49,16 +49,16 @@ internal static class Emitter
             case WebSocketBoundaryKind.Receive:
                 writer.WriteLine(
                     $$"""
-                        private {{member.ReturnTypeDisplay}}? _{{member.MemberName}};
+                        private {{member.ReturnTypeDisplay}}? {{IdentifierHelper.BackingFieldName(member.MemberName)}};
                         public {{member.ReturnTypeDisplay}} {{member.MemberName}} =>
-                            _{{member.MemberName}} ??= {{BridgeType}}.FromReceive<{{member.ResultTypeDisplay}}>(_socket);
+                            {{IdentifierHelper.BackingFieldName(member.MemberName)}} ??= {{BridgeType}}.FromReceive<{{member.ResultTypeDisplay}}>(_socket);
 
                     """);
                 break;
 
             case WebSocketBoundaryKind.Connect:
                 {
-                    var cancellation = member.HasCancellationToken ? ", cancellationToken" : ", default";
+                    var cancellation = member.CancellationTokenParameterName is { } ctName ? $", {ctName}" : ", default";
                     var uriParam = member.ParameterNames.Count > 0 ? member.ParameterNames.AsArray()[0] : "uri";
                     var parameterList = member.ParameterDeclarations.Count == 0
                         ? string.Empty
@@ -74,7 +74,7 @@ internal static class Emitter
 
             case WebSocketBoundaryKind.Close:
                 {
-                    var cancellation = member.HasCancellationToken ? ", cancellationToken" : ", default";
+                    var cancellation = member.CancellationTokenParameterName is { } ctName ? $", {ctName}" : ", default";
                     var parameterList = member.ParameterDeclarations.Count == 0
                         ? string.Empty
                         : string.Join(", ", member.ParameterDeclarations.AsArray());
@@ -89,7 +89,7 @@ internal static class Emitter
 
             default: // Send
                 {
-                    var cancellation = member.HasCancellationToken ? ", cancellationToken" : ", default";
+                    var cancellation = member.CancellationTokenParameterName is { } ctName ? $", {ctName}" : ", default";
                     var parameterList = member.ParameterDeclarations.Count == 0
                         ? string.Empty
                         : string.Join(", ", member.ParameterDeclarations.AsArray());

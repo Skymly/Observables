@@ -21,6 +21,10 @@ body:
         - WebSocket
         - Mqtt
         - Grpc
+        - Sse
+        - Nats
+        - Postgres
+        - Redis
         - New feature domain
         - Solution Items
     validations:

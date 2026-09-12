@@ -22,6 +22,10 @@ body:
         - WebSocket
         - Mqtt
         - Grpc
+        - Sse
+        - Nats
+        - Postgres
+        - Redis
         - Solution Items
         - Unsure
     validations:

@@ -186,7 +186,7 @@ Observables/
 ### 1. MSBuild 与包管理
 
 - **中央包管理（CPM）**
-  - 已落地：[`Directory.Packages.props`](Directory.Packages.props) 集中 22 个包版本；主树 csproj/props 已去除 `Version` 属性。`eng/nuget-smoke/` 通过本地 `Directory.Packages.props`（`ManagePackageVersionsCentrally=false`）保持动态/显式版本，模拟真实消费者。
+  - 已落地：[`Directory.Packages.props`](Directory.Packages.props) 集中 36 个包版本；主树 csproj/props 已去除 `Version` 属性。`eng/nuget-smoke/` 通过本地 `Directory.Packages.props`（`ManagePackageVersionsCentrally=false`）保持动态/显式版本，模拟真实消费者。
   - 标准：新增依赖先写入 `Directory.Packages.props`；csproj 仅写 `<PackageReference Include="…" />` 不带 `Version`。同一依赖**全仓单一版本**（含 Roslyn `4.12.0`、analyzer roslyn 文件夹 `roslyn4.12`）。
 - **公共属性归位**
   - 已落地：[`Directory.Build.props`](Directory.Build.props) 导入 [`eng/Observables.ProjectDefaults.props`](eng/Observables.ProjectDefaults.props)，按项目类型自动设置 TFM、`IsPackable`、AOT 标记；`Nullable`/`LangVersion`/`ImplicitUsings` 在仓库根统一声明，各 csproj 已去除重复。
@@ -203,7 +203,7 @@ Observables/
 - 已落地：`eng/Observables.ProjectDefaults.props` 对非 skip 项目启用 `TreatWarningsAsErrors=true`（`nuget-smoke`、`.Package`、`_build` 等 skip 项除外）。
 - 已清零（M2/M7）：RestAPI nullable（CS86xx）；xUnit1051；Events RS1032 消息格式；域运行时 net8/9 IL trim 告警（Requires* 传播 + 生成代理 `DynamicDependency`）。
 - 标准：新增 CS / 分析器告警须在 PR 内修复；禁止无注释的全仓 `NoWarn`。
-- **Public API（M7）**：域运行时 + Reactive 桥接（14 项目）启用 `Microsoft.CodeAnalysis.PublicApiAnalyzers`；`PublicAPI.Shipped.txt` / `Unshipped.txt` 与 per-TFM 补充文件见 [`docs/design/public-api.md`](docs/design/public-api.md)。Events（纯生成器）、`.Package`、测试不在范围。发版前将 `Unshipped` 迁入 `Shipped`；破坏性变更须 major bump。
+- **Public API（M7）**：域运行时 + Reactive 桥接（18 项目）启用 `Microsoft.CodeAnalysis.PublicApiAnalyzers`；`PublicAPI.Shipped.txt` / `Unshipped.txt` 与 per-TFM 补充文件见 [`docs/design/public-api.md`](docs/design/public-api.md)。Events（纯生成器）、`.Package`、测试不在范围。发版前将 `Unshipped` 迁入 `Shipped`；破坏性变更须 major bump。
 
 ### 3. 诊断治理
 

@@ -58,6 +58,20 @@ public sealed class GeneratorTestRunnerTests
     }
 
     [Fact]
+    public void ToSnapshot_ignores_CS_errors_in_user_source()
+    {
+        var output = GeneratorTestRunner.Run(
+            userSource: "public class User { int x = ; }",
+            buildHarnessDocument: static source => source,
+            references: GeneratorTestRunner.GetMetadataReferences(),
+            generators: [new EmitsValidCSharpGenerator()]);
+
+        string snapshot = GeneratorTestRunner.ToSnapshot(output, ObsSnapshotOptions);
+
+        Assert.Contains("class Valid", snapshot, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void ToSnapshot_succeeds_when_generated_source_compiles()
     {
         var output = GeneratorTestRunner.Run(

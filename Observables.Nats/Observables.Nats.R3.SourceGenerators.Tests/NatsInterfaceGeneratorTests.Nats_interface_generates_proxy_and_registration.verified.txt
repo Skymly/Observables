@@ -1,4 +1,4 @@
-﻿Diagnostics:
+Diagnostics:
   <none>
 
 Generated Sources:
@@ -24,7 +24,7 @@ namespace Observables.Nats.Generated
         }
 
     public global::R3.Observable<global::R3.Unit> Cancel(global::System.String id) =>
-        global::Observables.Nats.NatsObservable.FromPublish(_connection, global::Observables.Nats.NatsSubject.Format("orders.{id}.cancel", "id", id), default);
+        global::Observables.Nats.NatsObservable.FromPublish(_connection, global::Observables.Nats.NatsSubject.Format("orders.{id}.cancel", ("id", id)), default);
 
     private global::R3.Observable<global::OrderEvent>? _OrderEvents;
     public global::R3.Observable<global::OrderEvent> OrderEvents =>

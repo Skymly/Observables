@@ -204,6 +204,61 @@ public sealed class WebSocketInterfaceGeneratorTests
             $"Expected cache miss (Modified/New), got {reason}");
     }
 
+
+    [Fact]
+    public void Unattributed_property_reports_OBS6001()
+    {
+        const string userSource =
+            """
+            [WebSocket]
+            public interface IFeed
+            {
+                Observable<int> Bare { get; }
+            }
+            """;
+
+        var output = GeneratorTestHarness.Run(userSource);
+        var snapshot = GeneratorTestHarness.ToSnapshot(output);
+        Assert.Contains("OBS6001", snapshot, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Renamed_cancellation_token_is_passed_through()
+    {
+        const string userSource =
+            """
+            [WebSocket]
+            public interface IFeed
+            {
+                [WebSocketClose]
+                Observable<Unit> Close(CancellationToken ct);
+            }
+            """;
+
+        var output = GeneratorTestHarness.Run(userSource);
+        var snapshot = GeneratorTestHarness.ToSnapshot(output);
+        Assert.Contains(", ct)", snapshot, StringComparison.Ordinal);
+        Assert.DoesNotContain(", cancellationToken)", snapshot, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Non_trailing_cancellation_token_reports_OBS6001()
+    {
+        const string userSource =
+            """
+            [WebSocket]
+            public interface IFeed
+            {
+                [WebSocketSend]
+                Observable<Unit> Send(CancellationToken ct, string payload);
+            }
+            """;
+
+        var output = GeneratorTestHarness.Run(userSource);
+        var snapshot = GeneratorTestHarness.ToSnapshot(output);
+        Assert.Contains("OBS6001", snapshot, StringComparison.Ordinal);
+    }
+
     [Fact]
     public Task WebSocket_interface_with_keyword_parameter_names_generates_valid_code()
     {

@@ -49,9 +49,9 @@ internal static class Emitter
         {
             writer.WriteLine(
                 $$"""
-                    private {{member.ReturnTypeDisplay}}? _{{member.MemberName}};
+                    private {{member.ReturnTypeDisplay}}? {{BackingFieldName(member.MemberName)}};
                     public {{member.ReturnTypeDisplay}} {{member.MemberName}} =>
-                        _{{member.MemberName}} ??= {{BridgeType}}.FromSubscribe<{{member.ResultTypeDisplay}}>(_client, {{FormatLiteral(member.TopicTemplate)}});
+                        {{BackingFieldName(member.MemberName)}} ??= {{BridgeType}}.FromSubscribe<{{member.ResultTypeDisplay}}>(_client, {{FormatLiteral(member.TopicTemplate)}});
 
                 """);
             return;
@@ -84,7 +84,7 @@ internal static class Emitter
 
         var args = string.Join(
             ", ",
-            member.TopicParameterNames.AsArray().Select(static n => $"{FormatLiteral(n)}, {IdentifierHelper.Escape(n)}"));
+            member.TopicParameterNames.AsArray().Select(static n => $"({FormatLiteral(n)}, {IdentifierHelper.Escape(n)})"));
         return $"global::Observables.Mqtt.MqttTopic.Format({FormatLiteral(member.TopicTemplate)}, {args})";
     }
 
@@ -96,5 +96,13 @@ internal static class Emitter
             .Replace("\r", "\\r")
             .Replace("\n", "\\n")
             .Replace("\t", "\\t") + "\u0022";
+    }
+
+    static string BackingFieldName(string identifier)
+    {
+        var unescaped = identifier.Length > 0 && identifier[0] == '@'
+            ? identifier.Substring(1)
+            : identifier;
+        return "_" + unescaped;
     }
 }

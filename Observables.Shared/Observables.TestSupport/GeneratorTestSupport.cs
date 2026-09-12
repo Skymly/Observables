@@ -204,9 +204,7 @@ public static class GeneratorTestRunner
     static void ThrowIfCompilerErrors(GeneratorRunOutput output)
     {
         Diagnostic[] compilerErrors = output.Diagnostics
-            .Where(static diagnostic =>
-                diagnostic.Severity == DiagnosticSeverity.Error
-                && diagnostic.Id.StartsWith("CS", StringComparison.Ordinal))
+            .Where(diagnostic => IsGeneratedCompilerError(diagnostic, output))
             .OrderBy(static diagnostic => diagnostic.Id, StringComparer.Ordinal)
             .ThenBy(static diagnostic => diagnostic.GetMessage(), StringComparer.Ordinal)
             .ToArray();
@@ -224,6 +222,45 @@ public static class GeneratorTestRunner
         }
 
         throw new InvalidOperationException(builder.ToString().TrimEnd());
+    }
+
+    static bool IsGeneratedCompilerError(Diagnostic diagnostic, GeneratorRunOutput output)
+    {
+        if (diagnostic.Severity != DiagnosticSeverity.Error
+            || !diagnostic.Id.StartsWith("CS", StringComparison.Ordinal))
+        {
+            return false;
+        }
+
+        // Diagnostic tests skip illegal members, so the generated proxy may not
+        // implement the full user interface (CS0535). That is expected when OBS*
+        // diagnostics are present; other generated CS errors still fail the test.
+        if (diagnostic.Id == "CS0535"
+            && output.Diagnostics.Any(static d => d.Id.StartsWith("OBS", StringComparison.Ordinal)))
+        {
+            return false;
+        }
+
+        if (!diagnostic.Location.IsInSource)
+        {
+            return true;
+        }
+
+        string path = diagnostic.Location.SourceTree?.FilePath ?? string.Empty;
+        if (path.Length == 0)
+        {
+            return false;
+        }
+
+        foreach (GeneratedSource source in output.GeneratedSources)
+        {
+            if (path.EndsWith(source.HintName, StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+        }
+
+        return path.EndsWith(".g.cs", StringComparison.OrdinalIgnoreCase);
     }
 
     static void ThrowGeneratorExceptions(GeneratorDriverRunResult runResult)

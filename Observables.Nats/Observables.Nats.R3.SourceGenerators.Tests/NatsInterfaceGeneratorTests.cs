@@ -155,7 +155,7 @@ public sealed class NatsInterfaceGeneratorTests
                 Observable<Unit> Cancel(string @class);
 
                 [NatsRequest("query.{event}")]
-                Observable<string> Query(string @event);
+                Observable<string> Query(string @event, string payload);
             }
             """;
         var output = GeneratorTestHarness.Run(userSource);

@@ -48,9 +48,9 @@ internal static class Emitter
         {
             writer.WriteLine(
                 $$"""
-                    private {{member.ReturnTypeDisplay}}? _{{member.MemberName}};
+                    private {{member.ReturnTypeDisplay}}? {{IdentifierHelper.BackingFieldName(member.MemberName)}};
                     public {{member.ReturnTypeDisplay}} {{member.MemberName}} =>
-                        _{{member.MemberName}} ??= {{BridgeType}}.FromSubscribe<{{member.ResultTypeDisplay}}>(_client, "{{member.TopicTemplate}}");
+                        {{IdentifierHelper.BackingFieldName(member.MemberName)}} ??= {{BridgeType}}.FromSubscribe<{{member.ResultTypeDisplay}}>(_client, "{{member.TopicTemplate}}");
 
                 """);
             return;
@@ -83,7 +83,7 @@ internal static class Emitter
 
         var args = string.Join(
             ", ",
-            member.TopicParameterNames.AsArray().Select(static n => $"\"{n}\", {IdentifierHelper.Escape(n)}"));
+            member.TopicParameterNames.AsArray().Select(static n => $"(\"{n}\", {IdentifierHelper.Escape(n)})"));
         return $"global::Observables.Mqtt.MqttTopic.Format(\"{member.TopicTemplate}\", {args})";
     }
 }

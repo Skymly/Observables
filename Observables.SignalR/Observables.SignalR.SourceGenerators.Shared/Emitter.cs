@@ -48,9 +48,9 @@ internal static class Emitter
         {
             writer.WriteLine(
                 $$"""
-                    private {{member.ReturnTypeDisplay}}? _{{member.MemberName}};
+                    private {{member.ReturnTypeDisplay}}? {{IdentifierHelper.BackingFieldName(member.MemberName)}};
                     public {{member.ReturnTypeDisplay}} {{member.MemberName}} =>
-                        _{{member.MemberName}} ??= {{BridgeType}}.FromOn<{{member.ResultTypeDisplay}}>(_connection, "{{member.HubMethodName}}");
+                        {{IdentifierHelper.BackingFieldName(member.MemberName)}} ??= {{BridgeType}}.FromOn<{{member.ResultTypeDisplay}}>(_connection, "{{member.HubMethodName}}");
 
                 """);
             return;

@@ -49,9 +49,9 @@ internal static class Emitter
             case WebSocketBoundaryKind.Receive:
                 writer.WriteLine(
                     $$"""
-                        private {{member.ReturnTypeDisplay}}? _{{member.MemberName}};
+                        private {{member.ReturnTypeDisplay}}? {{IdentifierHelper.BackingFieldName(member.MemberName)}};
                         public {{member.ReturnTypeDisplay}} {{member.MemberName}} =>
-                            _{{member.MemberName}} ??= {{BridgeType}}.FromReceive<{{member.ResultTypeDisplay}}>(_socket);
+                            {{IdentifierHelper.BackingFieldName(member.MemberName)}} ??= {{BridgeType}}.FromReceive<{{member.ResultTypeDisplay}}>(_socket);
 
                     """);
                 break;

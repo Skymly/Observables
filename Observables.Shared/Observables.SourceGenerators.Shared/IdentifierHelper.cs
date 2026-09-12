@@ -16,4 +16,16 @@ internal static class IdentifierHelper
         var kind = SyntaxFacts.GetKeywordKind(identifier);
         return SyntaxFacts.IsKeywordKind(kind) ? "@" + identifier : identifier;
     }
+
+    /// <summary>
+    /// Returns a legal backing-field name for a member that may already be keyword-escaped.
+    /// <c>event</c> and <c>@event</c> both become <c>_event</c>.
+    /// </summary>
+    public static string BackingFieldName(string identifier)
+    {
+        var unescaped = identifier.Length > 0 && identifier[0] == '@'
+            ? identifier.Substring(1)
+            : identifier;
+        return "_" + unescaped;
+    }
 }

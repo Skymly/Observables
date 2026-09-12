@@ -46,7 +46,7 @@ namespace Observables.Mqtt.Generated
         }
 
     public global::R3.Observable<global::R3.Unit> Restart(global::System.String deviceId) =>
-        global::Observables.Mqtt.MqttObservable.FromPublish(_client, global::Observables.Mqtt.MqttTopic.Format("commands/{deviceId}/restart", "deviceId", deviceId), default);
+        global::Observables.Mqtt.MqttObservable.FromPublish(_client, global::Observables.Mqtt.MqttTopic.Format("commands/{deviceId}/restart", ("deviceId", deviceId)), default);
 
     private global::R3.Observable<global::TemperatureReading>? _Temperature;
     public global::R3.Observable<global::TemperatureReading> Temperature =>

@@ -48,9 +48,9 @@ internal static class Emitter
         {
             writer.WriteLine(
                 $$"""
-                    private {{member.ReturnTypeDisplay}}? _{{member.MemberName}};
+                    private {{member.ReturnTypeDisplay}}? {{IdentifierHelper.BackingFieldName(member.MemberName)}};
                     public {{member.ReturnTypeDisplay}} {{member.MemberName}} =>
-                        _{{member.MemberName}} ??= {{BridgeType}}.FromSubscribe<{{member.ResultTypeDisplay}}>(_connection, "{{member.SubjectTemplate}}");
+                        {{IdentifierHelper.BackingFieldName(member.MemberName)}} ??= {{BridgeType}}.FromSubscribe<{{member.ResultTypeDisplay}}>(_connection, "{{member.SubjectTemplate}}");
 
                 """);
             return;
@@ -98,7 +98,7 @@ internal static class Emitter
 
         var args = string.Join(
             ", ",
-            member.SubjectParameterNames.AsArray().Select(static n => $"\"{n}\", {IdentifierHelper.Escape(n)}"));
+            member.SubjectParameterNames.AsArray().Select(static n => $"(\"{n}\", {IdentifierHelper.Escape(n)})"));
         return $"global::Observables.Nats.NatsSubject.Format(\"{member.SubjectTemplate}\", {args})";
     }
 }

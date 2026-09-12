@@ -24,7 +24,7 @@ namespace Observables.Mqtt.Generated
         }
 
     public global::R3.Observable<global::R3.Unit> Restart(global::System.String @class) =>
-        global::Observables.Mqtt.MqttObservable.FromPublish(_client, global::Observables.Mqtt.MqttTopic.Format("commands/{class}/restart", "class", @class), default);
+        global::Observables.Mqtt.MqttObservable.FromPublish(_client, global::Observables.Mqtt.MqttTopic.Format("commands/{class}/restart", ("class", @class)), default);
 
     }
 }

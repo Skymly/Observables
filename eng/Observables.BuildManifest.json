@@ -123,6 +123,7 @@
     "Observables.Redis/Observables.Redis.Reactive.Tests/Observables.Redis.Reactive.Tests.csproj",
     "Observables.Shared/Observables.CodeFixes.Tests/Observables.CodeFixes.Tests.csproj",
     "Observables.Shared/Observables.Analyzers.Tests/Observables.Analyzers.Tests.csproj",
+    "Observables.Shared/Observables.TestSupport.Tests/Observables.TestSupport.Tests.csproj",
     "Observables.Shared/Observables.TrimTests/Observables.TrimTests.csproj"
   ],
   "smokeConsumers": [

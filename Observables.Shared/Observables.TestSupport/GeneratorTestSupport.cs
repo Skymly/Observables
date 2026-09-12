@@ -124,6 +124,8 @@ public static class GeneratorTestRunner
 
     public static string ToSnapshot(GeneratorRunOutput output, SnapshotOptions options)
     {
+        ThrowIfCompilerErrors(output);
+
         IEnumerable<Diagnostic> diagnostics = output.Diagnostics
             .Where(diagnostic => diagnostic.Id.StartsWith(options.DiagnosticPrefix, StringComparison.Ordinal));
 
@@ -197,6 +199,68 @@ public static class GeneratorTestRunner
         }
 
         return references.ToArray();
+    }
+
+    static void ThrowIfCompilerErrors(GeneratorRunOutput output)
+    {
+        Diagnostic[] compilerErrors = output.Diagnostics
+            .Where(diagnostic => IsGeneratedCompilerError(diagnostic, output))
+            .OrderBy(static diagnostic => diagnostic.Id, StringComparer.Ordinal)
+            .ThenBy(static diagnostic => diagnostic.GetMessage(), StringComparer.Ordinal)
+            .ToArray();
+
+        if (compilerErrors.Length == 0)
+        {
+            return;
+        }
+
+        var builder = new StringBuilder();
+        builder.AppendLine("Generated compilation produced CS errors:");
+        foreach (Diagnostic diagnostic in compilerErrors)
+        {
+            builder.AppendLine($"  {diagnostic.Id}: {diagnostic.GetMessage()}");
+        }
+
+        throw new InvalidOperationException(builder.ToString().TrimEnd());
+    }
+
+    static bool IsGeneratedCompilerError(Diagnostic diagnostic, GeneratorRunOutput output)
+    {
+        if (diagnostic.Severity != DiagnosticSeverity.Error
+            || !diagnostic.Id.StartsWith("CS", StringComparison.Ordinal))
+        {
+            return false;
+        }
+
+        // Diagnostic tests skip illegal members, so the generated proxy may not
+        // implement the full user interface (CS0535). That is expected when OBS*
+        // diagnostics are present; other generated CS errors still fail the test.
+        if (diagnostic.Id == "CS0535"
+            && output.Diagnostics.Any(static d => d.Id.StartsWith("OBS", StringComparison.Ordinal)))
+        {
+            return false;
+        }
+
+        if (!diagnostic.Location.IsInSource)
+        {
+            return true;
+        }
+
+        string path = diagnostic.Location.SourceTree?.FilePath ?? string.Empty;
+        if (path.Length == 0)
+        {
+            return false;
+        }
+
+        foreach (GeneratedSource source in output.GeneratedSources)
+        {
+            if (path.EndsWith(source.HintName, StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+        }
+
+        return path.EndsWith(".g.cs", StringComparison.OrdinalIgnoreCase);
     }
 
     static void ThrowGeneratorExceptions(GeneratorDriverRunResult runResult)

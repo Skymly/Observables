@@ -213,6 +213,29 @@ public sealed class RedisInterfaceGeneratorTests
     }
 
     [Fact]
+    public void Redis_publish_int_placeholder_converts_to_string()
+    {
+        const string userSource =
+            """
+            [Redis]
+            public interface INews
+            {
+                [RedisPublish("news.{id}")]
+                Observable<Unit> Publish(int id, string payload);
+            }
+            """;
+
+        var output = GeneratorTestHarness.Run(userSource);
+        var snapshot = GeneratorTestHarness.ToSnapshot(output);
+
+        Assert.DoesNotContain("OBS11", snapshot, StringComparison.Ordinal);
+        Assert.Contains(
+            @"RedisChannelTemplate.Format(""news.{id}"", (""id"", global::System.Convert.ToString((object?)id, global::System.Globalization.CultureInfo.InvariantCulture)))",
+            snapshot,
+            StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void Redis_interface_OBS11006_on_subscribe_placeholder()
     {
         const string userSource =

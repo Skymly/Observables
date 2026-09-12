@@ -4,6 +4,7 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Observables.SourceGenerators.Shared.Diagnostics;
+using Observables.SourceGenerators.Shared.Extensions;
 
 namespace Observables.Postgres.Generators;
 
@@ -53,7 +54,7 @@ internal static class Parser
                 members,
                 diagnostics),
             createInterface: static (marked, className, members) => new PostgresInterfaceModel(
-                $"{className}.Postgres.g.cs",
+                $"{marked.InterfaceSymbol.GetSafeHintName()}.Postgres.g.cs",
                 className,
                 marked.InterfaceSymbol.ToDisplayString(DisplayFormat),
                 BackendTokens.QualifyGeneratedNamespace("Observables.Postgres"),

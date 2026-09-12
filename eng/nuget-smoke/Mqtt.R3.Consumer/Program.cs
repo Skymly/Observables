@@ -6,8 +6,8 @@ namespace Observables.NuGetSmoke.Mqtt.R3;
 [Mqtt]
 public interface ISmokeTopics
 {
-    [MqttPublish("ping")]
-    Observable<Unit> Ping();
+    [MqttPublish("ping.{name}")]
+    Observable<Unit> Ping(string name);
 }
 
 public static class Program

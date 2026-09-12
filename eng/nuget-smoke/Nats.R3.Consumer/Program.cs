@@ -6,8 +6,8 @@ namespace Observables.NuGetSmoke.Nats.R3;
 [Nats]
 public interface ISmokeSubjects
 {
-    [NatsPublish("ping")]
-    Observable<Unit> Ping();
+    [NatsPublish("ping.{name}")]
+    Observable<Unit> Ping(string name);
 }
 
 public static class Program

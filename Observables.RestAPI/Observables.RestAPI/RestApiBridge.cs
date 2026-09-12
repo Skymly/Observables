@@ -101,6 +101,7 @@ namespace Observables.RestAPI
             HttpContent? content = null;
             var isApiResponse = IsRestApiResponseWrapper(typeof(T));
             var disposeResponse = !isApiResponse && ShouldDisposeResponse(typeof(TBody));
+            var disposeRequest = !isApiResponse;
             try
             {
                 if (request.Content != null && bodyBuffered)
@@ -238,6 +239,11 @@ namespace Observables.RestAPI
                 {
                     content.Dispose();
                 }
+
+                if (disposeRequest)
+                {
+                    request.Dispose();
+                }
             }
         }
 
@@ -255,13 +261,20 @@ namespace Observables.RestAPI
             CancellationToken cancellationToken
         )
         {
-            using var response = await client
-                .SendAsync(request, cancellationToken)
-                .ConfigureAwait(false);
+            try
+            {
+                using var response = await client
+                    .SendAsync(request, cancellationToken)
+                    .ConfigureAwait(false);
 
-            var exception = await settings.ExceptionFactory(response).ConfigureAwait(false);
-            if (exception != null)
-                throw exception;
+                var exception = await settings.ExceptionFactory(response).ConfigureAwait(false);
+                if (exception != null)
+                    throw exception;
+            }
+            finally
+            {
+                request.Dispose();
+            }
         }
 
         /// <summary>

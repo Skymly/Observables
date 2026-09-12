@@ -21,7 +21,7 @@ internal sealed record MethodModel(
     ImmutableEquatableArray<string> Headers = default!,
     bool IsMultipart = false,
     string MultipartBoundary = "----MyGreatBoundary",
-    int QueryUriFormat = 0,
+    int QueryUriFormat = 1,
     bool IsApiResponse = false,
     string ReturnResultType = "",
     string DeserializedResultType = ""

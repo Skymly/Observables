@@ -1726,7 +1726,14 @@
             </summary>
             <param name="interfaceType">REST API 接口类型。</param>
             <param name="factory">生成的实现工厂。</param>
-        </member><member name="T:Observables.RestAPI.RestService">
+        </member>
+        <member name="M:Observables.RestAPI.RestService.OwnsHttpClient(System.Net.Http.HttpClient)">
+            <summary>
+            当 <paramref name="client"/> 由 <see cref="M:Observables.RestAPI.RestService.For``1(System.String)"/> / 主机 URL 重载创建时为 true。
+            生成的 <see cref="T:System.IDisposable"/> 代理仅在该情况下释放客户端。
+            </summary>
+        </member>
+        <member name="T:Observables.RestAPI.RestService">
             <summary>
             为声明式 HTTP 接口创建 REST API 客户端实现。
             </summary>

@@ -246,17 +246,35 @@ internal static partial class Parser
         _ => RestApiSlotKind.Query,
     };
 
-    static string ExtractHttpMethodName(INamedTypeSymbol attrClass) => attrClass.Name switch
+    static string ExtractHttpMethodName(INamedTypeSymbol attrClass)
     {
-        "GetAttribute" => "GET",
-        "PostAttribute" => "POST",
-        "PutAttribute" => "PUT",
-        "DeleteAttribute" => "DELETE",
-        "PatchAttribute" => "PATCH",
-        "OptionsAttribute" => "OPTIONS",
-        "HeadAttribute" => "HEAD",
-        _ => "GET",
-    };
+        for (var type = attrClass; type is not null; type = type.BaseType)
+        {
+            switch (type.Name)
+            {
+                case "GetAttribute":
+                    return "GET";
+                case "PostAttribute":
+                    return "POST";
+                case "PutAttribute":
+                    return "PUT";
+                case "DeleteAttribute":
+                    return "DELETE";
+                case "PatchAttribute":
+                    return "PATCH";
+                case "OptionsAttribute":
+                    return "OPTIONS";
+                case "HeadAttribute":
+                    return "HEAD";
+            }
+        }
+
+        var name = attrClass.Name;
+        if (name.EndsWith("Attribute", StringComparison.Ordinal))
+            name = name.Substring(0, name.Length - "Attribute".Length);
+
+        return name.Length == 0 ? "GET" : name.ToUpperInvariant();
+    }
 
     static ParameterClassification ClassifyParameter(IParameterSymbol param, int index)
     {

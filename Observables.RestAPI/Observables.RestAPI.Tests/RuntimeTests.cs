@@ -41,8 +41,8 @@ public sealed class RuntimeTests
         client.BaseAddress = new Uri("https://api.example.com");
 
         var api = RestService.For<IUserApi>(client);
-        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
-        User received = await api.GetUserObservable(7).FirstAsync(cts.Token);
+        User received = await api.GetUserObservable(7, TestContext.Current.CancellationToken)
+            .FirstAsync(TestContext.Current.CancellationToken);
 
         Assert.Equal(7, received.Id);
     }
@@ -232,6 +232,61 @@ public sealed class RuntimeTests
     }
 
     [Fact]
+    public async Task IApiResponse_Dispose_disposes_the_request()
+    {
+        using var handler = new TrackingJsonHandler();
+        using var client = new HttpClient(handler) { BaseAddress = new Uri("https://api.example.com") };
+        var requestContent = new TrackingContent();
+        var request = new HttpRequestMessage(HttpMethod.Get, "/users/1") { Content = requestContent };
+
+        var response = await RestApiBridge.SendAsync<IApiResponse<User>, User>(
+            client,
+            request,
+            new RestApiSettings(),
+            bodyBuffered: false,
+            cancellationToken: TestContext.Current.CancellationToken);
+
+        Assert.False(requestContent.IsDisposed);
+        response!.Dispose();
+        Assert.True(requestContent.IsDisposed);
+    }
+
+    [Fact]
+    public async Task ObservableGet_caller_cancel_throws_OperationCanceledException()
+    {
+        using var handler = new StallUntilCanceledHandler();
+        using var client = new HttpClient(handler) { BaseAddress = new Uri("https://api.example.com") };
+        var api = RestService.For<IUserApi>(client);
+        using var cts = CancellationTokenSource.CreateLinkedTokenSource(TestContext.Current.CancellationToken);
+
+        var consume = api.GetUserObservable(1, cts.Token).FirstAsync(TestContext.Current.CancellationToken);
+        await handler.Started.WaitAsync(TimeSpan.FromSeconds(2), TestContext.Current.CancellationToken);
+        cts.Cancel();
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(
+            () => consume.WaitAsync(TimeSpan.FromSeconds(2), TestContext.Current.CancellationToken));
+    }
+
+    [Fact]
+    public async Task AuthorizationHeaderValueGetter_sets_header_when_request_has_none()
+    {
+        var handler = new CaptureJsonHandler();
+        var settings = new RestApiSettings
+        {
+            HttpMessageHandlerFactory = () => handler,
+            AuthorizationHeaderValueGetter = (_, _) => Task.FromResult("tok-123"),
+        };
+
+        var api = RestService.For<IUserApi>("https://api.example.com", settings);
+        await api.GetUser(1, TestContext.Current.CancellationToken);
+
+        Assert.NotNull(handler.Request);
+        Assert.NotNull(handler.Request.Headers.Authorization);
+        Assert.Equal("Bearer", handler.Request.Headers.Authorization.Scheme);
+        Assert.Equal("tok-123", handler.Request.Headers.Authorization.Parameter);
+    }
+
+    [Fact]
     public void Dispose_does_not_dispose_external_HttpClient()
     {
         using var handler = new TrackingJsonHandler();
@@ -268,7 +323,7 @@ public sealed class RuntimeTests
         Task<IApiResponse<User>> GetUserResponse(int id, CancellationToken cancellationToken = default);
 
         [Get("/users/{id}")]
-        Observable<User> GetUserObservable(int id);
+        Observable<User> GetUserObservable(int id, CancellationToken cancellationToken = default);
 
         [Get("/search")]
         Task<string> Search([Query] string q, CancellationToken cancellationToken = default);
@@ -328,6 +383,23 @@ public sealed class RuntimeTests
         {
             IsDisposed = true;
             base.Dispose(disposing);
+        }
+    }
+
+    sealed class CaptureJsonHandler : HttpMessageHandler
+    {
+        public HttpRequestMessage? Request { get; private set; }
+
+        protected override Task<HttpResponseMessage> SendAsync(
+            HttpRequestMessage request,
+            CancellationToken cancellationToken)
+        {
+            Request = request;
+            var response = new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent("""{"id":1,"name":"Ada"}""", Encoding.UTF8, "application/json"),
+            };
+            return Task.FromResult(response);
         }
     }
 

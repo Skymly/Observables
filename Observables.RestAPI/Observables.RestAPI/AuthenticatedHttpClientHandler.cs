@@ -54,12 +54,19 @@ namespace Observables.RestAPI
             CancellationToken cancellationToken
         )
         {
-            // See if the request has an authorize header
+            var token = await getToken(request, cancellationToken).ConfigureAwait(false);
             var auth = request.Headers.Authorization;
             if (auth != null)
             {
-                var token = await getToken(request, cancellationToken).ConfigureAwait(false);
                 request.Headers.Authorization = new AuthenticationHeaderValue(auth.Scheme, token);
+            }
+            else if (token.IndexOf(' ') >= 0 && AuthenticationHeaderValue.TryParse(token, out var parsed))
+            {
+                request.Headers.Authorization = parsed;
+            }
+            else
+            {
+                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
             }
 
             return await base.SendAsync(request, cancellationToken).ConfigureAwait(false);

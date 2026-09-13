@@ -312,14 +312,21 @@ public sealed partial class ObservableEventsGenerator
                 case ObservableEventsEntryKind.RoutedEvents:
                     if (TryGetAvaloniaRoutedClrEventField(evt, compilation, out var routedEventField, out var eventArgsType))
                     {
-                        members.Add(
-                            ObservableEventsSyntaxFactory.CreateAvaloniaRoutedEventProperty(
-                                evt,
-                                routedEventField,
-                                eventArgsType,
-                                useEventHandlers: false,
-                                ObservableEventsSyntaxFactory.CreateEventInheritDocTrivia(
-                                    $"{ObservableEventsConstants.QualifiedType(evt.ContainingType)}.{evt.Name}")));
+                        if (GetEventInterfacePropertyType(evt, entryKind, compilation) is null)
+                        {
+                            ReportInvalidDelegate(evt, reportDiagnostic, entryKind);
+                        }
+                        else
+                        {
+                            members.Add(
+                                ObservableEventsSyntaxFactory.CreateAvaloniaRoutedEventProperty(
+                                    evt,
+                                    routedEventField,
+                                    eventArgsType,
+                                    useEventHandlers: false,
+                                    ObservableEventsSyntaxFactory.CreateEventInheritDocTrivia(
+                                        $"{ObservableEventsConstants.QualifiedType(evt.ContainingType)}.{evt.Name}")));
+                        }
                     }
                     else if (TryCreateEventObservableProperty(evt, accessor, reportDiagnostic, entryKind, out var routedEventsProp, includeXmlDocumentation: false))
                     {
@@ -330,14 +337,21 @@ public sealed partial class ObservableEventsGenerator
                 case ObservableEventsEntryKind.RoutedEventHandlers:
                     if (TryGetAvaloniaRoutedClrEventField(evt, compilation, out var routedHandlerField, out var handlerArgsType))
                     {
-                        members.Add(
-                            ObservableEventsSyntaxFactory.CreateAvaloniaRoutedEventProperty(
-                                evt,
-                                routedHandlerField,
-                                handlerArgsType,
-                                useEventHandlers: true,
-                                ObservableEventsSyntaxFactory.CreateEventInheritDocTrivia(
-                                    $"{ObservableEventsConstants.QualifiedType(evt.ContainingType)}.{evt.Name}")));
+                        if (GetEventInterfacePropertyType(evt, entryKind, compilation) is null)
+                        {
+                            ReportInvalidEventHandlersDelegate(evt, reportDiagnostic, entryKind);
+                        }
+                        else
+                        {
+                            members.Add(
+                                ObservableEventsSyntaxFactory.CreateAvaloniaRoutedEventProperty(
+                                    evt,
+                                    routedHandlerField,
+                                    handlerArgsType,
+                                    useEventHandlers: true,
+                                    ObservableEventsSyntaxFactory.CreateEventInheritDocTrivia(
+                                        $"{ObservableEventsConstants.QualifiedType(evt.ContainingType)}.{evt.Name}")));
+                        }
                     }
                     else if (TryCreateEventHandlerObservableProperty(evt, accessor, compilation, reportDiagnostic, entryKind, out var routedHandlersProp, includeXmlDocumentation: false))
                     {

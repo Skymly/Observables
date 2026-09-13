@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -176,35 +177,39 @@ sealed class Build : NukeBuild
 
     Target Pack => _ => _
         .DependsOn(Restore)
-        .Executes(() =>
+        .Executes(() => PackPackages(FilteredPackages, Version));
+
+    void PackPackages(IEnumerable<BuildManifest.PackageEntry> packages, string? versionOverride)
+    {
+        PackageOutputDirectory.CreateOrCleanDirectory();
+
+        foreach (BuildManifest.PackageEntry package in packages)
         {
-            PackageOutputDirectory.CreateOrCleanDirectory();
-
-            foreach (BuildManifest.PackageEntry package in FilteredPackages)
+            AbsolutePath projectFile = Root / package.PackProject;
+            if (!projectFile.FileExists())
             {
-                AbsolutePath projectFile = Root / package.PackProject;
-                if (!projectFile.FileExists())
-                {
-                    throw new InvalidOperationException($"Pack project not found: {projectFile}");
-                }
+                throw new InvalidOperationException($"Pack project not found: {projectFile}");
+            }
 
-                DotNetPack(s =>
+            DotNetPack(s =>
+            {
+                s = s
+                    .SetProject(projectFile)
+                    .SetConfiguration(Configuration)
+                    .SetProperty("PackageOutputPath", PackageOutputDirectory)
+                    .SetProperty("ContinuousIntegrationBuild", "true");
+
+                if (!string.IsNullOrWhiteSpace(versionOverride))
                 {
                     s = s
-                        .SetProject(projectFile)
-                        .SetConfiguration(Configuration)
-                        .SetProperty("PackageOutputPath", PackageOutputDirectory)
-                        .SetProperty("ContinuousIntegrationBuild", "true");
+                        .SetVersion(versionOverride)
+                        .SetProperty("PackageVersion", versionOverride);
+                }
 
-                    if (!string.IsNullOrWhiteSpace(Version))
-                    {
-                        s = s.SetVersion(Version);
-                    }
-
-                    return s;
-                });
-            }
-        });
+                return s;
+            });
+        }
+    }
 
     Target PackVerify => _ => _
         .DependsOn(Pack)
@@ -237,36 +242,80 @@ sealed class Build : NukeBuild
         });
 
     Target NuGetConsumerSmoke => _ => _
-        .DependsOn(ConsumerFeed == NuGetConsumerFeed.Local ? Pack : null)
+        .DependsOn(ConsumerFeed == NuGetConsumerFeed.Local ? Restore : null)
         .DependsOn(ConsumerFeed == NuGetConsumerFeed.Local ? Test : null)
         .Executes(() =>
         {
-            string packageVersion = EffectivePackageVersion;
-            string? previousNuGetConfig = Environment.GetEnvironmentVariable("NUGET_CONFIG");
+            string packageVersion = ConsumerFeed == NuGetConsumerFeed.Local
+                ? SmokeFeed.LocalPackageVersion(EffectivePackageVersion, ResolveShortGitSha())
+                : EffectivePackageVersion;
 
             if (ConsumerFeed == NuGetConsumerFeed.Local)
             {
-                Environment.SetEnvironmentVariable("NUGET_CONFIG", NuGetSmokeLocalConfig);
+                PackPackages(Manifest.Packages, packageVersion);
             }
 
-            try
+            foreach (string relativePath in Manifest.SmokeConsumers)
             {
-                foreach (string relativePath in Manifest.SmokeConsumers)
-                {
-                    AbsolutePath projectFile = Root / relativePath;
-                    Assert.FileExists(projectFile, $"Consumer project not found: {projectFile}");
+                AbsolutePath projectFile = Root / relativePath;
+                Assert.FileExists(projectFile, $"Consumer project not found: {projectFile}");
 
-                    DotNetBuild(s => s
+                if (ConsumerFeed == NuGetConsumerFeed.Local)
+                {
+                    DotNetRestore(s => s
+                        .SetProjectFile(projectFile)
+                        .SetConfigFile(NuGetSmokeLocalConfig)
+                        .SetProperty("ObservablesConsumerPackageVersion", packageVersion)
+                        .SetProperty("RestoreConfigFile", NuGetSmokeLocalConfig));
+                }
+
+                DotNetBuild(s =>
+                {
+                    s = s
                         .SetProjectFile(projectFile)
                         .SetConfiguration(Configuration)
-                        .SetProperty("ObservablesConsumerPackageVersion", packageVersion));
-                }
-            }
-            finally
-            {
-                Environment.SetEnvironmentVariable("NUGET_CONFIG", previousNuGetConfig);
+                        .SetProperty("ObservablesConsumerPackageVersion", packageVersion);
+
+                    if (ConsumerFeed == NuGetConsumerFeed.Local)
+                    {
+                        s = s
+                            .EnableNoRestore()
+                            .SetProperty("RestoreConfigFile", NuGetSmokeLocalConfig);
+                    }
+
+                    return s;
+                });
             }
         });
+
+    string ResolveShortGitSha()
+    {
+        string? githubSha = Environment.GetEnvironmentVariable("GITHUB_SHA");
+        if (!string.IsNullOrWhiteSpace(githubSha))
+        {
+            return githubSha.Length <= 12 ? githubSha : githubSha[..12];
+        }
+
+        var startInfo = new ProcessStartInfo("git", "rev-parse --short=12 HEAD")
+        {
+            WorkingDirectory = Root,
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
+            UseShellExecute = false,
+        };
+
+        using Process process = Process.Start(startInfo)
+            ?? throw new InvalidOperationException("Failed to start git to resolve the smoke package version.");
+        string sha = process.StandardOutput.ReadToEnd().Trim();
+        process.WaitForExit();
+        if (process.ExitCode != 0 || string.IsNullOrWhiteSpace(sha))
+        {
+            throw new InvalidOperationException(
+                "git rev-parse --short=12 HEAD failed: " + process.StandardError.ReadToEnd().Trim());
+        }
+
+        return sha;
+    }
 
     Target Publish => _ => _
         .DependsOn(Test, PackVerify)

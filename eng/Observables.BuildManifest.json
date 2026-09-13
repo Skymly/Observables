@@ -129,6 +129,7 @@
   ],
   "smokeConsumers": [
     "eng/nuget-smoke/Events.R3.Consumer/Events.R3.Consumer.csproj",
+    "eng/nuget-smoke/Events.R3.RoutedEvents.Consumer/Events.R3.RoutedEvents.Consumer.csproj",
     "eng/nuget-smoke/Events.Reactive.Consumer/Events.Reactive.Consumer.csproj",
     "eng/nuget-smoke/RestAPI.R3.Consumer/RestAPI.R3.Consumer.csproj",
     "eng/nuget-smoke/RestAPI.Reactive.Consumer/RestAPI.Reactive.Consumer.csproj",
@@ -139,7 +140,9 @@
     "eng/nuget-smoke/WebSocket.R3.Consumer/WebSocket.R3.Consumer.csproj",
     "eng/nuget-smoke/WebSocket.Reactive.Consumer/WebSocket.Reactive.Consumer.csproj",
     "eng/nuget-smoke/Grpc.R3.Consumer/Grpc.R3.Consumer.csproj",
+    "eng/nuget-smoke/Grpc.R3.NoTransport.Consumer/Grpc.R3.NoTransport.Consumer.csproj",
     "eng/nuget-smoke/Grpc.Reactive.Consumer/Grpc.Reactive.Consumer.csproj",
+    "eng/nuget-smoke/Grpc.Reactive.NoTransport.Consumer/Grpc.Reactive.NoTransport.Consumer.csproj",
     "eng/nuget-smoke/Sse.R3.Consumer/Sse.R3.Consumer.csproj",
     "eng/nuget-smoke/Sse.Reactive.Consumer/Sse.Reactive.Consumer.csproj",
     "eng/nuget-smoke/Nats.R3.Consumer/Nats.R3.Consumer.csproj",

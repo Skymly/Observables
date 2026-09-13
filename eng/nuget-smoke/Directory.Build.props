@@ -8,4 +8,7 @@
     <Error Condition="'$(ObservablesConsumerPackageVersion)' == ''"
            Text="Set ObservablesConsumerPackageVersion (Nuke NuGetConsumerSmoke injects PackageVersion from eng/Observables.Package.props)." />
   </Target>
+  <PropertyGroup>
+    <WarningsAsErrors>$(WarningsAsErrors);NU1603</WarningsAsErrors>
+  </PropertyGroup>
 </Project>

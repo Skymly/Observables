@@ -18,6 +18,7 @@
     <Compile Include="..\..\build\NupkgVerifier.cs" Link="Linked\NupkgVerifier.cs" />
     <Compile Include="..\..\build\NupkgVerifyRequest.cs" Link="Linked\NupkgVerifyRequest.cs" />
     <Compile Include="..\..\build\PackCsprojReader.cs" Link="Linked\PackCsprojReader.cs" />
+    <Compile Include="..\..\build\SmokeFeed.cs" Link="Linked\SmokeFeed.cs" />
   </ItemGroup>
 
 </Project>

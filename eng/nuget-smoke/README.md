@@ -8,7 +8,7 @@ Minimal console apps that reference **only** published or locally packed Observa
 dotnet run --project build/_build.csproj -- --target NuGetConsumerSmoke --configuration Release
 ```
 
-Uses `nuget.config.local` pointing at `artifacts/package/`.
+Uses `nuget.config.local` with `packageSourceMapping` (`Observables.*` → local feed only) via `RestoreConfigFile` / `--configfile`. Local packages are packed as `{PackageVersion}-ci.{gitSha}` so they cannot collide with nuget.org `0.2.2`.
 
 ## Published feed (nuget.org)
 

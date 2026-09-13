@@ -23,6 +23,8 @@
   <ItemGroup>
     <ObservablesPackLibProjectReference Include="..\Observables.Grpc\Observables.Grpc.csproj" />
     <PackageReference Include="R3" />
+    <PackageReference Include="Grpc.Core.Api" />
+    <PackageReference Include="Google.Protobuf" />
     <None Include="README.Grpc.R3.pack.md" Pack="true" PackagePath="README.md" Visible="false" />
     <None Include="..\Observables.Grpc\loc\zh-Hans\Observables.Grpc.xml"
           Pack="true"

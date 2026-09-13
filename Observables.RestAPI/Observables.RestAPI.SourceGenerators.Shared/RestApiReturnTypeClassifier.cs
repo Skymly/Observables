@@ -74,7 +74,7 @@ internal static class RestApiReturnTypeClassifier
             if (isR3)
             {
                 diagnostics.Add(Diagnostic.Create(
-                    DiagnosticDescriptors.SystemReactiveNotReferenced,
+                    DiagnosticDescriptors.UnsupportedReturnType,
                     methodSymbol.Locations.FirstOrDefault(),
                     returnType.ToDisplayString()));
                 return ReturnTypeInfo.Unsupported;

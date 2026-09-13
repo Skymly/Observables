@@ -70,10 +70,14 @@ jobs:
             exit 1
           fi
 
-          # Validate tag version matches eng/Observables.Package.props
-          PROPS_VERSION=$(grep -oP '<Version>\K[^<]+' eng/Observables.Package.props || true)
-          if [[ -n "${PROPS_VERSION}" && "${PROPS_VERSION}" != "${VERSION}" ]]; then
-            echo "Error: tag version (${VERSION}) does not match eng/Observables.Package.props Version (${PROPS_VERSION})"
+          # Validate tag version matches the PackageVersion Nuke publishes.
+          PROPS_VERSION=$(grep -oP '<PackageVersion>\K[^<]+' eng/Observables.Package.props || true)
+          if [[ -z "${PROPS_VERSION}" ]]; then
+            echo "Error: PackageVersion not found in eng/Observables.Package.props"
+            exit 1
+          fi
+          if [[ "${PROPS_VERSION}" != "${VERSION}" ]]; then
+            echo "Error: tag version (${VERSION}) does not match eng/Observables.Package.props PackageVersion (${PROPS_VERSION})"
             exit 1
           fi
 

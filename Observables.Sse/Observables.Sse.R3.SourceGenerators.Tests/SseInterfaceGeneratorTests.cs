@@ -99,6 +99,25 @@ public sealed class SseInterfaceGeneratorTests
         Assert.Contains("OBS8003", snapshot, StringComparison.Ordinal);
     }
 
+    [Fact]
+    public void Sse_interface_OBS8002_when_runtime_missing()
+    {
+        const string userSource =
+            """
+            [Sse]
+            public interface IPriceFeed
+            {
+                [SseEvent("price")]
+                Observable<string> Prices { get; }
+            }
+            """;
+
+        var output = GeneratorTestHarness.Run(userSource, includeCoreReference: false);
+        var snapshot = GeneratorTestHarness.ToSnapshot(output);
+
+        Assert.Contains("OBS8002", snapshot, StringComparison.Ordinal);
+    }
+
     // ── Incremental cache hit tests (D3-A pilot) ──
 
     const string CacheTestSource =

@@ -119,4 +119,21 @@ public sealed class HubInterfaceGeneratorTests
             reason is IncrementalStepRunReason.Modified or IncrementalStepRunReason.New,
             $"Expected cache miss (Modified/New), got {reason}");
     }
+
+    [Fact]
+    public void Missing_reactive_adapter_reports_OBS4005()
+    {
+        const string userSource =
+            """
+            [Hub]
+            public interface IChat
+            {
+                [HubOn("ReceiveMessage")]
+                IObservable<string> ReceiveMessage { get; }
+            }
+            """;
+
+        var output = GeneratorTestHarness.RunWithoutReactiveAdapter(userSource);
+        Assert.Contains(output.Diagnostics, static diagnostic => diagnostic.Id == "OBS4005");
+    }
 }

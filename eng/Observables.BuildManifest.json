@@ -124,7 +124,8 @@
     "Observables.Shared/Observables.CodeFixes.Tests/Observables.CodeFixes.Tests.csproj",
     "Observables.Shared/Observables.Analyzers.Tests/Observables.Analyzers.Tests.csproj",
     "Observables.Shared/Observables.TestSupport.Tests/Observables.TestSupport.Tests.csproj",
-    "Observables.Shared/Observables.TrimTests/Observables.TrimTests.csproj"
+    "Observables.Shared/Observables.TrimTests/Observables.TrimTests.csproj",
+    "eng/Observables.Build.Tests/Observables.Build.Tests.csproj"
   ],
   "smokeConsumers": [
     "eng/nuget-smoke/Events.R3.Consumer/Events.R3.Consumer.csproj",

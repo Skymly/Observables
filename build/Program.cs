@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.IO.Compression;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -124,7 +123,10 @@ sealed class Build : NukeBuild
                 ? Manifest.TestProjects
                 : Manifest.TestProjects.Where(p =>
                     TestDomains.Any(d => p.StartsWith($"Observables.{d}/", StringComparison.OrdinalIgnoreCase))
-                    || TestDomains.Contains("shared", StringComparer.OrdinalIgnoreCase) && p.StartsWith("Observables.Shared/", StringComparison.OrdinalIgnoreCase));
+                    || TestDomains.Contains("shared", StringComparer.OrdinalIgnoreCase)
+                        && (p.StartsWith("Observables.Shared/", StringComparison.OrdinalIgnoreCase)
+                            || p.StartsWith("eng/", StringComparison.OrdinalIgnoreCase)
+                            || p.StartsWith("build/", StringComparison.OrdinalIgnoreCase)));
 
             var testProjects = projects
                 .Select(relativePath => Root / relativePath)
@@ -149,9 +151,18 @@ sealed class Build : NukeBuild
             }
         });
 
-    static bool IsE2ETestProject(AbsolutePath projectFile) =>
-        projectFile.Name.EndsWith(".Tests.csproj", StringComparison.OrdinalIgnoreCase)
-        && !projectFile.Name.Contains("SourceGenerators", StringComparison.OrdinalIgnoreCase);
+    static bool IsE2ETestProject(AbsolutePath projectFile)
+    {
+        string normalized = projectFile.ToString().Replace('\\', '/');
+        if (normalized.Contains("/eng/", StringComparison.OrdinalIgnoreCase)
+            || normalized.Contains("/build/", StringComparison.OrdinalIgnoreCase))
+        {
+            return false;
+        }
+
+        return projectFile.Name.EndsWith(".Tests.csproj", StringComparison.OrdinalIgnoreCase)
+            && !projectFile.Name.Contains("SourceGenerators", StringComparison.OrdinalIgnoreCase);
+    }
 
     void RunTestProject(AbsolutePath projectFile)
     {
@@ -207,56 +218,21 @@ sealed class Build : NukeBuild
                 AbsolutePath nupkg = PackageOutputDirectory / $"{packageId}.{packageVersion}.nupkg";
                 Assert.FileExists(nupkg, $"Expected package: {nupkg}");
 
-                using ZipArchive archive = ZipFile.OpenRead(nupkg);
-                HashSet<string> entries = archive.Entries
-                    .Select(e => e.FullName.Replace('\\', '/'))
-                    .ToHashSet(StringComparer.OrdinalIgnoreCase);
+                AbsolutePath packProject = Root / package.PackProject;
+                Assert.FileExists(packProject, $"Pack project not found: {packProject}");
 
-                bool hasAnalyzer = entries.Any(e => e.StartsWith("analyzers/dotnet/roslyn4.12/cs/", StringComparison.OrdinalIgnoreCase)
-                    && e.EndsWith(".dll", StringComparison.OrdinalIgnoreCase));
-                Assert.True(hasAnalyzer, $"{packageId}: missing analyzer DLL under analyzers/dotnet/roslyn4.12/cs/");
-
-                Assert.True(
-                    entries.Contains("analyzers/dotnet/roslyn4.12/cs/Observables.CodeFixes.dll"),
-                    $"{packageId}: missing Observables.CodeFixes.dll under analyzers/dotnet/roslyn4.12/cs/");
-                Assert.True(
-                    entries.Contains("analyzers/dotnet/roslyn4.12/cs/Observables.Analyzers.dll"),
-                    $"{packageId}: missing Observables.Analyzers.dll under analyzers/dotnet/roslyn4.12/cs/");
-
-                bool isEvents = packageId.StartsWith("Observables.Events.", StringComparison.Ordinal);
-                if (isEvents)
+                NupkgVerifyRequest request = PackCsprojReader.FromPackProject(packProject);
+                if (!string.Equals(request.PackageId, packageId, StringComparison.OrdinalIgnoreCase))
                 {
-                    Assert.True(
-                        entries.Contains("buildTransitive/observables.events.props"),
-                        $"{packageId}: missing buildTransitive/observables.events.props");
-                }
-                else
-                {
-                    bool hasLib = entries.Any(e => e.StartsWith("lib/", StringComparison.OrdinalIgnoreCase)
-                        && e.EndsWith(".dll", StringComparison.OrdinalIgnoreCase));
-                    Assert.True(hasLib, $"{packageId}: missing runtime assemblies under lib/");
+                    throw new InvalidOperationException(
+                        $"{packageId}: pack csproj PackageId is '{request.PackageId}'");
                 }
 
-                if (packageId.StartsWith("Observables.Redis.", StringComparison.Ordinal))
+                IReadOnlyList<string> errors = NupkgVerifier.Verify(nupkg, request);
+                if (errors.Count > 0)
                 {
-                    bool hasGarnetEntry = entries.Any(e =>
-                        e.Contains("Garnet", StringComparison.OrdinalIgnoreCase));
-                    Assert.False(hasGarnetEntry, $"{packageId}: Garnet must stay out of pack dependency graphs");
-
-                    ZipArchiveEntry? nuspec = archive.Entries.FirstOrDefault(e =>
-                        e.FullName.EndsWith(".nuspec", StringComparison.OrdinalIgnoreCase));
-                    Assert.True(nuspec is not null, $"{packageId}: missing .nuspec");
-                    using Stream nuspecStream = nuspec!.Open();
-                    using var nuspecReader = new StreamReader(nuspecStream);
-                    string nuspecText = nuspecReader.ReadToEnd();
-                    Assert.False(
-                        nuspecText.Contains("Garnet", StringComparison.OrdinalIgnoreCase),
-                        $"{packageId}: Garnet must stay out of pack dependency graphs (nuspec)");
+                    throw new InvalidOperationException(string.Join(Environment.NewLine, errors));
                 }
-
-                Assert.True(
-                    entries.Contains("README.md"),
-                    $"{packageId}: missing package README.md at package root");
             }
         });
 

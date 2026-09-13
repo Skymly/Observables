@@ -18,6 +18,8 @@
 
     <Project Path="build/_build.csproj" />
 
+    <Project Path="eng/Observables.Build.Tests/Observables.Build.Tests.csproj" />
+
   </Folder>
 
   <Folder Name="/Shared/">

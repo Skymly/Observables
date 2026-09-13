@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <RootNamespace>Observables.Build.Tests</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Using Include="Xunit" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="xunit.v3" />
+    <PackageReference Include="xunit.runner.visualstudio">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Include="..\..\build\NupkgVerifier.cs" Link="Linked\NupkgVerifier.cs" />
+    <Compile Include="..\..\build\NupkgVerifyRequest.cs" Link="Linked\NupkgVerifyRequest.cs" />
+    <Compile Include="..\..\build\PackCsprojReader.cs" Link="Linked\PackCsprojReader.cs" />
+  </ItemGroup>
+
+</Project>

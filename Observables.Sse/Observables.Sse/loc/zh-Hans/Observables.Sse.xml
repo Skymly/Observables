@@ -73,5 +73,13 @@
         <member name="T:Observables.GeneratedProxyFactoryRegistry`1">
             <summary>各 Feature *Service.For 共用的生成代理工厂登记表。</summary>
         </member>
+        <member name="T:Observables.R3AsyncCreate">
+            <summary>
+            R3 1.3.0 的 <c>Observable.Create</c> 不会等待或捕获异步订阅委托。
+            此帮助类型对齐 <c>Observable.CreateFrom</c>：用 <c>async void</c> 运行委托，
+            正常返回时完成观察者，抛出时以 <c>OnCompleted(Result.Failure(ex))</c> 完成。
+            订阅令牌取消保持静默；其他取消会终止观察者。
+            </summary>
+        </member>
     </members>
 </doc>

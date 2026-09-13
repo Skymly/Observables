@@ -118,7 +118,7 @@ public sealed partial class ObservableEventsGenerator
         if (!hierarchy.TryGetValue(type, out var desc))
             return string.Empty;
 
-        var implName = GetEventImplName(type, entryKind);
+        var implName = desc.ImplName;
         var typeParamList = type.IsGenericType
             ? $"<{string.Join(", ", type.TypeParameters.Select(static tp => tp.Name))}>"
             : string.Empty;

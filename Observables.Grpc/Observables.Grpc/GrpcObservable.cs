@@ -23,7 +23,7 @@ public static class GrpcObservable
         CancellationToken cancellationToken = default)
         where TRequest : class
         where TResponse : class =>
-        Observable.Create<TResponse>(async (observer, ct) =>
+        R3AsyncCreate.Create<TResponse>(async (observer, ct) =>
         {
             try
             {
@@ -31,17 +31,13 @@ public static class GrpcObservable
                     .ReadServerStreamAsync(invoker, method, request, observer.OnNext, observer.OnCompleted, cancellationToken, ct)
                     .ConfigureAwait(false);
             }
-            catch (OperationCanceledException)
+            catch (OperationCanceledException oce) when (oce.CancellationToken == ct || ct.IsCancellationRequested)
             {
-                return;
+                throw new OperationCanceledException(ct);
             }
             catch (RpcException ex) when (ex.StatusCode == StatusCode.Cancelled)
             {
-                return;
-            }
-            catch (Exception ex)
-            {
-                observer.OnErrorResume(ex);
+                throw new OperationCanceledException(ct);
             }
         });
 
@@ -68,7 +64,7 @@ public static class GrpcObservable
                 (Action<TRequest>)(item =>
                     GrpcProtocol.ObserveWrite(writer.WriteAsync(item, linked.Token), writeCompleted)),
                 (Action<Exception>)(ex => writeCompleted.TrySetException(ex)),
-                (Action<Result>)(_ => writeCompleted.TrySetResult(true)));
+                (Action<Result>)(result => GrpcProtocol.ObserveCompleted(result, writeCompleted)));
 
             await writeCompleted.Task.ConfigureAwait(false);
             await writer.CompleteAsync().ConfigureAwait(false);
@@ -82,7 +78,7 @@ public static class GrpcObservable
         CancellationToken cancellationToken = default)
         where TRequest : class
         where TResponse : class =>
-        Observable.Create<TResponse>(async (observer, ct) =>
+        R3AsyncCreate.Create<TResponse>(async (observer, ct) =>
         {
             using var linked = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, ct);
             using var call = invoker.AsyncDuplexStreamingCall(
@@ -98,27 +94,21 @@ public static class GrpcObservable
                 (Action<TRequest>)(item =>
                     GrpcProtocol.ObserveWrite(writer.WriteAsync(item, linked.Token), writeCompleted)),
                 (Action<Exception>)(ex => writeCompleted.TrySetException(ex)),
-                (Action<Result>)(_ => writeCompleted.TrySetResult(true)));
+                (Action<Result>)(result => GrpcProtocol.ObserveCompleted(result, writeCompleted)));
 
-            var readTask = GrpcProtocol.ReadResponsesAsync(call.ResponseStream, observer.OnNext, linked.Token);
             try
             {
-                await writeCompleted.Task.ConfigureAwait(false);
-                await writer.CompleteAsync().ConfigureAwait(false);
-                await readTask.ConfigureAwait(false);
-                observer.OnCompleted();
+                await GrpcProtocol
+                    .PumpStreamingCallAsync(writer, writeCompleted.Task, call.ResponseStream, observer.OnNext, linked.Token)
+                    .ConfigureAwait(false);
             }
-            catch (OperationCanceledException)
+            catch (OperationCanceledException oce) when (oce.CancellationToken == linked.Token || ct.IsCancellationRequested)
             {
-                return;
+                throw new OperationCanceledException(ct);
             }
             catch (RpcException ex) when (ex.StatusCode == StatusCode.Cancelled)
             {
-                return;
-            }
-            catch (Exception ex)
-            {
-                observer.OnErrorResume(ex);
+                throw new OperationCanceledException(ct);
             }
         });
 }

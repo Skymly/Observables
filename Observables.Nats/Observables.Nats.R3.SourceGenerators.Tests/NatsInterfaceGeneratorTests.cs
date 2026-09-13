@@ -53,7 +53,7 @@ public sealed class NatsInterfaceGeneratorTests
     }
 
     [Fact]
-    public void Nats_interface_OBS9005_on_iobservable_with_r3_generator()
+    public void Nats_interface_OBS9003_on_iobservable_with_r3_generator()
     {
         const string userSource =
             """
@@ -68,7 +68,7 @@ public sealed class NatsInterfaceGeneratorTests
         var output = GeneratorTestHarness.Run(userSource);
         var snapshot = GeneratorTestHarness.ToSnapshot(output);
 
-        Assert.Contains("OBS9005", snapshot, StringComparison.Ordinal);
+        Assert.Contains("OBS9003", snapshot, StringComparison.Ordinal);
     }
 
     // ── Incremental cache hit tests ──

@@ -169,6 +169,27 @@ public class CoreGeneratorTests
         return Task.CompletedTask;
     }
 
+    [Fact]
+    public void RestAPI_OBS3002_when_runtime_missing()
+    {
+        GeneratorRunOutput output = GeneratorTestHarness.Run(
+            """
+            public interface IUserApi
+            {
+                [Get("/users/{id}")]
+                Observable<User> GetUser(int id);
+            }
+
+            public sealed class User
+            {
+                public int Id { get; set; }
+            }
+            """,
+            includeCoreReference: false);
+
+        Assert.Contains("OBS3002", GeneratorTestHarness.ToSnapshot(output), StringComparison.Ordinal);
+    }
+
     // ── Path + [Body]/[Query] regression tests (issue #111) ──
 
     [Fact]

@@ -119,4 +119,20 @@ public sealed class HubInterfaceGeneratorTests
             reason is IncrementalStepRunReason.Modified or IncrementalStepRunReason.New,
             $"Expected cache miss (Modified/New), got {reason}");
     }
+
+    [Fact]
+    public void Public_instance_event_reports_OBS4001()
+    {
+        const string userSource =
+            """
+            [Hub]
+            public interface IChat
+            {
+                event System.Action Tick;
+            }
+            """;
+
+        var output = GeneratorTestHarness.Run(userSource);
+        Assert.Contains(output.Diagnostics, static diagnostic => diagnostic.Id == "OBS4001");
+    }
 }

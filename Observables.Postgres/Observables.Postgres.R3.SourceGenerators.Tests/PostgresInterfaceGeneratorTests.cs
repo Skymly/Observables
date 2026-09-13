@@ -71,7 +71,7 @@ public sealed class PostgresInterfaceGeneratorTests
     }
 
     [Fact]
-    public void Postgres_interface_OBS10005_on_iobservable_with_r3_generator()
+    public void Postgres_interface_OBS10003_on_iobservable_with_r3_generator()
     {
         const string userSource =
             """
@@ -86,7 +86,7 @@ public sealed class PostgresInterfaceGeneratorTests
         var output = GeneratorTestHarness.Run(userSource);
         var snapshot = GeneratorTestHarness.ToSnapshot(output);
 
-        Assert.Contains("OBS10005", snapshot, StringComparison.Ordinal);
+        Assert.Contains("OBS10003", snapshot, StringComparison.Ordinal);
     }
 
     [Fact]

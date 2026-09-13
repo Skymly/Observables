@@ -50,7 +50,7 @@ public sealed class MqttInterfaceGeneratorTests
     }
 
     [Fact]
-    public void Mqtt_interface_OBS5005_on_iobservable_with_r3_generator()
+    public void Mqtt_interface_OBS5003_on_iobservable_with_r3_generator()
     {
         const string userSource =
             """
@@ -65,7 +65,7 @@ public sealed class MqttInterfaceGeneratorTests
         var output = GeneratorTestHarness.Run(userSource);
         var snapshot = GeneratorTestHarness.ToSnapshot(output);
 
-        Assert.Contains("OBS5005", snapshot, StringComparison.Ordinal);
+        Assert.Contains("OBS5003", snapshot, StringComparison.Ordinal);
     }
 
     // ── Incremental cache hit tests ──

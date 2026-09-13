@@ -95,12 +95,7 @@ sealed class Build : NukeBuild
                 new ParallelOptions { MaxDegreeOfParallelism = EffectiveTestParallelism },
                 relativePath =>
                 {
-                    AbsolutePath projectFile = Root / relativePath;
-                    if (!projectFile.FileExists())
-                    {
-                        return;
-                    }
-
+                    string projectFile = ManifestPathGuard.RequireFile(relativePath, Root);
                     DotNetRestore(s => s.SetProjectFile(projectFile));
                 });
         });
@@ -129,8 +124,11 @@ sealed class Build : NukeBuild
                             || p.StartsWith("build/", StringComparison.OrdinalIgnoreCase)));
 
             var testProjects = projects
-                .Select(relativePath => Root / relativePath)
-                .Where(projectFile => projectFile.FileExists())
+                .Select(relativePath =>
+                {
+                    ManifestPathGuard.RequireFile(relativePath, Root);
+                    return Root / relativePath;
+                })
                 .ToArray();
 
             var parallelSafeProjects = testProjects
@@ -182,11 +180,7 @@ sealed class Build : NukeBuild
 
             foreach (BuildManifest.PackageEntry package in FilteredPackages)
             {
-                AbsolutePath projectFile = Root / package.PackProject;
-                if (!projectFile.FileExists())
-                {
-                    throw new InvalidOperationException($"Pack project not found: {projectFile}");
-                }
+                string projectFile = ManifestPathGuard.RequireFile(package.PackProject, Root);
 
                 DotNetPack(s =>
                 {
@@ -218,10 +212,8 @@ sealed class Build : NukeBuild
                 AbsolutePath nupkg = PackageOutputDirectory / $"{packageId}.{packageVersion}.nupkg";
                 Assert.FileExists(nupkg, $"Expected package: {nupkg}");
 
-                AbsolutePath packProject = Root / package.PackProject;
-                Assert.FileExists(packProject, $"Pack project not found: {packProject}");
-
-                NupkgVerifyRequest request = PackCsprojReader.FromPackProject(packProject);
+                string projectFile = ManifestPathGuard.RequireFile(package.PackProject, Root);
+                NupkgVerifyRequest request = PackCsprojReader.FromPackProject(projectFile);
                 if (!string.Equals(request.PackageId, packageId, StringComparison.OrdinalIgnoreCase))
                 {
                     throw new InvalidOperationException(

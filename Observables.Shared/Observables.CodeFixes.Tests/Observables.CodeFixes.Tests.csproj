@@ -17,6 +17,7 @@
   <ItemGroup>
     <ProjectReference Include="..\Observables.CodeFixes\Observables.CodeFixes.csproj" />
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp" />
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" />
   </ItemGroup>
 
 </Project>

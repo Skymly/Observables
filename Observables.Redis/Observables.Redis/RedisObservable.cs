@@ -84,17 +84,10 @@ public static class RedisObservable
         IConnectionMultiplexer multiplexer,
         RedisChannel channel,
         Func<ChannelMessage, T> map) =>
-        Observable.Create<T>(async (observer, ct) =>
+        R3AsyncCreate.Create<T>(async (observer, ct) =>
         {
-            try
-            {
-                await RedisProtocol
-                    .SubscribeAsync(multiplexer, channel, map, observer.OnNext, observer.OnCompleted, ct)
-                    .ConfigureAwait(false);
-            }
-            catch (Exception ex) when (ex is not OperationCanceledException)
-            {
-                observer.OnErrorResume(ex);
-            }
+            await RedisProtocol
+                .SubscribeAsync(multiplexer, channel, map, observer.OnNext, observer.OnCompleted, ct)
+                .ConfigureAwait(false);
         });
 }

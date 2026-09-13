@@ -51,7 +51,7 @@ internal static class RedisProtocol
         try
         {
             var subscriber = multiplexer.GetSubscriber();
-            queue = await subscriber.SubscribeAsync(channel).ConfigureAwait(false);
+            queue = await subscriber.SubscribeAsync(channel).WaitAsync(cancellationToken).ConfigureAwait(false);
 
             // ChannelMessageQueue enumeration is sequential (SER OnMessage / queue path).
             await foreach (var message in queue.WithCancellation(cancellationToken).ConfigureAwait(false))

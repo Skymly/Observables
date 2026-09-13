@@ -29,7 +29,7 @@ static partial class PackCsprojReader
         string[] libProjects = pack.Descendants("ObservablesPackLibProjectReference")
             .Select(static e => (string?)e.Attribute("Include"))
             .Where(static include => !string.IsNullOrWhiteSpace(include))
-            .Select(include => Path.GetFullPath(Path.Combine(packDir, include!)))
+            .Select(include => ResolveIncludePath(packDir, include!))
             .ToArray();
 
         string[] libTfms = ReadLibTfms(libProjects);
@@ -144,6 +144,12 @@ static partial class PackCsprojReader
                 yield return new PackageRef(id, privateAssets, condition);
             }
         }
+    }
+
+    internal static string ResolveIncludePath(string baseDirectory, string include)
+    {
+        string normalized = include.Replace('\\', '/');
+        return Path.GetFullPath(Path.Combine(baseDirectory, normalized));
     }
 
     static string RequiredProperty(XDocument document, string name, string path)

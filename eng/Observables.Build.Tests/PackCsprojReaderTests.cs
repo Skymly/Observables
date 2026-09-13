@@ -106,4 +106,26 @@ public sealed class PackCsprojReaderTests
         File.WriteAllText(Path.Combine(libDir, $"{libFolderName}.csproj"), libCsproj);
         return root;
     }
+
+    [Fact]
+    public void ResolveIncludePath_finds_a_file_when_the_include_uses_windows_separators()
+    {
+        string root = Path.Combine(Path.GetTempPath(), $"obs-include-{Guid.NewGuid():N}");
+        string packDir = Path.Combine(root, "Package");
+        string libDir = Path.Combine(root, "Lib");
+        Directory.CreateDirectory(packDir);
+        Directory.CreateDirectory(libDir);
+        string lib = Path.Combine(libDir, "Lib.csproj");
+        File.WriteAllText(lib, "<Project />");
+
+        try
+        {
+            string resolved = PackCsprojReader.ResolveIncludePath(packDir, @"..\Lib\Lib.csproj");
+            Assert.True(File.Exists(resolved), resolved);
+        }
+        finally
+        {
+            Directory.Delete(root, recursive: true);
+        }
+    }
 }

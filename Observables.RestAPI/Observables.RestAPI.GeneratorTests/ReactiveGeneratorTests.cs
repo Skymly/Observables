@@ -79,6 +79,42 @@ public class ReactiveGeneratorTests
     }
 
     [Fact]
+    public void Cache_unrelated_edit_reuses_report_diagnostics_step()
+    {
+        var harness = GeneratorTestHarness.RunWithCacheTrackingReactive(CacheTestSource);
+        var edited = harness.WithUnrelatedTree(
+            """
+            public interface IUnrelated : System.IDisposable
+            {
+                void M();
+            }
+            """);
+        var result = harness.RunSecond(edited);
+        var reason = GeneratorTestHarness.GetStepReason(result, "ReportDiagnostics");
+        Assert.True(
+            reason is IncrementalStepRunReason.Cached or IncrementalStepRunReason.Unchanged,
+            $"Expected ReportDiagnostics cache hit (Cached/Unchanged), got {reason}");
+    }
+
+    [Fact]
+    public void Cache_unrelated_marked_interface_reuses_parse_step()
+    {
+        var harness = GeneratorTestHarness.RunWithCacheTrackingReactive(CacheTestSource);
+        var edited = harness.WithUnrelatedTree(
+            """
+            public interface IUnrelated : System.IDisposable
+            {
+                void M();
+            }
+            """);
+        var result = harness.RunSecond(edited);
+        var reason = GeneratorTestHarness.GetStepReason(result, "ParseRestApi");
+        Assert.True(
+            reason is IncrementalStepRunReason.Cached or IncrementalStepRunReason.Unchanged,
+            $"Expected ParseRestApi cache hit after unrelated interface (Cached/Unchanged), got {reason}");
+    }
+
+    [Fact]
     public void Cache_unrelated_edit_preserves_build_step()
     {
         var harness = GeneratorTestHarness.RunWithCacheTrackingReactive(CacheTestSource);

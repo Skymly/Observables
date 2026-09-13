@@ -74,6 +74,7 @@ internal static class DiagnosticDescriptors
 
 internal static class RestApiGeneratorStepName
 {
+    public const string ParseRestApi = "ParseRestApi";
     public const string ReportDiagnostics = "ReportDiagnostics";
     public const string BuildRestApi = "BuildRestApi";
 }

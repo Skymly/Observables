@@ -142,6 +142,27 @@ public sealed class WebSocketInterfaceGeneratorTests
         Assert.Contains("OBS6001", snapshot, StringComparison.Ordinal);
     }
 
+    [Fact]
+    public void Trailing_nullable_cancellation_token_is_not_emitted_as_subscription_ct()
+    {
+        const string userSource =
+            """
+            [WebSocket]
+            public interface IFeed
+            {
+                [WebSocketClose]
+                IObservable<Unit> Close(CancellationToken? ct);
+            }
+            """;
+
+        var output = GeneratorTestHarness.Run(userSource);
+        Assert.Contains(output.Diagnostics, static diagnostic => diagnostic.Id == "OBS6006");
+        foreach (var source in output.GeneratedSources)
+        {
+            Assert.DoesNotContain("ct = default", source.Source, StringComparison.Ordinal);
+        }
+    }
+
     // ── Incremental cache hit tests ──
 
     const string CacheTestSource =

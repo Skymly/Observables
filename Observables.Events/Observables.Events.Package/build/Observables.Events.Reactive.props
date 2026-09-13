@@ -1,3 +1,9 @@
 <Project>
-  <!-- Marker props for Observables.Events.Reactive (analyzer + buildTransitive). -->
+  <PropertyGroup>
+    <ObservableRoutedEvents Condition="'$(ObservableRoutedEvents)' == ''">false</ObservableRoutedEvents>
+  </PropertyGroup>
+  <ItemGroup>
+    <CompilerVisibleProperty Include="ObservableRoutedEvents" />
+    <CompilerVisibleProperty Include="UseWPF" />
+  </ItemGroup>
 </Project>

@@ -51,6 +51,27 @@ public sealed class HubInterfaceGeneratorTests
         Assert.Contains("RegisterGeneratedFactory", snapshot, StringComparison.Ordinal);
     }
 
+    [Fact]
+    public void Trailing_nullable_cancellation_token_is_not_emitted_as_subscription_ct()
+    {
+        const string userSource =
+            """
+            [Hub]
+            public interface IChat
+            {
+                [HubInvoke]
+                IObservable<string> Echo(string msg, CancellationToken? ct);
+            }
+            """;
+
+        var output = GeneratorTestHarness.Run(userSource);
+        Assert.DoesNotContain(output.Diagnostics, static diagnostic => diagnostic.Id == "CS1503");
+        foreach (var source in output.GeneratedSources)
+        {
+            Assert.DoesNotContain("ct = default", source.Source, StringComparison.Ordinal);
+        }
+    }
+
     // ── Incremental cache hit tests (D3-A pilot) ──
 
     const string CacheTestSource =

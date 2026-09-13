@@ -41,13 +41,20 @@ public static class SseProtocol
 #endif
 
     /// <summary>Reads the next dispatched event from the stream, or null at end of stream.</summary>
-    public static async System.Threading.Tasks.Task<SseEvent?> ReadEventAsync(StreamReader reader)
+    public static System.Threading.Tasks.Task<SseEvent?> ReadEventAsync(StreamReader reader)
     {
         if (reader is null)
         {
             throw new ArgumentNullException(nameof(reader));
         }
 
+        return ReadEventAsync(reader, CancellationToken.None);
+    }
+
+    internal static async System.Threading.Tasks.Task<SseEvent?> ReadEventAsync(
+        StreamReader reader,
+        CancellationToken cancellationToken)
+    {
         string? eventName = null;
         var data = new StringBuilder();
         string? id = null;
@@ -55,20 +62,25 @@ public static class SseProtocol
 
         while (true)
         {
-            var line = await reader.ReadLineAsync().ConfigureAwait(false);
+            var line = await ReadLineAsync(reader, cancellationToken).ConfigureAwait(false);
 
             if (line is null)
             {
-                return hasFields ? Build(eventName, data, id) : (SseEvent?)null;
+                return TryDispatch(hasFields, eventName, data, id);
             }
 
             if (line.Length == 0)
             {
-                if (hasFields)
+                var dispatched = TryDispatch(hasFields, eventName, data, id);
+                if (dispatched is not null)
                 {
-                    return Build(eventName, data, id);
+                    return dispatched;
                 }
 
+                eventName = null;
+                data.Clear();
+                id = null;
+                hasFields = false;
                 continue;
             }
 
@@ -137,15 +149,35 @@ public static class SseProtocol
 #endif
     }
 
-    static SseEvent Build(string? eventName, StringBuilder data, string? id)
+    static SseEvent? TryDispatch(bool hasFields, string? eventName, StringBuilder data, string? id)
     {
+        if (!hasFields)
+        {
+            return null;
+        }
+
         var payload = data.ToString();
         if (payload.Length > 0 && payload[payload.Length - 1] == '\n')
         {
             payload = payload.Substring(0, payload.Length - 1);
         }
 
+        if (payload.Length == 0)
+        {
+            return null;
+        }
+
         return new SseEvent(string.IsNullOrEmpty(eventName) ? "message" : eventName!, payload, id);
+    }
+
+    static async System.Threading.Tasks.Task<string?> ReadLineAsync(StreamReader reader, CancellationToken cancellationToken)
+    {
+#if NET8_0_OR_GREATER
+        return await reader.ReadLineAsync(cancellationToken).ConfigureAwait(false);
+#else
+        _ = cancellationToken;
+        return await reader.ReadLineAsync().ConfigureAwait(false);
+#endif
     }
 
 #if NET8_0_OR_GREATER
@@ -167,6 +199,22 @@ public static class SseProtocol
             .ConfigureAwait(false);
         response.EnsureSuccessStatusCode();
 
+#if NETSTANDARD2_0
+        using var cancelReg = cancellationToken.Register(
+            static state =>
+            {
+                try
+                {
+                    ((HttpResponseMessage)state!).Dispose();
+                }
+                catch (Exception)
+                {
+                    // best-effort unblock of ReadLineAsync
+                }
+            },
+            response);
+#endif
+
 #if NET8_0_OR_GREATER
         using var stream = await response.Content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false);
 #else
@@ -174,9 +222,20 @@ public static class SseProtocol
 #endif
         using var reader = new StreamReader(stream, Encoding.UTF8);
 
-        while (!cancellationToken.IsCancellationRequested)
+        while (true)
         {
-            var sseEvent = await ReadEventAsync(reader).ConfigureAwait(false);
+            cancellationToken.ThrowIfCancellationRequested();
+
+            SseEvent? sseEvent;
+            try
+            {
+                sseEvent = await ReadEventAsync(reader, cancellationToken).ConfigureAwait(false);
+            }
+            catch (Exception) when (cancellationToken.IsCancellationRequested)
+            {
+                throw new OperationCanceledException(cancellationToken);
+            }
+
             if (sseEvent is null)
             {
                 onCompleted();

@@ -27,6 +27,8 @@
              Link="Infrastructure\SseTestServer.cs" />
     <Compile Include="..\Observables.Sse.Tests\Infrastructure\SseTestServerFixture.cs"
              Link="Infrastructure\SseTestServerFixture.cs" />
+    <Compile Include="..\Observables.Sse.Tests\Infrastructure\HoldOpenSseHandler.cs"
+             Link="Infrastructure\HoldOpenSseHandler.cs" />
   </ItemGroup>
 
 </Project>

@@ -17,20 +17,10 @@ public static class SseObservable
     [RequiresDynamicCode("JSON payload deserialization uses System.Text.Json reflection.")]
 #endif
     public static Observable<T> FromEvent<T>(SseConnection connection, string eventName) =>
-        Observable.Create<T>(async (observer, ct) =>
+        R3AsyncCreate.Create<T>(async (observer, ct) =>
         {
-            try
-            {
-                await SseProtocol
-                    .SubscribeAsync<T>(connection, eventName, observer.OnNext, observer.OnCompleted, ct)
-                    .ConfigureAwait(false);
-            }
-            catch (OperationCanceledException)
-            {
-            }
-            catch (Exception ex)
-            {
-                observer.OnErrorResume(ex);
-            }
+            await SseProtocol
+                .SubscribeAsync<T>(connection, eventName, observer.OnNext, observer.OnCompleted, ct)
+                .ConfigureAwait(false);
         });
 }

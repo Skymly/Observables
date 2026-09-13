@@ -177,6 +177,6 @@ public sealed class BoundaryGeneratorTests
 
         var snapshot = GeneratorTestHarness.ToSnapshot(output);
         Assert.Contains("OBS3001", snapshot, StringComparison.Ordinal);
-        Assert.Contains("OBS3005", snapshot, StringComparison.Ordinal);
+        Assert.Contains("OBS3003", snapshot, StringComparison.Ordinal);
     }
 }

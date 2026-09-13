@@ -95,7 +95,7 @@ public class CoreGeneratorTests
     }
 
     [Fact]
-    public Task IObservable_on_R3_generator_reports_OBS3005()
+    public Task IObservable_on_R3_generator_reports_OBS3003()
     {
         GeneratorRunOutput output = GeneratorTestHarness.Run(
             """
@@ -113,7 +113,7 @@ public class CoreGeneratorTests
             }
             """);
 
-        Assert.Contains("OBS3005", GeneratorTestHarness.ToSnapshot(output), StringComparison.Ordinal);
+        Assert.Contains("OBS3003", GeneratorTestHarness.ToSnapshot(output), StringComparison.Ordinal);
         return Task.CompletedTask;
     }
 

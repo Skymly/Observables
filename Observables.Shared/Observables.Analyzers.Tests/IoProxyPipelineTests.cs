@@ -103,6 +103,61 @@ public sealed class IoProxyPipelineTests
         Assert.Contains(diagnostics, static diagnostic => diagnostic.Id == "TEST001");
     }
 
+    [Fact]
+    public void ObservableReturnTypeParser_R3_IObservable_is_unsupported_not_missing_reactive()
+    {
+        var (diagnostics, ok) = ParseObservableReturn(
+            """
+            using System;
+            public interface ISample
+            {
+                IObservable<int> Go();
+            }
+            """,
+            isR3Generator: true,
+            expectedObservableTypeName: null);
+
+        Assert.False(ok);
+        Assert.Contains(diagnostics, static diagnostic => diagnostic.Id == "TEST001");
+        Assert.DoesNotContain(diagnostics, static diagnostic => diagnostic.Id == "TEST002");
+    }
+
+    [Fact]
+    public void ObservableReturnTypeParser_Reactive_IObservable_without_adapter_is_missing_reactive()
+    {
+        var (diagnostics, ok) = ParseObservableReturn(
+            """
+            using System;
+            public interface ISample
+            {
+                IObservable<int> Go();
+            }
+            """,
+            isR3Generator: false,
+            expectedObservableTypeName: null);
+
+        Assert.False(ok);
+        Assert.Contains(diagnostics, static diagnostic => diagnostic.Id == "TEST002");
+        Assert.DoesNotContain(diagnostics, static diagnostic => diagnostic.Id == "TEST001");
+    }
+
+    [Fact]
+    public void ObservableReturnTypeParser_R3_Observable_succeeds()
+    {
+        var (diagnostics, ok) = ParseObservableReturn(
+            """
+            using R3;
+            public interface ISample
+            {
+                Observable<int> Go();
+            }
+            """,
+            isR3Generator: true,
+            expectedObservableTypeName: "R3.Observable`1");
+
+        Assert.True(ok);
+        Assert.Empty(diagnostics);
+    }
 
     [Fact]
     public void Walk_collects_inherited_public_instance_members()
@@ -216,6 +271,45 @@ public sealed class IoProxyPipelineTests
         var b = compilation.GetTypeByMetadataName("B.ISub")!;
         Assert.Equal("A_ISub.Mqtt.g.cs", IoProxyModelAssembly.GeneratedHintName(a, "Mqtt"));
         Assert.Equal("B_ISub.Mqtt.g.cs", IoProxyModelAssembly.GeneratedHintName(b, "Mqtt"));
+    }
+
+    static (List<Diagnostic> diagnostics, bool ok) ParseObservableReturn(
+        string source,
+        bool isR3Generator,
+        string? expectedObservableTypeName)
+    {
+        var tree = CSharpSyntaxTree.ParseText(source);
+        var compilation = CSharpCompilation.Create(
+            "ReturnTypeTests",
+            [tree],
+            AnalyzerTestHarness.GetPlatformReferencesExcludingObservables()
+                .Append(AnalyzerTestHarness.CreateReferenceFromAssemblyOf(typeof(R3.Observable<>))),
+            new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary));
+
+        var method = compilation.GetTypeByMetadataName("ISample")!.GetMembers("Go").OfType<IMethodSymbol>().Single();
+        var unsupported = new DiagnosticDescriptor("TEST001", "u", "{0}", "Test", DiagnosticSeverity.Error, true);
+        var missingRx = new DiagnosticDescriptor("TEST002", "r", "{0}", "Test", DiagnosticSeverity.Error, true);
+        var diagnostics = new List<Diagnostic>();
+        var expected = expectedObservableTypeName is null
+            ? null
+            : compilation.GetTypeByMetadataName(expectedObservableTypeName);
+
+        var ok = ObservableReturnTypeParser.TryParse(
+            method.ReturnType,
+            compilation,
+            reactiveAdapterMetadataName: "Missing.Adapter",
+            expectedObservableType: expected,
+            unitType: null,
+            requiresUnitPayload: false,
+            unsupportedReturnType: unsupported,
+            systemReactiveNotReferenced: missingRx,
+            location: method.Locations[0],
+            diagnostics: diagnostics,
+            isR3Generator: isR3Generator,
+            resultTypeDisplay: out _,
+            returnTypeDisplay: out _);
+
+        return (diagnostics, ok);
     }
 
     static (CSharpCompilation compilation, ImmutableArray<InterfaceDeclarationSyntax> interfaces) CompileInterfaces(string source)

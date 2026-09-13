@@ -81,7 +81,7 @@ public sealed class SseInterfaceGeneratorTests
     }
 
     [Fact]
-    public void Sse_interface_OBS8005_on_iobservable_with_r3_generator()
+    public void Sse_interface_OBS8003_on_iobservable_with_r3_generator()
     {
         const string userSource =
             """
@@ -96,7 +96,7 @@ public sealed class SseInterfaceGeneratorTests
         var output = GeneratorTestHarness.Run(userSource);
         var snapshot = GeneratorTestHarness.ToSnapshot(output);
 
-        Assert.Contains("OBS8005", snapshot, StringComparison.Ordinal);
+        Assert.Contains("OBS8003", snapshot, StringComparison.Ordinal);
     }
 
     // ── Incremental cache hit tests (D3-A pilot) ──

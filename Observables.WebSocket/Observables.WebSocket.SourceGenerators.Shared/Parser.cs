@@ -190,7 +190,8 @@ internal static class Parser
                 resultType,
                 declarations.ToImmutableEquatableArray(),
                 names.ToImmutableEquatableArray(),
-                ctName));
+                ctName,
+                ClassifySendPayload(boundary.Value, method)));
     }
 
     static void TryAddProperty(
@@ -252,7 +253,8 @@ internal static class Parser
                 resultType,
                 ImmutableEquatableArray.Empty<string>(),
                 ImmutableEquatableArray.Empty<string>(),
-                null));
+                null,
+                WebSocketSendPayloadKind.None));
     }
 
     static bool HasMethodBoundaryOnProperty(
@@ -312,5 +314,50 @@ internal static class Parser
 
         return type.Name == "CancellationToken"
             && type.ContainingNamespace?.ToDisplayString() == "System.Threading";
+    }
+
+    static WebSocketSendPayloadKind ClassifySendPayload(WebSocketBoundaryKind boundary, IMethodSymbol method)
+    {
+        if (boundary != WebSocketBoundaryKind.Send)
+        {
+            return WebSocketSendPayloadKind.None;
+        }
+
+        ITypeSymbol? payloadType = null;
+        var payloadCount = 0;
+        for (var i = 0; i < method.Parameters.Length; i++)
+        {
+            var parameter = method.Parameters[i];
+            if (i == method.Parameters.Length - 1 && IsCancellationToken(parameter.Type))
+            {
+                continue;
+            }
+
+            payloadCount++;
+            payloadType = parameter.Type;
+        }
+
+        if (payloadCount == 0)
+        {
+            return WebSocketSendPayloadKind.None;
+        }
+
+        if (payloadCount > 1)
+        {
+            return WebSocketSendPayloadKind.Json;
+        }
+
+        if (payloadType!.SpecialType == SpecialType.System_String)
+        {
+            return WebSocketSendPayloadKind.Text;
+        }
+
+        if (payloadType is IArrayTypeSymbol array
+            && array.ElementType.SpecialType == SpecialType.System_Byte)
+        {
+            return WebSocketSendPayloadKind.Binary;
+        }
+
+        return WebSocketSendPayloadKind.Json;
     }
 }

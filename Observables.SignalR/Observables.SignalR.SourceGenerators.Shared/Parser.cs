@@ -16,7 +16,8 @@ internal static class Parser
     public static (List<Diagnostic> diagnostics, ContextGenerationModel model) GenerateHubStubs(
         CSharpCompilation compilation,
         ImmutableArray<MarkedInterfaceContext> markedInterfaces,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        bool failSafeProbe = false)
     {
         var hubAttribute = compilation.GetTypeByMetadataName("Observables.SignalR.HubAttribute");
         var invokeAttribute = compilation.GetTypeByMetadataName("Observables.SignalR.HubInvokeAttribute");
@@ -64,8 +65,7 @@ internal static class Parser
             createContext: static interfaces => new ContextGenerationModel(interfaces),
             onMarkedInterface: marked =>
             {
-                if (string.Equals(compilation.AssemblyName, "GeneratorTests", StringComparison.Ordinal)
-                    && marked.Syntax.Identifier.ValueText == "IInternalErrorProbe")
+                if (failSafeProbe && marked.Syntax.Identifier.ValueText == "IInternalErrorProbe")
                 {
                     throw new InvalidOperationException("fail-safe probe");
                 }

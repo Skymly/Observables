@@ -92,7 +92,7 @@ public static class RestService
 }
 ```
 
-`For<T>` 只查找 `GeneratedFactories` 字典。未命中则抛 `InvalidOperationException`（接口未生成或 `ModuleInitializer` 未运行）。
+`For<T>` 查找 `GeneratedFactories`：先精确类型，再开放泛型定义。未命中则抛 `InvalidOperationException`（接口未生成或 `ModuleInitializer` 未运行）。`For(string hostUrl)` 会给 BaseAddress **补尾斜杠**，相对路径不再以 `/` 开头，避免丢掉 `/api/v1` 这类 base path。
 
 ### 3.4 配置（`RestApiSettings`）
 
@@ -124,6 +124,8 @@ public class RestApiSettings
 | `ApiRequestException` | 请求阶段失败（发送前） |
 | `ApiException` | 响应阶段失败（含 `StatusCode`、`Content`、`Headers`） |
 | `ValidationApiException` | `ApiException` 子类，用于校验失败场景 |
+
+`SendVoidAsync` 与 `SendAsync` 一样：非调用方取消的传输错误包成 `ApiRequestException`，并使用 `ResponseHeadersRead`。`ApiResponse<T>.IsReceived` 只表示收到了 HTTP 响应，**不**保证 `Content` 非空。`[AliasAs]` 可用于 path 占位符。开放泛型接口会注册 `typeof(IFoo<>)` 工厂，`For<IFoo<TClosed>>()` 可构造。
 
 ## 4. 生成映射
 

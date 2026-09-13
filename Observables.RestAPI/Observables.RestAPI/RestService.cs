@@ -17,7 +17,7 @@ namespace Observables.RestAPI
 #endif
     public static class RestService
     {
-        static readonly ConcurrentDictionary<Type, Func<HttpClient, RestApiSettings?, object>> GeneratedFactories = new();
+        static readonly ConcurrentDictionary<Type, Func<Type, HttpClient, RestApiSettings?, object>> GeneratedFactories = new();
         static readonly ConditionalWeakTable<HttpClient, object> OwnedHttpClients = new();
         static readonly object OwnedHttpClientSentinel = new();
 
@@ -39,6 +39,33 @@ namespace Observables.RestAPI
         public static void RegisterGeneratedFactory(
             Type interfaceType,
             Func<HttpClient, RestApiSettings?, object> factory
+        )
+#endif
+        {
+            if (interfaceType is null)
+                throw new ArgumentNullException(nameof(interfaceType));
+            if (factory is null)
+                throw new ArgumentNullException(nameof(factory));
+
+            GeneratedFactories[interfaceType] = (_, client, settings) => factory(client, settings);
+        }
+
+        /// <summary>
+        /// Registers a source-generated factory that can close open generic interface types.
+        /// </summary>
+        [EditorBrowsable(EditorBrowsableState.Never)]
+#if NET8_0_OR_GREATER
+        public static void RegisterGeneratedFactory(
+            [DynamicallyAccessedMembers(
+                DynamicallyAccessedMemberTypes.PublicMethods |
+                DynamicallyAccessedMemberTypes.PublicProperties
+            )] Type interfaceType,
+            Func<Type, HttpClient, RestApiSettings?, object> factory
+        )
+#else
+        public static void RegisterGeneratedFactory(
+            Type interfaceType,
+            Func<Type, HttpClient, RestApiSettings?, object> factory
         )
 #endif
         {
@@ -162,9 +189,9 @@ namespace Observables.RestAPI
         )
 #endif
         {
-            if (GeneratedFactories.TryGetValue(interfaceType, out var factory))
+            if (TryGetGeneratedFactory(interfaceType, out var factory))
             {
-                return factory(client, settings);
+                return factory(interfaceType, client, settings);
             }
 
             throw new InvalidOperationException(
@@ -172,6 +199,24 @@ namespace Observables.RestAPI
                 + " does not have a generated REST API client. Ensure the interface has at least one "
                 + "method with a Rest API HTTP method attribute, Observables.RestAPI source generators "
                 + "are referenced, and the project was rebuilt.");
+        }
+
+        static bool TryGetGeneratedFactory(
+            Type interfaceType,
+            out Func<Type, HttpClient, RestApiSettings?, object> factory)
+        {
+            if (GeneratedFactories.TryGetValue(interfaceType, out factory!))
+            {
+                return true;
+            }
+
+            if (interfaceType.IsGenericType)
+            {
+                return GeneratedFactories.TryGetValue(interfaceType.GetGenericTypeDefinition(), out factory!);
+            }
+
+            factory = null!;
+            return false;
         }
 
         /// <summary>
@@ -273,9 +318,12 @@ namespace Observables.RestAPI
 
             return new HttpClient(innerHandler ?? new HttpClientHandler())
             {
-                BaseAddress = new Uri(hostUrl.TrimEnd('/'))
+                BaseAddress = new Uri(EnsureTrailingSlash(hostUrl.Trim()))
             };
         }
+
+        static string EnsureTrailingSlash(string hostUrl) =>
+            hostUrl.EndsWith("/", StringComparison.Ordinal) ? hostUrl : hostUrl + "/";
 
     }
 }

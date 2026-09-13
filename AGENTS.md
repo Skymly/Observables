@@ -6,9 +6,9 @@
 
 - **类型**：个人项目（Skymly 工作区）
 - **远端**：https://github.com/Skymly/Observables（私有）；文件夹名 `Observables` = 仓库名；同步状态以 `git status` 为准
-- **阶段**：**Events**、**RestAPI**、**SignalR**、**Mqtt**、**WebSocket**、**Grpc**、**Sse**、**Nats**、**Postgres**、**Redis** 已实现（运行时 + 双路生成器 + 测试）；共享层另含 `Observables.CodeFixes` 与 `Observables.Analyzers`；**nuget.org 已发** `0.2.1`（**20 包**）；Nuke `PackVerify` + `eng/nuget-smoke` 覆盖 manifest 包清单
-- **下一里程碑**：post-1.0 维护期（M1–M7 全部完成；`0.1.9` = Redis，`0.2.0` = Shared IO 生成器加深，`0.2.1` = 生命周期修复 + 协议桥）；待定项见 [`docs/ROADMAP.md`](docs/ROADMAP.md) 末尾
-- **路线图**：里程碑与发版顺序见 [`docs/ROADMAP.md`](docs/ROADMAP.md)（M1 ✅ … M7 ✅，0.1.7 = Postgres，0.1.9 = Redis，0.2.0 = Shared deepening，0.2.1 = patch）
+- **阶段**：**Events**、**RestAPI**、**SignalR**、**Mqtt**、**WebSocket**、**Grpc**、**Sse**、**Nats**、**Postgres**、**Redis** 已实现（运行时 + 双路生成器 + 测试）；共享层另含 `Observables.CodeFixes` 与 `Observables.Analyzers`；**nuget.org 已发** `0.2.2`（**20 包**）；Nuke `PackVerify` + `eng/nuget-smoke` 覆盖 manifest 包清单
+- **下一里程碑**：post-1.0 维护期（M1–M7 全部完成；`0.1.9` = Redis，`0.2.0` = Shared IO 生成器加深，`0.2.1` = 生命周期修复 + 协议桥，`0.2.2` = RestAPI HTTP 桥 + IO 字面量/取消令牌 + 诊断）；待定项见 [`docs/ROADMAP.md`](docs/ROADMAP.md) 末尾
+- **路线图**：里程碑与发版顺序见 [`docs/ROADMAP.md`](docs/ROADMAP.md)（M1 ✅ … M7 ✅，0.1.7 = Postgres，0.1.9 = Redis，0.2.0 = Shared deepening，0.2.1 / 0.2.2 = patch）
 - **结构约定**：下文「仓库结构」与命名约定为权威；**工程治理**（包管理、警告、诊断、版本来源）见下文同名章节
 
 ## 目标
@@ -214,7 +214,7 @@ Observables/
 
     | 段 | 域 |
     |----|----|
-    | `OBS0001` | Shared 全库（包冲突等） |
+    | `OBS0001`–`OBS0002` | Shared 全库（包冲突、开放泛型代理） |
     | `OBS2xxx` | Events |
     | `OBS3xxx` | RestAPI |
     | `OBS4xxx` | SignalR |

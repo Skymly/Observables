@@ -1,8 +1,9 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
-    <RootNamespace>Observables.Analyzers.Tests</RootNamespace>
-  </PropertyGroup>
+    <PropertyGroup>
+        <RootNamespace>Observables.Analyzers.Tests</RootNamespace>
+        <DefineConstants>$(DefineConstants);ROSLYN_4</DefineConstants>
+    </PropertyGroup>
 
   <ItemGroup>
     <Using Include="Xunit" />
@@ -17,6 +18,7 @@
   <ItemGroup>
     <Compile Include="..\Observables.SourceGenerators.Shared\IoProxyInterfaceWalk.cs" Link="Shared/IoProxyInterfaceWalk.cs" />
     <Compile Include="..\Observables.SourceGenerators.Shared\IoProxyModelAssembly.cs" Link="Shared/IoProxyModelAssembly.cs" />
+    <Compile Include="..\Observables.SourceGenerators.Shared\GeneratorFailSafe.cs" Link="Shared/GeneratorFailSafe.cs" />
     <Compile Include="..\Observables.SourceGenerators.Shared\ImmutableEquatableArray.cs" Link="Shared/ImmutableEquatableArray.cs" />
     <Compile Include="..\Observables.SourceGenerators.Shared\Extensions\INamedTypeSymbolExtensions.cs" Link="Shared/Extensions/INamedTypeSymbolExtensions.cs" />
     <Compile Include="..\Observables.SourceGenerators.Shared\Nullability.cs" Link="Shared/Nullability.cs" />

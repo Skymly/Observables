@@ -61,22 +61,39 @@ public sealed class NatsClientR3E2ETests(NatsTestServerFixture fixture)
         await using var client = new NatsConnection(CreateOpts(fixture.Server.Url));
 
         using var cts = new CancellationTokenSource(DefaultTimeout);
-        var respondTask = RespondEchoAsync(responder, cts.Token);
+        var subscribed = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var respondTask = RespondEchoAsync(responder, subscribed, cts.Token);
+        await subscribed.Task.WaitAsync(cts.Token);
 
         var hub = NatsService.For<IE2EHub>(client);
-        var reply = await hub.Echo("hello").FirstAsync(cts.Token);
+        var reply = await NatsE2EHelpers.RequestUntilRespondedAsync(
+            async ct => await hub.Echo("hello").FirstAsync(ct),
+            cts.Token);
 
         await respondTask;
         Assert.Equal("hello", reply);
     }
 
-    static async Task RespondEchoAsync(INatsConnection connection, CancellationToken cancellationToken)
+    static async Task RespondEchoAsync(
+        INatsConnection connection,
+        TaskCompletionSource subscribed,
+        CancellationToken cancellationToken)
     {
-        await foreach (var msg in connection.SubscribeAsync<string>("e2e.echo", cancellationToken: cancellationToken)
-                           .ConfigureAwait(false))
+        try
         {
+            await using var sub = await connection
+                .SubscribeCoreAsync<string>("e2e.echo", cancellationToken: cancellationToken)
+                .ConfigureAwait(false);
+            await connection.PingAsync(cancellationToken).ConfigureAwait(false);
+            subscribed.TrySetResult();
+
+            var msg = await sub.Msgs.ReadAsync(cancellationToken).ConfigureAwait(false);
             await msg.ReplyAsync(msg.Data, cancellationToken: cancellationToken).ConfigureAwait(false);
-            return;
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            subscribed.TrySetException(ex);
+            throw;
         }
     }
 }

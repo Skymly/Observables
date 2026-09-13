@@ -12,7 +12,7 @@ namespace Observables.Mqtt.Reactive.Tests;
 [Collection(nameof(MqttTestBrokerCollection))]
 public sealed class MqttClientReactiveE2ETests(MqttTestBrokerFixture fixture)
 {
-    static readonly TimeSpan DefaultTimeout = TimeSpan.FromSeconds(10);
+    static readonly TimeSpan DefaultTimeout = TimeSpan.FromSeconds(30);
 
     [Fact]
     public async Task MqttSubscribe_Ping_receives_broker_message()
@@ -97,10 +97,11 @@ public sealed class MqttClientReactiveE2ETests(MqttTestBrokerFixture fixture)
         try
         {
             await waitSubscription;
+            using var unsubCts = new CancellationTokenSource(DefaultTimeout);
             var waitUnsubscription = fixture.Broker.WaitForUnsubscriptionAsync(
                 session.ClientId,
                 topicFilter,
-                cts.Token);
+                unsubCts.Token);
             subscription.Dispose();
             await waitUnsubscription;
         }

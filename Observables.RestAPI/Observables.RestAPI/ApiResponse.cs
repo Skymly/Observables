@@ -252,6 +252,7 @@ namespace Observables.RestAPI
             disposed = true;
 
             response?.Dispose();
+            request.Dispose();
         }
 
         private async Task ThrowsApiExceptionAsync()

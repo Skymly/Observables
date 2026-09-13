@@ -212,7 +212,7 @@ namespace Observables.RestAPI
             "HEAD" => HttpMethod.Head,
             "PATCH" => new HttpMethod("PATCH"),
             "OPTIONS" => new HttpMethod("OPTIONS"),
-            _ => HttpMethod.Get,
+            _ => string.IsNullOrWhiteSpace(httpMethod) ? HttpMethod.Get : new HttpMethod(httpMethod),
         };
 
         static void AddHeaderCollection(HttpRequestMessage request, object? value)

@@ -20,6 +20,20 @@ public sealed class RestApiProtocolTests
     }
 
     [Fact]
+    public void Bind_preserves_custom_http_method()
+    {
+        var spec = new RestApiBridge.MethodSpec(
+            "PURGE",
+            "/cache/{key}",
+            [new RestApiBridge.Binding(RestApiBridge.SlotKind.Path, 0, "key")]);
+
+        var bound = RestApiProtocol.Bind(new RestApiSettings(), spec, ["abc"]);
+
+        Assert.Equal("PURGE", bound.Message.Method.Method);
+        Assert.Equal("/cache/abc", bound.RelativeUri);
+    }
+
+    [Fact]
     public void Bind_appends_query()
     {
         var spec = new RestApiBridge.MethodSpec(

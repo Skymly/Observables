@@ -49,6 +49,58 @@ public class CoreGeneratorTests
     }
 
     [Fact]
+    public Task GetObservableUser_with_cancellation_token_links_caller_token()
+    {
+        GeneratorRunOutput output = GeneratorTestHarness.Run(
+            """
+            public interface IUserApi
+            {
+                [Get("/users/{id}")]
+                Observable<User> GetUser(int id, CancellationToken cancellationToken);
+            }
+
+            public sealed class User
+            {
+                public int Id { get; set; }
+            }
+            """);
+
+        var snapshot = GeneratorTestHarness.ToSnapshot(output);
+        Assert.Contains(
+            "CreateLinkedTokenSource(______ct, @cancellationToken)",
+            snapshot,
+            StringComparison.Ordinal);
+        Assert.DoesNotContain(
+            "SendAsync<global::User, global::User>(Client, _settings, in ______spec0, ______ct, @id)",
+            snapshot,
+            StringComparison.Ordinal);
+        return Task.CompletedTask;
+    }
+
+    [Fact]
+    public Task Custom_http_method_attribute_emits_verb_from_attribute_name()
+    {
+        GeneratorRunOutput output = GeneratorTestHarness.Run(
+            """
+            public sealed class PurgeAttribute(string path) : HttpMethodAttribute(path)
+            {
+                public override HttpMethod Method => new("PURGE");
+            }
+
+            public interface ICacheApi
+            {
+                [Purge("/cache/{key}")]
+                Task Purge(string key);
+            }
+            """);
+
+        var snapshot = GeneratorTestHarness.ToSnapshot(output);
+        Assert.Contains("new(\"PURGE\"", snapshot, StringComparison.Ordinal);
+        Assert.DoesNotContain("new(\"GET\", \"/cache/{key}\"", snapshot, StringComparison.Ordinal);
+        return Task.CompletedTask;
+    }
+
+    [Fact]
     public Task Body_without_buffered_override_uses_settings_buffered_default()
     {
         GeneratorRunOutput output = GeneratorTestHarness.Run(

@@ -317,7 +317,15 @@ internal static class Emitter
         source.Indentation++;
         var args = FormatSendArgs(methodModel);
         var specField = SpecFieldName(specIndex);
-        source.WriteLine($"return await global::Observables.RestAPI.RestApiBridge.SendAsync<{methodModel.ReturnResultType}, {methodModel.DeserializedResultType}>(Client, _settings, in {specField}, ______ct{args}).ConfigureAwait(false);");
+        var sendCt = "______ct";
+        if (methodModel.CancellationTokenIndex is int ctIndex)
+        {
+            var callerCt = "@" + methodModel.Parameters[ctIndex].MetadataName;
+            source.WriteLine($"using var ______linked = global::System.Threading.CancellationTokenSource.CreateLinkedTokenSource(______ct, {callerCt});");
+            sendCt = "______linked.Token";
+        }
+
+        source.WriteLine($"return await global::Observables.RestAPI.RestApiBridge.SendAsync<{methodModel.ReturnResultType}, {methodModel.DeserializedResultType}>(Client, _settings, in {specField}, {sendCt}{args}).ConfigureAwait(false);");
         source.Indentation--;
         source.WriteLine("});");
     }

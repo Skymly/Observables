@@ -260,4 +260,20 @@ public sealed class PostgresInterfaceGeneratorTests
         var snapshot = GeneratorTestHarness.ToSnapshot(output);
         Assert.Contains("OBS10001", snapshot, StringComparison.Ordinal);
     }
+
+    [Fact]
+    public void Public_instance_event_reports_OBS10001()
+    {
+        const string userSource =
+            """
+            [Postgres]
+            public interface IHub
+            {
+                event System.Action Tick;
+            }
+            """;
+
+        var output = GeneratorTestHarness.Run(userSource);
+        Assert.Contains(output.Diagnostics, static diagnostic => diagnostic.Id == "OBS10001");
+    }
 }

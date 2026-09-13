@@ -116,7 +116,7 @@ public sealed class WebSocketInterfaceGeneratorTests
     }
 
     [Fact]
-    public void WebSocket_interface_OBS6005_on_iobservable_with_r3_generator()
+    public void WebSocket_interface_OBS6003_on_iobservable_with_r3_generator()
     {
         const string userSource =
             """
@@ -131,7 +131,7 @@ public sealed class WebSocketInterfaceGeneratorTests
         var output = GeneratorTestHarness.Run(userSource);
         var snapshot = GeneratorTestHarness.ToSnapshot(output);
 
-        Assert.Contains("OBS6005", snapshot, StringComparison.Ordinal);
+        Assert.Contains("OBS6003", snapshot, StringComparison.Ordinal);
     }
 
     // ── Incremental cache hit tests ──

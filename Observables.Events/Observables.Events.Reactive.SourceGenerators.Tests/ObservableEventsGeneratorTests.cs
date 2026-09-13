@@ -533,6 +533,36 @@ public sealed class ObservableEventsGeneratorTests
         Assert.Contains("IClickSourceEvents", snapshot);
     }
 
+    [Fact]
+    public void Does_not_emit_avalonia_routed_wrappers_when_ObservableRoutedEvents_false()
+    {
+        const string source = AvaloniaStubs + """
+            namespace Demo
+            {
+                public static class Usage
+                {
+                    public static void Run(Avalonia.Controls.Button button)
+                    {
+                        _ = button.RoutedEvents().Click;
+                    }
+                }
+            }
+            """;
+
+        GeneratorRunOutput output = GeneratorTestHarness.Run(
+            source,
+            generators: [new ObservableEventsGenerator()],
+            observableRoutedEvents: false);
+
+        Assert.DoesNotContain(
+            output.GeneratedSources,
+            static s => s.HintName.Contains("Avalonia_Controls_Button.RoutedEvents", StringComparison.Ordinal)
+                || s.HintName.Contains("EventInterfaces.RoutedEvents", StringComparison.Ordinal));
+        Assert.DoesNotContain(
+            output.GeneratedSources,
+            static s => s.Source.Contains("IButtonRoutedEvents", StringComparison.Ordinal));
+    }
+
     private const string AvaloniaStubs = """
         namespace Avalonia.Interactivity
         {

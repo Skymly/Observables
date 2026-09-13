@@ -26,11 +26,39 @@ public static class ObservableReturnTypeParser
         List<Diagnostic> diagnostics,
         out string resultTypeDisplay,
         out string returnTypeDisplay)
+        => TryParse(
+            returnType,
+            compilation,
+            reactiveAdapterMetadataName,
+            expectedObservableType,
+            unitType,
+            requiresUnitPayload,
+            unsupportedReturnType,
+            systemReactiveNotReferenced,
+            location,
+            diagnostics,
+            BackendTokens.IsR3,
+            out resultTypeDisplay,
+            out returnTypeDisplay);
+
+    public static bool TryParse(
+        ITypeSymbol returnType,
+        Compilation compilation,
+        string reactiveAdapterMetadataName,
+        INamedTypeSymbol? expectedObservableType,
+        INamedTypeSymbol? unitType,
+        bool requiresUnitPayload,
+        DiagnosticDescriptor unsupportedReturnType,
+        DiagnosticDescriptor systemReactiveNotReferenced,
+        Location? location,
+        List<Diagnostic> diagnostics,
+        bool isR3Generator,
+        out string resultTypeDisplay,
+        out string returnTypeDisplay)
     {
         resultTypeDisplay = string.Empty;
         returnTypeDisplay = returnType.ToDisplayString(DisplayFormat);
         location ??= Location.None;
-        var isR3Generator = BackendTokens.IsR3;
 
         if (returnType is not INamedTypeSymbol named || !named.IsGenericType)
         {
@@ -47,7 +75,7 @@ public static class ObservableReturnTypeParser
             if (isR3Generator)
             {
                 diagnostics.Add(
-                    Diagnostic.Create(systemReactiveNotReferenced, location, returnTypeDisplay));
+                    Diagnostic.Create(unsupportedReturnType, location, returnTypeDisplay));
                 return false;
             }
 

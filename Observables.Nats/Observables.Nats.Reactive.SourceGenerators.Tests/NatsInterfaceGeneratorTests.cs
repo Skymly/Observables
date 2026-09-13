@@ -82,4 +82,21 @@ public sealed class NatsInterfaceGeneratorTests
             reason is IncrementalStepRunReason.Modified or IncrementalStepRunReason.New,
             $"Expected cache miss (Modified/New), got {reason}");
     }
+
+    [Fact]
+    public void Missing_reactive_adapter_reports_OBS9005()
+    {
+        const string userSource =
+            """
+            [Nats]
+            public interface IFeed
+            {
+                [NatsSubscribe("orders.>")]
+                IObservable<string> Ping { get; }
+            }
+            """;
+
+        var output = GeneratorTestHarness.RunWithoutReactiveAdapter(userSource);
+        Assert.Contains(output.Diagnostics, static diagnostic => diagnostic.Id == "OBS9005");
+    }
 }

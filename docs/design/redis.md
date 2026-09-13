@@ -61,7 +61,7 @@ Reactive 路径：成员返回 `IObservable<T>`，引用 `Observables.Redis.Reac
 ## 3. Channel / Pattern 规则
 
 - **Subscribe**：字面量 Channel 或 Pattern。若字符串含 `*` 或 `?` → `PSUBSCRIBE`（Pattern）；否则 → `SUBSCRIBE`（exact）。**禁止** `{param}` 占位符（OBS11006）。
-- **Publish**：exact Channel only；模板支持 `{param}` 绑定方法参数名（`RedisChannelTemplate`）。**禁止** Pattern 元字符 `*` / `?`（OBS11006）。可选末尾 `CancellationToken`。
+- **Publish**：exact Channel only；模板支持 `{param}` 绑定方法参数名（`RedisChannelTemplate`）。**禁止** Pattern 元字符 `*` / `?`（OBS11006）。可选末尾 `CancellationToken`。该 token 只取消本地等待：StackExchange.Redis 2.8.x 的 `ISubscriber.PublishAsync` 没有 `CancellationToken` 重载，已发出的 `PUBLISH` 不会被客户端中止。
 - 未指定 Channel / 模板时回退为成员名（与 Nats/Mqtt 同惯例）。
 
 ## 4. 流元素类型

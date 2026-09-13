@@ -18,7 +18,32 @@ internal static class IoProxyModelAssembly
             name = name.Substring(1);
         }
 
-        return name + "GeneratedProxy";
+        if (iface.Arity > 0)
+        {
+            name += iface.Arity.ToString();
+        }
+
+        var prefix = ContainingIdentityPrefix(iface);
+        return prefix.Length == 0 ? name + "GeneratedProxy" : prefix + "_" + name + "GeneratedProxy";
+    }
+
+    static string ContainingIdentityPrefix(INamedTypeSymbol type)
+    {
+        var nested = string.Empty;
+        var containing = type.ContainingType;
+        while (containing is not null)
+        {
+            nested = nested.Length == 0 ? containing.Name : containing.Name + "_" + nested;
+            containing = containing.ContainingType;
+        }
+
+        if (type.ContainingNamespace is { IsGlobalNamespace: false } ns)
+        {
+            var nsPrefix = ns.ToDisplayString().Replace(".", "_");
+            return nested.Length == 0 ? nsPrefix : nsPrefix + "_" + nested;
+        }
+
+        return nested;
     }
 
     internal static string GeneratedHintName(INamedTypeSymbol iface, string domainSuffix) =>

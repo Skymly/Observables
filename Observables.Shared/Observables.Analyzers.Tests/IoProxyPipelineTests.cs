@@ -273,6 +273,32 @@ public sealed class IoProxyPipelineTests
         Assert.Equal("B_ISub.Mqtt.g.cs", IoProxyModelAssembly.GeneratedHintName(b, "Mqtt"));
     }
 
+    [Fact]
+    public void GeneratedProxyClassName_includes_namespace_containing_type_and_arity()
+    {
+        const string source =
+            """
+            namespace A { public interface ISub {} }
+            namespace B { public interface ISub {} }
+            namespace N { public class Outer { public interface IInner {} } }
+            public interface IBox<T> {}
+            """;
+
+        var (compilation, _) = CompileInterfaces(source);
+        var a = compilation.GetTypeByMetadataName("A.ISub")!;
+        var b = compilation.GetTypeByMetadataName("B.ISub")!;
+        var inner = compilation.GetTypeByMetadataName("N.Outer+IInner")!;
+        var box = compilation.GetTypeByMetadataName("IBox`1")!;
+
+        Assert.Equal("A_SubGeneratedProxy", IoProxyModelAssembly.GeneratedProxyClassName(a));
+        Assert.Equal("B_SubGeneratedProxy", IoProxyModelAssembly.GeneratedProxyClassName(b));
+        Assert.NotEqual(
+            IoProxyModelAssembly.GeneratedProxyClassName(a),
+            IoProxyModelAssembly.GeneratedProxyClassName(b));
+        Assert.Equal("N_Outer_InnerGeneratedProxy", IoProxyModelAssembly.GeneratedProxyClassName(inner));
+        Assert.Equal("Box1GeneratedProxy", IoProxyModelAssembly.GeneratedProxyClassName(box));
+    }
+
     static (List<Diagnostic> diagnostics, bool ok) ParseObservableReturn(
         string source,
         bool isR3Generator,

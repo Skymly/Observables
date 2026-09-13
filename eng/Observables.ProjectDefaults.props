@@ -51,6 +51,7 @@
     <_ObsIsSingleTfmTestProject Condition="'$(_ObsIsTestProject)' == 'true' and '$(MSBuildProjectName)' == 'Observables.CodeFixes.Tests'">true</_ObsIsSingleTfmTestProject>
     <_ObsIsSingleTfmTestProject Condition="'$(_ObsIsTestProject)' == 'true' and '$(MSBuildProjectName)' == 'Observables.Analyzers.Tests'">true</_ObsIsSingleTfmTestProject>
     <_ObsIsSingleTfmTestProject Condition="'$(_ObsIsTestProject)' == 'true' and '$(MSBuildProjectName)' == 'Observables.TestSupport.Tests'">true</_ObsIsSingleTfmTestProject>
+    <_ObsIsSingleTfmTestProject Condition="'$(_ObsIsTestProject)' == 'true' and '$(MSBuildProjectName)' == 'Observables.Build.Tests'">true</_ObsIsSingleTfmTestProject>
     <_ObsIsMultiTfmTestProject>false</_ObsIsMultiTfmTestProject>
     <_ObsIsMultiTfmTestProject Condition="'$(_ObsIsTestProject)' == 'true' and '$(_ObsIsSingleTfmTestProject)' != 'true'">true</_ObsIsMultiTfmTestProject>
     <_ObsIsDomainRuntimeProject>false</_ObsIsDomainRuntimeProject>

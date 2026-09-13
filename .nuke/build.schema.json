@@ -36,6 +36,7 @@
         "CiPack",
         "Clean",
         "Compile",
+        "FormatWhitespace",
         "NuGetConsumerSmoke",
         "NuGetConsumerSmokePublished",
         "Pack",

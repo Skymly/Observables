@@ -49,8 +49,9 @@ public sealed class SseClientReactiveE2ETests(SseTestServerFixture fixture)
     [Fact]
     public async Task FromEvent_dispose_cancels_the_pump_without_completing()
     {
-        using var http = new HttpClient();
-        var connection = new SseConnection(http, fixture.Server.KeepAliveUri);
+        var handler = new HoldOpenSseHandler();
+        using var http = new HttpClient(handler);
+        var connection = new SseConnection(http, new Uri("http://sse.test/stream"));
 
         var completed = 0;
         var errored = 0;
@@ -66,7 +67,7 @@ public sealed class SseClientReactiveE2ETests(SseTestServerFixture fixture)
         Assert.Equal("ready", await ready.Task.WaitAsync(cts.Token));
 
         subscription.Dispose();
-        await Task.Delay(200, cts.Token);
+        await handler.StreamDisposed.WaitAsync(cts.Token);
 
         Assert.Equal(0, Volatile.Read(ref completed));
         Assert.Equal(0, Volatile.Read(ref errored));

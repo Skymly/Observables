@@ -194,7 +194,7 @@ public sealed class RedisInterfaceGeneratorTests
     }
 
     [Fact]
-    public void Redis_interface_OBS11005_on_iobservable_with_r3_generator()
+    public void Redis_interface_OBS11003_on_iobservable_with_r3_generator()
     {
         const string userSource =
             """
@@ -209,7 +209,7 @@ public sealed class RedisInterfaceGeneratorTests
         var output = GeneratorTestHarness.Run(userSource);
         var snapshot = GeneratorTestHarness.ToSnapshot(output);
 
-        Assert.Contains("OBS11005", snapshot, StringComparison.Ordinal);
+        Assert.Contains("OBS11003", snapshot, StringComparison.Ordinal);
     }
 
     [Fact]

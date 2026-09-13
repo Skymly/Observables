@@ -48,8 +48,49 @@ public sealed class RedisTestServer : IAsyncDisposable
             cleanupDir: true);
 
         server.Start();
-        await Task.Yield();
+        await WaitUntilTcpPortAcceptsAsync(port, cancellationToken).ConfigureAwait(false);
         return new RedisTestServer(workDir, port, server);
+    }
+
+    public static async Task WaitUntilTcpPortAcceptsAsync(
+        int port,
+        CancellationToken cancellationToken,
+        int attempts = 50,
+        int delayMilliseconds = 50)
+    {
+        if (attempts <= 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(attempts));
+        }
+
+        SocketException? lastError = null;
+        for (var i = 0; i < attempts; i++)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            using var attemptCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            attemptCts.CancelAfter(delayMilliseconds);
+            using var client = new TcpClient();
+            try
+            {
+                await client.ConnectAsync(IPAddress.Loopback, port, attemptCts.Token).ConfigureAwait(false);
+                return;
+            }
+            catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
+            {
+            }
+            catch (ObjectDisposedException)
+            {
+            }
+            catch (IOException)
+            {
+            }
+            catch (SocketException ex)
+            {
+                lastError = ex;
+            }
+        }
+
+        throw new TimeoutException($"TCP port {port} did not accept connections.", lastError);
     }
 
     public async Task<ConnectionMultiplexer> ConnectAsync(CancellationToken cancellationToken = default)

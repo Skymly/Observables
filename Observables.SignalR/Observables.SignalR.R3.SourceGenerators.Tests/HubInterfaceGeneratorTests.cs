@@ -50,7 +50,7 @@ public sealed class HubInterfaceGeneratorTests
     }
 
     [Fact]
-    public void Hub_interface_OBS4005_on_iobservable_with_r3_generator()
+    public void Hub_interface_OBS4003_on_iobservable_with_r3_generator()
     {
         const string userSource =
             """
@@ -65,7 +65,7 @@ public sealed class HubInterfaceGeneratorTests
         var output = GeneratorTestHarness.Run(userSource);
         var snapshot = GeneratorTestHarness.ToSnapshot(output);
 
-        Assert.Contains("OBS4005", snapshot, StringComparison.Ordinal);
+        Assert.Contains("OBS4003", snapshot, StringComparison.Ordinal);
     }
 
     // ── Incremental cache hit tests (D3-A pilot) ──

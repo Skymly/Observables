@@ -59,7 +59,14 @@ internal static class Parser
                 GetServiceName(marked.InterfaceSymbol) ?? marked.InterfaceSymbol.Name.TrimStart('I'),
                 members,
                 marked.Nullability),
-            createContext: static interfaces => new ContextGenerationModel(interfaces));
+            createContext: static interfaces => new ContextGenerationModel(interfaces),
+            tryAddOther: (marked, member, _, diagnostics) =>
+                diagnostics.Add(
+                    Diagnostic.Create(
+                        DiagnosticDescriptors.InvalidGrpcMember,
+                        member.Locations.FirstOrDefault(),
+                        marked.InterfaceSymbol.Name,
+                        member.Name)));
     }
 
     static void TryAddMethod(

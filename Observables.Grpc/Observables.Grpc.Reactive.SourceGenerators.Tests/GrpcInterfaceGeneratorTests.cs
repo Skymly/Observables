@@ -153,4 +153,20 @@ public sealed class GrpcInterfaceGeneratorTests
         Assert.DoesNotContain("ForMessage<NumbersPoco>", snapshot, StringComparison.Ordinal);
         Assert.DoesNotContain("ForMessage<global::NumbersPoco>", snapshot, StringComparison.Ordinal);
     }
+
+    [Fact]
+    public void Public_instance_event_reports_OBS7001()
+    {
+        const string userSource =
+            """
+            [Grpc]
+            public interface IEcho
+            {
+                event System.Action Tick;
+            }
+            """;
+
+        var output = GeneratorTestHarness.Run(userSource);
+        Assert.Contains(output.Diagnostics, static diagnostic => diagnostic.Id == "OBS7001");
+    }
 }

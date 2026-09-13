@@ -46,4 +46,25 @@ internal static class HangingRedis
             throw new NotSupportedException(targetMethod?.Name);
         }
     }
+
+    public static IConnectionMultiplexer CreateThrowingSubscribe()
+    {
+        var subscriber = DispatchProxy.Create<ISubscriber, ThrowingSubscriberProxy>();
+        var multiplexer = DispatchProxy.Create<IConnectionMultiplexer, HangingMultiplexerProxy>();
+        ((HangingMultiplexerProxy)(object)multiplexer).Subscriber = subscriber;
+        return multiplexer;
+    }
+
+    public class ThrowingSubscriberProxy : DispatchProxy
+    {
+        protected override object? Invoke(MethodInfo? targetMethod, object?[]? args)
+        {
+            if (targetMethod?.Name == nameof(ISubscriber.SubscribeAsync))
+            {
+                throw new InvalidOperationException("subscribe-failed");
+            }
+
+            throw new NotSupportedException(targetMethod?.Name);
+        }
+    }
 }

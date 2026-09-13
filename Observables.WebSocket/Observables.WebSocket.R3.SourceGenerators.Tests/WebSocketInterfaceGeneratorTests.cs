@@ -134,6 +134,44 @@ public sealed class WebSocketInterfaceGeneratorTests
         Assert.Contains("OBS6003", snapshot, StringComparison.Ordinal);
     }
 
+    [Fact]
+    public void WebSocket_interface_OBS6002_when_runtime_missing()
+    {
+        const string userSource =
+            """
+            [WebSocket]
+            public interface IHub
+            {
+                [WebSocketReceive("ping")]
+                Observable<string> Ping { get; }
+            }
+            """;
+
+        var output = GeneratorTestHarness.Run(userSource, includeCoreReference: false);
+        var snapshot = GeneratorTestHarness.ToSnapshot(output);
+
+        Assert.Contains("OBS6002", snapshot, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void WebSocket_interface_OBS6006_on_connect_without_uri()
+    {
+        const string userSource =
+            """
+            [WebSocket]
+            public interface IHub
+            {
+                [WebSocketConnect]
+                Observable<Unit> Connect();
+            }
+            """;
+
+        var output = GeneratorTestHarness.Run(userSource);
+        var snapshot = GeneratorTestHarness.ToSnapshot(output);
+
+        Assert.Contains("OBS6006", snapshot, StringComparison.Ordinal);
+    }
+
     // ── Incremental cache hit tests ──
 
     const string CacheTestSource =

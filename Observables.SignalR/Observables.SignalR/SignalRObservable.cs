@@ -48,7 +48,7 @@ public static class SignalRObservable
         string methodName,
         object?[] args,
         CancellationToken cancellationToken = default) =>
-        Observable.Create<T>(async (observer, ct) =>
+        R3AsyncCreate.Create<T>(async (observer, ct) =>
         {
             await SignalRProtocol
                 .StreamAsync<T>(connection, methodName, args, observer.OnNext, observer.OnCompleted, cancellationToken, ct)
@@ -56,7 +56,7 @@ public static class SignalRObservable
         });
 
     public static Observable<T> FromOn<T>(HubConnection connection, string methodName) =>
-        Observable.Create<T>(async (observer, ct) =>
+        R3AsyncCreate.Create<T>(async (observer, ct) =>
         {
             using var subscription = SignalRProtocol.SubscribeOn<T>(connection, methodName, observer.OnNext);
             await Task.Delay(Timeout.Infinite, ct).ConfigureAwait(false);

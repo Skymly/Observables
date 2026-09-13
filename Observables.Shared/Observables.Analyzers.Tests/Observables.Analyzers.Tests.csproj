@@ -22,6 +22,7 @@
     <Compile Include="..\Observables.SourceGenerators.Shared\Nullability.cs" Link="Shared/Nullability.cs" />
     <Compile Include="..\Observables.SourceGenerators.Shared\BackendTokens.cs" Link="Shared/BackendTokens.cs" />
     <Compile Include="..\Observables.SourceGenerators.Shared\Diagnostics\ObservableReturnTypeParser.cs" Link="Shared/ObservableReturnTypeParser.cs" />
+    <Compile Include="..\Observables.R3.Runtime\R3AsyncCreate.cs" Link="Shared/R3AsyncCreate.cs" />
   </ItemGroup>
 
   <ItemGroup>

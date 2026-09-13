@@ -49,6 +49,26 @@ public sealed class GrpcInterfaceGeneratorTests
         Assert.DoesNotContain("OBS7", snapshot, StringComparison.Ordinal);
     }
 
+    [Fact]
+    public void Grpc_interface_OBS7003_on_iobservable_with_r3_generator()
+    {
+        const string userSource =
+            """
+            [Grpc("echo.Echo")]
+            public interface IEchoService
+            {
+                [GrpcUnary("UnaryEcho")]
+                IObservable<string> UnaryEcho(string request, CancellationToken cancellationToken = default);
+            }
+            """;
+
+        var output = GeneratorTestHarness.Run(userSource);
+        var snapshot = GeneratorTestHarness.ToSnapshot(output);
+
+        Assert.Contains("OBS7003", snapshot, StringComparison.Ordinal);
+        Assert.DoesNotContain("OBS7005", snapshot, StringComparison.Ordinal);
+    }
+
     // ── Incremental cache hit tests (D3-A pilot) ──
 
     const string CacheTestSource =

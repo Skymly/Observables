@@ -11,8 +11,6 @@ internal static class PostgresProtocol
         @"^[A-Za-z_][A-Za-z0-9_]*$",
         RegexOptions.CultureInvariant | RegexOptions.Compiled);
 
-    static readonly TimeSpan ListenWaitSlice = TimeSpan.FromMilliseconds(250);
-
     internal static void ValidateChannelName(string channel)
     {
         if (string.IsNullOrWhiteSpace(channel))
@@ -68,10 +66,10 @@ internal static class PostgresProtocol
 
             while (!cancellationToken.IsCancellationRequested)
             {
-                await connection.WaitAsync(ListenWaitSlice, cancellationToken).ConfigureAwait(false);
+                await connection.WaitAsync(cancellationToken).ConfigureAwait(false);
             }
         }
-        catch (OperationCanceledException)
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
         }
         catch (Exception ex)
@@ -81,7 +79,14 @@ internal static class PostgresProtocol
         finally
         {
             connection.Notification -= Handler;
-            await UnlistenBestEffortAsync(connection, channel).ConfigureAwait(false);
+            try
+            {
+                await UnlistenAsync(connection, channel).ConfigureAwait(false);
+            }
+            catch (Exception ex)
+            {
+                error ??= ex;
+            }
         }
 
         if (error is not null)
@@ -132,8 +137,9 @@ internal static class PostgresProtocol
         CancellationToken pumpToken) =>
         NotifyAsync(connection, channel, PostgresPayload.SerializeToText(payload), userToken, pumpToken);
 
-    static async Task UnlistenBestEffortAsync(NpgsqlConnection connection, string channel)
+    internal static async Task UnlistenAsync(NpgsqlConnection connection, string channel)
     {
+        NpgsqlOperationInProgressException? lastInProgress = null;
         for (var attempt = 0; attempt < 20; attempt++)
         {
             try
@@ -149,14 +155,18 @@ internal static class PostgresProtocol
                 await unlisten.ExecuteNonQueryAsync(CancellationToken.None).ConfigureAwait(false);
                 return;
             }
-            catch (NpgsqlOperationInProgressException)
+            catch (NpgsqlOperationInProgressException ex)
             {
+                lastInProgress = ex;
                 await Task.Delay(25, CancellationToken.None).ConfigureAwait(false);
             }
-            catch
-            {
-                return;
-            }
         }
+
+        if (lastInProgress is not null)
+        {
+            throw lastInProgress;
+        }
+
+        throw new TimeoutException("UNLISTEN did not complete while WaitAsync was in progress.");
     }
 }

@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Data;
 using System.Diagnostics.CodeAnalysis;
 using System.Text.RegularExpressions;
@@ -55,6 +56,7 @@ internal static class PostgresProtocol
 
         connection.Notification += Handler;
         Exception? error = null;
+        EnterListen(connection);
         try
         {
             await using (var listen = new NpgsqlCommand(
@@ -87,6 +89,8 @@ internal static class PostgresProtocol
             {
                 error ??= ex;
             }
+
+            ExitListen(connection);
         }
 
         if (error is not null)
@@ -113,6 +117,8 @@ internal static class PostgresProtocol
 
         ValidateChannelName(channel);
 
+        ThrowIfListening(connection);
+
         using var linked = CancellationTokenSource.CreateLinkedTokenSource(userToken, pumpToken);
         await using var command = new NpgsqlCommand(
             "SELECT pg_notify(@channel, @payload);",
@@ -136,6 +142,29 @@ internal static class PostgresProtocol
         CancellationToken userToken,
         CancellationToken pumpToken) =>
         NotifyAsync(connection, channel, PostgresPayload.SerializeToText(payload), userToken, pumpToken);
+
+    static readonly ConcurrentDictionary<NpgsqlConnection, int> ActiveListens = new();
+
+    static void EnterListen(NpgsqlConnection connection) =>
+        ActiveListens.AddOrUpdate(connection, 1, static (_, count) => count + 1);
+
+    static void ExitListen(NpgsqlConnection connection)
+    {
+        var remaining = ActiveListens.AddOrUpdate(connection, 0, static (_, count) => count - 1);
+        if (remaining <= 0)
+        {
+            ActiveListens.TryRemove(connection, out _);
+        }
+    }
+
+    static void ThrowIfListening(NpgsqlConnection connection)
+    {
+        if (ActiveListens.TryGetValue(connection, out var count) && count > 0)
+        {
+            throw new InvalidOperationException(
+                "This NpgsqlConnection is occupied by LISTEN; NOTIFY requires a second session.");
+        }
+    }
 
     internal static async Task UnlistenAsync(NpgsqlConnection connection, string channel)
     {

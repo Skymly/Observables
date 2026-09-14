@@ -107,4 +107,21 @@ public sealed class SseInterfaceGeneratorTests
             reason is IncrementalStepRunReason.Modified or IncrementalStepRunReason.New,
             $"Expected cache miss (Modified/New), got {reason}");
     }
+
+    [Fact]
+    public void Missing_reactive_adapter_reports_OBS8005()
+    {
+        const string userSource =
+            """
+            [Sse]
+            public interface IFeed
+            {
+                [SseEvent("ping")]
+                IObservable<string> Ping { get; }
+            }
+            """;
+
+        var output = GeneratorTestHarness.RunWithoutReactiveAdapter(userSource);
+        Assert.Contains(output.Diagnostics, static diagnostic => diagnostic.Id == "OBS8005");
+    }
 }

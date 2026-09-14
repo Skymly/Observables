@@ -50,6 +50,26 @@ public class ReactiveGeneratorTests
         return Task.CompletedTask;
     }
 
+    [Fact]
+    public void Missing_reactive_adapter_reports_OBS3005()
+    {
+        GeneratorRunOutput output = GeneratorTestHarness.RunReactiveWithoutAdapter(
+            """
+            public interface IUserApi
+            {
+                [Get("/users/{id}")]
+                IObservable<User> GetUser(int id);
+            }
+
+            public sealed class User
+            {
+                public int Id { get; set; }
+            }
+            """);
+
+        Assert.Contains(output.Diagnostics, static diagnostic => diagnostic.Id == "OBS3005");
+    }
+
     // ── Incremental cache hit tests (Reactive generator) ──
 
     const string CacheTestSource =

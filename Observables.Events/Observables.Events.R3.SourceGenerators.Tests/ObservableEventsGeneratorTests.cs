@@ -34,6 +34,46 @@ public sealed class ObservableEventsGeneratorTests
     }
 
     [Fact]
+    public void Same_named_types_in_different_namespaces_get_distinct_impl_classes()
+    {
+        const string source = """
+            namespace A
+            {
+                public class ClickSource
+                {
+                    public event System.Action? Click;
+                }
+            }
+
+            namespace B
+            {
+                public class ClickSource
+                {
+                    public event System.Action? Click;
+                }
+            }
+
+            public static class Usage
+            {
+                public static void Run(A.ClickSource a, B.ClickSource b)
+                {
+                    _ = a.Events().Click;
+                    _ = b.Events().Click;
+                }
+            }
+            """;
+
+        GeneratorRunOutput output = GeneratorTestHarness.Run(
+            source,
+            generators: [new ObservableEventsGenerator()]);
+        var generated = string.Join("\n", output.GeneratedSources.Select(static s => s.Source));
+
+        Assert.DoesNotContain(output.Diagnostics, static d => d.Id is "CS0101" or "CS0111");
+        Assert.Contains("class A_ClickSourceEventsImpl", generated, StringComparison.Ordinal);
+        Assert.Contains("class B_ClickSourceEventsImpl", generated, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void Generates_Events_wrapper_for_interface_type()
     {
         const string source = """

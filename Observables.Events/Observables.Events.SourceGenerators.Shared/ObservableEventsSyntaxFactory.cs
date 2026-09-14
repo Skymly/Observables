@@ -282,6 +282,35 @@ internal static class ObservableEventsSyntaxFactory
             .WithSemicolonToken(Token(SyntaxKind.SemicolonToken));
     }
 
+    public static MethodDeclarationSyntax CreateWpfRoutedExtensionMethod(
+        string methodName,
+        TypeSyntax returnType,
+        TypeSyntax receiverType,
+        TypeSyntax implementationType)
+    {
+        return MethodDeclaration(returnType, Identifier(methodName))
+            .AddModifiers(Token(SyntaxKind.PublicKeyword), Token(SyntaxKind.StaticKeyword))
+            .AddParameterListParameters(
+                Parameter(Identifier("source"))
+                    .WithType(receiverType)
+                    .AddModifiers(Token(SyntaxKind.ThisKeyword)),
+                Parameter(Identifier("handledEventsToo"))
+                    .WithType(PredefinedType(Token(SyntaxKind.BoolKeyword)))
+                    .WithDefault(
+                        EqualsValueClause(LiteralExpression(SyntaxKind.FalseLiteralExpression, Token(SyntaxKind.FalseKeyword)))))
+            .WithExpressionBody(
+                ArrowExpressionClause(
+                    ObjectCreationExpression(implementationType)
+                        .WithArgumentList(
+                            ArgumentList(
+                                SeparatedList(
+                                [
+                                    Argument(IdentifierName("source")),
+                                    Argument(IdentifierName("handledEventsToo")),
+                                ])))))
+            .WithSemicolonToken(Token(SyntaxKind.SemicolonToken));
+    }
+
     public static MethodDeclarationSyntax CreateAttachedRoutedEventMethod(
         string methodName,
         TypeSyntax returnType,
@@ -578,6 +607,77 @@ internal static class ObservableEventsSyntaxFactory
                 IdentifierName("_sender"),
                 GenericName(Identifier("RemoveHandler"))
                     .WithTypeArgumentList(TypeArgumentList(SingletonSeparatedList(eventArgs)))),
+            ArgumentList(
+                SeparatedList(
+                [
+                    Argument(eventFieldAccess),
+                    Argument(IdentifierName("h")),
+                ])));
+
+        var subscribeHandler = HandlerSubscriptionLambda(addHandler);
+        var unsubscribeHandler = HandlerSubscriptionLambda(removeHandler);
+        ExpressionSyntax body;
+        TypeSyntax returnType;
+        if (useEventHandlers)
+        {
+            returnType = ObservableSenderArgsTupleType(eventArgs);
+            body = FromEventHandlerInvocation(eventArgs, subscribeHandler, unsubscribeHandler);
+        }
+        else
+        {
+            returnType = ObservableType(eventArgs);
+            body = FromEventInvocation(
+                SystemEventHandlerType(eventArgs),
+                eventArgs,
+                EventHandlerFactorySenderAndArgs(),
+                subscribeHandler,
+                unsubscribeHandler);
+        }
+
+        var property = PropertyDeclaration(returnType, Identifier(evt.Name))
+            .AddModifiers(Token(SyntaxKind.PublicKeyword))
+            .WithExpressionBody(ArrowExpressionClause(body))
+            .WithSemicolonToken(Token(SyntaxKind.SemicolonToken));
+
+        if (documentation is { Count: > 0 })
+        {
+            property = property.WithLeadingTrivia(documentation.Value);
+        }
+
+        return property;
+    }
+
+    public static PropertyDeclarationSyntax CreateWpfRoutedEventProperty(
+        IEventSymbol evt,
+        IFieldSymbol routedEventField,
+        INamedTypeSymbol eventArgsType,
+        bool useEventHandlers,
+        SyntaxTriviaList? documentation = null)
+    {
+        var eventArgs = ParseTypeName(ObservableEventsConstants.QualifiedType(eventArgsType));
+        var eventFieldAccess = MemberAccessExpression(
+            SyntaxKind.SimpleMemberAccessExpression,
+            ParseName(ObservableEventsConstants.QualifiedType(routedEventField.ContainingType)),
+            IdentifierName(routedEventField.Name));
+
+        var addHandler = InvocationExpression(
+            MemberAccessExpression(
+                SyntaxKind.SimpleMemberAccessExpression,
+                IdentifierName("_sender"),
+                IdentifierName("AddHandler")),
+            ArgumentList(
+                SeparatedList(
+                [
+                    Argument(eventFieldAccess),
+                    Argument(IdentifierName("h")),
+                    Argument(IdentifierName("_handledEventsToo")),
+                ])));
+
+        var removeHandler = InvocationExpression(
+            MemberAccessExpression(
+                SyntaxKind.SimpleMemberAccessExpression,
+                IdentifierName("_sender"),
+                IdentifierName("RemoveHandler")),
             ArgumentList(
                 SeparatedList(
                 [

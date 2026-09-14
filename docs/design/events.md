@@ -1,11 +1,11 @@
 # Events 域 — 设计文档
 
-> 状态：**已实现**（`main`）；NuGet `Observables.Events.R3` / `Observables.Events.Reactive`（`0.1.6`）。
+> 状态：**已实现**（`main`）；NuGet `Observables.Events.R3` / `Observables.Events.Reactive`（随库 **`0.2.2`** 发布）。
 > 命名、打包、诊断分段以 [`AGENTS.md`](../../AGENTS.md) 为权威。
 
 ## 1. 目标与定位
 
-将 .NET 事件（经典 `event`、`EventHandler`、WPF/Avalonia 路由事件）桥接为反应式流。Events 是八域中**唯一的纯生成域**：`Observables.Events` 仅含 MSBuild props，桥接类型由生成器 `internal` 产出。
+将 .NET 事件（经典 `event`、`EventHandler`、WPF/Avalonia 路由事件）桥接为反应式流。Events 是十域中**唯一的纯生成域**：`Observables.Events` 仅含 MSBuild props，桥接类型由生成器 `internal` 产出。
 
 ## 2. API 面
 
@@ -185,6 +185,7 @@ Observables.Events/
 │   └── build/
 │       ├── Observables.Events.R3.props              # buildTransitive 标记
 │       └── Observables.Events.Reactive.props
+├── Observables.Events.SourceGenerators.Shared/       # shproj：生成器逻辑 + OBS2xxx DiagnosticDescriptors
 ├── Observables.Events.R3.SourceGenerators/          # R3 生成器（IIncrementalGenerator）
 │   ├── ObservableEventsGenerator.cs                 # 入口（partial）
 │   ├── ObservableEventsGenerator.*.cs               # Discovery / InterfacePipeline / EventProperties
@@ -199,7 +200,7 @@ Observables.Events/
 └── Observables.Events.Reactive.SourceGenerators.Tests/
 ```
 
-**无双后端 shproj**：Events 域不建 `*.SourceGenerators.Shared` shproj；诊断定义在 `Observables.Events.*.SourceGenerators` 内 `DiagnosticDescriptors.cs`（OBS2xxx）。
+**双后端 shproj**：Events 与其它域一样 Import `Observables.Events.SourceGenerators.Shared`；诊断 OBS2xxx 定义在 Shared 的 `DiagnosticDescriptors.cs`。
 
 ## 8. 关键设计决策
 

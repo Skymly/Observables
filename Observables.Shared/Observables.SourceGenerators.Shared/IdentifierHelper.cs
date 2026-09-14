@@ -37,12 +37,11 @@ internal static class IdentifierHelper
         SymbolDisplay.FormatLiteral(value, quote: true);
 
     /// <summary>
-    /// True when <paramref name="type"/> is <see cref="System.Threading.CancellationToken"/>,
-    /// including <c>CancellationToken?</c> and aliases.
+    /// True when <paramref name="type"/> is non-nullable <see cref="System.Threading.CancellationToken"/>,
+    /// including aliases. <c>CancellationToken?</c> is not a cancellation token.
     /// </summary>
     public static bool IsCancellationToken(ITypeSymbol type)
     {
-        type = UnwrapNullable(type);
         return type.Name == "CancellationToken"
             && type.ContainingNamespace?.ToDisplayString() == "System.Threading";
     }
@@ -76,17 +75,5 @@ internal static class IdentifierHelper
         }
 
         return false;
-    }
-
-    static ITypeSymbol UnwrapNullable(ITypeSymbol type)
-    {
-        if (type is INamedTypeSymbol named
-            && named.OriginalDefinition.SpecialType == SpecialType.System_Nullable_T
-            && named.TypeArguments.Length == 1)
-        {
-            return named.TypeArguments[0];
-        }
-
-        return type;
     }
 }

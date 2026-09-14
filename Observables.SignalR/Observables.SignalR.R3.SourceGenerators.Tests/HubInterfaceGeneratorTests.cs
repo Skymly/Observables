@@ -68,6 +68,46 @@ public sealed class HubInterfaceGeneratorTests
         Assert.Contains("OBS4003", snapshot, StringComparison.Ordinal);
     }
 
+    [Fact]
+    public void Hub_interface_OBS4002_when_runtime_missing()
+    {
+        const string userSource =
+            """
+            [Hub]
+            public interface IChatHub
+            {
+                [HubInvoke]
+                Observable<int> GetUserCount();
+            }
+            """;
+
+        var output = GeneratorTestHarness.Run(userSource, includeCoreReference: false);
+        var snapshot = GeneratorTestHarness.ToSnapshot(output);
+
+        Assert.Contains("OBS4002", snapshot, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Hub_interface_OBS4006_on_streaming_parameter()
+    {
+        const string userSource =
+            """
+            using System.Collections.Generic;
+
+            [Hub]
+            public interface IChatHub
+            {
+                [HubInvoke]
+                Observable<int> Stream(IAsyncEnumerable<int> items);
+            }
+            """;
+
+        var output = GeneratorTestHarness.Run(userSource);
+        var snapshot = GeneratorTestHarness.ToSnapshot(output);
+
+        Assert.Contains("OBS4006", snapshot, StringComparison.Ordinal);
+    }
+
     // ── Incremental cache hit tests (D3-A pilot) ──
 
     const string CacheTestSource =
@@ -175,6 +215,27 @@ public sealed class HubInterfaceGeneratorTests
     }
 
     [Fact]
+    public void Trailing_nullable_cancellation_token_is_not_emitted_as_subscription_ct()
+    {
+        const string userSource =
+            """
+            [Hub]
+            public interface IChat
+            {
+                [HubInvoke]
+                Observable<string> Echo(string msg, CancellationToken? ct);
+            }
+            """;
+
+        var output = GeneratorTestHarness.Run(userSource);
+        Assert.DoesNotContain(output.Diagnostics, static diagnostic => diagnostic.Id == "CS1503");
+        foreach (var source in output.GeneratedSources)
+        {
+            Assert.DoesNotContain("ct = default", source.Source, StringComparison.Ordinal);
+        }
+    }
+
+    [Fact]
     public void Non_trailing_cancellation_token_reports_OBS4001()
     {
         const string userSource =
@@ -224,5 +285,21 @@ public sealed class HubInterfaceGeneratorTests
             """;
         var output = GeneratorTestHarness.Run(userSource);
         return Verifier.Verify(GeneratorTestHarness.ToSnapshot(output));
+    }
+
+    [Fact]
+    public void Public_instance_event_reports_OBS4001()
+    {
+        const string userSource =
+            """
+            [Hub]
+            public interface IChat
+            {
+                event System.Action Tick;
+            }
+            """;
+
+        var output = GeneratorTestHarness.Run(userSource);
+        Assert.Contains(output.Diagnostics, static diagnostic => diagnostic.Id == "OBS4001");
     }
 }

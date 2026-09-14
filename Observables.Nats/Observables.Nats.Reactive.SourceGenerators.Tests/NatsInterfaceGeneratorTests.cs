@@ -82,4 +82,58 @@ public sealed class NatsInterfaceGeneratorTests
             reason is IncrementalStepRunReason.Modified or IncrementalStepRunReason.New,
             $"Expected cache miss (Modified/New), got {reason}");
     }
+
+    [Fact]
+    public void Trailing_nullable_cancellation_token_is_not_emitted_as_subscription_ct()
+    {
+        const string userSource =
+            """
+            [Nats]
+            public interface IHub
+            {
+                [NatsPublish("ping")]
+                IObservable<Unit> Restart(string id, CancellationToken? ct);
+            }
+            """;
+
+        var output = GeneratorTestHarness.Run(userSource);
+        Assert.Contains(output.Diagnostics, static diagnostic => diagnostic.Id == "OBS9006");
+        foreach (var source in output.GeneratedSources)
+        {
+            Assert.DoesNotContain("ct = default", source.Source, StringComparison.Ordinal);
+        }
+    }
+
+    [Fact]
+    public void Public_instance_event_reports_OBS9001()
+    {
+        const string userSource =
+            """
+            [Nats]
+            public interface IFeed
+            {
+                event System.Action Tick;
+            }
+            """;
+
+        var output = GeneratorTestHarness.Run(userSource);
+        Assert.Contains(output.Diagnostics, static diagnostic => diagnostic.Id == "OBS9001");
+    }
+
+    [Fact]
+    public void Missing_reactive_adapter_reports_OBS9005()
+    {
+        const string userSource =
+            """
+            [Nats]
+            public interface IFeed
+            {
+                [NatsSubscribe("orders.>")]
+                IObservable<string> Ping { get; }
+            }
+            """;
+
+        var output = GeneratorTestHarness.RunWithoutReactiveAdapter(userSource);
+        Assert.Contains(output.Diagnostics, static diagnostic => diagnostic.Id == "OBS9005");
+    }
 }

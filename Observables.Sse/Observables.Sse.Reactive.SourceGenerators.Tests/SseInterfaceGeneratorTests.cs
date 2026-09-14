@@ -109,6 +109,23 @@ public sealed class SseInterfaceGeneratorTests
     }
 
     [Fact]
+    public void Missing_reactive_adapter_reports_OBS8005()
+    {
+        const string userSource =
+            """
+            [Sse]
+            public interface IFeed
+            {
+                [SseEvent("ping")]
+                IObservable<string> Ping { get; }
+            }
+            """;
+
+        var output = GeneratorTestHarness.RunWithoutReactiveAdapter(userSource);
+        Assert.Contains(output.Diagnostics, static diagnostic => diagnostic.Id == "OBS8005");
+    }
+
+    [Fact]
     public void Public_instance_event_reports_OBS8001()
     {
         const string userSource =

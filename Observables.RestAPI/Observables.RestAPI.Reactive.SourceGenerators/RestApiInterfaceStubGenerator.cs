@@ -48,21 +48,25 @@ public sealed class RestApiInterfaceStubGenerator : IIncrementalGenerator
 
         var parseStep = inputs.Select(
             static (collectedValues, cancellationToken) =>
-                GeneratorFailSafe.ExecuteParse(
+            {
+                var parsed = GeneratorFailSafe.ExecuteParse(
                     () => Parser.GenerateInterfaceStubs(
                         (CSharpCompilation)collectedValues.compilation,
                         collectedValues.candidateMethods,
                         collectedValues.candidateInterfaces,
                         cancellationToken),
                     DiagnosticDescriptors.InternalGeneratorError,
-                    () => new ContextGenerationModel(ImmutableEquatableArray.Empty<InterfaceModel>())));
+                    () => new ContextGenerationModel(ImmutableEquatableArray.Empty<InterfaceModel>()));
+                return (diagnostics: parsed.diagnostics.ToImmutableEquatableArray(), model: parsed.model);
+            })
+            .WithTrackingName(RestApiGeneratorStepName.ParseRestApi);
 
         var diagnostics = parseStep
-            .Select(static (x, _) => x.diagnostics.ToImmutableEquatableArray())
+            .Select(static (x, _) => x.diagnostics)
             .WithTrackingName(RestApiGeneratorStepName.ReportDiagnostics);
         context.ReportDiagnostics(diagnostics);
 
-        var contextModel = parseStep.Select(static (x, _) => x.Item2);
+        var contextModel = parseStep.Select(static (x, _) => x.model);
         var interfaceModels = contextModel
             .SelectMany(static (x, _) => x.Interfaces)
             .WithTrackingName(RestApiGeneratorStepName.BuildRestApi);

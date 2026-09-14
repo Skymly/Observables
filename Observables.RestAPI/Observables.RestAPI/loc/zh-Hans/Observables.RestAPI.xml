@@ -1727,6 +1727,11 @@
             <param name="interfaceType">REST API 接口类型。</param>
             <param name="factory">生成的实现工厂。</param>
         </member>
+        <member name="M:Observables.RestAPI.RestService.RegisterGeneratedFactory(System.Type,System.Func{System.Type,System.Net.Http.HttpClient,Observables.RestAPI.RestApiSettings,System.Object})">
+            <summary>
+            注册可闭合开放泛型接口类型的源生成工厂。
+            </summary>
+        </member>
         <member name="M:Observables.RestAPI.RestService.OwnsHttpClient(System.Net.Http.HttpClient)">
             <summary>
             当 <paramref name="client"/> 由 <see cref="M:Observables.RestAPI.RestService.For``1(System.String)"/> / 主机 URL 重载创建时为 true。

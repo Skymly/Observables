@@ -16,6 +16,12 @@ public static class SystemReactiveRedisAdapter
         CancellationToken cancellationToken = default) =>
         FromPublish(multiplexer, channel, Array.Empty<byte>(), cancellationToken);
 
+    /// <summary>Publishes <paramref name="payload"/> on <paramref name="channel"/>.</summary>
+    /// <remarks>
+    /// <paramref name="cancellationToken"/> cancels the local wait for the StackExchange.Redis
+    /// publish task. <c>ISubscriber.PublishAsync</c> has no cancellation-token overload in 2.8.x,
+    /// so an in-flight <c>PUBLISH</c> is not aborted.
+    /// </remarks>
     public static IObservable<System.Reactive.Unit> FromPublish(
         IConnectionMultiplexer multiplexer,
         string channel,

@@ -15,6 +15,8 @@ internal static class RedisProtocol
     {
         cancellationToken.ThrowIfCancellationRequested();
         var subscriber = multiplexer.GetSubscriber();
+        // ISubscriber.PublishAsync has no CancellationToken in StackExchange.Redis 2.8.x.
+        // WaitAsync only abandons the local wait; the in-flight PUBLISH is not aborted.
         await subscriber
             .PublishAsync(RedisChannel.Literal(channel), payload ?? Array.Empty<byte>())
             .WaitAsync(cancellationToken)

@@ -103,4 +103,20 @@ public sealed class NatsInterfaceGeneratorTests
             Assert.DoesNotContain("ct = default", source.Source, StringComparison.Ordinal);
         }
     }
+
+    [Fact]
+    public void Public_instance_event_reports_OBS9001()
+    {
+        const string userSource =
+            """
+            [Nats]
+            public interface IFeed
+            {
+                event System.Action Tick;
+            }
+            """;
+
+        var output = GeneratorTestHarness.Run(userSource);
+        Assert.Contains(output.Diagnostics, static diagnostic => diagnostic.Id == "OBS9001");
+    }
 }

@@ -10,6 +10,10 @@ namespace Observables.Postgres.Reactive.Generated
 {
     [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
     [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
+#if NET8_0_OR_GREATER
+    [global::System.Diagnostics.CodeAnalysis.RequiresUnreferencedCode("JSON payload serialization uses System.Text.Json reflection. Preserve payload type members when trimming.")]
+    [global::System.Diagnostics.CodeAnalysis.RequiresDynamicCode("JSON payload serialization uses System.Text.Json reflection. Preserve payload type members when trimming.")]
+#endif
     internal sealed class OrderChannelGeneratedProxy : global::IOrderChannel
     {
         private readonly global::Npgsql.NpgsqlConnection _connection;

@@ -118,7 +118,7 @@ public sealed partial class ObservableEventsGenerator
         if (!hierarchy.TryGetValue(type, out var desc))
             return string.Empty;
 
-        var implName = GetEventImplName(type, entryKind);
+        var implName = desc.ImplName;
         var implClass = CreateEventImplClass(type, desc, implName, hierarchy, compilation, reportDiagnostic, entryKind);
         if (CreateEventInterface(desc, hierarchy, compilation, entryKind) is null)
             return string.Empty;

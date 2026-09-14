@@ -34,6 +34,46 @@ public sealed class ObservableEventsGeneratorTests
     }
 
     [Fact]
+    public void Same_named_types_in_different_namespaces_get_distinct_impl_classes()
+    {
+        const string source = """
+            namespace A
+            {
+                public class ClickSource
+                {
+                    public event System.Action? Click;
+                }
+            }
+
+            namespace B
+            {
+                public class ClickSource
+                {
+                    public event System.Action? Click;
+                }
+            }
+
+            public static class Usage
+            {
+                public static void Run(A.ClickSource a, B.ClickSource b)
+                {
+                    _ = a.Events().Click;
+                    _ = b.Events().Click;
+                }
+            }
+            """;
+
+        GeneratorRunOutput output = GeneratorTestHarness.Run(
+            source,
+            generators: [new ObservableEventsGenerator()]);
+        var generated = string.Join("\n", output.GeneratedSources.Select(static s => s.Source));
+
+        Assert.DoesNotContain(output.Diagnostics, static d => d.Id is "CS0101" or "CS0111");
+        Assert.Contains("class A_ClickSourceEventsImpl", generated, StringComparison.Ordinal);
+        Assert.Contains("class B_ClickSourceEventsImpl", generated, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void Generates_Events_wrapper_for_interface_type()
     {
         const string source = """
@@ -297,6 +337,34 @@ public sealed class ObservableEventsGeneratorTests
     }
 
     [Fact]
+    public void Illegal_only_type_does_not_emit_impl_for_missing_interface()
+    {
+        const string source = """
+            namespace Demo;
+
+            public class BadOnly
+            {
+                public event System.Func<int>? Bad;
+            }
+
+            public static class Usage
+            {
+                public static void Run(BadOnly s) => s.Events();
+            }
+            """;
+
+        GeneratorRunOutput output = GeneratorTestHarness.Run(
+            source,
+            generators: [new ObservableEventsGenerator()]);
+        string snapshot = GeneratorTestHarness.ToSnapshot(output);
+
+        Assert.Empty(output.Diagnostics.Where(static d => d.Id == "CS0246"));
+        Assert.Contains("OBS2001", snapshot);
+        Assert.DoesNotContain("IBadOnlyEvents", snapshot);
+        Assert.DoesNotContain("BadOnlyEventsImpl", snapshot);
+    }
+
+    [Fact]
     public void Reports_diagnostic_for_unsupported_from_event_handlers_delegate()
     {
         const string source = """
@@ -412,6 +480,36 @@ public sealed class ObservableEventsGeneratorTests
         Assert.DoesNotContain("IButtonRoutedEvents", snapshot);
     }
 
+    [Fact]
+    public void Wpf_routed_events_subscribe_via_AddHandler()
+    {
+        const string source = WpfStubs + """
+            namespace Demo
+            {
+                public static class Usage
+                {
+                    public static void Run(System.Windows.Controls.Button button)
+                    {
+                        _ = button.RoutedEvents(handledEventsToo: true).Click;
+                        _ = button.RoutedEventHandlers(handledEventsToo: true).Click;
+                    }
+                }
+            }
+            """;
+
+        GeneratorRunOutput output = GeneratorTestHarness.Run(
+            source,
+            generators: [new ObservableEventsGenerator()],
+            useWpf: true,
+            observableRoutedEvents: true);
+        string snapshot = GeneratorTestHarness.ToSnapshot(output);
+
+        Assert.Contains("AddHandler", snapshot);
+        Assert.Contains("RemoveHandler", snapshot);
+        Assert.Contains("_handledEventsToo", snapshot);
+        Assert.DoesNotContain("_sender.Click +=", snapshot);
+        Assert.DoesNotContain("_sender.Click -=", snapshot);
+    }
 
     [Fact]
     public void Parent_event_interface_uses_constructed_type_arguments()

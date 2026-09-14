@@ -310,6 +310,27 @@ public sealed class RedisInterfaceGeneratorTests
     }
 
     [Fact]
+    public void Trailing_nullable_cancellation_token_is_not_emitted_as_subscription_ct()
+    {
+        const string userSource =
+            """
+            [Redis]
+            public interface IHub
+            {
+                [RedisPublish("ping")]
+                Observable<Unit> Publish(string id, CancellationToken? ct);
+            }
+            """;
+
+        var output = GeneratorTestHarness.Run(userSource);
+        Assert.Contains(output.Diagnostics, static diagnostic => diagnostic.Id == "OBS11006");
+        foreach (var source in output.GeneratedSources)
+        {
+            Assert.DoesNotContain("ct = default", source.Source, StringComparison.Ordinal);
+        }
+    }
+
+    [Fact]
     public void Non_trailing_cancellation_token_reports_OBS11001()
     {
         const string userSource =
@@ -343,5 +364,21 @@ public sealed class RedisInterfaceGeneratorTests
         var output = GeneratorTestHarness.Run(userSource);
         var snapshot = GeneratorTestHarness.ToSnapshot(output);
         Assert.Contains(@"FromSubscribe<global::System.String>(_multiplexer, ""a\""b"")", snapshot, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Public_instance_event_reports_OBS11001()
+    {
+        const string userSource =
+            """
+            [Redis]
+            public interface IHub
+            {
+                event System.Action Tick;
+            }
+            """;
+
+        var output = GeneratorTestHarness.Run(userSource);
+        Assert.Contains(output.Diagnostics, static diagnostic => diagnostic.Id == "OBS11001");
     }
 }

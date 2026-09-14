@@ -25,6 +25,7 @@ public sealed partial class ObservableEventsGenerator
         foreach (var type in seedTypes)
             ExpandForInterfaces(type, result, entryKind, compilation, useWpf);
         ResolveInterfaceNameCollisions(result, entryKind);
+        ResolveImplNameCollisions(result, entryKind);
         return result;
     }
 
@@ -126,7 +127,8 @@ public sealed partial class ObservableEventsGenerator
             return ImmutableArray<INamedTypeSymbol>.Empty;
 
         var ifaceName = ComputeRawEventInterfaceName(type, entryKind);
-        result[type] = new EventInterfaceDescriptor(type, ifaceName, exclusiveEvents, parentTypes.ToImmutableArray());
+        var implName = GetEventImplName(type, entryKind);
+        result[type] = new EventInterfaceDescriptor(type, ifaceName, implName, exclusiveEvents, parentTypes.ToImmutableArray());
         return ImmutableArray.Create(type);
     }
 
@@ -199,6 +201,63 @@ public sealed partial class ObservableEventsGenerator
                 desc.InterfaceName = $"{prefix}{suffix}";
             }
         }
+    }
+
+    private static void ResolveImplNameCollisions(
+        Dictionary<INamedTypeSymbol, EventInterfaceDescriptor> hierarchy,
+        ObservableEventsEntryKind entryKind)
+    {
+        var suffix = entryKind switch
+        {
+            ObservableEventsEntryKind.Events => "EventsImpl",
+            ObservableEventsEntryKind.EventHandlers => "EventHandlersImpl",
+            ObservableEventsEntryKind.RoutedEvents => "RoutedEventsImpl",
+            ObservableEventsEntryKind.RoutedEventHandlers => "RoutedEventHandlersImpl",
+            _ => throw new System.ArgumentOutOfRangeException(nameof(entryKind)),
+        };
+
+        var byName = new Dictionary<string, List<INamedTypeSymbol>>(System.StringComparer.Ordinal);
+        foreach (var kvp in hierarchy)
+        {
+            if (!byName.TryGetValue(kvp.Value.ImplName, out var list))
+            {
+                list = new List<INamedTypeSymbol>();
+                byName[kvp.Value.ImplName] = list;
+            }
+
+            list.Add(kvp.Key);
+        }
+
+        foreach (var group in byName.Where(static g => g.Value.Count > 1))
+        {
+            foreach (var type in group.Value)
+            {
+                var desc = hierarchy[type];
+                var identity = TypeIdentityPrefix(type);
+                if (identity.Length == 0)
+                    continue;
+                desc.ImplName = $"{identity}_{type.Name}{suffix}";
+            }
+        }
+    }
+
+    private static string TypeIdentityPrefix(INamedTypeSymbol type)
+    {
+        var nested = string.Empty;
+        var containing = type.ContainingType;
+        while (containing is not null)
+        {
+            nested = nested.Length == 0 ? containing.Name : containing.Name + "_" + nested;
+            containing = containing.ContainingType;
+        }
+
+        if (type.ContainingNamespace is { IsGlobalNamespace: false } ns)
+        {
+            var nsPrefix = ns.ToDisplayString().Replace('.', '_');
+            return nested.Length == 0 ? nsPrefix : nsPrefix + "_" + nested;
+        }
+
+        return nested;
     }
 
     private static string GetEventImplName(INamedTypeSymbol type, ObservableEventsEntryKind entryKind)

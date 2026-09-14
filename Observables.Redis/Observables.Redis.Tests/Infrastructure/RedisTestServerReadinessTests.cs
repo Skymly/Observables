@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Net;
 using System.Net.Sockets;
 
@@ -57,5 +58,27 @@ public sealed class RedisTestServerReadinessTests
                 cancellation,
                 attempts: 3,
                 delayMilliseconds: 10));
+    }
+
+    [Fact]
+    public async Task WaitUntilTcpPortAccepts_pauses_between_immediate_refusals()
+    {
+        var cancellation = TestContext.Current.CancellationToken;
+        var listener = new TcpListener(IPAddress.Loopback, 0);
+        listener.Start();
+        var port = ((IPEndPoint)listener.LocalEndpoint).Port;
+        listener.Stop();
+
+        var started = Stopwatch.StartNew();
+        await Assert.ThrowsAsync<TimeoutException>(
+            () => RedisTestServer.WaitUntilTcpPortAcceptsAsync(
+                port,
+                cancellation,
+                attempts: 4,
+                delayMilliseconds: 50));
+
+        Assert.True(
+            started.ElapsedMilliseconds >= 100,
+            $"expected at least 100ms of retry backoff, elapsed {started.ElapsedMilliseconds}ms");
     }
 }

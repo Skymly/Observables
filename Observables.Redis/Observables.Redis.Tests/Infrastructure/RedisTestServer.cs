@@ -70,6 +70,7 @@ public sealed class RedisTestServer : IAsyncDisposable
             using var attemptCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
             attemptCts.CancelAfter(delayMilliseconds);
             using var client = new TcpClient();
+            var spentAttemptBudget = false;
             try
             {
                 await client.ConnectAsync(IPAddress.Loopback, port, attemptCts.Token).ConfigureAwait(false);
@@ -77,6 +78,7 @@ public sealed class RedisTestServer : IAsyncDisposable
             }
             catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
             {
+                spentAttemptBudget = true;
             }
             catch (ObjectDisposedException)
             {
@@ -87,6 +89,16 @@ public sealed class RedisTestServer : IAsyncDisposable
             catch (SocketException ex)
             {
                 lastError = ex;
+            }
+
+            if (i == attempts - 1)
+            {
+                break;
+            }
+
+            if (!spentAttemptBudget)
+            {
+                await Task.Delay(delayMilliseconds, cancellationToken).ConfigureAwait(false);
             }
         }
 

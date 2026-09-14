@@ -69,7 +69,14 @@ internal static class Parser
                 {
                     throw new InvalidOperationException("fail-safe probe");
                 }
-            });
+            },
+            tryAddOther: (marked, member, _, diagnostics) =>
+                diagnostics.Add(
+                    Diagnostic.Create(
+                        DiagnosticDescriptors.InvalidHubMember,
+                        member.Locations.FirstOrDefault(),
+                        marked.InterfaceSymbol.Name,
+                        member.Name)));
     }
 
     static void TryAddMethod(

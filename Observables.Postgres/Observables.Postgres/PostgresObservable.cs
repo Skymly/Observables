@@ -13,7 +13,7 @@ public static class PostgresObservable
     /// subscription lifetime. Use a dedicated non-pooled connection; do not share it with concurrent commands.
     /// </summary>
     public static Observable<string> FromListen(NpgsqlConnection connection, string channel) =>
-        Observable.Create<string>(async (observer, ct) =>
+        R3AsyncCreate.Create<string>(async (observer, ct) =>
         {
             await PostgresProtocol
                 .ListenAsync(
@@ -34,7 +34,7 @@ public static class PostgresObservable
     [RequiresUnreferencedCode(PostgresTrimAnnotations.JsonPayload)]
     [RequiresDynamicCode(PostgresTrimAnnotations.JsonPayload)]
     public static Observable<T> FromListen<T>(NpgsqlConnection connection, string channel) =>
-        Observable.Create<T>(async (observer, ct) =>
+        R3AsyncCreate.Create<T>(async (observer, ct) =>
         {
             await PostgresProtocol
                 .ListenAsync(

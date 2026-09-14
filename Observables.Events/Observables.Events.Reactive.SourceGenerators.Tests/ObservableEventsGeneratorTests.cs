@@ -298,6 +298,34 @@ public sealed class ObservableEventsGeneratorTests
     }
 
     [Fact]
+    public void Illegal_only_type_does_not_emit_impl_for_missing_interface()
+    {
+        const string source = """
+            namespace Demo;
+
+            public class BadOnly
+            {
+                public event System.Func<int>? Bad;
+            }
+
+            public static class Usage
+            {
+                public static void Run(BadOnly s) => s.Events();
+            }
+            """;
+
+        GeneratorRunOutput output = GeneratorTestHarness.Run(
+            source,
+            generators: [new ObservableEventsGenerator()]);
+        string snapshot = GeneratorTestHarness.ToSnapshot(output);
+
+        Assert.Empty(output.Diagnostics.Where(static d => d.Id == "CS0246"));
+        Assert.Contains("OBS2001", snapshot);
+        Assert.DoesNotContain("IBadOnlyEvents", snapshot);
+        Assert.DoesNotContain("BadOnlyEventsImpl", snapshot);
+    }
+
+    [Fact]
     public void Reports_diagnostic_for_unsupported_from_event_handlers_delegate()
     {
         const string source = """

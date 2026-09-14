@@ -19,6 +19,7 @@
     <Compile Include="..\Observables.SourceGenerators.Shared\IoProxyInterfaceWalk.cs" Link="Shared/IoProxyInterfaceWalk.cs" />
     <Compile Include="..\Observables.SourceGenerators.Shared\IoProxyModelAssembly.cs" Link="Shared/IoProxyModelAssembly.cs" />
     <Compile Include="..\Observables.SourceGenerators.Shared\GeneratorFailSafe.cs" Link="Shared/GeneratorFailSafe.cs" />
+    <Compile Include="..\Observables.SourceGenerators.Shared\IdentifierHelper.cs" Link="Shared/IdentifierHelper.cs" />
     <Compile Include="..\Observables.SourceGenerators.Shared\ImmutableEquatableArray.cs" Link="Shared/ImmutableEquatableArray.cs" />
     <Compile Include="..\Observables.SourceGenerators.Shared\Extensions\INamedTypeSymbolExtensions.cs" Link="Shared/Extensions/INamedTypeSymbolExtensions.cs" />
     <Compile Include="..\Observables.SourceGenerators.Shared\Nullability.cs" Link="Shared/Nullability.cs" />

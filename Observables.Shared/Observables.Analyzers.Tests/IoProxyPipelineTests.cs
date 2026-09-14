@@ -59,6 +59,73 @@ public sealed class IoProxyPipelineTests
     }
 
     [Fact]
+    public void Walk_collects_public_events_and_indexers()
+    {
+        const string source =
+            """
+            using Observables.Mqtt;
+            using System;
+
+            [Mqtt]
+            public interface IWeirdHub
+            {
+                [MqttPublish("x")]
+                void Publish(int id);
+
+                event Action Tick;
+
+                string this[int i] { get; }
+            }
+            """;
+
+        var (compilation, interfaces) = CompileInterfaces(source);
+        var marker = compilation.GetTypeByMetadataName(ProxyDomainTable.Mqtt.InterfaceMarkerMetadataName);
+        Assert.NotNull(marker);
+
+        var marked = IoProxyInterfaceWalk.Collect(compilation, interfaces, marker!, CancellationToken.None);
+        Assert.Single(marked);
+        Assert.Contains(marked[0].PublicInstanceMembers, static member => member is IEventSymbol && member.Name == "Tick");
+        Assert.Contains(marked[0].PublicInstanceMembers, static member => member is IPropertySymbol { IsIndexer: true });
+    }
+
+    [Fact]
+    public void Parse_invokes_tryAddOther_for_events()
+    {
+        const string source =
+            """
+            using Observables.Mqtt;
+            using System;
+
+            [Mqtt]
+            public interface IWeirdHub
+            {
+                event Action Tick;
+            }
+            """;
+
+        var (compilation, interfaces) = CompileInterfaces(source);
+        var marker = compilation.GetTypeByMetadataName(ProxyDomainTable.Mqtt.InterfaceMarkerMetadataName);
+        Assert.NotNull(marker);
+        var marked = IoProxyInterfaceWalk.Collect(compilation, interfaces, marker!, CancellationToken.None);
+
+        var other = new List<ISymbol>();
+        var coreMissing = new DiagnosticDescriptor("TEST000", "c", "{0}", "Test", DiagnosticSeverity.Error, true);
+        IoProxyModelAssembly.Parse<string, string, string>(
+            marked,
+            CancellationToken.None,
+            coreReferenced: true,
+            coreNotReferenced: coreMissing,
+            emptyModel: static () => "",
+            tryAddMethod: static (_, _, _, _) => { },
+            tryAddProperty: static (_, _, _, _) => { },
+            createInterface: static (_, _, _) => "iface",
+            createContext: static _ => "ctx",
+            tryAddOther: (_, member, _, _) => other.Add(member));
+
+        Assert.Contains(other, static member => member is IEventSymbol && member.Name == "Tick");
+    }
+
+    [Fact]
     public void OBS7004_stays_on_the_Grpc_adapter()
     {
         // Shared does not template DiagnosticDescriptors. OBS7004 is the Grpc

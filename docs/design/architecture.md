@@ -8,7 +8,7 @@
 Skymly/Observables/                 # 工作区根（非 git 根）
 ├── Observables/                    # 主仓 — 生成器、运行时、CI、维护者 docs/
 ├── Observables.Docs/               # VitePress 用户文档（英 + zh）
-└── Observables.Samples/              # 16 个示例项目（消费 NuGet）
+└── Observables.Samples/              # 20 个示例项目（十域 R3/Reactive + Events.Routed；尚缺 Redis.Reactive）
 ```
 
 | 仓库 | 受众 | 语言 |
@@ -34,7 +34,7 @@ Observables.<Feature>/
 └── *Tests / *SourceGenerators.Tests
 ```
 
-**Events 例外**：无双后端 shproj；R3 与 Reactive 各一套生成器源码，诊断 OBS2xxx 在域内 `DiagnosticDescriptors.cs`。
+**Events**：与其它域一样有 `Observables.Events.SourceGenerators.Shared` shproj；无域运行时（仅 MSBuild props）。诊断 OBS2xxx 在该 Shared 的 `DiagnosticDescriptors.cs`。
 
 **NuGet 面**：每域仅两个包 ID — `Observables.<Feature>.R3`、`Observables.<Feature>.Reactive`（共 20 包，10 域）。
 

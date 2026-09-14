@@ -17,6 +17,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)Models\WebSocketBoundaryKind.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Models\WebSocketInterfaceModel.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Models\WebSocketMemberModel.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Models\WebSocketSendPayloadKind.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Parser.cs" />
   </ItemGroup>
 </Project>

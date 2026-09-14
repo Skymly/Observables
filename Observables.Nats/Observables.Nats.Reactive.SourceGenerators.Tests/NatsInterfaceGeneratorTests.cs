@@ -103,4 +103,37 @@ public sealed class NatsInterfaceGeneratorTests
             Assert.DoesNotContain("ct = default", source.Source, StringComparison.Ordinal);
         }
     }
+
+    [Fact]
+    public void Public_instance_event_reports_OBS9001()
+    {
+        const string userSource =
+            """
+            [Nats]
+            public interface IFeed
+            {
+                event System.Action Tick;
+            }
+            """;
+
+        var output = GeneratorTestHarness.Run(userSource);
+        Assert.Contains(output.Diagnostics, static diagnostic => diagnostic.Id == "OBS9001");
+    }
+
+    [Fact]
+    public void Missing_reactive_adapter_reports_OBS9005()
+    {
+        const string userSource =
+            """
+            [Nats]
+            public interface IFeed
+            {
+                [NatsSubscribe("orders.>")]
+                IObservable<string> Ping { get; }
+            }
+            """;
+
+        var output = GeneratorTestHarness.RunWithoutReactiveAdapter(userSource);
+        Assert.Contains(output.Diagnostics, static diagnostic => diagnostic.Id == "OBS9005");
+    }
 }

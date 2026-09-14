@@ -69,6 +69,44 @@ public sealed class GrpcInterfaceGeneratorTests
         Assert.DoesNotContain("OBS7005", snapshot, StringComparison.Ordinal);
     }
 
+    [Fact]
+    public void Grpc_interface_OBS7002_when_runtime_missing()
+    {
+        const string userSource =
+            """
+            [Grpc("echo.Echo")]
+            public interface IEchoService
+            {
+                [GrpcUnary("UnaryEcho")]
+                Observable<string> UnaryEcho(string request, CancellationToken cancellationToken = default);
+            }
+            """;
+
+        var output = GeneratorTestHarness.Run(userSource, includeCoreReference: false);
+        var snapshot = GeneratorTestHarness.ToSnapshot(output);
+
+        Assert.Contains("OBS7002", snapshot, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Grpc_interface_OBS7006_on_unary_without_request()
+    {
+        const string userSource =
+            """
+            [Grpc("echo.Echo")]
+            public interface IEchoService
+            {
+                [GrpcUnary("UnaryEcho")]
+                Observable<string> UnaryEcho();
+            }
+            """;
+
+        var output = GeneratorTestHarness.Run(userSource);
+        var snapshot = GeneratorTestHarness.ToSnapshot(output);
+
+        Assert.Contains("OBS7006", snapshot, StringComparison.Ordinal);
+    }
+
     // ── Incremental cache hit tests (D3-A pilot) ──
 
     const string CacheTestSource =
@@ -240,6 +278,27 @@ public sealed class GrpcInterfaceGeneratorTests
     }
 
     [Fact]
+    public void Trailing_nullable_cancellation_token_is_not_emitted_as_subscription_ct()
+    {
+        const string userSource =
+            """
+            [Grpc("echo.Echo")]
+            public interface IEcho
+            {
+                [GrpcUnary("UnaryEcho")]
+                Observable<string> UnaryEcho(string request, CancellationToken? ct);
+            }
+            """;
+
+        var output = GeneratorTestHarness.Run(userSource);
+        Assert.Contains(output.Diagnostics, static diagnostic => diagnostic.Id == "OBS7006");
+        foreach (var source in output.GeneratedSources)
+        {
+            Assert.DoesNotContain("ct = default", source.Source, StringComparison.Ordinal);
+        }
+    }
+
+    [Fact]
     public void Non_trailing_cancellation_token_reports_OBS7001()
     {
         const string userSource =
@@ -289,5 +348,21 @@ public sealed class GrpcInterfaceGeneratorTests
             """;
         var output = GeneratorTestHarness.Run(userSource);
         return Verifier.Verify(GeneratorTestHarness.ToSnapshot(output));
+    }
+
+    [Fact]
+    public void Public_instance_event_reports_OBS7001()
+    {
+        const string userSource =
+            """
+            [Grpc("echo.Echo")]
+            public interface IEcho
+            {
+                event System.Action Tick;
+            }
+            """;
+
+        var output = GeneratorTestHarness.Run(userSource);
+        Assert.Contains(output.Diagnostics, static diagnostic => diagnostic.Id == "OBS7001");
     }
 }

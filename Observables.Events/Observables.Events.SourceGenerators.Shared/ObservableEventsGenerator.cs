@@ -64,13 +64,11 @@ public sealed partial class ObservableEventsGenerator : IIncrementalGenerator
                 var candidates = triple.Left.Left;
                 var compilation = triple.Left.Right;
                 var config = triple.Right;
-                var observableRoutedEvents = config.ObservableRoutedEvents
-                    || IsGeneratorTestRoutedGeneration(compilation, candidates);
                 return (
                     Candidates: candidates,
                     Compilation: compilation,
                     UseWpf: config.UseWpf,
-                    ObservableRoutedEvents: observableRoutedEvents);
+                    ObservableRoutedEvents: config.ObservableRoutedEvents);
             });
 
         var parseStep = pipeline
@@ -173,32 +171,4 @@ public sealed partial class ObservableEventsGenerator : IIncrementalGenerator
                     exception.Message),
             }.ToImmutableEquatableArray());
 
-    private static bool IsGeneratorTestRoutedGeneration(Compilation compilation, ImmutableArray<SyntaxNode> candidates)
-    {
-        if (string.Equals(compilation.AssemblyName, "Observables.Samples.Events.Routed", System.StringComparison.Ordinal))
-        {
-            return true;
-        }
-
-        if (!string.Equals(compilation.AssemblyName, "GeneratorTests", System.StringComparison.Ordinal))
-        {
-            return false;
-        }
-
-        return candidates.Any(static c => c is InvocationExpressionSyntax invocation
-            && IsRoutedEntryInvocationName(invocation));
-    }
-
-    private static bool IsRoutedEntryInvocationName(InvocationExpressionSyntax invocation)
-    {
-        if (invocation.Expression is not MemberAccessExpressionSyntax memberAccess)
-        {
-            return false;
-        }
-
-        return memberAccess.Name.Identifier.ValueText is ObservableEventsConstants.RoutedEventsEntryMethodName
-            or ObservableEventsConstants.RoutedEventHandlersEntryMethodName
-            or ObservableEventsConstants.AttachedRoutedEventEntryMethodName
-            or ObservableEventsConstants.AttachedRoutedEventHandlerEntryMethodName;
-    }
 }

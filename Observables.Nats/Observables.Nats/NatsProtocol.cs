@@ -64,6 +64,7 @@ internal static class NatsProtocol
         await foreach (var msg in connection.SubscribeAsync<T>(subject, cancellationToken: cancellationToken)
                            .ConfigureAwait(false))
         {
+            msg.EnsureSuccess();
             onNext(msg.Data!);
         }
 

@@ -124,6 +124,82 @@ public sealed class RuntimeTests
     }
 
     [Fact]
+    public async Task TaskDelete_timeout_like_cancel_throws_ApiRequestException()
+    {
+        using var handler = new TimeoutLikeHandler();
+        using var client = new HttpClient(handler) { BaseAddress = new Uri("https://api.example.com") };
+        var api = RestService.For<IUserApi>(client);
+
+        var ex = await Assert.ThrowsAsync<ApiRequestException>(
+            () => api.DeleteUser(1, TestContext.Current.CancellationToken));
+        Assert.IsType<TaskCanceledException>(ex.InnerException);
+    }
+
+    [Fact]
+    public async Task For_hostUrl_keeps_base_path()
+    {
+        var mockHttp = new MockHttpMessageHandler();
+        mockHttp.When(HttpMethod.Get, "https://api.example.com/api/v1/users/42")
+            .Respond(HttpStatusCode.OK, "application/json", """{"id":42,"name":"Ada"}""");
+
+        var settings = new RestApiSettings
+        {
+            HttpMessageHandlerFactory = () => mockHttp,
+        };
+        var api = RestService.For<IUserApi>("https://api.example.com/api/v1", settings);
+        User user = await api.GetUser(42, TestContext.Current.CancellationToken);
+
+        Assert.Equal(42, user.Id);
+    }
+
+    [Fact]
+    public async Task Path_AliasAs_binds_placeholder()
+    {
+        var mockHttp = new MockHttpMessageHandler();
+        mockHttp.When(HttpMethod.Get, "https://api.example.com/users/42")
+            .Respond(HttpStatusCode.OK, "application/json", """{"id":42,"name":"Ada"}""");
+
+        var client = mockHttp.ToHttpClient();
+        client.BaseAddress = new Uri("https://api.example.com");
+        var api = RestService.For<IAliasedUserApi>(client);
+
+        User user = await api.GetUser(42, TestContext.Current.CancellationToken);
+        Assert.Equal(42, user.Id);
+    }
+
+    [Fact]
+    public async Task For_closed_generic_interface_creates_client()
+    {
+        var mockHttp = new MockHttpMessageHandler();
+        mockHttp.When(HttpMethod.Get, "https://api.example.com/items/7")
+            .Respond(HttpStatusCode.OK, "application/json", """{"id":7,"name":"Ada"}""");
+
+        var client = mockHttp.ToHttpClient();
+        client.BaseAddress = new Uri("https://api.example.com");
+        var api = RestService.For<IGenericApi<User>>(client);
+
+        User user = await api.Get(7, TestContext.Current.CancellationToken);
+        Assert.Equal(7, user.Id);
+    }
+
+    [Fact]
+    public async Task IsReceived_does_not_imply_Content()
+    {
+        var mockHttp = new MockHttpMessageHandler();
+        mockHttp.When(HttpMethod.Get, "https://api.example.com/users/1")
+            .Respond(HttpStatusCode.OK, "application/json", "null");
+
+        var client = mockHttp.ToHttpClient();
+        client.BaseAddress = new Uri("https://api.example.com");
+        var api = RestService.For<IUserApi>(client);
+
+        IApiResponse<User> response = await api.GetUserResponse(1, TestContext.Current.CancellationToken);
+
+        Assert.True(response.IsReceived);
+        Assert.Null(response.Content);
+    }
+
+    [Fact]
     public async Task IApiResponse_timeout_like_cancel_stores_ApiRequestException()
     {
         using var handler = new TimeoutLikeHandler();
@@ -325,8 +401,23 @@ public sealed class RuntimeTests
         [Get("/users/{id}")]
         Observable<User> GetUserObservable(int id, CancellationToken cancellationToken = default);
 
+        [Delete("/users/{id}")]
+        Task DeleteUser(int id, CancellationToken cancellationToken = default);
+
         [Get("/search")]
         Task<string> Search([Query] string q, CancellationToken cancellationToken = default);
+    }
+
+    public interface IAliasedUserApi
+    {
+        [Get("/users/{id}")]
+        Task<User> GetUser([AliasAs("id")] int userId, CancellationToken cancellationToken = default);
+    }
+
+    public interface IGenericApi<T>
+    {
+        [Get("/items/{id}")]
+        Task<T> Get(int id, CancellationToken cancellationToken = default);
     }
 
     public interface IDisposableUserApi : IDisposable

@@ -15,7 +15,7 @@ public sealed class RestApiProtocolTests
         var bound = RestApiProtocol.Bind(new RestApiSettings(), spec, [42]);
 
         Assert.Equal(HttpMethod.Get, bound.Message.Method);
-        Assert.Equal("/users/42", bound.RelativeUri);
+        Assert.Equal("users/42", bound.RelativeUri);
         Assert.False(bound.BodyBuffered);
     }
 
@@ -30,7 +30,7 @@ public sealed class RestApiProtocolTests
         var bound = RestApiProtocol.Bind(new RestApiSettings(), spec, ["abc"]);
 
         Assert.Equal("PURGE", bound.Message.Method.Method);
-        Assert.Equal("/cache/abc", bound.RelativeUri);
+        Assert.Equal("cache/abc", bound.RelativeUri);
     }
 
     [Fact]
@@ -47,7 +47,7 @@ public sealed class RestApiProtocolTests
 
         var bound = RestApiProtocol.Bind(new RestApiSettings(), spec, ["skymly", "observables", "open"]);
 
-        Assert.Equal("/repos/skymly/observables/issues?state=open", bound.RelativeUri);
+        Assert.Equal("repos/skymly/observables/issues?state=open", bound.RelativeUri);
     }
 
     [Fact]

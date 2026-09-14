@@ -98,11 +98,9 @@ namespace Observables.RestAPI
         /// <inheritdoc />
 #if NET6_0_OR_GREATER
         [MemberNotNullWhen(true, nameof(Headers))]
-        [MemberNotNullWhen(true, nameof(Content))]
         [MemberNotNullWhen(true, nameof(ContentHeaders))]
         [MemberNotNullWhen(true, nameof(StatusCode))]
         [MemberNotNullWhen(true, nameof(Version))]
-        [MemberNotNullWhen(false, nameof(Error))]
 #endif
         public bool IsReceived => response != null;
 
@@ -372,7 +370,6 @@ namespace Observables.RestAPI
         [MemberNotNullWhen(true, nameof(ContentHeaders))]
         [MemberNotNullWhen(true, nameof(StatusCode))]
         [MemberNotNullWhen(true, nameof(Version))]
-        [MemberNotNullWhen(false, nameof(Error))]
 #endif
         bool IsReceived { get; }
 

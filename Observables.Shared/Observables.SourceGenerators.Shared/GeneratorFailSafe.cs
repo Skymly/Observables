@@ -29,14 +29,15 @@ internal static class GeneratorFailSafe
         }
     }
 
-    public static (List<Diagnostic> diagnostics, TModel model) ExecuteParse<TModel>(
+    public static (ImmutableEquatableArray<Diagnostic> diagnostics, TModel model) ExecuteParse<TModel>(
         Func<(List<Diagnostic> diagnostics, TModel model)> parse,
         DiagnosticDescriptor internalErrorDescriptor,
         Func<TModel> emptyModel)
     {
         try
         {
-            return parse();
+            var (diagnostics, model) = parse();
+            return (diagnostics.ToImmutableEquatableArray(), model);
         }
         catch (OperationCanceledException)
         {
@@ -44,7 +45,9 @@ internal static class GeneratorFailSafe
         }
         catch (Exception exception)
         {
-            return (new List<Diagnostic> { CreateInternalError(internalErrorDescriptor, exception) }, emptyModel());
+            return (
+                new[] { CreateInternalError(internalErrorDescriptor, exception) }.ToImmutableEquatableArray(),
+                emptyModel());
         }
     }
 }

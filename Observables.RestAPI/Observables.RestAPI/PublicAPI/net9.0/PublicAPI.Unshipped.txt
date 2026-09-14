@@ -1,1 +1,2 @@
 #nullable enable
+static Observables.RestAPI.RestService.RegisterGeneratedFactory(System.Type! interfaceType, System.Func<System.Type!, System.Net.Http.HttpClient!, Observables.RestAPI.RestApiSettings?, object!>! factory) -> void

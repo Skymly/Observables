@@ -127,7 +127,7 @@ internal static partial class Parser
             var classification = ClassifyParameter(methodSymbol.Parameters[i], i);
             classifications.Add(classification);
             slots.Add(new RestApiParameterSlot(
-                methodSymbol.Parameters[i].Name,
+                classification.AliasAs ?? methodSymbol.Parameters[i].Name,
                 ToDeclaredKind(classification.Kind)));
         }
 
@@ -152,7 +152,8 @@ internal static partial class Parser
             var classification = classifications[i];
             var param = methodSymbol.Parameters[i];
 
-            if (classification.Kind == ParameterKind.None && occupancy.PathKindNames.Contains(param.Name))
+            if (classification.Kind == ParameterKind.None
+                && occupancy.PathKindNames.Contains(classification.AliasAs ?? param.Name))
                 classification.Kind = ParameterKind.Path;
             else if (isMultipart && classification.Kind == ParameterKind.None)
                 classification.Kind = ParameterKind.Multipart;
@@ -199,6 +200,7 @@ internal static partial class Parser
         var name = classification.Kind switch
         {
             ParameterKind.Query => classification.AliasAs ?? metadataName,
+            ParameterKind.Path => classification.AliasAs ?? metadataName,
             ParameterKind.Header => classification.HeaderName ?? metadataName,
             ParameterKind.Property => classification.PropertyKey ?? metadataName,
             _ => metadataName,

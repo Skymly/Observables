@@ -46,18 +46,11 @@ public static class NatsObservable
     [RequiresDynamicCode("NATS payload serialization may use reflection.")]
 #endif
     public static Observable<T> FromSubscribe<T>(INatsConnection connection, string subject) =>
-        Observable.Create<T>(async (observer, ct) =>
+        R3AsyncCreate.Create<T>(async (observer, ct) =>
         {
-            try
-            {
-                await NatsProtocol
-                    .SubscribeAsync<T>(connection, subject, observer.OnNext, observer.OnCompleted, ct)
-                    .ConfigureAwait(false);
-            }
-            catch (Exception ex) when (ex is not OperationCanceledException)
-            {
-                observer.OnErrorResume(ex);
-            }
+            await NatsProtocol
+                .SubscribeAsync<T>(connection, subject, observer.OnNext, observer.OnCompleted, ct)
+                .ConfigureAwait(false);
         });
 
 #if NET8_0_OR_GREATER

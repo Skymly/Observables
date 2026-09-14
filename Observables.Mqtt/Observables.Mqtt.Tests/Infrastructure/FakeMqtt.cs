@@ -24,6 +24,8 @@ public class FakeMqttClientProxy : DispatchProxy
 
     public bool RejectSubscribe { get; set; }
 
+    public int SubscribeDelayMilliseconds { get; set; }
+
     public int SubscribeCalls;
 
     public int UnsubscribeCalls;
@@ -74,8 +76,14 @@ public class FakeMqttClientProxy : DispatchProxy
                     ? MqttClientSubscribeResultCode.UnspecifiedError
                     : MqttClientSubscribeResultCode.GrantedQoS0;
                 var item = new MqttClientSubscribeResultItem(filter, code);
-                return Task.FromResult(
-                    new MqttClientSubscribeResult(0, [item], string.Empty, Array.Empty<MqttUserProperty>()));
+                var result = new MqttClientSubscribeResult(0, [item], string.Empty, Array.Empty<MqttUserProperty>());
+                var cancellation = SubscribeCancellation(args);
+                if (SubscribeDelayMilliseconds <= 0)
+                {
+                    return Task.FromResult(result);
+                }
+
+                return DelaySubscribeAsync(result, cancellation);
             case nameof(IMqttClient.UnsubscribeAsync):
                 Interlocked.Increment(ref UnsubscribeCalls);
                 BrokerUnsubscribed = true;
@@ -85,6 +93,24 @@ public class FakeMqttClientProxy : DispatchProxy
             default:
                 throw new NotSupportedException(targetMethod?.Name);
         }
+    }
+
+    async Task<MqttClientSubscribeResult> DelaySubscribeAsync(
+        MqttClientSubscribeResult result,
+        CancellationToken cancellationToken)
+    {
+        await Task.Delay(SubscribeDelayMilliseconds, cancellationToken).ConfigureAwait(false);
+        return result;
+    }
+
+    static CancellationToken SubscribeCancellation(object?[]? args)
+    {
+        if (args is { Length: > 1 } && args[1] is CancellationToken cancellationToken)
+        {
+            return cancellationToken;
+        }
+
+        return default;
     }
 
     static MqttTopicFilter TopicFilter(object?[]? args)

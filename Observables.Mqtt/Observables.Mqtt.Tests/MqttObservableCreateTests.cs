@@ -39,14 +39,41 @@ public sealed class MqttObservableCreateTests
         Assert.Equal(0, Volatile.Read(ref proxy.UnsubscribeCalls));
     }
 
-    static async Task WaitForHandlers(FakeMqttClientProxy proxy, int count)
+    [Fact]
+    public async Task FromSubscribe_dispose_unsubscribes_when_subscribe_is_still_in_flight()
+    {
+        var proxy = FakeMqtt.Create();
+        proxy.SubscribeDelayMilliseconds = 200;
+        var subscription = MqttObservable.FromSubscribe<string>(proxy.AsClient(), "orders").Subscribe(_ => { });
+        try
+        {
+            await WaitUntil(
+                () => Volatile.Read(ref proxy.SubscribeCalls) >= 1,
+                "SubscribeCalls");
+            subscription.Dispose();
+            await WaitUntil(
+                () => Volatile.Read(ref proxy.UnsubscribeCalls) >= 1,
+                "UnsubscribeCalls");
+        }
+        finally
+        {
+            subscription.Dispose();
+        }
+
+        Assert.Equal(1, Volatile.Read(ref proxy.UnsubscribeCalls));
+    }
+
+    static Task WaitForHandlers(FakeMqttClientProxy proxy, int count) =>
+        WaitUntil(() => Volatile.Read(ref proxy.HandlerCount) >= count, "Handlers");
+
+    static async Task WaitUntil(Func<bool> condition, string name)
     {
         var deadline = DateTime.UtcNow + TimeSpan.FromSeconds(2);
-        while (Volatile.Read(ref proxy.HandlerCount) < count)
+        while (!condition())
         {
             if (DateTime.UtcNow >= deadline)
             {
-                throw new TimeoutException($"Handlers={Volatile.Read(ref proxy.HandlerCount)}");
+                throw new TimeoutException($"{name} did not reach the expected state.");
             }
 
             await Task.Delay(10, TestContext.Current.CancellationToken);

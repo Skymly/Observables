@@ -70,7 +70,6 @@ internal static class MqttProtocol
 
         var key = new FilterKey(client, topicFilter);
         var gate = Filters.GetOrAdd(key, static _ => new FilterGate());
-        var joinedBroker = false;
 
         client.ApplicationMessageReceivedAsync += Handler;
         try
@@ -81,14 +80,13 @@ internal static class MqttProtocol
                 gate.Count++;
                 if (gate.Count == 1)
                 {
-                    gate.SubscribeTask = SubscribeBrokerAsync(client, topicFilter, cancellationToken);
+                    gate.SubscribeTask = SubscribeBrokerAsync(client, topicFilter, CancellationToken.None);
                 }
 
                 subscribeTask = gate.SubscribeTask;
             }
 
             await subscribeTask.ConfigureAwait(false);
-            joinedBroker = true;
 
             await Task.Delay(Timeout.Infinite, cancellationToken).ConfigureAwait(false);
         }
@@ -96,9 +94,11 @@ internal static class MqttProtocol
         {
             client.ApplicationMessageReceivedAsync -= Handler;
             var shouldUnsubscribe = false;
+            Task subscribeTask;
             lock (gate.Sync)
             {
                 gate.Count--;
+                subscribeTask = gate.SubscribeTask;
                 if (gate.Count <= 0)
                 {
                     shouldUnsubscribe = true;
@@ -106,16 +106,17 @@ internal static class MqttProtocol
                 }
             }
 
-            if (shouldUnsubscribe && joinedBroker)
+            if (shouldUnsubscribe)
             {
                 try
                 {
+                    await subscribeTask.ConfigureAwait(false);
                     using var unsubCts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
                     await client.UnsubscribeAsync(topicFilter, unsubCts.Token).ConfigureAwait(false);
                 }
                 catch (Exception)
                 {
-                    // best-effort if the client is already down
+                    // best-effort if the client is already down or subscribe never completed
                 }
             }
         }

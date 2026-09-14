@@ -15,6 +15,7 @@
 
   <ItemGroup>
     <InternalsVisibleTo Include="Observables.Postgres.Reactive" />
+    <InternalsVisibleTo Include="Observables.Postgres.Tests" />
   </ItemGroup>
 
 

@@ -8,4 +8,5 @@ internal sealed record WebSocketMemberModel(
     string ResultTypeDisplay,
     ImmutableEquatableArray<string> ParameterDeclarations,
     ImmutableEquatableArray<string> ParameterNames,
-    string? CancellationTokenParameterName);
+    string? CancellationTokenParameterName,
+    WebSocketSendPayloadKind SendPayloadKind);

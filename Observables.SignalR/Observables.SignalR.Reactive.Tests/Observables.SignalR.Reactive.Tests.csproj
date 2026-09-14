@@ -29,6 +29,7 @@
 
   <ItemGroup>
     <Compile Include="..\Observables.SignalR.Tests\Infrastructure\E2ETestHub.cs" Link="Infrastructure\E2ETestHub.cs" />
+    <Compile Include="..\Observables.SignalR.Tests\Infrastructure\HubConnectionOnHandlers.cs" Link="Infrastructure\HubConnectionOnHandlers.cs" />
     <Compile Include="..\Observables.SignalR.Tests\Infrastructure\SignalRTestServer.cs" Link="Infrastructure\SignalRTestServer.cs" />
     <Compile Include="..\Observables.SignalR.Tests\Infrastructure\SignalRTestServerFixture.cs" Link="Infrastructure\SignalRTestServerFixture.cs" />
     <Compile Include="..\Observables.SignalR.Tests\Infrastructure\HubConnectionAsyncDisposableExtensions.cs" Link="Infrastructure\HubConnectionAsyncDisposableExtensions.cs" />

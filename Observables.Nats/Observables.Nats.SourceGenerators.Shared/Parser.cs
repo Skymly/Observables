@@ -60,7 +60,14 @@ internal static class Parser
                 BackendTokens.QualifyGeneratedNamespace("Observables.Nats"),
                 members,
                 marked.Nullability),
-            createContext: static interfaces => new ContextGenerationModel(interfaces));
+            createContext: static interfaces => new ContextGenerationModel(interfaces),
+            tryAddOther: (marked, member, _, diagnostics) =>
+                diagnostics.Add(
+                    Diagnostic.Create(
+                        DiagnosticDescriptors.InvalidNatsMember,
+                        member.Locations.FirstOrDefault(),
+                        marked.InterfaceSymbol.Name,
+                        member.Name)));
     }
 
     static void TryAddMethod(

@@ -136,6 +136,8 @@ internal sealed class RoutedEventsImpl_Control : IRoutedEventsInterface_Control>
 
 `routes` 对应 `RoutingStrategies`，`handledEventsToo` 控制是否接收已处理事件。
 
+WPF 无 `RoutingStrategies` 参数；`UseWPF=true` 时生成 `AddHandler(routedEvent, handler, handledEventsToo)` / `RemoveHandler`，不回退 CLR `+=`。
+
 ### 5.4 附加路由事件
 
 ```csharp

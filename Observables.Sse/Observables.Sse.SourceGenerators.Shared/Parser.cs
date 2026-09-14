@@ -45,7 +45,14 @@ internal static class Parser
                 BackendTokens.QualifyGeneratedNamespace("Observables.Sse"),
                 members,
                 marked.Nullability),
-            createContext: static interfaces => new ContextGenerationModel(interfaces));
+            createContext: static interfaces => new ContextGenerationModel(interfaces),
+            tryAddOther: (marked, member, _, diagnostics) =>
+                diagnostics.Add(
+                    Diagnostic.Create(
+                        DiagnosticDescriptors.InvalidSseMember,
+                        member.Locations.FirstOrDefault(),
+                        marked.InterfaceSymbol.Name,
+                        member.Name)));
     }
 
     static void TryAddMethod(

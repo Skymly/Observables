@@ -172,4 +172,37 @@ public sealed class RedisInterfaceGeneratorTests
             Assert.DoesNotContain("ct = default", source.Source, StringComparison.Ordinal);
         }
     }
+
+    [Fact]
+    public void Public_instance_event_reports_OBS11001()
+    {
+        const string userSource =
+            """
+            [Redis]
+            public interface IHub
+            {
+                event System.Action Tick;
+            }
+            """;
+
+        var output = GeneratorTestHarness.Run(userSource);
+        Assert.Contains(output.Diagnostics, static diagnostic => diagnostic.Id == "OBS11001");
+    }
+
+    [Fact]
+    public void Missing_reactive_adapter_reports_OBS11005()
+    {
+        const string userSource =
+            """
+            [Redis]
+            public interface INewsHub
+            {
+                [RedisSubscribe("news.alerts")]
+                IObservable<string> Alerts { get; }
+            }
+            """;
+
+        var output = GeneratorTestHarness.RunWithoutReactiveAdapter(userSource);
+        Assert.Contains(output.Diagnostics, static diagnostic => diagnostic.Id == "OBS11005");
+    }
 }

@@ -36,7 +36,10 @@ internal static class Emitter
                 "_connection",
                 "connection"),
             model.Members.AsArray(),
-            EmitMember);
+            EmitMember,
+            trim: new ProxyClassEmitter.TrimWarnings(
+                "JSON payload serialization uses System.Text.Json reflection. Preserve payload type members when trimming.",
+                "JSON payload serialization uses System.Text.Json reflection. Preserve payload type members when trimming."));
 
     static void EmitMember(SourceWriter writer, PostgresMemberModel member)
     {

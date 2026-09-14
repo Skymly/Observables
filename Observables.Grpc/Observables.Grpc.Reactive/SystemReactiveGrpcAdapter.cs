@@ -99,10 +99,9 @@ public static class SystemReactiveGrpcAdapter
                     ex => writeCompleted.TrySetException(ex),
                     () => writeCompleted.TrySetResult(true));
 
-                var readTask = GrpcProtocol.ReadResponsesAsync(call.ResponseStream, observer.OnNext, linked.Token);
-                await writeCompleted.Task.ConfigureAwait(false);
-                await writer.CompleteAsync().ConfigureAwait(false);
-                await readTask.ConfigureAwait(false);
+                await GrpcProtocol
+                    .PumpStreamingCallAsync(writer, writeCompleted.Task, call.ResponseStream, observer.OnNext, linked.Token)
+                    .ConfigureAwait(false);
                 observer.OnCompleted();
             }
             catch (OperationCanceledException)

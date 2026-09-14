@@ -28,8 +28,29 @@ internal static class GeneratorTestHarness
                 WriteNoneForEmptyDiagnostics: false,
                 DiagnosticIdComparer: Comparer<string>.Default)));
 
+    static readonly GeneratorHarness HarnessWithoutReactiveAdapter = new(
+        new GeneratorHarnessDefinition(
+            HarnessDocumentBuilder.Create(
+                "System",
+                "Observables.Mqtt",
+                "MQTTnet.Client"),
+            _ => MetadataReferenceBuilder.Build(
+                "Observables.Mqtt.Reactive.dll",
+                typeof(global::System.Reactive.Unit),
+                typeof(global::Observables.Mqtt.MqttService),
+                typeof(global::MQTTnet.MqttFactory)),
+            static () => [new MqttInterfaceStubGenerator()],
+            new SnapshotOptions(
+                "OBS5",
+                DeduplicateDiagnostics: false,
+                WriteNoneForEmptyDiagnostics: false,
+                DiagnosticIdComparer: Comparer<string>.Default)));
+
     internal static GeneratorRunOutput Run(string userSource) =>
         Harness.Run(userSource);
+
+    internal static GeneratorRunOutput RunWithoutReactiveAdapter(string userSource) =>
+        HarnessWithoutReactiveAdapter.Run(userSource);
 
     internal static CacheTrackingDriver RunWithCacheTracking(string userSource) =>
         Harness.RunWithCacheTracking(userSource);

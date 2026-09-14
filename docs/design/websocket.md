@@ -73,6 +73,7 @@ Observable<string> Messages { get; }
 - 缓存（惰性 `??=`）：每个代理实例一次订阅。
 - 载荷反序列化为 `T`：`byte[]`（原始）、`string`（UTF-8）或 JSON（net8+）。
 - 当服务器发送 Close 帧时完成。
+- 重组后的单条消息默认上限 **1 MiB**（`WebSocketObservable.DefaultMaxReceiveMessageBytes`）。`FromReceive(socket, maxMessageBytes)` 可覆盖。超出则接收流以错误完成，避免无界缓冲。
 
 ## 5. 诊断 ID（OBS6xxx）
 

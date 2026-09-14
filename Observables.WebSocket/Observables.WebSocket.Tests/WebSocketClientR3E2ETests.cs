@@ -78,4 +78,40 @@ public sealed class WebSocketClientR3E2ETests(WebSocketTestServerFixture fixture
         Assert.Equal(expected.Length, received.Length);
         Assert.Equal(expected, received);
     }
+
+    [Fact]
+    public async Task FromReceive_message_over_cap_completes_with_error()
+    {
+        using var socket = new ClientWebSocket();
+        using var cts = new CancellationTokenSource(DefaultTimeout);
+        await socket.ConnectAsync(fixture.Server.Uri, cts.Token);
+
+        var observer = new RecordingObserver<string>();
+        using var subscription = WebSocketObservable.FromReceive<string>(socket, maxMessageBytes: 16).Subscribe(observer);
+
+        var payload = Encoding.UTF8.GetBytes(new string('x', 64));
+        await socket.SendAsync(new ArraySegment<byte>(payload), WebSocketMessageType.Text, true, cts.Token);
+
+        var result = await observer.Completed.WaitAsync(cts.Token);
+        Assert.True(result.IsFailure);
+        Assert.IsAssignableFrom<InvalidOperationException>(result.Exception);
+        Assert.Contains("maximum size", result.Exception.Message, StringComparison.Ordinal);
+    }
+
+    sealed class RecordingObserver<T> : Observer<T>
+    {
+        readonly TaskCompletionSource<Result> _completed = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        public Task<Result> Completed => _completed.Task;
+
+        protected override void OnNextCore(T value)
+        {
+        }
+
+        protected override void OnErrorResumeCore(Exception error)
+        {
+        }
+
+        protected override void OnCompletedCore(Result result) => _completed.TrySetResult(result);
+    }
 }

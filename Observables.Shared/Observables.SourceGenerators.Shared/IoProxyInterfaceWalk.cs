@@ -101,7 +101,7 @@ internal static class IoProxyInterfaceWalk
                 continue;
             }
 
-            if (member is not (IMethodSymbol { MethodKind: MethodKind.Ordinary } or IPropertySymbol))
+            if (member is not (IMethodSymbol { MethodKind: MethodKind.Ordinary } or IPropertySymbol or IEventSymbol))
             {
                 continue;
             }

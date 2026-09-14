@@ -51,18 +51,30 @@ public static class WebSocketObservable
             return Unit.Default;
         });
 
+    /// <summary>Default reassembled-receive cap (1 MiB). Exceeding it completes the receive stream with an error.</summary>
+    public const int DefaultMaxReceiveMessageBytes = WebSocketProtocol.DefaultMaxReceiveMessageBytes;
+
 #if NET8_0_OR_GREATER
     [RequiresUnreferencedCode("JSON payload deserialization uses System.Text.Json reflection. Preserve payload type members when trimming.")]
     [RequiresDynamicCode("JSON payload deserialization uses System.Text.Json reflection.")]
 #endif
     public static Observable<T> FromReceive<T>(ClientWebSocket socket) =>
+        FromReceive<T>(socket, DefaultMaxReceiveMessageBytes);
+
+#if NET8_0_OR_GREATER
+    [RequiresUnreferencedCode("JSON payload deserialization uses System.Text.Json reflection. Preserve payload type members when trimming.")]
+    [RequiresDynamicCode("JSON payload deserialization uses System.Text.Json reflection.")]
+#endif
+    public static Observable<T> FromReceive<T>(ClientWebSocket socket, int maxMessageBytes) =>
         Observable.Create<T>(async (observer, ct) =>
         {
             while (!ct.IsCancellationRequested && socket.State == WebSocketState.Open)
             {
                 try
                 {
-                    var message = await WebSocketProtocol.ReceiveMessageAsync(socket, ct).ConfigureAwait(false);
+                    var message = await WebSocketProtocol
+                        .ReceiveMessageAsync(socket, ct, maxMessageBytes)
+                        .ConfigureAwait(false);
                     if (message is null)
                     {
                         observer.OnCompleted();
@@ -73,6 +85,11 @@ public static class WebSocketObservable
                 }
                 catch (OperationCanceledException)
                 {
+                    return;
+                }
+                catch (WebSocketProtocol.MessageTooLargeException ex)
+                {
+                    observer.OnCompleted(Result.Failure(ex));
                     return;
                 }
                 catch (Exception ex)

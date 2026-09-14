@@ -107,11 +107,8 @@ internal static class Emitter
                     else if (member.ParameterNames.Count == 1)
                     {
                         var paramName = member.ParameterNames.AsArray()[0];
-                        var paramDecl = member.ParameterDeclarations.Count > 0
-                            ? member.ParameterDeclarations.AsArray()[0]
-                            : string.Empty;
 
-                        if (paramDecl.Contains("string") || paramDecl.Contains("String"))
+                        if (member.SendPayloadKind == WebSocketSendPayloadKind.Text)
                         {
                             // string → Text frame
                             writer.WriteLine(
@@ -121,7 +118,7 @@ internal static class Emitter
 
                             """);
                         }
-                        else if (paramDecl.Contains("byte[]") || paramDecl.Contains("Byte[]"))
+                        else if (member.SendPayloadKind == WebSocketSendPayloadKind.Binary)
                         {
                             // byte[] → Binary frame
                             writer.WriteLine(

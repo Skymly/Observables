@@ -59,6 +59,52 @@ public sealed class WebSocketInterfaceGeneratorTests
     }
 
     [Fact]
+    public void Int_send_named_valueAsString_serializes_json_instead_of_text_frame()
+    {
+        const string userSource =
+            """
+            [WebSocket]
+            public interface IFeed
+            {
+                [WebSocketSend]
+                IObservable<Unit> Send(int valueAsString);
+
+                [WebSocketReceive]
+                IObservable<string> Incoming { get; }
+            }
+            """;
+
+        var output = GeneratorTestHarness.Run(userSource);
+        var source = string.Join("\n", output.GeneratedSources.Select(static s => s.Source));
+        Assert.DoesNotContain(output.Diagnostics, static d => d.Id == "CS1503");
+        Assert.DoesNotContain("FromSendText(_socket, valueAsString", source, StringComparison.Ordinal);
+        Assert.Contains("JsonSerializer.Serialize(valueAsString)", source, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Byte_array_send_uses_binary_frame()
+    {
+        const string userSource =
+            """
+            [WebSocket]
+            public interface IFeed
+            {
+                [WebSocketSend]
+                IObservable<Unit> Send(byte[] payloadAsString);
+
+                [WebSocketReceive]
+                IObservable<string> Incoming { get; }
+            }
+            """;
+
+        var output = GeneratorTestHarness.Run(userSource);
+        var snapshot = GeneratorTestHarness.ToSnapshot(output);
+        Assert.DoesNotContain("OBS6", snapshot, StringComparison.Ordinal);
+        Assert.Contains("FromSend(_socket, payloadAsString", snapshot, StringComparison.Ordinal);
+        Assert.DoesNotContain("FromSendText(_socket, payloadAsString", snapshot, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void Interface_without_WebSocket_attribute_produces_no_output()
     {
         // An interface without [WebSocket] is simply ignored by the generator; no diagnostics, no generated source.
@@ -94,6 +140,27 @@ public sealed class WebSocketInterfaceGeneratorTests
         var snapshot = GeneratorTestHarness.ToSnapshot(output);
 
         Assert.Contains("OBS6001", snapshot, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Trailing_nullable_cancellation_token_is_not_emitted_as_subscription_ct()
+    {
+        const string userSource =
+            """
+            [WebSocket]
+            public interface IFeed
+            {
+                [WebSocketClose]
+                IObservable<Unit> Close(CancellationToken? ct);
+            }
+            """;
+
+        var output = GeneratorTestHarness.Run(userSource);
+        Assert.Contains(output.Diagnostics, static diagnostic => diagnostic.Id == "OBS6006");
+        foreach (var source in output.GeneratedSources)
+        {
+            Assert.DoesNotContain("ct = default", source.Source, StringComparison.Ordinal);
+        }
     }
 
     // ── Incremental cache hit tests ──

@@ -34,7 +34,8 @@ internal static class IoProxyModelAssembly
         Action<MarkedInterfaceContext, IPropertySymbol, List<TMember>, List<Diagnostic>>? tryAddProperty,
         Func<MarkedInterfaceContext, string, ImmutableEquatableArray<TMember>, TInterfaceModel> createInterface,
         Func<ImmutableEquatableArray<TInterfaceModel>, TContextModel> createContext,
-        Action<MarkedInterfaceContext>? onMarkedInterface = null)
+        Action<MarkedInterfaceContext>? onMarkedInterface = null,
+        Action<MarkedInterfaceContext, ISymbol, List<TMember>, List<Diagnostic>>? tryAddOther = null)
         where TMember : IEquatable<TMember>
         where TInterfaceModel : IEquatable<TInterfaceModel>
     {
@@ -65,6 +66,9 @@ internal static class IoProxyModelAssembly
                         break;
                     case IPropertySymbol property:
                         tryAddProperty?.Invoke(marked, property, members, diagnostics);
+                        break;
+                    default:
+                        tryAddOther?.Invoke(marked, member, members, diagnostics);
                         break;
                 }
             }

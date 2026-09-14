@@ -4,11 +4,9 @@
     <RootNamespace>Observables.Nats</RootNamespace>
     <AssemblyName>Observables.Nats</AssemblyName>
     <Description>NATS client runtime and R3 stream bridges.</Description>
-  </PropertyGroup>
-
-  <PropertyGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">
-    <!-- NATS.Client.Core pulls VisualStudio.Threading analyzers; R3AsyncCreate uses async void on purpose. -->
-    <NoWarn>$(NoWarn);VSTHRD100;VSTHRD200</NoWarn>
+    <!-- NATS.Client.Core pulls VisualStudio.Threading analyzers; R3AsyncCreate uses async void on purpose.
+         Keep a single PropertyGroup so eng/scripts/sync-doc-loc.ps1 can read AssemblyName under StrictMode. -->
+    <NoWarn Condition="'$(TargetFramework)' == 'netstandard2.0'">$(NoWarn);VSTHRD100;VSTHRD200</NoWarn>
   </PropertyGroup>
 
   <Import Project="..\..\eng\NetStandard20.props" Condition="Exists('..\..\eng\NetStandard20.props')" />

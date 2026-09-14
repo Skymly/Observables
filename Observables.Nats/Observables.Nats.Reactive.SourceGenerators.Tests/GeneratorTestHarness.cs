@@ -25,8 +25,26 @@ internal static class GeneratorTestHarness
             static () => [new NatsInterfaceStubGenerator()],
             SnapshotOptionsFactory.ForDomain("OBS9")));
 
+    static readonly GeneratorHarness HarnessWithoutReactiveAdapter = new(
+        new GeneratorHarnessDefinition(
+            HarnessDocumentBuilder.Create(
+                "System",
+                "System.Threading",
+                "Observables.Nats",
+                "NATS.Client.Core"),
+            _ => MetadataReferenceBuilder.Build(
+                "Observables.Nats.Reactive.dll",
+                typeof(global::System.Reactive.Unit),
+                typeof(global::Observables.Nats.NatsService),
+                typeof(global::NATS.Client.Core.NatsConnection)),
+            static () => [new NatsInterfaceStubGenerator()],
+            SnapshotOptionsFactory.ForDomain("OBS9")));
+
     internal static GeneratorRunOutput Run(string userSource) =>
         Harness.Run(userSource);
+
+    internal static GeneratorRunOutput RunWithoutReactiveAdapter(string userSource) =>
+        HarnessWithoutReactiveAdapter.Run(userSource);
 
     internal static CacheTrackingDriver RunWithCacheTracking(string userSource) =>
         Harness.RunWithCacheTracking(userSource);

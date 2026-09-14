@@ -35,6 +35,46 @@ public sealed class ObservableEventsGeneratorTests
     }
 
     [Fact]
+    public void Same_named_types_in_different_namespaces_get_distinct_impl_classes()
+    {
+        const string source = """
+            namespace A
+            {
+                public class ClickSource
+                {
+                    public event System.Action? Click;
+                }
+            }
+
+            namespace B
+            {
+                public class ClickSource
+                {
+                    public event System.Action? Click;
+                }
+            }
+
+            public static class Usage
+            {
+                public static void Run(A.ClickSource a, B.ClickSource b)
+                {
+                    _ = a.Events().Click;
+                    _ = b.Events().Click;
+                }
+            }
+            """;
+
+        GeneratorRunOutput output = GeneratorTestHarness.Run(
+            source,
+            generators: [new ObservableEventsGenerator()]);
+        var generated = string.Join("\n", output.GeneratedSources.Select(static s => s.Source));
+
+        Assert.DoesNotContain(output.Diagnostics, static d => d.Id is "CS0101" or "CS0111");
+        Assert.Contains("class A_ClickSourceEventsImpl", generated, StringComparison.Ordinal);
+        Assert.Contains("class B_ClickSourceEventsImpl", generated, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void Generates_Events_wrapper_for_interface_type()
     {
         const string source = """
@@ -354,6 +394,62 @@ public sealed class ObservableEventsGeneratorTests
     }
 
     [Fact]
+    public void Reports_OBS2003_for_unsupported_routed_event_delegate()
+    {
+        const string source = AvaloniaStubs + """
+            namespace Demo
+            {
+                public class BadRouted : Avalonia.Controls.Control
+                {
+                    public static readonly Avalonia.Interactivity.RoutedEvent<Avalonia.Interactivity.RoutedEventArgs> ClickEvent = new();
+
+                    public event System.Func<int>? Click;
+                }
+
+                public static class Usage
+                {
+                    public static void Run(BadRouted source) => source.RoutedEvents();
+                }
+            }
+            """;
+
+        GeneratorRunOutput output = GeneratorTestHarness.Run(
+            source,
+            generators: [new ObservableEventsGenerator()],
+            observableRoutedEvents: true);
+
+        Assert.Contains(output.Diagnostics, static d => d.Id == "OBS2003");
+    }
+
+    [Fact]
+    public void Reports_OBS2004_for_unsupported_routed_event_handlers_delegate()
+    {
+        const string source = AvaloniaStubs + """
+            namespace Demo
+            {
+                public class BadRouted : Avalonia.Controls.Control
+                {
+                    public static readonly Avalonia.Interactivity.RoutedEvent<Avalonia.Interactivity.RoutedEventArgs> ClickEvent = new();
+
+                    public event System.Action<int>? Click;
+                }
+
+                public static class Usage
+                {
+                    public static void Run(BadRouted source) => source.RoutedEventHandlers();
+                }
+            }
+            """;
+
+        GeneratorRunOutput output = GeneratorTestHarness.Run(
+            source,
+            generators: [new ObservableEventsGenerator()],
+            observableRoutedEvents: true);
+
+        Assert.Contains(output.Diagnostics, static d => d.Id == "OBS2004");
+    }
+
+    [Fact]
     public Task Generates_Avalonia_routed_event_wrappers()
     {
         const string source = AvaloniaStubs + """
@@ -589,6 +685,36 @@ public sealed class ObservableEventsGeneratorTests
         Assert.DoesNotContain("IButtonRoutedEvents", snapshot);
         Assert.DoesNotContain(".RoutedEvents.g.cs", snapshot);
         Assert.Contains("IClickSourceEvents", snapshot);
+    }
+
+    [Fact]
+    public void Does_not_emit_avalonia_routed_wrappers_when_ObservableRoutedEvents_false()
+    {
+        const string source = AvaloniaStubs + """
+            namespace Demo
+            {
+                public static class Usage
+                {
+                    public static void Run(Avalonia.Controls.Button button)
+                    {
+                        _ = button.RoutedEvents().Click;
+                    }
+                }
+            }
+            """;
+
+        GeneratorRunOutput output = GeneratorTestHarness.Run(
+            source,
+            generators: [new ObservableEventsGenerator()],
+            observableRoutedEvents: false);
+
+        Assert.DoesNotContain(
+            output.GeneratedSources,
+            static s => s.HintName.Contains("Avalonia_Controls_Button.RoutedEvents", StringComparison.Ordinal)
+                || s.HintName.Contains("EventInterfaces.RoutedEvents", StringComparison.Ordinal));
+        Assert.DoesNotContain(
+            output.GeneratedSources,
+            static s => s.Source.Contains("IButtonRoutedEvents", StringComparison.Ordinal));
     }
 
     private const string AvaloniaStubs = """

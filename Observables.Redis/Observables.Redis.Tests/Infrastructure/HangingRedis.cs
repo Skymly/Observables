@@ -5,15 +5,40 @@ namespace Observables.Redis.Tests.Infrastructure;
 
 internal static class HangingRedis
 {
-    public static (IConnectionMultiplexer Multiplexer, Task PublishStarted) CreateForPublish()
+    public static HangingPublish CreateForPublish()
     {
         var publishStarted = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var inFlight = new TaskCompletionSource<long>(TaskCreationOptions.RunContinuationsAsynchronously);
         var subscriber = DispatchProxy.Create<ISubscriber, HangingSubscriberProxy>();
-        ((HangingSubscriberProxy)(object)subscriber).PublishStarted = publishStarted;
+        var hanging = (HangingSubscriberProxy)(object)subscriber;
+        hanging.PublishStarted = publishStarted;
+        hanging.InFlight = inFlight;
 
         var multiplexer = DispatchProxy.Create<IConnectionMultiplexer, HangingMultiplexerProxy>();
         ((HangingMultiplexerProxy)(object)multiplexer).Subscriber = subscriber;
-        return (multiplexer, publishStarted.Task);
+        return new HangingPublish(multiplexer, publishStarted.Task, inFlight.Task, hanging);
+    }
+
+    public sealed class HangingPublish
+    {
+        readonly HangingSubscriberProxy _subscriber;
+
+        internal HangingPublish(
+            IConnectionMultiplexer multiplexer,
+            Task publishStarted,
+            Task inFlight,
+            HangingSubscriberProxy subscriber)
+        {
+            Multiplexer = multiplexer;
+            PublishStarted = publishStarted;
+            InFlight = inFlight;
+            _subscriber = subscriber;
+        }
+
+        public IConnectionMultiplexer Multiplexer { get; }
+        public Task PublishStarted { get; }
+        public Task InFlight { get; }
+        public object?[]? LastPublishArgs => _subscriber.LastPublishArgs;
     }
 
     public class HangingMultiplexerProxy : DispatchProxy
@@ -34,13 +59,16 @@ internal static class HangingRedis
     public class HangingSubscriberProxy : DispatchProxy
     {
         public TaskCompletionSource PublishStarted { get; set; } = null!;
+        public TaskCompletionSource<long> InFlight { get; set; } = null!;
+        public object?[]? LastPublishArgs { get; private set; }
 
         protected override object? Invoke(MethodInfo? targetMethod, object?[]? args)
         {
             if (targetMethod?.Name == nameof(ISubscriber.PublishAsync))
             {
+                LastPublishArgs = args;
                 PublishStarted.TrySetResult();
-                return new TaskCompletionSource<long>(TaskCreationOptions.RunContinuationsAsynchronously).Task;
+                return InFlight.Task;
             }
 
             throw new NotSupportedException(targetMethod?.Name);

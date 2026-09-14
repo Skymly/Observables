@@ -26,6 +26,30 @@ public sealed class PostgresInterfaceGeneratorTests
     }
 
     [Fact]
+    public void Generated_proxy_carries_json_trim_warnings()
+    {
+        const string userSource =
+            """
+            [Postgres]
+            public interface IOrderChannel
+            {
+                [Listen("order_created")]
+                IObservable<string> OrderCreated { get; }
+
+                [Notify("order_created")]
+                IObservable<System.Reactive.Unit> Raise(string payload, CancellationToken cancellationToken = default);
+            }
+            """;
+
+        var output = GeneratorTestHarness.Run(userSource);
+        Assert.Contains(
+            output.GeneratedSources,
+            static s => s.HintName.Contains("IOrderChannel.Postgres.g.cs", StringComparison.Ordinal)
+                && s.Source.Contains("RequiresUnreferencedCode(\"JSON payload serialization uses System.Text.Json reflection. Preserve payload type members when trimming.\")", StringComparison.Ordinal)
+                && s.Source.Contains("RequiresDynamicCode(\"JSON payload serialization uses System.Text.Json reflection. Preserve payload type members when trimming.\")", StringComparison.Ordinal));
+    }
+
+    [Fact]
     public Task Postgres_interface_generates_typed_json_payload_reactive_proxy()
     {
         const string userSource =
@@ -126,5 +150,21 @@ public sealed class PostgresInterfaceGeneratorTests
         {
             Assert.DoesNotContain("ct = default", source.Source, StringComparison.Ordinal);
         }
+    }
+
+    [Fact]
+    public void Public_instance_event_reports_OBS10001()
+    {
+        const string userSource =
+            """
+            [Postgres]
+            public interface IHub
+            {
+                event System.Action Tick;
+            }
+            """;
+
+        var output = GeneratorTestHarness.Run(userSource);
+        Assert.Contains(output.Diagnostics, static diagnostic => diagnostic.Id == "OBS10001");
     }
 }

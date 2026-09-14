@@ -77,4 +77,42 @@ public sealed class PostgresClientR3E2ETests(PostgresTestServerFixture fixture)
 
         Assert.Equal(payload, received);
     }
+
+    [Fact]
+    public async Task Generated_hub_notify_fails_while_listen_holds_the_same_connection()
+    {
+        var cancellation = TestContext.Current.CancellationToken;
+        await using var connection = new NpgsqlConnection(fixture.Server.ConnectionString);
+        await connection.OpenAsync(cancellation);
+        var hub = PostgresService.For<IE2EHub>(connection);
+
+        using var listen = hub.Ping.Subscribe(_ => { });
+        await Task.Delay(300, cancellation);
+
+        var observer = new RecordingObserver<Unit>();
+        using var notify = hub.PublishPing("same-connection").Subscribe(observer);
+
+        var result = await observer.Completed.WaitAsync(TimeSpan.FromSeconds(2), cancellation);
+
+        Assert.True(result.IsFailure);
+        Assert.IsType<InvalidOperationException>(result.Exception);
+        Assert.Contains("LISTEN", result.Exception.Message, StringComparison.Ordinal);
+    }
+
+    sealed class RecordingObserver<T> : Observer<T>
+    {
+        readonly TaskCompletionSource<Result> _completed = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        public Task<Result> Completed => _completed.Task;
+
+        protected override void OnNextCore(T value)
+        {
+        }
+
+        protected override void OnErrorResumeCore(Exception error)
+        {
+        }
+
+        protected override void OnCompletedCore(Result result) => _completed.TrySetResult(result);
+    }
 }

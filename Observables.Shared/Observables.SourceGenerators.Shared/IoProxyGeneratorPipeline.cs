@@ -52,7 +52,7 @@ internal static class IoProxyGeneratorPipeline
                     emptyModelFactory));
 
         var diagnostics = parseStep
-            .Select(static (x, _) => x.diagnostics.ToImmutableEquatableArray())
+            .Select(static (x, _) => x.diagnostics)
             .WithTrackingName(reportDiagnosticsTrackingName);
         context.ReportDiagnostics(diagnostics);
 

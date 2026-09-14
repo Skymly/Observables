@@ -366,6 +366,33 @@ public sealed class IoProxyPipelineTests
         Assert.Equal("Box1GeneratedProxy", IoProxyModelAssembly.GeneratedProxyClassName(box));
     }
 
+    [Fact]
+    public void ExecuteParse_results_are_value_equal_for_equivalent_diagnostics()
+    {
+        var descriptor = new DiagnosticDescriptor(
+            "TEST000",
+            "t",
+            "m",
+            "Test",
+            DiagnosticSeverity.Warning,
+            isEnabledByDefault: true);
+
+        (List<Diagnostic> diagnostics, string model) Parse() =>
+            (new List<Diagnostic> { Diagnostic.Create(descriptor, Location.None) }, "model");
+
+        var first = GeneratorFailSafe.ExecuteParse(Parse, descriptor, static () => "");
+        var second = GeneratorFailSafe.ExecuteParse(Parse, descriptor, static () => "");
+
+        Assert.Equal(first, second);
+    }
+
+    [Fact]
+    public void ImmutableEquatableArray_GetHashCode_is_null_safe()
+    {
+        var array = new ImmutableEquatableArray<string>(new string?[] { null, "x" }!);
+        _ = array.GetHashCode();
+    }
+
     static (List<Diagnostic> diagnostics, bool ok) ParseObservableReturn(
         string source,
         bool isR3Generator,

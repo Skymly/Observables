@@ -1,1 +1,3 @@
 #nullable enable
+const Observables.WebSocket.WebSocketObservable.DefaultMaxReceiveMessageBytes = 1048576 -> int
+static Observables.WebSocket.WebSocketObservable.FromReceive<T>(System.Net.WebSockets.ClientWebSocket! socket, int maxMessageBytes) -> R3.Observable<T>!

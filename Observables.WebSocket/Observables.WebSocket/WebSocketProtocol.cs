@@ -22,6 +22,15 @@ internal readonly struct WebSocketReceivedMessage
 }
 internal static class WebSocketProtocol
 {
+    internal const int DefaultMaxReceiveMessageBytes = 1_048_576;
+
+    internal sealed class MessageTooLargeException : InvalidOperationException
+    {
+        internal MessageTooLargeException(int maxMessageBytes)
+            : base($"WebSocket message exceeded the maximum size of {maxMessageBytes} bytes.")
+        {
+        }
+    }
 #if NETSTANDARD2_0
 #else
     static readonly JsonSerializerOptions JsonOptions = new() { PropertyNameCaseInsensitive = true };
@@ -69,8 +78,14 @@ internal static class WebSocketProtocol
         SendAsync(socket, Encoding.UTF8.GetBytes(text), WebSocketMessageType.Text, userToken, pumpToken);
     internal static async Task<WebSocketReceivedMessage?> ReceiveMessageAsync(
         ClientWebSocket socket,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        int maxMessageBytes = DefaultMaxReceiveMessageBytes)
     {
+        if (maxMessageBytes <= 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(maxMessageBytes));
+        }
+
         var buffer = new byte[4096];
         using var ms = new MemoryStream();
         WebSocketMessageType messageType = WebSocketMessageType.Binary;
@@ -87,6 +102,11 @@ internal static class WebSocketProtocol
             }
 
             messageType = result.MessageType;
+            if (ms.Length + result.Count > maxMessageBytes)
+            {
+                throw new MessageTooLargeException(maxMessageBytes);
+            }
+
             ms.Write(buffer, 0, result.Count);
         }
         while (!result.EndOfMessage);

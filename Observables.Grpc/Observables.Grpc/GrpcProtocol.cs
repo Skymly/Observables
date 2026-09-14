@@ -1,4 +1,5 @@
 using Grpc.Core;
+using R3;
 
 namespace Observables.Grpc;
 
@@ -14,7 +15,7 @@ internal static class GrpcProtocol
         where TResponse : class
     {
         using var linked = CancellationTokenSource.CreateLinkedTokenSource(userToken, pumpToken);
-        var call = invoker.AsyncUnaryCall(
+        using var call = invoker.AsyncUnaryCall(
             method,
             host: null,
             options: new CallOptions(cancellationToken: linked.Token),
@@ -65,6 +66,37 @@ internal static class GrpcProtocol
         {
             onNext(stream.Current);
         }
+    }
+
+    internal static async Task PumpStreamingCallAsync<TRequest, TResponse>(
+        SerializedClientStreamWriter<TRequest> writer,
+        Task writeCompleted,
+        IAsyncStreamReader<TResponse> responseStream,
+        Action<TResponse> onNext,
+        CancellationToken cancellationToken)
+    {
+        var readTask = ReadResponsesAsync(responseStream, onNext, cancellationToken);
+        var finished = await Task.WhenAny(writeCompleted, readTask).ConfigureAwait(false);
+        if (finished == readTask)
+        {
+            await readTask.ConfigureAwait(false);
+            return;
+        }
+
+        await writeCompleted.ConfigureAwait(false);
+        await writer.CompleteAsync().ConfigureAwait(false);
+        await readTask.ConfigureAwait(false);
+    }
+
+    internal static void ObserveCompleted(Result result, TaskCompletionSource<bool> writeCompleted)
+    {
+        if (result.IsFailure)
+        {
+            writeCompleted.TrySetException(result.Exception ?? new InvalidOperationException("gRPC request source failed."));
+            return;
+        }
+
+        writeCompleted.TrySetResult(true);
     }
 
     internal static void ObserveWrite(Task write, TaskCompletionSource<bool> writeCompleted)

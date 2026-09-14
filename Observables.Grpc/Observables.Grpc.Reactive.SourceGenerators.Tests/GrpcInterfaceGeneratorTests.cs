@@ -190,4 +190,21 @@ public sealed class GrpcInterfaceGeneratorTests
         var output = GeneratorTestHarness.Run(userSource);
         Assert.Contains(output.Diagnostics, static diagnostic => diagnostic.Id == "OBS7001");
     }
+
+    [Fact]
+    public void Missing_reactive_adapter_reports_OBS7005()
+    {
+        const string userSource =
+            """
+            [Grpc("echo.Echo")]
+            public interface IEchoService
+            {
+                [GrpcUnary("UnaryEcho")]
+                IObservable<string> UnaryEcho(string request);
+            }
+            """;
+
+        var output = GeneratorTestHarness.RunWithoutReactiveAdapter(userSource);
+        Assert.Contains(output.Diagnostics, static diagnostic => diagnostic.Id == "OBS7005");
+    }
 }

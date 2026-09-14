@@ -25,8 +25,26 @@ internal static class GeneratorTestHarness
             static () => [new GrpcInterfaceStubGenerator()],
             SnapshotOptionsFactory.ForDomain("OBS7")));
 
+    static readonly GeneratorHarness HarnessWithoutReactiveAdapter = new(
+        new GeneratorHarnessDefinition(
+            HarnessDocumentBuilder.Create(
+                "System",
+                "System.Threading",
+                "Observables.Grpc"),
+            _ => MetadataReferenceBuilder.Build(
+                "Observables.Grpc.Reactive.dll",
+                typeof(global::System.Reactive.Unit),
+                typeof(global::Observables.Grpc.GrpcService),
+                typeof(global::Grpc.Core.CallInvoker),
+                typeof(global::Google.Protobuf.WellKnownTypes.Empty)),
+            static () => [new GrpcInterfaceStubGenerator()],
+            SnapshotOptionsFactory.ForDomain("OBS7")));
+
     internal static GeneratorRunOutput Run(string userSource) =>
         Harness.Run(userSource);
+
+    internal static GeneratorRunOutput RunWithoutReactiveAdapter(string userSource) =>
+        HarnessWithoutReactiveAdapter.Run(userSource);
 
     internal static CacheTrackingDriver RunWithCacheTracking(string userSource) =>
         Harness.RunWithCacheTracking(userSource);

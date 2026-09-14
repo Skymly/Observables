@@ -82,4 +82,25 @@ public sealed class NatsInterfaceGeneratorTests
             reason is IncrementalStepRunReason.Modified or IncrementalStepRunReason.New,
             $"Expected cache miss (Modified/New), got {reason}");
     }
+
+    [Fact]
+    public void Trailing_nullable_cancellation_token_is_not_emitted_as_subscription_ct()
+    {
+        const string userSource =
+            """
+            [Nats]
+            public interface IHub
+            {
+                [NatsPublish("ping")]
+                IObservable<Unit> Restart(string id, CancellationToken? ct);
+            }
+            """;
+
+        var output = GeneratorTestHarness.Run(userSource);
+        Assert.Contains(output.Diagnostics, static diagnostic => diagnostic.Id == "OBS9006");
+        foreach (var source in output.GeneratedSources)
+        {
+            Assert.DoesNotContain("ct = default", source.Source, StringComparison.Ordinal);
+        }
+    }
 }

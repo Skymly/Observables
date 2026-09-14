@@ -175,6 +175,27 @@ public sealed class MqttInterfaceGeneratorTests
     }
 
     [Fact]
+    public void Trailing_nullable_cancellation_token_is_not_emitted_as_subscription_ct()
+    {
+        const string userSource =
+            """
+            [Mqtt]
+            public interface ISensorTopics
+            {
+                [MqttPublish("ping")]
+                Observable<Unit> Ping(CancellationToken? ct);
+            }
+            """;
+
+        var output = GeneratorTestHarness.Run(userSource);
+        Assert.Contains(output.Diagnostics, static diagnostic => diagnostic.Id == "OBS5006");
+        foreach (var source in output.GeneratedSources)
+        {
+            Assert.DoesNotContain("ct = default", source.Source, StringComparison.Ordinal);
+        }
+    }
+
+    [Fact]
     public void Non_trailing_cancellation_token_reports_OBS5001()
     {
         const string userSource =

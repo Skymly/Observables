@@ -48,6 +48,86 @@ public sealed partial class ObservableEventsGenerator
             .Any(evt => TryGetAvaloniaRoutedClrEventField(evt, compilation, out _, out _));
     }
 
+    private static bool HasWpfRoutedClrEvents(INamedTypeSymbol type, Compilation compilation)
+    {
+        return GetPublicInstanceEventsFromTypeAndBases(type)
+            .Any(evt => TryGetWpfRoutedClrEventField(evt, compilation, out _, out _));
+    }
+
+    private static bool TryGetWpfRoutedClrEventField(
+        IEventSymbol evt,
+        Compilation compilation,
+        out IFieldSymbol routedEventField,
+        out INamedTypeSymbol eventArgsType)
+    {
+        routedEventField = null!;
+        eventArgsType = null!;
+
+        var routedEventType = compilation.GetTypeByMetadataName("System.Windows.RoutedEvent");
+        if (routedEventType is null)
+        {
+            return false;
+        }
+
+        var fieldName = evt.Name + "Event";
+        for (var current = evt.ContainingType; current is not null; current = current.BaseType)
+        {
+            if (current.SpecialType == SpecialType.System_Object)
+            {
+                break;
+            }
+
+            foreach (var member in current.GetMembers(fieldName))
+            {
+                if (member is not IFieldSymbol field
+                    || !field.IsStatic
+                    || field.IsImplicitlyDeclared
+                    || field.Type is not INamedTypeSymbol fieldType)
+                {
+                    continue;
+                }
+
+                var normalizedFieldType = fieldType.WithNullableAnnotation(NullableAnnotation.None);
+                if (!SymbolEqualityComparer.Default.Equals(normalizedFieldType, routedEventType)
+                    || !TryGetWpfRoutedEventArgsType(evt, compilation, out INamedTypeSymbol argsType))
+                {
+                    continue;
+                }
+
+                routedEventField = field;
+                eventArgsType = argsType;
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static bool TryGetWpfRoutedEventArgsType(
+        IEventSymbol evt,
+        Compilation compilation,
+        out INamedTypeSymbol eventArgsType)
+    {
+        eventArgsType = null!;
+
+        if (evt.Type is INamedTypeSymbol { DelegateInvokeMethod: { } invoke }
+            && invoke.Parameters.Length > 0
+            && invoke.Parameters[invoke.Parameters.Length - 1].Type is INamedTypeSymbol argsFromHandler)
+        {
+            eventArgsType = argsFromHandler;
+            return true;
+        }
+
+        var routedEventArgs = compilation.GetTypeByMetadataName("System.Windows.RoutedEventArgs");
+        if (routedEventArgs is not null)
+        {
+            eventArgsType = routedEventArgs;
+            return true;
+        }
+
+        return false;
+    }
+
     private static bool TryGetAvaloniaRoutedClrEventField(
         IEventSymbol evt,
         Compilation compilation,

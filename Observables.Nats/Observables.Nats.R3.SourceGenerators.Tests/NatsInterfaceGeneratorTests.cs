@@ -71,6 +71,44 @@ public sealed class NatsInterfaceGeneratorTests
         Assert.Contains("OBS9003", snapshot, StringComparison.Ordinal);
     }
 
+    [Fact]
+    public void Nats_interface_OBS9002_when_runtime_missing()
+    {
+        const string userSource =
+            """
+            [Nats]
+            public interface IOrderHub
+            {
+                [NatsSubscribe("orders.created")]
+                Observable<string> Created { get; }
+            }
+            """;
+
+        var output = GeneratorTestHarness.Run(userSource, includeCoreReference: false);
+        var snapshot = GeneratorTestHarness.ToSnapshot(output);
+
+        Assert.Contains("OBS9002", snapshot, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Nats_interface_OBS9006_on_subscribe_placeholder()
+    {
+        const string userSource =
+            """
+            [Nats]
+            public interface IOrderHub
+            {
+                [NatsSubscribe("orders.{id}")]
+                Observable<string> Created { get; }
+            }
+            """;
+
+        var output = GeneratorTestHarness.Run(userSource);
+        var snapshot = GeneratorTestHarness.ToSnapshot(output);
+
+        Assert.Contains("OBS9006", snapshot, StringComparison.Ordinal);
+    }
+
     // ── Incremental cache hit tests ──
 
     const string CacheTestSource =
@@ -254,5 +292,21 @@ public sealed class NatsInterfaceGeneratorTests
             """;
         var output = GeneratorTestHarness.Run(userSource);
         return Verifier.Verify(GeneratorTestHarness.ToSnapshot(output));
+    }
+
+    [Fact]
+    public void Public_instance_event_reports_OBS9001()
+    {
+        const string userSource =
+            """
+            [Nats]
+            public interface IFeed
+            {
+                event System.Action Tick;
+            }
+            """;
+
+        var output = GeneratorTestHarness.Run(userSource);
+        Assert.Contains(output.Diagnostics, static diagnostic => diagnostic.Id == "OBS9001");
     }
 }

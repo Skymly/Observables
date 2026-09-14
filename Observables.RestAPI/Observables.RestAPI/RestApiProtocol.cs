@@ -127,7 +127,10 @@ namespace Observables.RestAPI
                 }
             }
 
-            request.RequestUri = new Uri(path, UriKind.Relative);
+            var relative = ToRelativePath(path);
+            request.RequestUri = string.IsNullOrEmpty(relative)
+                ? null
+                : new Uri(relative, UriKind.Relative);
             var bodyBuffered = spec.Flags.BodyBuffered ?? (hasBody && settings.Buffered);
             return new RestApiBoundRequest(request, bodyBuffered);
         }
@@ -146,6 +149,21 @@ namespace Observables.RestAPI
             RestApiSettings settings,
             CancellationToken cancellationToken) =>
             RestApiBridge.SendVoidAsync(client, request, settings, cancellationToken);
+
+        static string ToRelativePath(string path)
+        {
+            if (string.IsNullOrEmpty(path))
+            {
+                return string.Empty;
+            }
+
+            if (path[0] == '/' && (path.Length == 1 || path[1] != '/'))
+            {
+                return path.Substring(1);
+            }
+
+            return path;
+        }
 
         static object? GetArg(object?[] args, int index)
         {

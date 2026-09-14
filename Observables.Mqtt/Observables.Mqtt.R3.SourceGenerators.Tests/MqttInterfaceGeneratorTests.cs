@@ -31,6 +31,30 @@ public sealed class MqttInterfaceGeneratorTests
     }
 
     [Fact]
+    public void Docs_getting_started_snippet_does_not_report_OBS5006()
+    {
+        const string userSource =
+            """
+            [Mqtt]
+            public interface ISensorTopics
+            {
+                [MqttSubscribe("sensors/+/temperature")]
+                Observable<double> Temperature { get; }
+
+                [MqttPublish("commands/{deviceId}/restart")]
+                Observable<Unit> Restart(string deviceId);
+            }
+            """;
+
+        var output = GeneratorTestHarness.Run(userSource);
+        var snapshot = GeneratorTestHarness.ToSnapshot(output);
+        Assert.DoesNotContain("OBS5006", snapshot, StringComparison.Ordinal);
+        Assert.Contains("SensorTopicsGeneratedProxy", snapshot, StringComparison.Ordinal);
+        Assert.Contains("FromSubscribe", snapshot, StringComparison.Ordinal);
+        Assert.Contains("FromPublish", snapshot, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void Mqtt_interface_OBS5004_on_subscribe_method()
     {
         const string userSource =

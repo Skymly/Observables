@@ -175,6 +175,27 @@ public sealed class HubInterfaceGeneratorTests
     }
 
     [Fact]
+    public void Trailing_nullable_cancellation_token_is_not_emitted_as_subscription_ct()
+    {
+        const string userSource =
+            """
+            [Hub]
+            public interface IChat
+            {
+                [HubInvoke]
+                Observable<string> Echo(string msg, CancellationToken? ct);
+            }
+            """;
+
+        var output = GeneratorTestHarness.Run(userSource);
+        Assert.DoesNotContain(output.Diagnostics, static diagnostic => diagnostic.Id == "CS1503");
+        foreach (var source in output.GeneratedSources)
+        {
+            Assert.DoesNotContain("ct = default", source.Source, StringComparison.Ordinal);
+        }
+    }
+
+    [Fact]
     public void Non_trailing_cancellation_token_reports_OBS4001()
     {
         const string userSource =

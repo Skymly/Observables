@@ -31,6 +31,30 @@ public sealed class MqttInterfaceGeneratorTests
     }
 
     [Fact]
+    public void Docs_getting_started_snippet_does_not_report_OBS5006()
+    {
+        const string userSource =
+            """
+            [Mqtt]
+            public interface ISensorTopics
+            {
+                [MqttSubscribe("sensors/+/temperature")]
+                Observable<double> Temperature { get; }
+
+                [MqttPublish("commands/{deviceId}/restart")]
+                Observable<Unit> Restart(string deviceId);
+            }
+            """;
+
+        var output = GeneratorTestHarness.Run(userSource);
+        var snapshot = GeneratorTestHarness.ToSnapshot(output);
+        Assert.DoesNotContain("OBS5006", snapshot, StringComparison.Ordinal);
+        Assert.Contains("SensorTopicsGeneratedProxy", snapshot, StringComparison.Ordinal);
+        Assert.Contains("FromSubscribe", snapshot, StringComparison.Ordinal);
+        Assert.Contains("FromPublish", snapshot, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void Mqtt_interface_OBS5004_on_subscribe_method()
     {
         const string userSource =
@@ -66,6 +90,44 @@ public sealed class MqttInterfaceGeneratorTests
         var snapshot = GeneratorTestHarness.ToSnapshot(output);
 
         Assert.Contains("OBS5003", snapshot, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Mqtt_interface_OBS5002_when_runtime_missing()
+    {
+        const string userSource =
+            """
+            [Mqtt]
+            public interface ISensorTopics
+            {
+                [MqttSubscribe("sensors/temperature")]
+                Observable<string> Temperature { get; }
+            }
+            """;
+
+        var output = GeneratorTestHarness.Run(userSource, includeCoreReference: false);
+        var snapshot = GeneratorTestHarness.ToSnapshot(output);
+
+        Assert.Contains("OBS5002", snapshot, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Mqtt_interface_OBS5006_on_subscribe_placeholder()
+    {
+        const string userSource =
+            """
+            [Mqtt]
+            public interface ISensorTopics
+            {
+                [MqttSubscribe("sensors/{id}")]
+                Observable<string> Temperature { get; }
+            }
+            """;
+
+        var output = GeneratorTestHarness.Run(userSource);
+        var snapshot = GeneratorTestHarness.ToSnapshot(output);
+
+        Assert.Contains("OBS5006", snapshot, StringComparison.Ordinal);
     }
 
     // ── Incremental cache hit tests ──
@@ -172,6 +234,27 @@ public sealed class MqttInterfaceGeneratorTests
         var snapshot = GeneratorTestHarness.ToSnapshot(output);
         Assert.Contains(", ct)", snapshot, StringComparison.Ordinal);
         Assert.DoesNotContain(", cancellationToken)", snapshot, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Trailing_nullable_cancellation_token_is_not_emitted_as_subscription_ct()
+    {
+        const string userSource =
+            """
+            [Mqtt]
+            public interface ISensorTopics
+            {
+                [MqttPublish("ping")]
+                Observable<Unit> Ping(CancellationToken? ct);
+            }
+            """;
+
+        var output = GeneratorTestHarness.Run(userSource);
+        Assert.Contains(output.Diagnostics, static diagnostic => diagnostic.Id == "OBS5006");
+        foreach (var source in output.GeneratedSources)
+        {
+            Assert.DoesNotContain("ct = default", source.Source, StringComparison.Ordinal);
+        }
     }
 
     [Fact]

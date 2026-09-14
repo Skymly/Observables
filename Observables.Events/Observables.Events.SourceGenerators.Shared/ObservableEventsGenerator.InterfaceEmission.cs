@@ -118,7 +118,7 @@ public sealed partial class ObservableEventsGenerator
         if (!hierarchy.TryGetValue(type, out var desc))
             return string.Empty;
 
-        var implName = GetEventImplName(type, entryKind);
+        var implName = desc.ImplName;
         var implClass = CreateEventImplClass(type, desc, implName, hierarchy, compilation, reportDiagnostic, entryKind);
         if (CreateEventInterface(desc, hierarchy, compilation, entryKind) is null)
             return string.Empty;
@@ -155,6 +155,9 @@ public sealed partial class ObservableEventsGenerator
 
         var useAvaloniaRoutedExtension = HasAvaloniaRoutedClrEvents(type, compilation)
             && entryKind is ObservableEventsEntryKind.RoutedEvents or ObservableEventsEntryKind.RoutedEventHandlers;
+        var useWpfRoutedExtension = !useAvaloniaRoutedExtension
+            && HasWpfRoutedClrEvents(type, compilation)
+            && entryKind is ObservableEventsEntryKind.RoutedEvents or ObservableEventsEntryKind.RoutedEventHandlers;
 
         var extensionMembers = new List<MemberDeclarationSyntax>();
         if (useAvaloniaRoutedExtension)
@@ -170,6 +173,15 @@ public sealed partial class ObservableEventsGenerator
                     objectCreationArguments: ObservableEventsSyntaxFactory.AvaloniaRoutedImplConstructorArguments()));
             extensionMembers.Add(
                 ObservableEventsSyntaxFactory.CreateAvaloniaRoutedExtensionMethod(
+                    methodName,
+                    SyntaxFactory.ParseTypeName(interfaceRef),
+                    SyntaxFactory.ParseTypeName(qualifiedSender),
+                    SyntaxFactory.ParseTypeName(implRef)));
+        }
+        else if (useWpfRoutedExtension)
+        {
+            extensionMembers.Add(
+                ObservableEventsSyntaxFactory.CreateWpfRoutedExtensionMethod(
                     methodName,
                     SyntaxFactory.ParseTypeName(interfaceRef),
                     SyntaxFactory.ParseTypeName(qualifiedSender),
@@ -230,6 +242,9 @@ public sealed partial class ObservableEventsGenerator
         var senderType = SyntaxFactory.ParseTypeName(ObservableEventsConstants.QualifiedType(type));
         var useAvaloniaRoutedImpl = HasAvaloniaRoutedClrEvents(type, compilation)
             && entryKind is ObservableEventsEntryKind.RoutedEvents or ObservableEventsEntryKind.RoutedEventHandlers;
+        var useWpfRoutedImpl = !useAvaloniaRoutedImpl
+            && HasWpfRoutedClrEvents(type, compilation)
+            && entryKind is ObservableEventsEntryKind.RoutedEvents or ObservableEventsEntryKind.RoutedEventHandlers;
 
         var members = new List<MemberDeclarationSyntax>();
         if (useAvaloniaRoutedImpl)
@@ -280,6 +295,40 @@ public sealed partial class ObservableEventsGenerator
                                     SyntaxFactory.IdentifierName("_handledEventsToo"),
                                     SyntaxFactory.IdentifierName("handledEventsToo"))))));
         }
+        else if (useWpfRoutedImpl)
+        {
+            members.Add(
+                SyntaxFactory.FieldDeclaration(
+                        SyntaxFactory.VariableDeclaration(senderType)
+                            .AddVariables(SyntaxFactory.VariableDeclarator("_sender")))
+                    .AddModifiers(
+                        SyntaxFactory.Token(SyntaxKind.PrivateKeyword),
+                        SyntaxFactory.Token(SyntaxKind.ReadOnlyKeyword)));
+            members.Add(
+                SyntaxFactory.FieldDeclaration(
+                        SyntaxFactory.VariableDeclaration(
+                                SyntaxFactory.PredefinedType(SyntaxFactory.Token(SyntaxKind.BoolKeyword)))
+                            .AddVariables(SyntaxFactory.VariableDeclarator("_handledEventsToo")))
+                    .AddModifiers(
+                        SyntaxFactory.Token(SyntaxKind.PrivateKeyword),
+                        SyntaxFactory.Token(SyntaxKind.ReadOnlyKeyword)));
+
+            members.Add(
+                SyntaxFactory.ConstructorDeclaration(implName)
+                    .AddModifiers(SyntaxFactory.Token(SyntaxKind.InternalKeyword))
+                    .AddParameterListParameters(
+                        SyntaxFactory.Parameter(SyntaxFactory.Identifier("sender")).WithType(senderType),
+                        SyntaxFactory.Parameter(SyntaxFactory.Identifier("handledEventsToo"))
+                            .WithType(SyntaxFactory.PredefinedType(SyntaxFactory.Token(SyntaxKind.BoolKeyword))))
+                    .WithBody(
+                        SyntaxFactory.Block(
+                            ObservableEventsSyntaxFactory.SenderAssignmentStatement(),
+                            SyntaxFactory.ExpressionStatement(
+                                SyntaxFactory.AssignmentExpression(
+                                    SyntaxKind.SimpleAssignmentExpression,
+                                    SyntaxFactory.IdentifierName("_handledEventsToo"),
+                                    SyntaxFactory.IdentifierName("handledEventsToo"))))));
+        }
         else
         {
             members.Add(
@@ -322,6 +371,17 @@ public sealed partial class ObservableEventsGenerator
                                 ObservableEventsSyntaxFactory.CreateEventInheritDocTrivia(
                                     $"{ObservableEventsConstants.QualifiedType(evt.ContainingType)}.{evt.Name}")));
                     }
+                    else if (TryGetWpfRoutedClrEventField(evt, compilation, out var wpfRoutedEventField, out var wpfEventArgsType))
+                    {
+                        members.Add(
+                            ObservableEventsSyntaxFactory.CreateWpfRoutedEventProperty(
+                                evt,
+                                wpfRoutedEventField,
+                                wpfEventArgsType,
+                                useEventHandlers: false,
+                                ObservableEventsSyntaxFactory.CreateEventInheritDocTrivia(
+                                    $"{ObservableEventsConstants.QualifiedType(evt.ContainingType)}.{evt.Name}")));
+                    }
                     else if (TryCreateEventObservableProperty(evt, accessor, reportDiagnostic, entryKind, out var routedEventsProp, includeXmlDocumentation: false))
                     {
                         members.Add(routedEventsProp);
@@ -336,6 +396,17 @@ public sealed partial class ObservableEventsGenerator
                                 evt,
                                 routedHandlerField,
                                 handlerArgsType,
+                                useEventHandlers: true,
+                                ObservableEventsSyntaxFactory.CreateEventInheritDocTrivia(
+                                    $"{ObservableEventsConstants.QualifiedType(evt.ContainingType)}.{evt.Name}")));
+                    }
+                    else if (TryGetWpfRoutedClrEventField(evt, compilation, out var wpfRoutedHandlerField, out var wpfHandlerArgsType))
+                    {
+                        members.Add(
+                            ObservableEventsSyntaxFactory.CreateWpfRoutedEventProperty(
+                                evt,
+                                wpfRoutedHandlerField,
+                                wpfHandlerArgsType,
                                 useEventHandlers: true,
                                 ObservableEventsSyntaxFactory.CreateEventInheritDocTrivia(
                                     $"{ObservableEventsConstants.QualifiedType(evt.ContainingType)}.{evt.Name}")));

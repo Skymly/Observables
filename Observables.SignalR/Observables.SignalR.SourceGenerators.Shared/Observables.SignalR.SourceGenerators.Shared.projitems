@@ -18,5 +18,6 @@
     <Compile Include="$(MSBuildThisFileDirectory)Models\HubInterfaceModel.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Models\HubMemberModel.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Parser.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)SignalRGeneratorPipeline.cs" />
   </ItemGroup>
 </Project>

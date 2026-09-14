@@ -22,6 +22,30 @@ public sealed class MqttInterfaceGeneratorTests
         return Verifier.Verify(GeneratorTestHarness.ToSnapshot(output));
     }
 
+    [Fact]
+    public void Docs_getting_started_snippet_does_not_report_OBS5006()
+    {
+        const string userSource =
+            """
+            [Mqtt]
+            public interface ISensorTopics
+            {
+                [MqttSubscribe("sensors/+/temperature")]
+                IObservable<double> Temperature { get; }
+
+                [MqttPublish("commands/{deviceId}/restart")]
+                IObservable<global::System.Reactive.Unit> Restart(string deviceId);
+            }
+            """;
+
+        var output = GeneratorTestHarness.Run(userSource);
+        var snapshot = GeneratorTestHarness.ToSnapshot(output);
+        Assert.DoesNotContain("OBS5006", snapshot, StringComparison.Ordinal);
+        Assert.Contains("SensorTopicsGeneratedProxy", snapshot, StringComparison.Ordinal);
+        Assert.Contains("FromSubscribe", snapshot, StringComparison.Ordinal);
+        Assert.Contains("FromPublish", snapshot, StringComparison.Ordinal);
+    }
+
     // ── Incremental cache hit tests ──
 
     const string CacheTestSource =
@@ -137,6 +161,22 @@ public sealed class MqttInterfaceGeneratorTests
         {
             Assert.DoesNotContain("ct = default", source.Source, StringComparison.Ordinal);
         }
+    }
+
+    [Fact]
+    public void Public_instance_event_reports_OBS5001()
+    {
+        const string userSource =
+            """
+            [Mqtt]
+            public interface IFeed
+            {
+                event System.Action Tick;
+            }
+            """;
+
+        var output = GeneratorTestHarness.Run(userSource);
+        Assert.Contains(output.Diagnostics, static diagnostic => diagnostic.Id == "OBS5001");
     }
 
     [Fact]

@@ -70,7 +70,7 @@ Reactive 路径：成员返回 `IObservable<T>`，引用 `Observables.Postgres.R
 LISTEN 在会话上注册通道并占用连接上的 `Wait`/`WaitAsync` 循环，因此：
 
 1. **专用、非池化连接**：不要把从 `NpgsqlDataSource` / 连接池借来的连接用于长生命周期 Listen。优先 `Pooling=false`（或显式工厂打开专用连接）。
-2. **生命周期 = 订阅**：连接由调用方拥有；代理不 `Dispose` 连接。Listen 订阅结束时应 `UNLISTEN`（运行时尽力清理）并关闭/释放连接。
+2. **生命周期 = 订阅**：连接由调用方拥有；代理不 `Dispose` 连接。Listen 订阅结束时运行时 `UNLISTEN`：`WaitAsync` 使用订阅 `CancellationToken`（无 250ms 超时轮询）；`NpgsqlOperationInProgressException` 会重试，其它失败会传到流的 `OnError`。
 3. **勿与并发命令共享**：同一连接上不要与 Listen 的 `Wait` 循环并行跑其它查询。
 4. **Keepalive（推荐）**：在专用 Listen 连接字符串上设置 Npgsql **`Keepalive`**（秒，例如 `Keepalive=30`），避免空闲 LISTEN 会话被中间设备或服务器超时断开。Notify 可用短生命周期连接或另一会话；不必与 Listen 共用同一连接。
 

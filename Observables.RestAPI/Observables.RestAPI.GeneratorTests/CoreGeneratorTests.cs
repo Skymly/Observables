@@ -147,6 +147,29 @@ public class CoreGeneratorTests
     }
 
     [Fact]
+    public Task Path_AliasAs_does_not_report_OBS3004()
+    {
+        GeneratorRunOutput output = GeneratorTestHarness.Run(
+            """
+            public interface IUserApi
+            {
+                [Get("/users/{id}")]
+                Task<User> GetUser([AliasAs("id")] int userId);
+            }
+
+            public sealed class User
+            {
+                public int Id { get; set; }
+            }
+            """);
+
+        var snapshot = GeneratorTestHarness.ToSnapshot(output);
+        Assert.DoesNotContain("OBS3004", snapshot, StringComparison.Ordinal);
+        Assert.Contains("SlotKind.Path, 0, \"id\"", snapshot, StringComparison.Ordinal);
+        return Task.CompletedTask;
+    }
+
+    [Fact]
     public Task IObservable_on_R3_generator_reports_OBS3003()
     {
         GeneratorRunOutput output = GeneratorTestHarness.Run(
@@ -167,6 +190,27 @@ public class CoreGeneratorTests
 
         Assert.Contains("OBS3003", GeneratorTestHarness.ToSnapshot(output), StringComparison.Ordinal);
         return Task.CompletedTask;
+    }
+
+    [Fact]
+    public void RestAPI_OBS3002_when_runtime_missing()
+    {
+        GeneratorRunOutput output = GeneratorTestHarness.Run(
+            """
+            public interface IUserApi
+            {
+                [Get("/users/{id}")]
+                Observable<User> GetUser(int id);
+            }
+
+            public sealed class User
+            {
+                public int Id { get; set; }
+            }
+            """,
+            includeCoreReference: false);
+
+        Assert.Contains("OBS3002", GeneratorTestHarness.ToSnapshot(output), StringComparison.Ordinal);
     }
 
     // ── Path + [Body]/[Query] regression tests (issue #111) ──

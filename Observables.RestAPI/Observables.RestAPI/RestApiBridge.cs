@@ -261,11 +261,22 @@ namespace Observables.RestAPI
             CancellationToken cancellationToken
         )
         {
+            HttpResponseMessage? response = null;
             try
             {
-                using var response = await client
-                    .SendAsync(request, cancellationToken)
-                    .ConfigureAwait(false);
+                try
+                {
+                    response = await client
+                        .SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancellationToken)
+                        .ConfigureAwait(false);
+                }
+                catch (Exception ex)
+                {
+                    if (IsCallerCancellation(ex, cancellationToken))
+                        throw;
+
+                    throw new ApiRequestException(request, request.Method, settings, ex);
+                }
 
                 var exception = await settings.ExceptionFactory(response).ConfigureAwait(false);
                 if (exception != null)
@@ -273,6 +284,7 @@ namespace Observables.RestAPI
             }
             finally
             {
+                response?.Dispose();
                 request.Dispose();
             }
         }

@@ -44,7 +44,7 @@ internal sealed class ImmutableEquatableArray<T>
         var hash = 0;
         foreach (T value in _values)
         {
-            hash = Combine(hash, value.GetHashCode());
+            hash = Combine(hash, value is null ? 0 : value.GetHashCode());
         }
 
         static int Combine(int h1, int h2)

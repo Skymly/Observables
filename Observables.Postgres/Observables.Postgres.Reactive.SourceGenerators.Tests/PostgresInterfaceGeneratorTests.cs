@@ -167,4 +167,21 @@ public sealed class PostgresInterfaceGeneratorTests
         var output = GeneratorTestHarness.Run(userSource);
         Assert.Contains(output.Diagnostics, static diagnostic => diagnostic.Id == "OBS10001");
     }
+
+    [Fact]
+    public void Missing_reactive_adapter_reports_OBS10005()
+    {
+        const string userSource =
+            """
+            [Postgres]
+            public interface IHub
+            {
+                [Listen("orders")]
+                IObservable<string> Ping { get; }
+            }
+            """;
+
+        var output = GeneratorTestHarness.RunWithoutReactiveAdapter(userSource);
+        Assert.Contains(output.Diagnostics, static diagnostic => diagnostic.Id == "OBS10005");
+    }
 }

@@ -19,11 +19,7 @@ internal static class Emitter
         // Only emit the ModuleInitializer that registers generated factories.
         var generatedFactoryRegistrations = string.Join(
             "\n",
-            model.Interfaces
-                .Where(static interfaceModel => !interfaceModel.ClassDeclaration.Contains("<"))
-                .Select(static interfaceModel =>
-                    $"                        global::Observables.RestAPI.RestService.RegisterGeneratedFactory(typeof({interfaceModel.InterfaceDisplayName}), static (client, settings) => new global::Observables.RestAPI.Implementation.Generated.{interfaceModel.Ns}{interfaceModel.ClassSuffix}(client, settings));"
-                )
+            model.Interfaces.Select(FormatFactoryRegistration)
         );
 
         addSource(
@@ -142,6 +138,68 @@ internal static class Emitter
             """
         );
         return source.ToSourceText();
+    }
+
+    static string FormatFactoryRegistration(InterfaceModel interfaceModel)
+    {
+        var implementationType =
+            $"global::Observables.RestAPI.Implementation.Generated.{interfaceModel.Ns}{interfaceModel.ClassSuffix}";
+        if (!interfaceModel.ClassDeclaration.Contains("<"))
+        {
+            return $"                        global::Observables.RestAPI.RestService.RegisterGeneratedFactory(typeof({interfaceModel.InterfaceDisplayName}), static (client, settings) => new {implementationType}(client, settings));";
+        }
+
+        var unboundInterface = ToUnboundGeneric(interfaceModel.InterfaceDisplayName);
+        var unboundImplementation = $"{implementationType}{UnboundGenericAritySuffix(interfaceModel.ClassDeclaration)}";
+        return $"                        global::Observables.RestAPI.RestService.RegisterGeneratedFactory(typeof({unboundInterface}), static (type, client, settings) => global::System.Activator.CreateInstance(typeof({unboundImplementation}).MakeGenericType(type.GetGenericArguments()), client, settings)!);";
+    }
+
+    static string ToUnboundGeneric(string fullyQualified)
+    {
+        var open = fullyQualified.IndexOf('<');
+        if (open < 0)
+        {
+            return fullyQualified;
+        }
+
+        var close = fullyQualified.LastIndexOf('>');
+        if (close < open)
+        {
+            return fullyQualified;
+        }
+
+        return fullyQualified.Substring(0, open) + UnboundGenericAritySuffix(fullyQualified);
+    }
+
+    static string UnboundGenericAritySuffix(string declaration)
+    {
+        var open = declaration.IndexOf('<');
+        var close = declaration.LastIndexOf('>');
+        if (open < 0 || close < open)
+        {
+            return "<>";
+        }
+
+        var arity = 1;
+        var depth = 0;
+        for (var i = open + 1; i < close; i++)
+        {
+            var c = declaration[i];
+            if (c == '<')
+            {
+                depth++;
+            }
+            else if (c == '>')
+            {
+                depth--;
+            }
+            else if (c == ',' && depth == 0)
+            {
+                arity++;
+            }
+        }
+
+        return "<" + new string(',', arity - 1) + ">";
     }
 
 

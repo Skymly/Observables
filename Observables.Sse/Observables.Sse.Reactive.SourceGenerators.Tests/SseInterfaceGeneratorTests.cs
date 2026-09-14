@@ -124,4 +124,20 @@ public sealed class SseInterfaceGeneratorTests
         var output = GeneratorTestHarness.RunWithoutReactiveAdapter(userSource);
         Assert.Contains(output.Diagnostics, static diagnostic => diagnostic.Id == "OBS8005");
     }
+
+    [Fact]
+    public void Public_instance_event_reports_OBS8001()
+    {
+        const string userSource =
+            """
+            [Sse]
+            public interface IFeed
+            {
+                event System.Action Tick;
+            }
+            """;
+
+        var output = GeneratorTestHarness.Run(userSource);
+        Assert.Contains(output.Diagnostics, static diagnostic => diagnostic.Id == "OBS8001");
+    }
 }

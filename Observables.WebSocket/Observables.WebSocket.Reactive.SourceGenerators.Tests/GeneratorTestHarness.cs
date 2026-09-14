@@ -25,8 +25,26 @@ internal static class GeneratorTestHarness
             static () => [new WebSocketInterfaceStubGenerator()],
             SnapshotOptionsFactory.ForDomain("OBS6")));
 
+    static readonly GeneratorHarness HarnessWithoutReactiveAdapter = new(
+        new GeneratorHarnessDefinition(
+            HarnessDocumentBuilder.Create(
+                "System",
+                "System.Net.WebSockets",
+                "System.Threading",
+                "System.Reactive",
+                "Observables.WebSocket"),
+            _ => MetadataReferenceBuilder.Build(
+                "Observables.WebSocket.Reactive.dll",
+                typeof(global::System.Reactive.Unit),
+                typeof(global::Observables.WebSocket.WebSocketService)),
+            static () => [new WebSocketInterfaceStubGenerator()],
+            SnapshotOptionsFactory.ForDomain("OBS6")));
+
     internal static GeneratorRunOutput Run(string userSource) =>
         Harness.Run(userSource);
+
+    internal static GeneratorRunOutput RunWithoutReactiveAdapter(string userSource) =>
+        HarnessWithoutReactiveAdapter.Run(userSource);
 
     internal static CacheTrackingDriver RunWithCacheTracking(string userSource) =>
         Harness.RunWithCacheTracking(userSource);

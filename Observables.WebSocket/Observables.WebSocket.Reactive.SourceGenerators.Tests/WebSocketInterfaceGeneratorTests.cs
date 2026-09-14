@@ -248,4 +248,21 @@ public sealed class WebSocketInterfaceGeneratorTests
         var output = GeneratorTestHarness.Run(userSource);
         Assert.Contains(output.Diagnostics, static diagnostic => diagnostic.Id == "OBS6001");
     }
+
+    [Fact]
+    public void Missing_reactive_adapter_reports_OBS6005()
+    {
+        const string userSource =
+            """
+            [WebSocket]
+            public interface IFeed
+            {
+                [WebSocketReceive("message")]
+                IObservable<string> Messages { get; }
+            }
+            """;
+
+        var output = GeneratorTestHarness.RunWithoutReactiveAdapter(userSource);
+        Assert.Contains(output.Diagnostics, static diagnostic => diagnostic.Id == "OBS6005");
+    }
 }

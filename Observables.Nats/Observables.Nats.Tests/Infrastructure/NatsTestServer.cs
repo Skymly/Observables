@@ -10,7 +10,7 @@ public sealed class NatsTestServer : IAsyncDisposable
 {
     const string NatsServerVersion = "v2.10.28";
     static readonly SemaphoreSlim ServerBinaryGate = new(1, 1);
-    static readonly Mutex CrossProcessServerBinaryGate = CreateCrossProcessGate();
+    static readonly Semaphore CrossProcessServerBinaryGate = CreateCrossProcessGate();
     readonly Process process;
     readonly string url;
 
@@ -62,7 +62,14 @@ public sealed class NatsTestServer : IAsyncDisposable
         return new NatsTestServer(process, url);
     }
 
-    static async Task<string> EnsureNatsServerPathAsync(CancellationToken cancellationToken)
+    static Task<string> EnsureNatsServerPathAsync(CancellationToken cancellationToken) =>
+        WithCrossProcessBinaryGateAsync(
+            () => EnsureNatsServerPathCoreAsync(cancellationToken),
+            cancellationToken);
+
+    internal static async Task<T> WithCrossProcessBinaryGateAsync<T>(
+        Func<Task<T>> action,
+        CancellationToken cancellationToken = default)
     {
         await ServerBinaryGate.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
@@ -70,11 +77,11 @@ public sealed class NatsTestServer : IAsyncDisposable
             WaitForCrossProcessGate();
             try
             {
-                return await EnsureNatsServerPathCoreAsync(cancellationToken).ConfigureAwait(false);
+                return await action().ConfigureAwait(false);
             }
             finally
             {
-                CrossProcessServerBinaryGate.ReleaseMutex();
+                CrossProcessServerBinaryGate.Release();
             }
         }
         finally
@@ -83,28 +90,22 @@ public sealed class NatsTestServer : IAsyncDisposable
         }
     }
 
-    static Mutex CreateCrossProcessGate()
+    static Semaphore CreateCrossProcessGate()
     {
+        var name = "Observables.NatsTestServer.bin." + NatsServerVersion;
         try
         {
-            return new Mutex(initiallyOwned: false, @"Global\Observables.NatsTestServer." + NatsServerVersion);
+            return new Semaphore(1, 1, @"Global\" + name);
         }
         catch (UnauthorizedAccessException)
         {
-            return new Mutex(initiallyOwned: false, @"Local\Observables.NatsTestServer." + NatsServerVersion);
+            return new Semaphore(1, 1, @"Local\" + name);
         }
     }
 
     static void WaitForCrossProcessGate()
     {
-        try
-        {
-            CrossProcessServerBinaryGate.WaitOne();
-        }
-        catch (AbandonedMutexException)
-        {
-            // Previous process died while holding the gate; this process now owns it.
-        }
+        CrossProcessServerBinaryGate.WaitOne();
     }
 
     static async Task<string> EnsureNatsServerPathCoreAsync(CancellationToken cancellationToken)

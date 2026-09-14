@@ -42,6 +42,20 @@ public sealed class NatsTestServerArchiveTests
     }
 
     [Fact]
+    public async Task Cross_process_binary_gate_can_await_before_release()
+    {
+        var observed = await NatsTestServer.WithCrossProcessBinaryGateAsync(
+            async () =>
+            {
+                await Task.Yield();
+                return 17;
+            },
+            TestContext.Current.CancellationToken);
+
+        Assert.Equal(17, observed);
+    }
+
+    [Fact]
     public async Task WaitForPort_connects_after_earlier_attempts_failed()
     {
         var listener = new TcpListener(IPAddress.Loopback, 0);

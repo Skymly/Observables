@@ -153,6 +153,27 @@ public sealed class RedisInterfaceGeneratorTests
     }
 
     [Fact]
+    public void Trailing_nullable_cancellation_token_is_not_emitted_as_subscription_ct()
+    {
+        const string userSource =
+            """
+            [Redis]
+            public interface IHub
+            {
+                [RedisPublish("ping")]
+                IObservable<Unit> Publish(string id, CancellationToken? ct);
+            }
+            """;
+
+        var output = GeneratorTestHarness.Run(userSource);
+        Assert.Contains(output.Diagnostics, static diagnostic => diagnostic.Id == "OBS11006");
+        foreach (var source in output.GeneratedSources)
+        {
+            Assert.DoesNotContain("ct = default", source.Source, StringComparison.Ordinal);
+        }
+    }
+
+    [Fact]
     public void Missing_reactive_adapter_reports_OBS11005()
     {
         const string userSource =

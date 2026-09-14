@@ -132,7 +132,7 @@ internal static class Parser
             return;
         }
 
-        if (HasNonTrailingCancellationToken(method))
+        if (IdentifierHelper.HasNonTrailingCancellationToken(method))
         {
             diagnostics.Add(
                 Diagnostic.Create(
@@ -255,7 +255,7 @@ internal static class Parser
 
         var methodParamNames = new HashSet<string>(
             method.Parameters
-                .Where(static p => !IsCancellationToken(p.Type))
+                .Where(static p => !IdentifierHelper.IsCancellationToken(p.Type))
                 .Select(static p => p.Name),
             StringComparer.Ordinal);
 
@@ -353,7 +353,7 @@ internal static class Parser
         for (var i = 0; i < method.Parameters.Length; i++)
         {
             var parameter = method.Parameters[i];
-            if (i == method.Parameters.Length - 1 && IsCancellationToken(parameter.Type))
+            if (i == method.Parameters.Length - 1 && IdentifierHelper.IsCancellationToken(parameter.Type))
             {
                 ctName = IdentifierHelper.Escape(parameter.Name);
                 declarations.Add(
@@ -365,31 +365,5 @@ internal static class Parser
         }
 
         return (declarations, ctName);
-    }
-
-    static bool HasNonTrailingCancellationToken(IMethodSymbol method)
-    {
-        for (var i = 0; i < method.Parameters.Length - 1; i++)
-        {
-            if (IsCancellationToken(method.Parameters[i].Type))
-            {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    static bool IsCancellationToken(ITypeSymbol type)
-    {
-        if (type is INamedTypeSymbol named
-            && named.OriginalDefinition.SpecialType == SpecialType.System_Nullable_T
-            && named.TypeArguments.Length == 1)
-        {
-            type = named.TypeArguments[0];
-        }
-
-        return type.Name == "CancellationToken"
-            && type.ContainingNamespace?.ToDisplayString() == "System.Threading";
     }
 }

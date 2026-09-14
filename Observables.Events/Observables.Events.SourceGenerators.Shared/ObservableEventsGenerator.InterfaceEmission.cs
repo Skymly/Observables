@@ -119,6 +119,9 @@ public sealed partial class ObservableEventsGenerator
             return string.Empty;
 
         var implName = GetEventImplName(type, entryKind);
+        var implClass = CreateEventImplClass(type, desc, implName, hierarchy, compilation, reportDiagnostic, entryKind);
+        if (CreateEventInterface(desc, hierarchy, compilation, entryKind) is null)
+            return string.Empty;
         var typeParamList = type.IsGenericType
             ? $"<{string.Join(", ", type.TypeParameters.Select(static tp => tp.Name))}>"
             : string.Empty;
@@ -186,8 +189,6 @@ public sealed partial class ObservableEventsGenerator
 
         var extensionClass = ObservableEventsSyntaxFactory.BootstrapExtensionsClassDeclaration()
             .AddMembers(extensionMembers.ToArray());
-
-        var implClass = CreateEventImplClass(type, desc, implName, hierarchy, compilation, reportDiagnostic, entryKind);
 
         var ns = SyntaxFactory.FileScopedNamespaceDeclaration(SyntaxFactory.ParseName(ObservableEventsConstants.GeneratedNamespace))
             .AddMembers(extensionClass, implClass);

@@ -56,6 +56,17 @@ internal static class GeneratorTestHarness
             SnapshotOptions,
             includeResultDiagnostics: true));
 
+    static readonly GeneratorHarness ReactiveHarnessWithoutAdapter = new(
+        new GeneratorHarnessDefinition(
+            HarnessDocumentBuilder.Create(SharedUsings),
+            _ => MetadataReferenceBuilder.Build(
+                "Observables.RestAPI.Reactive.dll",
+                typeof(global::System.Reactive.Unit),
+                typeof(global::Observables.RestAPI.RestService)),
+            static () => [new Observables.RestAPI.Reactive.SourceGenerators.RestApiInterfaceStubGenerator()],
+            SnapshotOptions,
+            includeResultDiagnostics: true));
+
     internal static (CSharpCompilation Compilation, SyntaxTree Tree) CreateHarnessCompilation(
         string userSource,
         LanguageVersion languageVersion = LanguageVersion.Preview,
@@ -101,6 +112,9 @@ internal static class GeneratorTestHarness
                 ExtraReferences = extraReferences,
                 IncludeCoreReference = includeCoreReference,
             });
+
+    public static GeneratorRunOutput RunReactiveWithoutAdapter(string userSource) =>
+        ReactiveHarnessWithoutAdapter.Run(userSource);
 
     internal static CacheTrackingDriver RunWithCacheTracking(string userSource) =>
         R3Harness.RunWithCacheTracking(userSource);

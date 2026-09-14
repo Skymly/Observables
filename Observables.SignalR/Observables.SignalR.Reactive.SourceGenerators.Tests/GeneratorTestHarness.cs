@@ -26,8 +26,19 @@ internal static class GeneratorTestHarness
             static () => [new HubInterfaceStubGenerator()],
             SnapshotOptionsFactory.ForDomain("OBS4")));
 
-    internal static GeneratorRunOutput Run(string userSource) =>
-        Harness.Run(userSource);
+    internal static GeneratorRunOutput Run(string userSource, bool failSafeProbe = false) =>
+        Harness.Run(
+            userSource,
+            new GeneratorHarnessRunOptions
+            {
+                OptionsProvider = failSafeProbe
+                    ? new TestAnalyzerConfigOptionsProvider(
+                        new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+                        {
+                            ["build_property.ObservablesSignalRFailSafeProbe"] = "true",
+                        })
+                    : null,
+            });
 
     internal static CacheTrackingDriver RunWithCacheTracking(string userSource) =>
         Harness.RunWithCacheTracking(userSource);

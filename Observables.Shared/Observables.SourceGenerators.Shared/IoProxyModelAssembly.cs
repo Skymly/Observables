@@ -18,7 +18,32 @@ internal static class IoProxyModelAssembly
             name = name.Substring(1);
         }
 
-        return name + "GeneratedProxy";
+        if (iface.Arity > 0)
+        {
+            name += iface.Arity.ToString();
+        }
+
+        var prefix = ContainingIdentityPrefix(iface);
+        return prefix.Length == 0 ? name + "GeneratedProxy" : prefix + "_" + name + "GeneratedProxy";
+    }
+
+    static string ContainingIdentityPrefix(INamedTypeSymbol type)
+    {
+        var nested = string.Empty;
+        var containing = type.ContainingType;
+        while (containing is not null)
+        {
+            nested = nested.Length == 0 ? containing.Name : containing.Name + "_" + nested;
+            containing = containing.ContainingType;
+        }
+
+        if (type.ContainingNamespace is { IsGlobalNamespace: false } ns)
+        {
+            var nsPrefix = ns.ToDisplayString().Replace(".", "_");
+            return nested.Length == 0 ? nsPrefix : nsPrefix + "_" + nested;
+        }
+
+        return nested;
     }
 
     internal static string GeneratedHintName(INamedTypeSymbol iface, string domainSuffix) =>
@@ -34,7 +59,8 @@ internal static class IoProxyModelAssembly
         Action<MarkedInterfaceContext, IPropertySymbol, List<TMember>, List<Diagnostic>>? tryAddProperty,
         Func<MarkedInterfaceContext, string, ImmutableEquatableArray<TMember>, TInterfaceModel> createInterface,
         Func<ImmutableEquatableArray<TInterfaceModel>, TContextModel> createContext,
-        Action<MarkedInterfaceContext>? onMarkedInterface = null)
+        Action<MarkedInterfaceContext>? onMarkedInterface = null,
+        Action<MarkedInterfaceContext, ISymbol, List<TMember>, List<Diagnostic>>? tryAddOther = null)
         where TMember : IEquatable<TMember>
         where TInterfaceModel : IEquatable<TInterfaceModel>
     {
@@ -65,6 +91,9 @@ internal static class IoProxyModelAssembly
                         break;
                     case IPropertySymbol property:
                         tryAddProperty?.Invoke(marked, property, members, diagnostics);
+                        break;
+                    default:
+                        tryAddOther?.Invoke(marked, member, members, diagnostics);
                         break;
                 }
             }

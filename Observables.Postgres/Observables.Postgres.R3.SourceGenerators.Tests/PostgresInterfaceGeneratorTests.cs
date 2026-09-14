@@ -26,6 +26,30 @@ public sealed class PostgresInterfaceGeneratorTests
     }
 
     [Fact]
+    public void Generated_proxy_carries_json_trim_warnings()
+    {
+        const string userSource =
+            """
+            [Postgres]
+            public interface IOrderChannel
+            {
+                [Listen("order_created")]
+                Observable<string> OrderCreated { get; }
+
+                [Notify("order_created")]
+                Observable<Unit> Raise(string payload, CancellationToken cancellationToken = default);
+            }
+            """;
+
+        var output = GeneratorTestHarness.Run(userSource);
+        Assert.Contains(
+            output.GeneratedSources,
+            static s => s.HintName.Contains("IOrderChannel.Postgres.g.cs", StringComparison.Ordinal)
+                && s.Source.Contains("RequiresUnreferencedCode(\"JSON payload serialization uses System.Text.Json reflection. Preserve payload type members when trimming.\")", StringComparison.Ordinal)
+                && s.Source.Contains("RequiresDynamicCode(\"JSON payload serialization uses System.Text.Json reflection. Preserve payload type members when trimming.\")", StringComparison.Ordinal));
+    }
+
+    [Fact]
     public Task Postgres_interface_generates_typed_json_payload_proxy()
     {
         const string userSource =
@@ -244,6 +268,27 @@ public sealed class PostgresInterfaceGeneratorTests
     }
 
     [Fact]
+    public void Trailing_nullable_cancellation_token_is_not_emitted_as_subscription_ct()
+    {
+        const string userSource =
+            """
+            [Postgres]
+            public interface IHub
+            {
+                [Notify("ping")]
+                Observable<Unit> Ping(string payload, CancellationToken? ct);
+            }
+            """;
+
+        var output = GeneratorTestHarness.Run(userSource);
+        Assert.Contains(output.Diagnostics, static diagnostic => diagnostic.Id == "OBS10006");
+        foreach (var source in output.GeneratedSources)
+        {
+            Assert.DoesNotContain("ct = default", source.Source, StringComparison.Ordinal);
+        }
+    }
+
+    [Fact]
     public void Non_trailing_cancellation_token_reports_OBS10001()
     {
         const string userSource =
@@ -259,5 +304,21 @@ public sealed class PostgresInterfaceGeneratorTests
         var output = GeneratorTestHarness.Run(userSource);
         var snapshot = GeneratorTestHarness.ToSnapshot(output);
         Assert.Contains("OBS10001", snapshot, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Public_instance_event_reports_OBS10001()
+    {
+        const string userSource =
+            """
+            [Postgres]
+            public interface IHub
+            {
+                event System.Action Tick;
+            }
+            """;
+
+        var output = GeneratorTestHarness.Run(userSource);
+        Assert.Contains(output.Diagnostics, static diagnostic => diagnostic.Id == "OBS10001");
     }
 }

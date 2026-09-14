@@ -75,17 +75,20 @@ internal sealed class EventInterfaceDescriptor
     public EventInterfaceDescriptor(
         INamedTypeSymbol sourceType,
         string interfaceName,
+        string implName,
         ImmutableArray<IEventSymbol> exclusiveEvents,
         ImmutableArray<INamedTypeSymbol> parentTypes)
     {
         SourceType = sourceType;
         InterfaceName = interfaceName;
+        ImplName = implName;
         ExclusiveEvents = exclusiveEvents;
         ParentTypes = parentTypes;
     }
 
     public INamedTypeSymbol SourceType { get; }
     public string InterfaceName { get; set; }
+    public string ImplName { get; set; }
     public ImmutableArray<IEventSymbol> ExclusiveEvents { get; }
     public ImmutableArray<INamedTypeSymbol> ParentTypes { get; }
 }

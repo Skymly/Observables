@@ -25,8 +25,26 @@ internal static class GeneratorTestHarness
             static () => [new PostgresInterfaceStubGenerator()],
             SnapshotOptionsFactory.ForDomain("OBS10")));
 
+    static readonly GeneratorHarness HarnessWithoutReactiveAdapter = new(
+        new GeneratorHarnessDefinition(
+            HarnessDocumentBuilder.Create(
+                "System",
+                "System.Threading",
+                "Observables.Postgres",
+                "Npgsql"),
+            _ => MetadataReferenceBuilder.Build(
+                "Observables.Postgres.Reactive.dll",
+                typeof(global::System.Reactive.Unit),
+                typeof(global::Observables.Postgres.PostgresService),
+                typeof(global::Npgsql.NpgsqlConnection)),
+            static () => [new PostgresInterfaceStubGenerator()],
+            SnapshotOptionsFactory.ForDomain("OBS10")));
+
     internal static GeneratorRunOutput Run(string userSource) =>
         Harness.Run(userSource);
+
+    internal static GeneratorRunOutput RunWithoutReactiveAdapter(string userSource) =>
+        HarnessWithoutReactiveAdapter.Run(userSource);
 
     internal static CacheTrackingDriver RunWithCacheTracking(string userSource) =>
         Harness.RunWithCacheTracking(userSource);

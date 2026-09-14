@@ -31,6 +31,22 @@ internal static class GeneratorTestHarness
             static () => [new RedisInterfaceStubGenerator()],
             SnapshotOptionsFactory.ForDomain("OBS11")));
 
+    static readonly GeneratorHarness HarnessWithoutReactiveAdapter = new(
+        new GeneratorHarnessDefinition(
+            HarnessDocumentBuilder.Create(
+                "System",
+                "System.Threading",
+                "System.Reactive",
+                "Observables.Redis",
+                "StackExchange.Redis"),
+            _ => MetadataReferenceBuilder.Build(
+                "Observables.Redis.Reactive.dll",
+                typeof(global::System.Reactive.Unit),
+                typeof(global::Observables.Redis.RedisService),
+                typeof(global::StackExchange.Redis.ConnectionMultiplexer)),
+            static () => [new RedisInterfaceStubGenerator()],
+            SnapshotOptionsFactory.ForDomain("OBS11")));
+
     internal static GeneratorRunOutput Run(string userSource, bool includeCoreReference = true) =>
         Harness.Run(
             userSource,
@@ -38,6 +54,9 @@ internal static class GeneratorTestHarness
             {
                 IncludeCoreReference = includeCoreReference,
             });
+
+    internal static GeneratorRunOutput RunWithoutReactiveAdapter(string userSource) =>
+        HarnessWithoutReactiveAdapter.Run(userSource);
 
     internal static CacheTrackingDriver RunWithCacheTracking(string userSource) =>
         Harness.RunWithCacheTracking(userSource);

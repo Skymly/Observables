@@ -10,6 +10,7 @@ public sealed class NatsTestServer : IAsyncDisposable
 {
     const string NatsServerVersion = "v2.10.28";
     static readonly SemaphoreSlim ServerBinaryGate = new(1, 1);
+    static readonly Semaphore CrossProcessServerBinaryGate = CreateCrossProcessGate();
     readonly Process process;
     readonly string url;
 
@@ -45,27 +46,76 @@ public sealed class NatsTestServer : IAsyncDisposable
             EnableRaisingEvents = true,
         };
 
+        process.OutputDataReceived += static (_, _) => { };
+        process.ErrorDataReceived += static (_, _) => { };
+
         if (!process.Start())
         {
             throw new InvalidOperationException("Failed to start nats-server.");
         }
+
+        process.BeginOutputReadLine();
+        process.BeginErrorReadLine();
 
         var url = $"nats://127.0.0.1:{port}";
         await WaitForPortAsync(port, cancellationToken).ConfigureAwait(false);
         return new NatsTestServer(process, url);
     }
 
-    static async Task<string> EnsureNatsServerPathAsync(CancellationToken cancellationToken)
+    static Task<string> EnsureNatsServerPathAsync(CancellationToken cancellationToken) =>
+        WithCrossProcessBinaryGateAsync(
+            () => EnsureNatsServerPathCoreAsync(cancellationToken),
+            cancellationToken);
+
+    internal static async Task<T> WithCrossProcessBinaryGateAsync<T>(
+        Func<Task<T>> action,
+        CancellationToken cancellationToken = default)
     {
         await ServerBinaryGate.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
-            return await EnsureNatsServerPathCoreAsync(cancellationToken).ConfigureAwait(false);
+            WaitForCrossProcessGate();
+            try
+            {
+                return await action().ConfigureAwait(false);
+            }
+            finally
+            {
+                CrossProcessServerBinaryGate.Release();
+            }
         }
         finally
         {
             ServerBinaryGate.Release();
         }
+    }
+
+    static Semaphore CreateCrossProcessGate()
+    {
+        if (!OperatingSystem.IsWindows())
+        {
+            // Named semaphores are Windows-only; unnamed Semaphore is not thread-affine, so await+Release is safe.
+            return new Semaphore(1, 1);
+        }
+
+        var name = "Observables.NatsTestServer.bin." + NatsServerVersion;
+        try
+        {
+            return new Semaphore(1, 1, @"Global\" + name);
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return new Semaphore(1, 1, @"Local\" + name);
+        }
+        catch (PlatformNotSupportedException)
+        {
+            return new Semaphore(1, 1);
+        }
+    }
+
+    static void WaitForCrossProcessGate()
+    {
+        CrossProcessServerBinaryGate.WaitOne();
     }
 
     static async Task<string> EnsureNatsServerPathCoreAsync(CancellationToken cancellationToken)
@@ -80,50 +130,59 @@ public sealed class NatsTestServer : IAsyncDisposable
         }
 
         Directory.CreateDirectory(root);
-        var archive = OperatingSystem.IsWindows()
+        var zip = OperatingSystem.IsWindows();
+        var archive = zip
             ? $"nats-server-{NatsServerVersion}-windows-amd64.zip"
             : OperatingSystem.IsLinux()
                 ? $"nats-server-{NatsServerVersion}-linux-amd64.tar.gz"
                 : throw new PlatformNotSupportedException("E2E NATS tests require Windows or Linux CI agents.");
 
         var archivePath = Path.Combine(root, archive);
-        if (!File.Exists(archivePath))
+        if (!IsUsableArchive(archivePath, zip))
         {
+            TryDelete(archivePath);
             var downloadUrl =
                 $"https://github.com/nats-io/nats-server/releases/download/{NatsServerVersion}/{archive}";
             using var client = new HttpClient();
             await using var stream = await client
                 .GetStreamAsync(downloadUrl, cancellationToken)
                 .ConfigureAwait(false);
-            await using var file = File.Create(archivePath);
-            await stream.CopyToAsync(file, cancellationToken).ConfigureAwait(false);
+            await DownloadAtomicallyAsync(stream, archivePath, cancellationToken).ConfigureAwait(false);
         }
 
-        if (OperatingSystem.IsWindows())
+        try
         {
-            ZipFile.ExtractToDirectory(archivePath, root, overwriteFiles: true);
-        }
-        else
-        {
-            using var extraction = Process.Start(
-                new ProcessStartInfo
-                {
-                    FileName = "tar",
-                    UseShellExecute = false,
-                    ArgumentList =
-                    {
-                        "-xzf",
-                        archivePath,
-                        "-C",
-                        root,
-                    },
-                }) ?? throw new InvalidOperationException("Failed to start tar for NATS server extraction.");
-            await extraction.WaitForExitAsync(cancellationToken).ConfigureAwait(false);
-            if (extraction.ExitCode != 0)
+            if (zip)
             {
-                throw new InvalidOperationException(
-                    $"tar failed to extract NATS server archive with exit code {extraction.ExitCode}.");
+                ZipFile.ExtractToDirectory(archivePath, root, overwriteFiles: true);
             }
+            else
+            {
+                using var extraction = Process.Start(
+                    new ProcessStartInfo
+                    {
+                        FileName = "tar",
+                        UseShellExecute = false,
+                        ArgumentList =
+                        {
+                            "-xzf",
+                            archivePath,
+                            "-C",
+                            root,
+                        },
+                    }) ?? throw new InvalidOperationException("Failed to start tar for NATS server extraction.");
+                await extraction.WaitForExitAsync(cancellationToken).ConfigureAwait(false);
+                if (extraction.ExitCode != 0)
+                {
+                    throw new InvalidOperationException(
+                        $"tar failed to extract NATS server archive with exit code {extraction.ExitCode}.");
+                }
+            }
+        }
+        catch
+        {
+            TryDelete(archivePath);
+            throw;
         }
 
         var extracted = Directory.GetFiles(root, exeName, SearchOption.AllDirectories).FirstOrDefault();
@@ -139,6 +198,70 @@ public sealed class NatsTestServer : IAsyncDisposable
 
         EnsureExecutable(exePath);
         return exePath;
+    }
+
+    internal static bool IsUsableArchive(string archivePath, bool zip)
+    {
+        if (!File.Exists(archivePath) || new FileInfo(archivePath).Length == 0)
+        {
+            return false;
+        }
+
+        if (!zip)
+        {
+            return new FileInfo(archivePath).Length > 1024;
+        }
+
+        try
+        {
+            using var archive = ZipFile.OpenRead(archivePath);
+            return archive.Entries.Count > 0;
+        }
+        catch (InvalidDataException)
+        {
+            return false;
+        }
+        catch (InvalidOperationException)
+        {
+            return false;
+        }
+    }
+
+    internal static async Task DownloadAtomicallyAsync(
+        Stream source,
+        string archivePath,
+        CancellationToken cancellationToken)
+    {
+        var partialPath = archivePath + ".partial";
+        try
+        {
+            await using (var file = new FileStream(partialPath, FileMode.Create, FileAccess.Write, FileShare.None))
+            {
+                await source.CopyToAsync(file, cancellationToken).ConfigureAwait(false);
+            }
+
+            File.Move(partialPath, archivePath, overwrite: true);
+        }
+        catch
+        {
+            TryDelete(partialPath);
+            throw;
+        }
+    }
+
+    static void TryDelete(string path)
+    {
+        try
+        {
+            if (File.Exists(path))
+            {
+                File.Delete(path);
+            }
+        }
+        catch
+        {
+            // ignored
+        }
     }
 
     static void EnsureExecutable(string path)
@@ -168,16 +291,20 @@ public sealed class NatsTestServer : IAsyncDisposable
         }
     }
 
-    static async Task WaitForPortAsync(int port, CancellationToken cancellationToken)
+    internal static async Task WaitForPortAsync(int port, CancellationToken cancellationToken)
     {
-        using var client = new TcpClient();
         for (var i = 0; i < 50; i++)
         {
             cancellationToken.ThrowIfCancellationRequested();
             try
             {
+                using var client = new TcpClient();
                 await client.ConnectAsync(IPAddress.Loopback, port, cancellationToken).ConfigureAwait(false);
                 return;
+            }
+            catch (OperationCanceledException)
+            {
+                throw;
             }
             catch
             {

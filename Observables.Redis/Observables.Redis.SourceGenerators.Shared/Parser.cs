@@ -159,7 +159,7 @@ internal static class Parser
             return;
         }
 
-        if (HasNonTrailingCancellationToken(method))
+        if (IdentifierHelper.HasNonTrailingCancellationToken(method))
         {
             diagnostics.Add(
                 Diagnostic.Create(
@@ -326,7 +326,7 @@ internal static class Parser
 
         foreach (var parameter in method.Parameters)
         {
-            if (IsCancellationToken(parameter.Type))
+            if (IdentifierHelper.IsCancellationToken(parameter.Type))
             {
                 continue;
             }
@@ -341,7 +341,7 @@ internal static class Parser
 
         foreach (var name in channelParameterNames)
         {
-            var found = method.Parameters.Any(p => p.Name == name && !IsCancellationToken(p.Type));
+            var found = method.Parameters.Any(p => p.Name == name && !IdentifierHelper.IsCancellationToken(p.Type));
             if (!found)
             {
                 badLocation = method.Locations.FirstOrDefault();
@@ -448,7 +448,7 @@ internal static class Parser
         for (var i = 0; i < method.Parameters.Length; i++)
         {
             var parameter = method.Parameters[i];
-            if (i == method.Parameters.Length - 1 && IsCancellationToken(parameter.Type))
+            if (i == method.Parameters.Length - 1 && IdentifierHelper.IsCancellationToken(parameter.Type))
             {
                 ctName = IdentifierHelper.Escape(parameter.Name);
                 declarations.Add(
@@ -460,31 +460,5 @@ internal static class Parser
         }
 
         return (declarations, ctName);
-    }
-
-    static bool HasNonTrailingCancellationToken(IMethodSymbol method)
-    {
-        for (var i = 0; i < method.Parameters.Length - 1; i++)
-        {
-            if (IsCancellationToken(method.Parameters[i].Type))
-            {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    static bool IsCancellationToken(ITypeSymbol type)
-    {
-        if (type is INamedTypeSymbol named
-            && named.OriginalDefinition.SpecialType == SpecialType.System_Nullable_T
-            && named.TypeArguments.Length == 1)
-        {
-            type = named.TypeArguments[0];
-        }
-
-        return type.Name == "CancellationToken"
-            && type.ContainingNamespace?.ToDisplayString() == "System.Threading";
     }
 }

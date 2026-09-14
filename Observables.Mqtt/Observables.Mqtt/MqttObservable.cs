@@ -32,7 +32,7 @@ public static class MqttObservable
     [RequiresDynamicCode("JSON payload serialization uses System.Text.Json reflection.")]
 #endif
     public static Observable<T> FromSubscribe<T>(IMqttClient client, string topicFilter) =>
-        Observable.Create<T>(async (observer, ct) =>
+        R3AsyncCreate.Create<T>(async (observer, ct) =>
         {
             await MqttProtocol
                 .SubscribeAsync<T>(client, topicFilter, observer.OnNext, observer.OnErrorResume, ct)

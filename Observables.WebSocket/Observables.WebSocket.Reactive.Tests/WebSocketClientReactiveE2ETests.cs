@@ -109,4 +109,26 @@ public sealed class WebSocketClientReactiveE2ETests(WebSocketTestServerFixture f
         Assert.Equal(0, Volatile.Read(ref completed));
         Assert.Equal(0, Volatile.Read(ref errored));
     }
+
+    [Fact]
+    public async Task FromReceive_message_over_cap_completes_with_error()
+    {
+        using var socket = new ClientWebSocket();
+        using var cts = new CancellationTokenSource(DefaultTimeout);
+        await socket.ConnectAsync(fixture.Server.Uri, cts.Token);
+
+        var error = new TaskCompletionSource<Exception>(TaskCreationOptions.RunContinuationsAsynchronously);
+        using var subscription = SystemReactiveWebSocketAdapter.FromReceive<string>(socket, maxMessageBytes: 16)
+            .Subscribe(
+                _ => { },
+                ex => error.TrySetResult(ex),
+                () => { });
+
+        var payload = Encoding.UTF8.GetBytes(new string('x', 64));
+        await socket.SendAsync(new ArraySegment<byte>(payload), WebSocketMessageType.Text, true, cts.Token);
+
+        var ex = await error.Task.WaitAsync(cts.Token);
+        Assert.IsAssignableFrom<InvalidOperationException>(ex);
+        Assert.Contains("maximum size", ex.Message, StringComparison.Ordinal);
+    }
 }

@@ -92,6 +92,12 @@ public sealed class NatsTestServer : IAsyncDisposable
 
     static Semaphore CreateCrossProcessGate()
     {
+        if (!OperatingSystem.IsWindows())
+        {
+            // Named semaphores are Windows-only; unnamed Semaphore is not thread-affine, so await+Release is safe.
+            return new Semaphore(1, 1);
+        }
+
         var name = "Observables.NatsTestServer.bin." + NatsServerVersion;
         try
         {
@@ -100,6 +106,10 @@ public sealed class NatsTestServer : IAsyncDisposable
         catch (UnauthorizedAccessException)
         {
             return new Semaphore(1, 1, @"Local\" + name);
+        }
+        catch (PlatformNotSupportedException)
+        {
+            return new Semaphore(1, 1);
         }
     }
 

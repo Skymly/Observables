@@ -441,6 +441,36 @@ public sealed class ObservableEventsGeneratorTests
         Assert.DoesNotContain("IButtonRoutedEvents", snapshot);
     }
 
+    [Fact]
+    public void Wpf_routed_events_subscribe_via_AddHandler()
+    {
+        const string source = WpfStubs + """
+            namespace Demo
+            {
+                public static class Usage
+                {
+                    public static void Run(System.Windows.Controls.Button button)
+                    {
+                        _ = button.RoutedEvents(handledEventsToo: true).Click;
+                        _ = button.RoutedEventHandlers(handledEventsToo: true).Click;
+                    }
+                }
+            }
+            """;
+
+        GeneratorRunOutput output = GeneratorTestHarness.Run(
+            source,
+            generators: [new ObservableEventsGenerator()],
+            useWpf: true,
+            observableRoutedEvents: true);
+        string snapshot = GeneratorTestHarness.ToSnapshot(output);
+
+        Assert.Contains("AddHandler", snapshot);
+        Assert.Contains("RemoveHandler", snapshot);
+        Assert.Contains("_handledEventsToo", snapshot);
+        Assert.DoesNotContain("_sender.Click +=", snapshot);
+        Assert.DoesNotContain("_sender.Click -=", snapshot);
+    }
 
     [Fact]
     public void Parent_event_interface_uses_constructed_type_arguments()

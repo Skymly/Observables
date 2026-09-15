@@ -71,10 +71,11 @@ Observable<string> Messages { get; }
 ```
 
 - 只读属性（仅 get）。
-- 缓存（惰性 `??=`）：每个代理实例一次订阅。
+- 缓存（惰性 `??=`）：每个代理实例一个序列。
 - 载荷反序列化为 `T`：`byte[]`（原始）、`string`（UTF-8）或 JSON（net8+）。
 - 当服务器发送 Close 帧时完成。
 - 重组后的单条消息默认上限 **1 MiB**（`WebSocketObservable.DefaultMaxReceiveMessageBytes`）。`FromReceive(socket, maxMessageBytes)` 可覆盖。超出则接收流以错误完成，避免无界缓冲。
+- 每个 `ClientWebSocket` 只有一个接收循环（`WebSocketReceivePump`），多个 `[WebSocketReceive]` 成员、多个订阅者共用它，各自反序列化自己的 `T`。上限由启动该循环的那次订阅决定，后来者沿用。
 
 ## 5. 诊断 ID（OBS6xxx）
 
@@ -109,7 +110,8 @@ ClientWebSocket  ──►  WebSocketService.For<T>(socket)
 - **代理接收预构造的 socket**：调用方在传递给 `WebSocketService.For<T>` 之前控制连接生命周期与配置
   （头、保活、TLS 等）。
 - **Connect/Close 作为显式边界方法**：使连接生命周期在接口契约中可见，并可与反应式运算符组合。
-- **Receive 使用惰性缓存 observable**：重新订阅不会重新注册接收循环。
+- **每 socket 一个接收泵**：`ClientWebSocket` 不允许并发接收，一个订阅一条循环会让 BCL 把每条消息只交给其中一个挂起的 `ReceiveAsync`，其余订阅者永远收不到。所以循环按 socket 唯一（`ConditionalWeakTable` 索引），首次订阅时启动，之后把消息扇出给所有 sink。
+- **最后一个订阅者离开时不停泵**：取消挂起的 `ReceiveAsync` 会连带 abort 整个 socket，发送也一起废掉。没有订阅者的泵读完即丢——WebSocket 客户端本来也得持续接收才能处理控制帧。泵在 socket 关闭或出错时结束。
 - **Send 载荷分派**：`string` → 文本帧（UTF-8），`byte[]` → 二进制帧，其他类型
   → JSON 文本帧（仅 net8+；在 netstandard2.0 上抛出 `NotSupportedException`）。
 - **具名 Send 用 `{"type","payload"}` 信封**：名字在生成代码里直接成为匿名对象的字面量，运行时不读特性，

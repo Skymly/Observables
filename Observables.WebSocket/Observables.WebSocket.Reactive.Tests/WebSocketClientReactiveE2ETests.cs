@@ -97,7 +97,7 @@ public sealed class WebSocketClientReactiveE2ETests(WebSocketTestServerFixture f
     }
 
     [Fact]
-    public async Task FromReceive_dispose_cancels_the_pump_without_completing()
+    public async Task FromReceive_dispose_detaches_without_completing_and_leaves_the_socket_usable()
     {
         using var socket = new ClientWebSocket();
         using var cts = new CancellationTokenSource(DefaultTimeout);
@@ -123,6 +123,35 @@ public sealed class WebSocketClientReactiveE2ETests(WebSocketTestServerFixture f
 
         Assert.Equal(0, Volatile.Read(ref completed));
         Assert.Equal(0, Volatile.Read(ref errored));
+
+        // Cancelling a pending ReceiveAsync aborts the whole socket, so detaching must not cancel one.
+        await socket.SendAsync(
+            new ArraySegment<byte>(Encoding.UTF8.GetBytes("still-open")),
+            WebSocketMessageType.Text,
+            true,
+            cts.Token);
+        Assert.Equal(WebSocketState.Open, socket.State);
+    }
+
+    [Fact]
+    public async Task Two_subscribers_see_the_same_message()
+    {
+        using var socket = new ClientWebSocket();
+        using var cts = new CancellationTokenSource(DefaultTimeout);
+        await socket.ConnectAsync(fixture.Server.Uri, cts.Token);
+
+        var stream = SystemReactiveWebSocketAdapter.FromReceive<string>(socket);
+        var first = new TaskCompletionSource<string>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var second = new TaskCompletionSource<string>(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        using var firstSubscription = stream.Subscribe(value => first.TrySetResult(value));
+        using var secondSubscription = stream.Subscribe(value => second.TrySetResult(value));
+
+        var payload = Encoding.UTF8.GetBytes("shared");
+        await socket.SendAsync(new ArraySegment<byte>(payload), WebSocketMessageType.Text, true, cts.Token);
+
+        Assert.Equal("shared", await first.Task.WaitAsync(cts.Token));
+        Assert.Equal("shared", await second.Task.WaitAsync(cts.Token));
     }
 
     [Fact]

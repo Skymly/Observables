@@ -66,36 +66,34 @@ public static class WebSocketObservable
     [RequiresDynamicCode("JSON payload deserialization uses System.Text.Json reflection.")]
 #endif
     public static Observable<T> FromReceive<T>(ClientWebSocket socket, int maxMessageBytes) =>
-        Observable.Create<T>(async (observer, ct) =>
-        {
-            while (!ct.IsCancellationRequested && socket.State == WebSocketState.Open)
-            {
-                try
-                {
-                    var message = await WebSocketProtocol
-                        .ReceiveMessageAsync(socket, ct, maxMessageBytes)
-                        .ConfigureAwait(false);
-                    if (message is null)
-                    {
-                        observer.OnCompleted();
-                        return;
-                    }
+        Observable.Create<T>(observer =>
+            WebSocketReceivePump
+                .For(socket)
+                .Subscribe(
+                    new Sink<T>(
+                        observer,
+                        (payload, messageType) => WebSocketProtocol.DeserializePayload<T>(payload, messageType)),
+                    maxMessageBytes));
 
-                    observer.OnNext(WebSocketProtocol.DeserializePayload<T>(message.Value.Payload, message.Value.MessageType));
-                }
-                catch (OperationCanceledException)
-                {
-                    return;
-                }
-                catch (WebSocketProtocol.MessageTooLargeException ex)
-                {
-                    observer.OnCompleted(Result.Failure(ex));
-                    return;
-                }
-                catch (Exception ex)
-                {
-                    observer.OnErrorResume(ex);
-                }
+    sealed class Sink<T>(Observer<T> observer, Func<byte[], WebSocketMessageType, T> deserialize)
+        : IWebSocketReceiveSink
+    {
+        public void OnMessage(byte[] payload, WebSocketMessageType messageType)
+        {
+            try
+            {
+                observer.OnNext(deserialize(payload, messageType));
             }
-        });
+            catch (Exception ex)
+            {
+                observer.OnErrorResume(ex);
+            }
+        }
+
+        public void OnClosed() => observer.OnCompleted();
+
+        public void OnFailed(Exception error) => observer.OnCompleted(Result.Failure(error));
+
+        public void OnTransientError(Exception error) => observer.OnErrorResume(error);
+    }
 }

@@ -307,6 +307,8 @@
 
     <Project Path="Observables.Redis/Observables.Redis/Observables.Redis.csproj" />
 
+    <Project Path="Observables.Redis/Observables.Redis.R3/Observables.Redis.R3.csproj" />
+
     <Project Path="Observables.Redis/Observables.Redis.Reactive/Observables.Redis.Reactive.csproj" />
 
     <Project Path="Observables.Redis/Observables.Redis.R3.SourceGenerators/Observables.Redis.R3.SourceGenerators.csproj" />

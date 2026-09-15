@@ -3,19 +3,17 @@
   <PropertyGroup>
     <RootNamespace>Observables.Redis</RootNamespace>
     <AssemblyName>Observables.Redis</AssemblyName>
-    <Description>Redis Pub/Sub runtime and R3 stream bridges.</Description>
+    <Description>Redis Pub/Sub runtime, backend-neutral: R3 bridges live in Observables.Redis.R3.</Description>
   </PropertyGroup>
 
   <Import Project="..\..\eng\NetStandard20.props" Condition="Exists('..\..\eng\NetStandard20.props')" />
 
   <ItemGroup>
     <PackageReference Include="StackExchange.Redis" />
-    <PackageReference Include="R3" />
   </ItemGroup>
 
 
   <ItemGroup>
     <Compile Include="..\..\Observables.Shared\Observables.Core\GeneratedProxyFactoryRegistry.cs" Link="Shared/GeneratedProxyFactoryRegistry.cs" />
-    <Compile Include="..\..\Observables.Shared\Observables.R3.Runtime\R3AsyncCreate.cs" Link="Shared/R3AsyncCreate.cs" />
   </ItemGroup>
 </Project>

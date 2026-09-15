@@ -2,7 +2,7 @@ using System.Diagnostics.CodeAnalysis;
 
 namespace Observables.Redis;
 
-/// <summary>Global Redis payload serializer used by <see cref="RedisObservable"/> and generated proxies.</summary>
+/// <summary>Global Redis payload serializer used by the backend bridges and generated proxies.</summary>
 #if NET8_0_OR_GREATER
 [RequiresUnreferencedCode(RedisTrimAnnotations.JsonPayload)]
 [RequiresDynamicCode(RedisTrimAnnotations.JsonPayload)]

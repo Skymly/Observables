@@ -6,4 +6,5 @@ internal sealed record NatsInterfaceModel(
     string InterfaceDisplayName,
     string GeneratedNamespace,
     ImmutableEquatableArray<NatsMemberModel> Members,
-    Nullability Nullability);
+    Nullability Nullability,
+    string? ConnectionName);

@@ -34,6 +34,45 @@ public sealed class NatsInterfaceGeneratorTests
     }
 
     [Fact]
+    public void Connection_name_reaches_the_generated_registration()
+    {
+        const string userSource =
+            """
+            [Nats("primary")]
+            public interface IOrderHub
+            {
+                [NatsSubscribe("orders.>")]
+                Observable<string> OrderEvents { get; }
+            }
+            """;
+
+        var output = GeneratorTestHarness.Run(userSource);
+        var snapshot = GeneratorTestHarness.ToSnapshot(output);
+
+        Assert.Contains("RegisterProxyName", snapshot, StringComparison.Ordinal);
+        Assert.Contains("\"primary\"", snapshot, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Nats_interface_without_a_name_emits_no_name_registration()
+    {
+        const string userSource =
+            """
+            [Nats]
+            public interface IOrderHub
+            {
+                [NatsSubscribe("orders.>")]
+                Observable<string> OrderEvents { get; }
+            }
+            """;
+
+        var output = GeneratorTestHarness.Run(userSource);
+        var snapshot = GeneratorTestHarness.ToSnapshot(output);
+
+        Assert.DoesNotContain("RegisterProxyName", snapshot, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void Nats_interface_OBS9004_on_subscribe_method()
     {
         const string userSource =

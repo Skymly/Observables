@@ -53,13 +53,14 @@ internal static class Parser
                 redisMessageType,
                 members,
                 diagnostics),
-            createInterface: static (marked, className, members) => new RedisInterfaceModel(
+            createInterface: (marked, className, members) => new RedisInterfaceModel(
                 $"{marked.InterfaceSymbol.GetSafeHintName()}.Redis.g.cs",
                 className,
                 marked.InterfaceSymbol.ToDisplayString(DisplayFormat),
                 BackendTokens.QualifyGeneratedNamespace("Observables.Redis"),
                 members,
-                marked.Nullability),
+                marked.Nullability,
+                GetConnectionName(marked.InterfaceSymbol, redisAttribute)),
             createContext: static interfaces => new ContextGenerationModel(interfaces),
             tryAddOther: (marked, member, _, diagnostics) =>
                 diagnostics.Add(
@@ -68,6 +69,34 @@ internal static class Parser
                         member.Locations.FirstOrDefault(),
                         marked.InterfaceSymbol.Name,
                         member.Name)));
+    }
+
+    /// <summary>
+    /// Reads the name off <c>[Redis(connectionName)]</c>. A null or blank name means the interface opts out of
+    /// named resolution and stays reachable only through <c>RedisService.For&lt;T&gt;(IConnectionMultiplexer)</c>.
+    /// </summary>
+    static string? GetConnectionName(INamedTypeSymbol interfaceSymbol, INamedTypeSymbol? redisAttribute)
+    {
+        if (redisAttribute is null)
+        {
+            return null;
+        }
+
+        foreach (var attribute in interfaceSymbol.GetAttributes())
+        {
+            if (!SymbolEqualityComparer.Default.Equals(attribute.AttributeClass, redisAttribute))
+            {
+                continue;
+            }
+
+            return attribute.ConstructorArguments.Length > 0
+                && attribute.ConstructorArguments[0].Value is string name
+                && !string.IsNullOrWhiteSpace(name)
+                    ? name
+                    : null;
+        }
+
+        return null;
     }
 
     static void TryAddMethod(

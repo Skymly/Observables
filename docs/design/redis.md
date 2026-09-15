@@ -58,6 +58,8 @@ var hub = RedisService.For<INewsHub>(mux);
 
 Reactive 路径：成员返回 `IObservable<T>`，引用 `Observables.Redis.Reactive`；桥接为 `SystemReactiveRedisAdapter`。
 
+具名连接：`[Redis(connectionName)]` 上的名字由 Parser 读出、随 `RegisterProxyName(Type, string)` 一起发到模块初始化器（生成物 `RedisProxyNames.g.cs`），`RedisService.For<T>()` 这个不带 multiplexer 参数的重载据此查 `RegisterConnection(name, multiplexer)` 注册的连接。名字走生成代码而不是运行期读特性，是因为域运行时要对 trim / AOT 分析器零告警。未写名字的接口仍只能走 `For<T>(IConnectionMultiplexer)`；解析未命名接口、或名字没注册过 multiplexer，都抛 `InvalidOperationException` 并在消息里点名缺的是哪一个。
+
 ## 3. Channel / Pattern 规则
 
 - **Subscribe**：字面量 Channel 或 Pattern。若字符串含 `*` 或 `?` → `PSUBSCRIBE`（Pattern）；否则 → `SUBSCRIBE`（exact）。**禁止** `{param}` 占位符（OBS11006）。

@@ -15,16 +15,65 @@ internal static class Emitter
         ContextGenerationModel model,
         Action<string, SourceText> addSource)
     {
+        var interfaces = model.Interfaces.AsArray();
+
         ProxyRegistrationEmitter.Emit(
             hintName: "RedisProxyRegistration.g.cs",
             registrationClassName: "RedisProxyRegistration",
             registerGeneratedFactoryMetadataName: "global::Observables.Redis.RedisService.RegisterGeneratedFactory",
-            registrations: model.Interfaces.AsArray().Select(static m =>
+            registrations: interfaces.Select(static m =>
                 new ProxyRegistrationEmitter.ProxyTypeRegistration(
                     m.InterfaceDisplayName,
                     m.GeneratedNamespace,
                     m.ClassName)).ToArray(),
             addSource);
+
+        EmitConnectionNames(interfaces, addSource);
+    }
+
+    /// <summary>
+    /// Emits the names carried by <c>[Redis(connectionName)]</c> so that <c>RedisService.For&lt;T&gt;()</c> can
+    /// resolve a registered multiplexer without reading attributes reflectively, which the trim and AOT
+    /// analyzers reject.
+    /// </summary>
+    /// <remarks>
+    /// Relies on <see cref="ProxyRegistrationEmitter"/> having emitted the <c>ModuleInitializerAttribute</c>
+    /// polyfill that netstandard2.0 needs: a named interface is also a registered interface, so that file is
+    /// always present alongside this one.
+    /// </remarks>
+    static void EmitConnectionNames(
+        IReadOnlyList<RedisInterfaceModel> interfaces,
+        Action<string, SourceText> addSource)
+    {
+        var named = interfaces.Where(static m => m.ConnectionName is not null).ToArray();
+        if (named.Length == 0)
+        {
+            return;
+        }
+
+        var registrationCalls = string.Join(
+            "\n",
+            named.Select(static m =>
+                $"            global::Observables.Redis.RedisService.RegisterProxyName(typeof({m.InterfaceDisplayName}), {FormatLiteral(m.ConnectionName!)});"));
+
+        addSource(
+            "RedisProxyNames.g.cs",
+            GeneratedSourceHeader.ToSourceText(
+                $$"""
+                namespace {{named[0].GeneratedNamespace}}
+                {
+                    [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+                    [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
+                    internal static class RedisProxyNames
+                    {
+                        [global::System.Runtime.CompilerServices.ModuleInitializer]
+                        internal static void Initialize()
+                        {
+                {{registrationCalls}}
+                        }
+                    }
+                }
+                """));
     }
     public static SourceText EmitInterface(RedisInterfaceModel model) =>
         ProxyClassEmitter.Emit(

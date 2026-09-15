@@ -25,6 +25,45 @@ public sealed class RedisInterfaceGeneratorTests
         return Verifier.Verify(GeneratorTestHarness.ToSnapshot(output));
     }
 
+    [Fact]
+    public void Connection_name_reaches_the_generated_registration()
+    {
+        const string userSource =
+            """
+            [Redis("primary")]
+            public interface INewsHub
+            {
+                [RedisSubscribe("news.alerts")]
+                IObservable<string> Alerts { get; }
+            }
+            """;
+
+        var output = GeneratorTestHarness.Run(userSource);
+        var snapshot = GeneratorTestHarness.ToSnapshot(output);
+
+        Assert.Contains("RegisterProxyName", snapshot, StringComparison.Ordinal);
+        Assert.Contains("\"primary\"", snapshot, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Redis_interface_without_a_name_emits_no_name_registration()
+    {
+        const string userSource =
+            """
+            [Redis]
+            public interface INewsHub
+            {
+                [RedisSubscribe("news.alerts")]
+                IObservable<string> Alerts { get; }
+            }
+            """;
+
+        var output = GeneratorTestHarness.Run(userSource);
+        var snapshot = GeneratorTestHarness.ToSnapshot(output);
+
+        Assert.DoesNotContain("RegisterProxyName", snapshot, StringComparison.Ordinal);
+    }
+
     const string CacheTestSource =
         """
         [Redis]

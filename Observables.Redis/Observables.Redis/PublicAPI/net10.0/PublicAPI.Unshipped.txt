@@ -1,1 +1,5 @@
 #nullable enable
+static Observables.Redis.RedisService.For(System.Type! redisInterfaceType) -> object!
+static Observables.Redis.RedisService.For<T>() -> T
+static Observables.Redis.RedisService.RegisterConnection(string! name, StackExchange.Redis.IConnectionMultiplexer! multiplexer) -> void
+static Observables.Redis.RedisService.RegisterProxyName(System.Type! redisInterfaceType, string! connectionName) -> void

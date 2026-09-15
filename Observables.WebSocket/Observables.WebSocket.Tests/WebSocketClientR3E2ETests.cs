@@ -44,6 +44,36 @@ public sealed class WebSocketClientR3E2ETests(WebSocketTestServerFixture fixture
     }
 
     [Fact]
+    public async Task Named_send_without_a_payload_puts_the_name_on_the_wire()
+    {
+        using var socket = new ClientWebSocket();
+        var hub = WebSocketService.For<IE2EHub>(socket);
+
+        using var cts = new CancellationTokenSource(DefaultTimeout);
+        await hub.Connect(fixture.Server.Uri, cts.Token).FirstAsync(cts.Token);
+
+        var receiveTask = hub.EchoText.FirstAsync(cts.Token);
+        await hub.Ping(cts.Token).FirstAsync(cts.Token);
+
+        Assert.Equal("{\"type\":\"ping\"}", await receiveTask);
+    }
+
+    [Fact]
+    public async Task Named_send_wraps_the_payload_in_the_envelope()
+    {
+        using var socket = new ClientWebSocket();
+        var hub = WebSocketService.For<IE2EHub>(socket);
+
+        using var cts = new CancellationTokenSource(DefaultTimeout);
+        await hub.Connect(fixture.Server.Uri, cts.Token).FirstAsync(cts.Token);
+
+        var receiveTask = hub.EchoText.FirstAsync(cts.Token);
+        await hub.SendChat("hello", cts.Token).FirstAsync(cts.Token);
+
+        Assert.Equal("{\"type\":\"chat\",\"payload\":\"hello\"}", await receiveTask);
+    }
+
+    [Fact]
     public async Task SendBytes_echoes_binary_content()
     {
         using var socket = new ClientWebSocket();

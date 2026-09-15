@@ -29,8 +29,15 @@ namespace Observables.WebSocket.Generated
     public global::R3.Observable<global::R3.Unit> Close(global::System.Threading.CancellationToken cancellationToken = default) =>
         global::Observables.WebSocket.WebSocketObservable.FromClose(_socket, cancellationToken);
 
-    public global::R3.Observable<global::R3.Unit> Ping(global::System.Threading.CancellationToken cancellationToken = default) =>
-        global::Observables.WebSocket.WebSocketObservable.FromSend(_socket, global::System.Array.Empty<byte>(), cancellationToken);
+    public global::R3.Observable<global::R3.Unit> Ping(global::System.Threading.CancellationToken cancellationToken = default)
+    {
+#if NET8_0_OR_GREATER
+        return global::Observables.WebSocket.WebSocketObservable.FromSendText(_socket, global::System.Text.Json.JsonSerializer.Serialize(new { type = "ping" }), cancellationToken);
+#else
+        throw new global::System.NotSupportedException(
+            "Sending a WebSocket message that declares a message name requires net8.0 or later.");
+#endif
+    }
 
     private global::R3.Observable<global::System.String>? _Messages;
     public global::R3.Observable<global::System.String> Messages =>

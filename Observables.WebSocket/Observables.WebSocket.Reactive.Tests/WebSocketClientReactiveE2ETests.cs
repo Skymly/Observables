@@ -46,6 +46,21 @@ public sealed class WebSocketClientReactiveE2ETests(WebSocketTestServerFixture f
     }
 
     [Fact]
+    public async Task Named_send_wraps_the_payload_in_the_envelope()
+    {
+        using var socket = new ClientWebSocket();
+        var hub = WebSocketService.For<IE2EHub>(socket);
+
+        using var cts = new CancellationTokenSource(DefaultTimeout);
+        await hub.Connect(fixture.Server.Uri, cts.Token).Timeout(DefaultTimeout).FirstAsync().ToTask();
+
+        var receiveTask = hub.EchoText.Timeout(DefaultTimeout).FirstAsync().ToTask();
+        await hub.SendChat("hello", cts.Token).Timeout(DefaultTimeout).FirstAsync().ToTask();
+
+        Assert.Equal("{\"type\":\"chat\",\"payload\":\"hello\"}", await receiveTask);
+    }
+
+    [Fact]
     public async Task SendBytes_echoes_binary_content()
     {
         using var socket = new ClientWebSocket();

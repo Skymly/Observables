@@ -6,4 +6,5 @@ internal sealed record RedisInterfaceModel(
     string InterfaceDisplayName,
     string GeneratedNamespace,
     ImmutableEquatableArray<RedisMemberModel> Members,
-    Nullability Nullability);
+    Nullability Nullability,
+    string? ConnectionName);

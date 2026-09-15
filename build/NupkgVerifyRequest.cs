@@ -13,5 +13,11 @@ sealed class NupkgVerifyRequest
 
     public IReadOnlyList<string> ForbiddenNuspecSubstrings { get; init; } = [];
 
+    /// <summary>
+    /// Assembly names that no <c>lib/</c> assembly in the package may reference. Catches a dependency that
+    /// hides inside a shipped DLL instead of showing up in the nuspec.
+    /// </summary>
+    public IReadOnlyList<string> ForbiddenLibAssemblyReferences { get; init; } = [];
+
     public bool RequireReadme { get; init; } = true;
 }

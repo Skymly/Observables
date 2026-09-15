@@ -107,6 +107,25 @@ public sealed class PackCsprojReaderTests
         return root;
     }
 
+    [Theory]
+    [InlineData("Observables.Events.Reactive", "R3")]
+    [InlineData("Observables.Events.R3", "System.Reactive")]
+    [InlineData("Observables.RestAPI.Reactive", "R3")]
+    public void ForbiddenBackendAssemblies_names_the_backend_a_split_domain_must_not_ship(
+        string packageId,
+        string expected)
+    {
+        Assert.Equal([expected], PackCsprojReader.ForbiddenBackendAssemblies(packageId));
+    }
+
+    [Theory]
+    [InlineData("Observables.Mqtt.Reactive")]
+    [InlineData("Observables.WebSocket.Reactive")]
+    public void ForbiddenBackendAssemblies_is_empty_while_a_domain_awaits_its_split(string packageId)
+    {
+        Assert.Empty(PackCsprojReader.ForbiddenBackendAssemblies(packageId));
+    }
+
     [Fact]
     public void ResolveIncludePath_finds_a_file_when_the_include_uses_windows_separators()
     {

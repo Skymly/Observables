@@ -22,10 +22,9 @@ static partial class PackCsprojReader
     /// DLL that references R3. See ADR-003; delete a name when its split lands, and delete this set when it
     /// empties.
     /// </summary>
-    static readonly HashSet<string> DomainsPendingBackendSplit = new(StringComparer.OrdinalIgnoreCase)
+    internal static readonly HashSet<string> DomainsPendingBackendSplit = new(StringComparer.OrdinalIgnoreCase)
     {
         "Grpc",
-        "Mqtt",
         "Nats",
         "Postgres",
         "Redis",

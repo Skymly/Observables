@@ -43,7 +43,7 @@
   <!-- Domain runtimes -->
   <ItemGroup>
     <ProjectReference Include="..\..\Observables.RestAPI\Observables.RestAPI\Observables.RestAPI.csproj" />
-    <ProjectReference Include="..\..\Observables.Mqtt\Observables.Mqtt\Observables.Mqtt.csproj" />
+    <ProjectReference Include="..\..\Observables.Mqtt\Observables.Mqtt.R3\Observables.Mqtt.R3.csproj" />
     <ProjectReference Include="..\..\Observables.Nats\Observables.Nats\Observables.Nats.csproj" />
     <ProjectReference Include="..\..\Observables.SignalR\Observables.SignalR\Observables.SignalR.csproj" />
     <ProjectReference Include="..\..\Observables.WebSocket\Observables.WebSocket\Observables.WebSocket.csproj" />

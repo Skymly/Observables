@@ -36,4 +36,9 @@
           Visible="false" />
   </ItemGroup>
 
+  <!-- Span<T> for the netstandard2.0 runtime assembly; it used to arrive through the R3 reference. -->
+  <ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">
+    <PackageReference Include="System.Memory" />
+  </ItemGroup>
+
 </Project>

@@ -2,7 +2,7 @@ using System.Diagnostics.CodeAnalysis;
 
 namespace Observables.Mqtt;
 
-/// <summary>Global MQTT payload serializer used by <see cref="MqttObservable"/> and generated proxies.</summary>
+/// <summary>Global MQTT payload serializer used by the backend bridges and generated proxies.</summary>
 #if NET8_0_OR_GREATER
 [RequiresUnreferencedCode(MqttTrimAnnotations.JsonPayload)]
 [RequiresDynamicCode(MqttTrimAnnotations.JsonPayload)]

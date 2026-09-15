@@ -157,6 +157,8 @@
 
     <Project Path="Observables.Mqtt/Observables.Mqtt/Observables.Mqtt.csproj" />
 
+    <Project Path="Observables.Mqtt/Observables.Mqtt.R3/Observables.Mqtt.R3.csproj" />
+
     <Project Path="Observables.Mqtt/Observables.Mqtt.Reactive/Observables.Mqtt.Reactive.csproj" />
 
     <Project Path="Observables.Mqtt/Observables.Mqtt.Reactive.SourceGenerators/Observables.Mqtt.Reactive.SourceGenerators.csproj" />

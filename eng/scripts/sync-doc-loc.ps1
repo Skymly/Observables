@@ -30,6 +30,7 @@ $defaultDomainProjects = @(
     'Observables.WebSocket/Observables.WebSocket/Observables.WebSocket.csproj',
     'Observables.WebSocket/Observables.WebSocket.Reactive/Observables.WebSocket.Reactive.csproj',
     'Observables.Mqtt/Observables.Mqtt/Observables.Mqtt.csproj',
+    'Observables.Mqtt/Observables.Mqtt.R3/Observables.Mqtt.R3.csproj',
     'Observables.Mqtt/Observables.Mqtt.Reactive/Observables.Mqtt.Reactive.csproj',
     'Observables.SignalR/Observables.SignalR/Observables.SignalR.csproj',
     'Observables.SignalR/Observables.SignalR.Reactive/Observables.SignalR.Reactive.csproj',

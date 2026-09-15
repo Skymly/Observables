@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <RootNamespace>Observables.Mqtt</RootNamespace>
+    <AssemblyName>Observables.Mqtt.R3</AssemblyName>
+    <Description>R3 bridges for Observables.Mqtt.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Observables.Mqtt\Observables.Mqtt.csproj" />
+    <PackageReference Include="MQTTnet" />
+    <PackageReference Include="R3" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Include="..\..\Observables.Shared\Observables.R3.Runtime\R3AsyncCreate.cs" Link="Shared/R3AsyncCreate.cs" />
+  </ItemGroup>
+
+</Project>

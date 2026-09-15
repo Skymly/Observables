@@ -5,7 +5,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="Observables.Mqtt.R3.csproj" />
+    <ProjectReference Include="Observables.Mqtt.R3.Pack.csproj" />
     <ProjectReference Include="Observables.Mqtt.Reactive.Pack.csproj" />
   </ItemGroup>
 

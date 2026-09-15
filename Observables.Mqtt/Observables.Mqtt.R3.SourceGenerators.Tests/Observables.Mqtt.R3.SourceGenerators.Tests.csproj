@@ -19,7 +19,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\Observables.Shared\Observables.TestSupport\Observables.TestSupport.csproj" />
-    <ProjectReference Include="..\Observables.Mqtt\Observables.Mqtt.csproj" />
+    <ProjectReference Include="..\Observables.Mqtt.R3\Observables.Mqtt.R3.csproj" />
     <ProjectReference Include="..\Observables.Mqtt.R3.SourceGenerators\Observables.Mqtt.R3.SourceGenerators.csproj" />
   </ItemGroup>
 

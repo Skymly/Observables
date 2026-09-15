@@ -117,7 +117,8 @@ Dispose 订阅 → 取消 Redis 订阅，避免泄漏。
 
 ```
 Observables.Redis/
-├── Observables.Redis/
+├── Observables.Redis/            # 后端中立运行时
+├── Observables.Redis.R3/         # R3 桥（RedisObservable）
 ├── Observables.Redis.Reactive/
 ├── Observables.Redis.SourceGenerators.Shared/
 ├── Observables.Redis.R3.SourceGenerators/
@@ -130,6 +131,16 @@ Observables.Redis/
 ```
 
 登记：`Observables.slnx` `/Redis/`、`ProxyDomainCatalog`、`eng/Observables.BuildManifest.json`（**20** 包）、`ci.yml` redis 矩阵、`eng/nuget-smoke`。
+
+三个运行时程序集按后端分层（[ADR-003](../adr/ADR-003-backend-neutral-domain-runtime.md)）：
+
+| 程序集 | 依赖 | 进哪个包 |
+|--------|------|----------|
+| `Observables.Redis` | StackExchange.Redis | 两个包都进 |
+| `Observables.Redis.R3`（`RedisObservable`） | 上面那个 + R3 | 仅 `Observables.Redis.R3` |
+| `Observables.Redis.Reactive`（`SystemReactiveRedisAdapter`） | 上面第一个 + System.Reactive | 仅 `Observables.Redis.Reactive` |
+
+命名空间都是 `Observables.Redis`，拆分对消费者源码不可见。本域不用 `InternalsVisibleTo`：两个桥接项目都 `Compile Include` 链接 `RedisProtocol.cs` / `RedisTrimAnnotations.cs`（Reactive 侧原本就这么做）。`RedisProtocol` 只有静态纯函数，连接复用由 StackExchange.Redis 的 multiplexer 负责，所以重复编译无副作用。
 
 ## 10. 测试
 

@@ -50,7 +50,7 @@
     <ProjectReference Include="..\..\Observables.Grpc\Observables.Grpc\Observables.Grpc.csproj" />
     <ProjectReference Include="..\..\Observables.Sse\Observables.Sse.R3\Observables.Sse.R3.csproj" />
     <ProjectReference Include="..\..\Observables.Postgres\Observables.Postgres\Observables.Postgres.csproj" />
-    <ProjectReference Include="..\..\Observables.Redis\Observables.Redis\Observables.Redis.csproj" />
+    <ProjectReference Include="..\..\Observables.Redis\Observables.Redis.R3\Observables.Redis.R3.csproj" />
   </ItemGroup>
 
   <!-- R3 source generators (analyzer references → generate proxy implementations) -->

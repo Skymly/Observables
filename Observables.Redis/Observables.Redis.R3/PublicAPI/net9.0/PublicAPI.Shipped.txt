@@ -1,0 +1,9 @@
+#nullable enable
+Observables.Redis.RedisObservable
+static Observables.Redis.RedisObservable.FromPatternSubscribe<T>(StackExchange.Redis.IConnectionMultiplexer! multiplexer, string! pattern) -> R3.Observable<T>!
+static Observables.Redis.RedisObservable.FromPatternSubscribeMessage<T>(StackExchange.Redis.IConnectionMultiplexer! multiplexer, string! pattern) -> R3.Observable<Observables.Redis.RedisMessage<T>!>!
+static Observables.Redis.RedisObservable.FromPublish(StackExchange.Redis.IConnectionMultiplexer! multiplexer, string! channel, byte[]! payload, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> R3.Observable<R3.Unit>!
+static Observables.Redis.RedisObservable.FromPublish(StackExchange.Redis.IConnectionMultiplexer! multiplexer, string! channel, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> R3.Observable<R3.Unit>!
+static Observables.Redis.RedisObservable.FromPublish<T>(StackExchange.Redis.IConnectionMultiplexer! multiplexer, string! channel, T payload, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> R3.Observable<R3.Unit>!
+static Observables.Redis.RedisObservable.FromSubscribe<T>(StackExchange.Redis.IConnectionMultiplexer! multiplexer, string! channel) -> R3.Observable<T>!
+static Observables.Redis.RedisObservable.FromSubscribeMessage<T>(StackExchange.Redis.IConnectionMultiplexer! multiplexer, string! channel) -> R3.Observable<Observables.Redis.RedisMessage<T>!>!

@@ -20,7 +20,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\Observables.Shared\Observables.TestSupport\Observables.TestSupport.csproj" />
-    <ProjectReference Include="..\Observables.Redis\Observables.Redis.csproj" />
+    <ProjectReference Include="..\Observables.Redis.R3\Observables.Redis.R3.csproj" />
     <ProjectReference Include="..\Observables.Redis.R3.SourceGenerators\Observables.Redis.R3.SourceGenerators.csproj" />
   </ItemGroup>
 

@@ -22,6 +22,7 @@
 
   <ItemGroup>
     <ObservablesPackLibProjectReference Include="..\Observables.Redis\Observables.Redis.csproj" />
+    <ObservablesPackLibProjectReference Include="..\Observables.Redis.R3\Observables.Redis.R3.csproj" />
     <PackageReference Include="R3" />
     <PackageReference Include="StackExchange.Redis" />
     <None Include="README.Redis.R3.pack.md" Pack="true" PackagePath="README.md" Visible="false" />

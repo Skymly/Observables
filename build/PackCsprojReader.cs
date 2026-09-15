@@ -26,7 +26,6 @@ static partial class PackCsprojReader
     {
         "Grpc",
         "Postgres",
-        "Redis",
     };
 
     public static NupkgVerifyRequest FromPackProject(string packCsprojPath)

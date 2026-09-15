@@ -22,6 +22,9 @@ internal static class GeneratorTestHarness
                 options.IncludeCoreReference ? null : "Observables.Redis.dll",
                 typeof(global::R3.Unit),
                 options.IncludeCoreReference
+                    ? typeof(global::Observables.Redis.RedisObservable)
+                    : null,
+                options.IncludeCoreReference
                     ? typeof(global::Observables.Redis.RedisService)
                     : null,
                 typeof(global::StackExchange.Redis.ConnectionMultiplexer)),

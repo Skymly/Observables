@@ -73,7 +73,7 @@
       "packageId": "Observables.Postgres.Reactive"
     },
     {
-      "packProject": "Observables.Redis/Observables.Redis.Package/Observables.Redis.R3.csproj",
+      "packProject": "Observables.Redis/Observables.Redis.Package/Observables.Redis.R3.Pack.csproj",
       "packageId": "Observables.Redis.R3"
     },
     {

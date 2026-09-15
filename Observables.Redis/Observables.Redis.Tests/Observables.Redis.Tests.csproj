@@ -21,7 +21,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Observables.Redis\Observables.Redis.csproj" />
+    <ProjectReference Include="..\Observables.Redis.R3\Observables.Redis.R3.csproj" />
     <ProjectReference Include="..\Observables.Redis.R3.SourceGenerators\Observables.Redis.R3.SourceGenerators.csproj"
                       OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
   </ItemGroup>

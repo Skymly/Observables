@@ -24,7 +24,10 @@ internal sealed record RestApiBindingModel(
     string QueryDelimiter = ".",
     bool QueryTreatAsString = false,
     int QueryCollectionFormat = 0,
-    bool QueryIsCollectionFormatSpecified = false
+    bool QueryIsCollectionFormatSpecified = false,
+    // True when Name came from [AliasAs] rather than the parameter name. The runtime key
+    // formatter applies to inferred names only; an explicit one is the final wire name.
+    bool NameIsExplicit = false
 );
 
 internal sealed record RestApiMethodSpecModel(

@@ -218,7 +218,8 @@ internal static partial class Parser
             QueryDelimiter: classification.QueryDelimiter,
             QueryTreatAsString: classification.QueryTreatAsString,
             QueryCollectionFormat: classification.QueryCollectionFormat,
-            QueryIsCollectionFormatSpecified: classification.QueryCollectionFormatSpecified);
+            QueryIsCollectionFormatSpecified: classification.QueryCollectionFormatSpecified,
+            NameIsExplicit: classification.Kind == ParameterKind.Query && classification.AliasAs != null);
     }
 
     static RestApiDeclaredKind ToDeclaredKind(ParameterKind kind) => kind switch

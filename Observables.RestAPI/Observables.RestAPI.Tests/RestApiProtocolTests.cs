@@ -156,6 +156,30 @@ public sealed class RestApiProtocolTests
     }
 
     [Fact]
+    public void Bind_leaves_an_explicit_query_key_alone()
+    {
+        var spec = new RestApiBridge.MethodSpec(
+            "GET",
+            "/users",
+            [
+                new RestApiBridge.Binding(
+                    RestApiBridge.SlotKind.Query,
+                    0,
+                    "UserName",
+                    query: new RestApiBridge.QueryOptions().WithExplicitName()),
+            ]);
+        var settings = new RestApiSettings
+        {
+            UrlParameterKeyFormatter = new CamelCaseUrlParameterKeyFormatter(),
+        };
+
+        var bound = RestApiProtocol.Bind(settings, spec, ["ada"]);
+
+        // [AliasAs("UserName")] is the final wire name; only inferred names go through the formatter.
+        Assert.Equal("users?UserName=ada", bound.RelativeUri);
+    }
+
+    [Fact]
     public async Task Send_spec_roundtrips_json()
     {
         var mockHttp = new MockHttpMessageHandler();

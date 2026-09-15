@@ -273,9 +273,11 @@ internal static class Emitter
             inits.Add("collectionFormatSpecified: true");
         }
 
-        if (inits.Count == 0)
+        if (inits.Count == 0 && !binding.NameIsExplicit)
             return null;
-        return "new global::Observables.RestAPI.RestApiBridge.QueryOptions(" + string.Join(", ", inits) + ")";
+
+        var options = "new global::Observables.RestAPI.RestApiBridge.QueryOptions(" + string.Join(", ", inits) + ")";
+        return binding.NameIsExplicit ? options + ".WithExplicitName()" : options;
     }
 
     static string? FormatFlags(RestApiMethodSpecModel spec)

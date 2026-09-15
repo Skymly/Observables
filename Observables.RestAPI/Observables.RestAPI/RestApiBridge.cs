@@ -443,13 +443,41 @@ namespace Observables.RestAPI
             bool treatAsString = false,
             int collectionFormat = 0,
             bool isCollectionFormatSpecified = false
+        ) =>
+            AddQueryParameter(
+                queryParams,
+                key,
+                value,
+                settings,
+                prefix,
+                delimiter,
+                format,
+                treatAsString,
+                collectionFormat,
+                isCollectionFormatSpecified,
+                nameIsExplicit: false);
+
+        // nameIsExplicit says the caller already knows the final wire name, so the key formatter is skipped.
+        // Kept internal: the public overload above is a shipped signature and keeps formatting every key.
+        internal static void AddQueryParameter(
+            List<KeyValuePair<string, string?>> queryParams,
+            string key,
+            object? value,
+            RestApiSettings settings,
+            string? prefix,
+            string delimiter,
+            string? format,
+            bool treatAsString,
+            int collectionFormat,
+            bool isCollectionFormatSpecified,
+            bool nameIsExplicit
         )
         {
             if (value == null)
                 return;
 
             // Apply prefix to key
-            var formattedKey = settings.UrlParameterKeyFormatter.Format(key);
+            var formattedKey = nameIsExplicit ? key : settings.UrlParameterKeyFormatter.Format(key);
             var finalKey = !string.IsNullOrWhiteSpace(prefix)
                 ? $"{prefix}{delimiter}{formattedKey}"
                 : formattedKey;

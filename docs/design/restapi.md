@@ -115,7 +115,11 @@ public class RestApiSettings
 }
 ```
 
-读取时机（`RestApiProtocol.Bind` 构造 `HttpRequestMessage` 时）：`HttpRequestMessageOptions` 先灌进 `request.Options`（ns2.0 上是 `request.Properties`），再走参数绑定，所以 `[Property]` 参数同名时覆盖设置里的值——设置是默认值，参数是本次调用的值。`Version` / `VersionPolicy` 直接赋给请求上的同名属性（NET6+）。`UrlParameterKeyFormatter` 在 `AddQueryParameter` 里格式化 query 键，`[Query(Prefix)]` 的前缀按原样保留，只格式化键本身。
+读取时机（`RestApiProtocol.Bind` 构造 `HttpRequestMessage` 时）：`HttpRequestMessageOptions` 先灌进 `request.Options`（ns2.0 上是 `request.Properties`），再走参数绑定，所以 `[Property]` 参数同名时覆盖设置里的值——设置是默认值，参数是本次调用的值。`Version` / `VersionPolicy` 直接赋给请求上的同名属性（NET6+）。`UrlParameterKeyFormatter` 在 `AddQueryParameter` 里格式化 query 键，`[Query(Prefix)]` 的前缀按原样保留，只格式化键本身；并且**只格式化推断出来的键**——写了 `[AliasAs("…")]` 就是最终线上名字，跳过 formatter（与 Refit 一致）。这一位由生成器在编译期定下：`QueryOptions.WithExplicitName()` 只在有 alias 时发射，运行时靠 `QueryOptions.NameIsExplicit` 读它。之所以是方法而不是再加一个构造重载，是因为已 ship 的那个带可选参数的构造函数必须保持「公共重载里参数最多」（RS0027）。
+
+公开的 `RestApiBridge.AddQueryParameter` 重载签名不动，行为也不变（照旧格式化每个键）；带 `nameIsExplicit` 的是 internal 重载，只有 `Bind` 走。
+
+仍未对齐 Refit 的部分：Refit 还会把 query object 展开后对每个属性名调这个 formatter，Observables 目前不展开 query object（非集合的对象整体 `FormatQueryValue` 成单个值）。
 
 ### 3.5 响应与异常
 

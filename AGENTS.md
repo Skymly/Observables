@@ -45,7 +45,7 @@
 
 | 项目 | 角色 |
 |------|------|
-| **`Observables.Core`** | 全库通用**运行时**（≥2 个 Feature 复用的 Attribute、枚举、接口等）。不引用 Roslyn。 |
+| **`Observables.Core`** | 全库通用**运行时**（≥2 个 Feature 复用的 Attribute、枚举、接口等）。不引用 Roslyn。**不打包、不作为 `ProjectReference` 被引用**：域运行时 `Compile Include` 其源文件（link-compile），理由见 [`docs/design/architecture.md`](docs/design/architecture.md) §2「共享层：link-compile 而非 ProjectReference」。往这里加类型前先读那一节。 |
 | **`Observables.SourceGenerators.Shared`** | 全库通用**生成器**基础设施（`BackendTokens`、`GeneratedSourceHeader`、符号扩展、跨域可复用诊断如 Events `OBS2xxx`）。不引用 R3 / System.Reactive。 |
 | **`Observables.Analyzers`** | 独立分析器（非生成器）：全库诊断 `OBS0001`（R3/Reactive 包冲突）、各域空代理接口 `OBS4007`/`OBS5007`/`OBS6007`/`OBS7007` 等。随 `.Package` 以 analyzer 形式分发。 |
 | **`Observables.CodeFixes`** | 对应分析器/生成器诊断的 `CodeFixProvider` 与补全提供器。随 `.Package` 以 analyzer 形式分发。 |

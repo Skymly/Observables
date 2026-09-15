@@ -51,13 +51,14 @@ internal static class Parser
                 observableType,
                 members,
                 diagnostics),
-            createInterface: static (marked, className, members) => new MqttInterfaceModel(
+            createInterface: (marked, className, members) => new MqttInterfaceModel(
                 $"{marked.InterfaceSymbol.GetSafeHintName()}.Mqtt.g.cs",
                 className,
                 marked.InterfaceSymbol.ToDisplayString(DisplayFormat),
                 BackendTokens.QualifyGeneratedNamespace("Observables.Mqtt"),
                 members,
-                marked.Nullability),
+                marked.Nullability,
+                GetClientName(marked.InterfaceSymbol, mqttAttribute)),
             createContext: static interfaces => new ContextGenerationModel(interfaces),
             tryAddOther: (marked, member, _, diagnostics) =>
                 diagnostics.Add(
@@ -66,6 +67,34 @@ internal static class Parser
                         member.Locations.FirstOrDefault(),
                         marked.InterfaceSymbol.Name,
                         member.Name)));
+    }
+
+    /// <summary>
+    /// Reads the name off <c>[Mqtt(clientName)]</c>. A null or blank name means the interface opts out of
+    /// named resolution and stays reachable only through <c>MqttService.For&lt;T&gt;(IMqttClient)</c>.
+    /// </summary>
+    static string? GetClientName(INamedTypeSymbol interfaceSymbol, INamedTypeSymbol? mqttAttribute)
+    {
+        if (mqttAttribute is null)
+        {
+            return null;
+        }
+
+        foreach (var attribute in interfaceSymbol.GetAttributes())
+        {
+            if (!SymbolEqualityComparer.Default.Equals(attribute.AttributeClass, mqttAttribute))
+            {
+                continue;
+            }
+
+            return attribute.ConstructorArguments.Length > 0
+                && attribute.ConstructorArguments[0].Value is string name
+                && !string.IsNullOrWhiteSpace(name)
+                    ? name
+                    : null;
+        }
+
+        return null;
     }
 
     static void TryAddMethod(

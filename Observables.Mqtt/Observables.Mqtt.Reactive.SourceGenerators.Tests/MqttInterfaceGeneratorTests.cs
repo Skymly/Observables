@@ -23,6 +23,45 @@ public sealed class MqttInterfaceGeneratorTests
     }
 
     [Fact]
+    public void Client_name_reaches_the_generated_registration()
+    {
+        const string userSource =
+            """
+            [Mqtt("primary")]
+            public interface ISensorTopics
+            {
+                [MqttSubscribe("sensors/+/temperature")]
+                IObservable<int> Temperature { get; }
+            }
+            """;
+
+        var output = GeneratorTestHarness.Run(userSource);
+        var snapshot = GeneratorTestHarness.ToSnapshot(output);
+
+        Assert.Contains("RegisterProxyName", snapshot, StringComparison.Ordinal);
+        Assert.Contains("\"primary\"", snapshot, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Mqtt_interface_without_a_name_emits_no_name_registration()
+    {
+        const string userSource =
+            """
+            [Mqtt]
+            public interface ISensorTopics
+            {
+                [MqttSubscribe("sensors/+/temperature")]
+                IObservable<int> Temperature { get; }
+            }
+            """;
+
+        var output = GeneratorTestHarness.Run(userSource);
+        var snapshot = GeneratorTestHarness.ToSnapshot(output);
+
+        Assert.DoesNotContain("RegisterProxyName", snapshot, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void Docs_getting_started_snippet_does_not_report_OBS5006()
     {
         const string userSource =

@@ -112,8 +112,23 @@
         <member name="T:Observables.Mqtt.MqttService">
             <summary>创建源生成的 MQTT 主题代理实现。</summary>
         </member>
+        <member name="M:Observables.Mqtt.MqttService.RegisterClient(System.String,MQTTnet.Client.IMqttClient)">
+            <summary>
+            以接口在 <c>[Mqtt(clientName)]</c> 上声明的名字注册一个客户端，使其可通过 <see cref="M:Observables.Mqtt.MqttService.For``1"/> 解析。
+            同名重复注册会替换原客户端。
+            </summary>
+        </member>
+        <member name="M:Observables.Mqtt.MqttService.RegisterProxyName(System.Type,System.String)">
+            <summary>注册生成代理所声明的名字。</summary>
+        </member>
         <member name="M:Observables.Mqtt.MqttService.RegisterGeneratedFactory(System.Type,System.Func{MQTTnet.Client.IMqttClient,System.Object})">
             <summary>注册源生成的主题代理工厂。</summary>
+        </member>
+        <member name="M:Observables.Mqtt.MqttService.For``1">
+            <summary>基于 <typeparamref name="T"/> 在 <c>[Mqtt(clientName)]</c> 中声明的名字所注册的客户端创建代理。</summary>
+        </member>
+        <member name="M:Observables.Mqtt.MqttService.For(System.Type)">
+            <summary>基于 <paramref name="mqttInterfaceType"/> 在 <c>[Mqtt(clientName)]</c> 中声明的名字所注册的客户端创建代理。</summary>
         </member>
         <member name="T:Observables.Mqtt.MqttTopic">
             <summary>解析带有 <c>{parameter}</c> 占位符的主题模板。</summary>

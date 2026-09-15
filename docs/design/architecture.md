@@ -38,6 +38,25 @@ Observables.<Feature>/
 
 **NuGet 面**：每域仅两个包 ID — `Observables.<Feature>.R3`、`Observables.<Feature>.Reactive`（共 20 包，10 域）。
 
+### 共享层：link-compile 而非 ProjectReference
+
+`Observables.Shared/` 下的项目都**不**以 `ProjectReference` 形式被下游引用；下游各自 `Compile Include` 其源文件：
+
+| 共享项目 | 链接方 | 机制 |
+|----------|--------|------|
+| `Observables.SourceGenerators.Shared` | 各域 `*.SourceGenerators` | 统一 Import `Observables.SourceGenerators.SharedSource.props` |
+| `Observables.Core` | 8 个域运行时（Grpc / Mqtt / Nats / Postgres / Redis / SignalR / Sse / WebSocket） | 各 csproj 一行 `<Compile Include="…" Link="Shared/…" />` |
+
+生成器侧的原因是分发形式：生成器以 analyzer 形式随包发出，不能携带程序集依赖。
+
+运行时侧的原因不同。`Observables.Core` 目前只有 `GeneratedProxyFactoryRegistry.cs` 一个源文件，内含 `internal static class GeneratedProxyFactoryRegistry<TClient>`；它不在 `eng/Observables.BuildManifest.json` 中，不产出任何 NuGet 包。选 link-compile 而非 ProjectReference：
+
+- 类型是 `internal`，八份副本互不可见，不会产生 CS0433；消费者同时装两个域的包也不冲突。
+- 泛型参数 `TClient` 始终是域特有的客户端类型，静态字典本就应按域隔离，共享单一实例没有收益。
+- 反过来做要么把该类型提为 `public`（把实现细节写进每个域运行时的 `PublicAPI.Shipped.txt` 基线），要么让 `Observables.Core` 反向 `InternalsVisibleTo` 八个域；两条路都要求 `Observables.Core.dll` 成为随 20 个 nupkg 的 `lib/` 一起分发的第 21 个程序集。
+
+因此「`Observables.Core` 零 `ProjectReference`」是刻意的，不是遗漏（[#489](https://github.com/Skymly/Observables/issues/489)）。若日后共享层出现必须跨程序集公开的类型，这个权衡要重新算。
+
 ## 3. 双后端（R3 / System.Reactive）
 
 ```mermaid

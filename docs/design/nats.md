@@ -105,7 +105,8 @@ Reactive 桥：`SystemReactiveNatsAdapter` 同名方法，返回 `IObservable<T>
 
 ```
 Observables.Nats/
-├── Observables.Nats/
+├── Observables.Nats/            # 后端中立运行时
+├── Observables.Nats.R3/         # R3 桥（NatsObservable）
 ├── Observables.Nats.Reactive/
 ├── Observables.Nats.SourceGenerators.Shared/
 ├── Observables.Nats.R3.SourceGenerators/
@@ -118,6 +119,16 @@ Observables.Nats/
 ```
 
 登记：`Observables.slnx`、`Observables.BuildManifest.json`（16 包）、`ProxyDomainCatalog`、`ci.yml` nats 矩阵、`eng/nuget-smoke`。
+
+三个运行时程序集按后端分层（[ADR-003](../adr/ADR-003-backend-neutral-domain-runtime.md)）：
+
+| 程序集 | 依赖 | 进哪个包 |
+|--------|------|----------|
+| `Observables.Nats` | NATS.Client.Core / Serializers.Json（ns2.0 上另加 System.Memory） | 两个包都进 |
+| `Observables.Nats.R3`（`NatsObservable`） | 上面那个 + R3 | 仅 `Observables.Nats.R3` |
+| `Observables.Nats.Reactive`（`SystemReactiveNatsAdapter`） | 上面第一个 + System.Reactive | 仅 `Observables.Nats.Reactive` |
+
+命名空间都是 `Observables.Nats`，拆分对消费者源码不可见。`NatsProtocol`、`NatsPayloadSerializerBridge` 等 internal 类型留在中立运行时，两个桥接项目通过 `InternalsVisibleTo` 取用。
 
 ## 8. 测试
 

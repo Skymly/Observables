@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <RootNamespace>Observables.Nats</RootNamespace>
+    <AssemblyName>Observables.Nats.R3</AssemblyName>
+    <Description>R3 bridges for Observables.Nats.</Description>
+    <!-- NATS.Client.Core pulls VisualStudio.Threading analyzers; R3AsyncCreate uses async void on purpose.
+         Keep a single PropertyGroup so eng/scripts/sync-doc-loc.ps1 can read AssemblyName under StrictMode. -->
+    <NoWarn Condition="'$(TargetFramework)' == 'netstandard2.0'">$(NoWarn);VSTHRD100;VSTHRD200</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Observables.Nats\Observables.Nats.csproj" />
+    <PackageReference Include="NATS.Client.Core" />
+    <PackageReference Include="R3" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Include="..\..\Observables.Shared\Observables.R3.Runtime\R3AsyncCreate.cs" Link="Shared/R3AsyncCreate.cs" />
+  </ItemGroup>
+
+</Project>

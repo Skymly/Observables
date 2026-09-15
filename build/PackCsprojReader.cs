@@ -17,6 +17,23 @@ static partial class PackCsprojReader
         "System.Reactive",
     };
 
+    /// <summary>
+    /// Domains whose runtime assembly still carries the R3 bridges, so their Reactive package still ships a
+    /// DLL that references R3. See ADR-003; delete a name when its split lands, and delete this set when it
+    /// empties.
+    /// </summary>
+    static readonly HashSet<string> DomainsPendingBackendSplit = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "Grpc",
+        "Mqtt",
+        "Nats",
+        "Postgres",
+        "Redis",
+        "SignalR",
+        "Sse",
+        "WebSocket",
+    };
+
     public static NupkgVerifyRequest FromPackProject(string packCsprojPath)
     {
         XDocument pack = XDocument.Load(packCsprojPath);
@@ -88,6 +105,32 @@ static partial class PackCsprojReader
                 static pair => (IReadOnlyList<string>)pair.Value,
                 StringComparer.OrdinalIgnoreCase),
             ForbiddenNuspecSubstrings = isRedis ? ["Garnet"] : [],
+            ForbiddenLibAssemblyReferences = ForbiddenBackendAssemblies(packageId),
+        };
+    }
+
+    /// <summary>
+    /// The backend a package must not ship, per AGENTS.md: an R3 package carries no System.Reactive and a
+    /// Reactive package carries no R3. Returns nothing for a domain that ADR-003 has not split yet.
+    /// </summary>
+    internal static string[] ForbiddenBackendAssemblies(string packageId)
+    {
+        string[] parts = packageId.Split('.');
+        if (parts.Length != 3 || !string.Equals(parts[0], "Observables", StringComparison.Ordinal))
+        {
+            return [];
+        }
+
+        if (DomainsPendingBackendSplit.Contains(parts[1]))
+        {
+            return [];
+        }
+
+        return parts[2] switch
+        {
+            "R3" => ["System.Reactive"],
+            "Reactive" => ["R3"],
+            _ => [],
         };
     }
 

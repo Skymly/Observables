@@ -10,7 +10,8 @@ static class NupkgFixture
         IEnumerable<string> files,
         IReadOnlyDictionary<string, IReadOnlyList<string>>? nuspecDependenciesByTfm = null,
         string? extraNuspecText = null,
-        IReadOnlyDictionary<string, string>? fileContents = null)
+        IReadOnlyDictionary<string, string>? fileContents = null,
+        IReadOnlyDictionary<string, string>? fileSources = null)
     {
         string path = Path.Combine(Path.GetTempPath(), $"obs-nupkg-{Guid.NewGuid():N}.nupkg");
         using ZipArchive zip = ZipFile.Open(path, ZipArchiveMode.Create);
@@ -20,6 +21,14 @@ static class NupkgFixture
             string normalized = file.Replace('\\', '/').TrimStart('/');
             ZipArchiveEntry entry = zip.CreateEntry(normalized, CompressionLevel.NoCompression);
             using Stream stream = entry.Open();
+
+            if (fileSources is not null && fileSources.TryGetValue(normalized, out string? sourcePath))
+            {
+                using FileStream source = File.OpenRead(sourcePath);
+                source.CopyTo(stream);
+                continue;
+            }
+
             string content = "x";
             if (fileContents is not null
                 && fileContents.TryGetValue(normalized, out string? custom)

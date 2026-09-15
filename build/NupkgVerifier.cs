@@ -1,4 +1,6 @@
 using System.IO.Compression;
+using System.Reflection.Metadata;
+using System.Reflection.PortableExecutable;
 using System.Xml.Linq;
 
 static class NupkgVerifier
@@ -48,6 +50,11 @@ static class NupkgVerifier
             {
                 errors.Add($"{request.PackageId}: missing runtime assembly under lib/{tfm}/");
             }
+        }
+
+        if (request.ForbiddenLibAssemblyReferences.Count > 0)
+        {
+            errors.AddRange(FindForbiddenLibAssemblyReferences(zip, request));
         }
 
         if (request.RequireReadme && !entries.Contains("README.md"))
@@ -106,6 +113,48 @@ static class NupkgVerifier
         }
 
         return errors;
+    }
+
+    static IEnumerable<string> FindForbiddenLibAssemblyReferences(ZipArchive zip, NupkgVerifyRequest request)
+    {
+        var forbidden = new HashSet<string>(request.ForbiddenLibAssemblyReferences, StringComparer.OrdinalIgnoreCase);
+
+        foreach (ZipArchiveEntry entry in zip.Entries)
+        {
+            string path = entry.FullName.Replace('\\', '/');
+            if (!path.StartsWith("lib/", StringComparison.OrdinalIgnoreCase)
+                || !path.EndsWith(".dll", StringComparison.OrdinalIgnoreCase))
+            {
+                continue;
+            }
+
+            using Stream stream = entry.Open();
+            foreach (string reference in ReadAssemblyReferences(stream))
+            {
+                if (forbidden.Contains(reference))
+                {
+                    yield return $"{request.PackageId}: {path} references {reference}";
+                }
+            }
+        }
+    }
+
+    internal static IReadOnlyList<string> ReadAssemblyReferences(Stream assembly)
+    {
+        using var buffer = new MemoryStream();
+        assembly.CopyTo(buffer);
+        buffer.Position = 0;
+
+        using var pe = new PEReader(buffer);
+        if (!pe.HasMetadata)
+        {
+            return [];
+        }
+
+        MetadataReader metadata = pe.GetMetadataReader();
+        return metadata.AssemblyReferences
+            .Select(handle => metadata.GetString(metadata.GetAssemblyReference(handle).Name))
+            .ToArray();
     }
 
     internal static bool ReadmePinsObservablesPackageVersion(string readme)

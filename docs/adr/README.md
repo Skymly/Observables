@@ -12,7 +12,8 @@
 |-----|------|------|------|------------------|
 | [ADR-001](ADR-001-primitives-backend-skip.md) | 不采用 ReactiveUI.Primitives 作为第三后端 | Accepted | 2026-06-28 | — |
 | [ADR-002](ADR-002-domain-admission-and-ranking.md) | 新域准入标准与下一批域 top-N 排名 | Accepted | 2026-07-28 | [#141](https://github.com/Skymly/Observables/issues/141) / [#149](https://github.com/Skymly/Observables/issues/149) |
+| [ADR-003](ADR-003-backend-neutral-domain-runtime.md) | 域运行时保持后端中立，R3 桥接移入 `Observables.<Feature>.R3` | Accepted | 2026-09-15 | [#363](https://github.com/Skymly/Observables/issues/363) |
 
 ## 下一个可用编号
 
-**ADR-003**
+**ADR-004**

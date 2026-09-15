@@ -32,7 +32,8 @@
 
 | 项目 | 是否必需 | 角色 |
 |------|----------|------|
-| **`Observables.<Feature>`** | 按需 | **域运行时**。纯生成、无运行时的域（如 Events）可不建。 |
+| **`Observables.<Feature>`** | 按需 | **域运行时**，**后端中立**：协议、attribute、序列化、具名注册表。**不得引用 R3 或 System.Reactive**——两个包都装它。纯生成、无运行时的域（如 Events）可不建。 |
+| **`Observables.<Feature>.R3`** | 按需 | **R3 桥接运行时**（`<Feature>Observable` 等）。R3 桥接类型放在此项目。 |
 | **`Observables.<Feature>.Reactive`** | 按需 | **System.Reactive 桥接运行时**（如 `IObservable` 适配器）。桥接类型放在此项目。 |
 | **`Observables.<Feature>.SourceGenerators.Shared`** | 双生成器时 | 本域共享生成器逻辑（`.projitems`），由 R3 与 Reactive 两路生成器 Import。 |
 | **`Observables.<Feature>.R3.SourceGenerators`** | 是 | R3 源生成器（`IsRoslynComponent`）。 |
@@ -54,17 +55,19 @@
 
 | NuGet 包（目标） | 运行时 | 生成器项目 |
 |------------------|--------|------------|
-| **`Observables.<Feature>.R3`** | R3 | `*.R3.SourceGenerators` |
-| **`Observables.<Feature>.Reactive`** | System.Reactive + 本域 `.Reactive`（若有） | `*.Reactive.SourceGenerators` |
+| **`Observables.<Feature>.R3`** | R3 + 域运行时 + 本域 `.R3`（若有） | `*.R3.SourceGenerators` |
+| **`Observables.<Feature>.Reactive`** | System.Reactive + 域运行时 + 本域 `.Reactive`（若有） | `*.Reactive.SourceGenerators` |
 
-- R3 包 **不** 引用 System.Reactive；Reactive 包 **不** 引用 R3。
+- R3 包 **不** 引用 System.Reactive；Reactive 包 **不** 引用 R3。这条管的是包里 **每一个** 程序集，不只是 nuspec：两个包共享的域运行时因此必须后端中立。PackVerify 读 `lib/**/*.dll` 的程序集引用表来验（`PackCsprojReader.ForbiddenBackendAssemblies`）。
+- 八个域（Grpc / Mqtt / Nats / Postgres / Redis / SignalR / Sse / WebSocket）的 R3 桥接仍在域运行时里，见 [ADR-003](docs/adr/ADR-003-backend-neutral-domain-runtime.md)。它们暂列在 `PackCsprojReader.DomainsPendingBackendSplit` 里豁免；拆一个划掉一个，名单空了连名单一起删。**新域不得进这张名单。**
 - 生成器仅编译期；发布后消费者通过 **`.Package` 元包** 获得「运行时 + 对应分析器」。开发阶段用 `ProjectReference` + `OutputItemType="Analyzer"`。
 
 ### 运行时类型放在哪
 
 ```
 ≥2 个 Feature 复用     →  Observables.Core
-仅单域使用             →  Observables.<Feature>（按需创建）
+仅单域使用、后端中立   →  Observables.<Feature>（按需创建）
+R3 Observable<T> 桥接  →  Observables.<Feature>.R3（按需；与 R3 包一起发布）
 IObservable 等桥接     →  Observables.<Feature>.Reactive（按需；与 Reactive 包一起发布）
 ```
 
@@ -97,8 +100,8 @@ IObservable 等桥接     →  Observables.<Feature>.Reactive（按需；与 Rea
 
 ### 新增 Feature 检查清单
 
-1. 是否需要 `Observables.<Feature>` 运行时？
-2. 是否需要 `Observables.<Feature>.Reactive` 桥接？
+1. 是否需要 `Observables.<Feature>` 运行时？（后端中立，不引用 R3 / System.Reactive）
+2. 是否需要 `Observables.<Feature>.R3` / `Observables.<Feature>.Reactive` 桥接？
 3. 建立 `*.SourceGenerators.Shared`（若两路生成器共享逻辑）
 4. 建立 `*.R3.SourceGenerators` 与 `*.Reactive.SourceGenerators`（**生成器项目必须带 `.SourceGenerators` 后缀**，`.R3`/`.Reactive` 仅用于 NuGet 包 ID）
 5. 建立 `*.Package`，产出 `.R3` / `.Reactive` 两个包；在 [`eng/Observables.BuildManifest.json`](eng/Observables.BuildManifest.json) 登记 `packProject` + `packageId`

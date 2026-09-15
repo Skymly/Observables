@@ -317,6 +317,92 @@ public sealed class NupkgVerifierTests
     }
 
     [Fact]
+    public void Verify_fails_when_a_lib_assembly_references_a_forbidden_backend()
+    {
+        string assemblyPath = typeof(NupkgVerifierTests).Assembly.Location;
+        string[] references = ReadReferences(assemblyPath);
+        Assert.NotEmpty(references);
+
+        string nupkg = NupkgFixture.Create(
+            GrpcR3,
+            [
+                $"analyzers/dotnet/roslyn4.12/cs/{GrpcGenerator}",
+                .. SharedAnalyzerFiles,
+                "build/Observables.Grpc.R3.props",
+                "lib/net8.0/Observables.Grpc.dll",
+            ],
+            fileSources: new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["lib/net8.0/Observables.Grpc.dll"] = assemblyPath,
+            });
+
+        try
+        {
+            IReadOnlyList<string> errors = NupkgVerifier.Verify(
+                nupkg,
+                new NupkgVerifyRequest
+                {
+                    PackageId = GrpcR3,
+                    GeneratorAssemblyFileName = GrpcGenerator,
+                    ForbiddenLibAssemblyReferences = [references[0]],
+                });
+
+            Assert.Contains(
+                errors,
+                e => e.Contains("lib/net8.0/Observables.Grpc.dll", StringComparison.Ordinal)
+                    && e.Contains(references[0], StringComparison.Ordinal));
+        }
+        finally
+        {
+            File.Delete(nupkg);
+        }
+    }
+
+    [Fact]
+    public void Verify_accepts_a_lib_assembly_that_references_neither_forbidden_backend()
+    {
+        string assemblyPath = typeof(NupkgVerifierTests).Assembly.Location;
+        Assert.DoesNotContain("R3", ReadReferences(assemblyPath), StringComparer.OrdinalIgnoreCase);
+
+        string nupkg = NupkgFixture.Create(
+            GrpcR3,
+            [
+                $"analyzers/dotnet/roslyn4.12/cs/{GrpcGenerator}",
+                .. SharedAnalyzerFiles,
+                "build/Observables.Grpc.R3.props",
+                "lib/net8.0/Observables.Grpc.dll",
+            ],
+            fileSources: new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["lib/net8.0/Observables.Grpc.dll"] = assemblyPath,
+            });
+
+        try
+        {
+            IReadOnlyList<string> errors = NupkgVerifier.Verify(
+                nupkg,
+                new NupkgVerifyRequest
+                {
+                    PackageId = GrpcR3,
+                    GeneratorAssemblyFileName = GrpcGenerator,
+                    ForbiddenLibAssemblyReferences = ["R3"],
+                });
+
+            Assert.Empty(errors);
+        }
+        finally
+        {
+            File.Delete(nupkg);
+        }
+    }
+
+    static string[] ReadReferences(string assemblyPath)
+    {
+        using FileStream stream = File.OpenRead(assemblyPath);
+        return NupkgVerifier.ReadAssemblyReferences(stream).ToArray();
+    }
+
+    [Fact]
     public void Pack_readme_sources_do_not_pin_observables_package_version()
     {
         string[] packReadmes = Directory.GetFiles(

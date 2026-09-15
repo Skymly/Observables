@@ -249,6 +249,8 @@
 
     <Project Path="Observables.Nats/Observables.Nats/Observables.Nats.csproj" />
 
+    <Project Path="Observables.Nats/Observables.Nats.R3/Observables.Nats.R3.csproj" />
+
     <Project Path="Observables.Nats/Observables.Nats.Reactive/Observables.Nats.Reactive.csproj" />
 
     <Project Path="Observables.Nats/Observables.Nats.Reactive.SourceGenerators/Observables.Nats.Reactive.SourceGenerators.csproj" />

@@ -22,6 +22,9 @@ internal static class GeneratorTestHarness
                 options.IncludeCoreReference ? null : "Observables.Nats.dll",
                 typeof(global::R3.Unit),
                 options.IncludeCoreReference
+                    ? typeof(global::Observables.Nats.NatsObservable)
+                    : null,
+                options.IncludeCoreReference
                     ? typeof(global::Observables.Nats.NatsService)
                     : null,
                 typeof(global::NATS.Client.Core.NatsConnection)),

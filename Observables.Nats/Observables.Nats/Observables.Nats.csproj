@@ -3,27 +3,23 @@
   <PropertyGroup>
     <RootNamespace>Observables.Nats</RootNamespace>
     <AssemblyName>Observables.Nats</AssemblyName>
-    <Description>NATS client runtime and R3 stream bridges.</Description>
-    <!-- NATS.Client.Core pulls VisualStudio.Threading analyzers; R3AsyncCreate uses async void on purpose.
-         Keep a single PropertyGroup so eng/scripts/sync-doc-loc.ps1 can read AssemblyName under StrictMode. -->
-    <NoWarn Condition="'$(TargetFramework)' == 'netstandard2.0'">$(NoWarn);VSTHRD100;VSTHRD200</NoWarn>
+    <Description>NATS client runtime, backend-neutral: R3 bridges live in Observables.Nats.R3.</Description>
   </PropertyGroup>
 
   <Import Project="..\..\eng\NetStandard20.props" Condition="Exists('..\..\eng\NetStandard20.props')" />
 
   <ItemGroup>
+    <InternalsVisibleTo Include="Observables.Nats.R3" />
     <InternalsVisibleTo Include="Observables.Nats.Reactive" />
   </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="NATS.Client.Core" />
     <PackageReference Include="NATS.Client.Serializers.Json" />
-    <PackageReference Include="R3" />
   </ItemGroup>
 
 
   <ItemGroup>
     <Compile Include="..\..\Observables.Shared\Observables.Core\GeneratedProxyFactoryRegistry.cs" Link="Shared/GeneratedProxyFactoryRegistry.cs" />
-    <Compile Include="..\..\Observables.Shared\Observables.R3.Runtime\R3AsyncCreate.cs" Link="Shared/R3AsyncCreate.cs" />
   </ItemGroup>
 </Project>

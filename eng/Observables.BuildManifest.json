@@ -57,7 +57,7 @@
       "packageId": "Observables.Sse.Reactive"
     },
     {
-      "packProject": "Observables.Nats/Observables.Nats.Package/Observables.Nats.R3.csproj",
+      "packProject": "Observables.Nats/Observables.Nats.Package/Observables.Nats.R3.Pack.csproj",
       "packageId": "Observables.Nats.R3"
     },
     {

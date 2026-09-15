@@ -2,7 +2,7 @@ using System.Diagnostics.CodeAnalysis;
 
 namespace Observables.Nats;
 
-/// <summary>Global NATS payload serializer used by <see cref="NatsObservable"/> and generated proxies.</summary>
+/// <summary>Global NATS payload serializer used by the backend bridges and generated proxies.</summary>
 #if NET8_0_OR_GREATER
 [RequiresUnreferencedCode(NatsTrimAnnotations.JsonPayload)]
 [RequiresDynamicCode(NatsTrimAnnotations.JsonPayload)]

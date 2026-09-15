@@ -100,6 +100,31 @@ jobs:
       - name: Verify whitespace (LF / trailing)
         run: dotnet format whitespace Observables.slnx --verify-no-changes --verbosity diagnostic
 
+  eol-guard:
+    name: Line ending guard
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # .gitattributes pins every text pattern to eol=lf, so the index must be
+      # pure LF. Two failure modes slip past `dotnet format whitespace`, which
+      # only ever sees an LF checkout on Linux:
+      #   - a blob committed before .gitattributes landed keeps its CRLF, and
+      #     every later read shows the whole file as changed
+      #   - a lone CR makes Git report the file as -text, which silently skips
+      #     eol=lf altogether, so no amount of configuration reaches it
+      - name: Assert index is pure LF
+        run: |
+          if git ls-files --eol | grep -E '^i/(crlf|mixed)'; then
+            echo "::error::Index holds CRLF or mixed line endings (listed above). Fix with: git add --renormalize ."
+            exit 1
+          fi
+          if git ls-files --eol | grep -E '^i/-text' | grep -v 'attr/-text'; then
+            echo "::error::File is declared text but detected as binary (listed above), usually a stray lone CR. Strip the CR, or add a 'binary' rule to .gitattributes."
+            exit 1
+          fi
+          echo "Index is pure LF."
+
   changes:
     name: Detect changed domains
     runs-on: windows-latest

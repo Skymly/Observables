@@ -40,8 +40,23 @@
         <member name="T:Observables.SignalR.HubService">
             <summary>创建源生成的 Hub 代理实现。</summary>
         </member>
+        <member name="M:Observables.SignalR.HubService.RegisterConnection(System.String,Microsoft.AspNetCore.SignalR.Client.HubConnection)">
+            <summary>
+            以接口在 <c>[Hub(hubName)]</c> 上声明的名字注册一个连接，使其可通过 <see cref="M:Observables.SignalR.HubService.For``1"/> 解析。
+            同名重复注册会替换原连接。
+            </summary>
+        </member>
+        <member name="M:Observables.SignalR.HubService.RegisterProxyName(System.Type,System.String)">
+            <summary>注册生成代理所声明的名字。</summary>
+        </member>
         <member name="M:Observables.SignalR.HubService.RegisterGeneratedFactory(System.Type,System.Func{Microsoft.AspNetCore.SignalR.Client.HubConnection,System.Object})">
             <summary>注册源生成的 Hub 代理工厂。</summary>
+        </member>
+        <member name="M:Observables.SignalR.HubService.For``1">
+            <summary>基于 <typeparamref name="T"/> 在 <c>[Hub(hubName)]</c> 中声明的名字所注册的连接创建代理。</summary>
+        </member>
+        <member name="M:Observables.SignalR.HubService.For(System.Type)">
+            <summary>基于 <paramref name="hubInterfaceType"/> 在 <c>[Hub(hubName)]</c> 中声明的名字所注册的连接创建代理。</summary>
         </member>
         <member name="T:Observables.SignalR.SignalRObservable">
             <summary>将 SignalR 客户端 API 桥接到 R3 <see cref="T:R3.Observable`1"/>。</summary>

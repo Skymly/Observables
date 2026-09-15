@@ -55,13 +55,14 @@ internal static class Parser
                 observableType,
                 members,
                 diagnostics),
-            createInterface: static (marked, className, members) => new HubInterfaceModel(
+            createInterface: (marked, className, members) => new HubInterfaceModel(
                 $"{marked.InterfaceSymbol.GetSafeHintName()}.SignalR.g.cs",
                 className,
                 marked.InterfaceSymbol.ToDisplayString(DisplayFormat),
                 BackendTokens.QualifyGeneratedNamespace("Observables.SignalR"),
                 members,
-                marked.Nullability),
+                marked.Nullability,
+                GetHubName(marked.InterfaceSymbol, hubAttribute)),
             createContext: static interfaces => new ContextGenerationModel(interfaces),
             onMarkedInterface: marked =>
             {
@@ -77,6 +78,34 @@ internal static class Parser
                         member.Locations.FirstOrDefault(),
                         marked.InterfaceSymbol.Name,
                         member.Name)));
+    }
+
+    /// <summary>
+    /// Reads the name off <c>[Hub(hubName)]</c>. A null or blank name means the interface opts out of
+    /// named resolution and stays reachable only through <c>HubService.For&lt;T&gt;(HubConnection)</c>.
+    /// </summary>
+    static string? GetHubName(INamedTypeSymbol interfaceSymbol, INamedTypeSymbol? hubAttribute)
+    {
+        if (hubAttribute is null)
+        {
+            return null;
+        }
+
+        foreach (var attribute in interfaceSymbol.GetAttributes())
+        {
+            if (!SymbolEqualityComparer.Default.Equals(attribute.AttributeClass, hubAttribute))
+            {
+                continue;
+            }
+
+            return attribute.ConstructorArguments.Length > 0
+                && attribute.ConstructorArguments[0].Value is string name
+                && !string.IsNullOrWhiteSpace(name)
+                    ? name
+                    : null;
+        }
+
+        return null;
     }
 
     static void TryAddMethod(

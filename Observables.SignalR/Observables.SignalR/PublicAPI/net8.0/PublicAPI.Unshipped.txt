@@ -1,1 +1,5 @@
 #nullable enable
+static Observables.SignalR.HubService.For(System.Type! hubInterfaceType) -> object!
+static Observables.SignalR.HubService.For<T>() -> T
+static Observables.SignalR.HubService.RegisterConnection(string! name, Microsoft.AspNetCore.SignalR.Client.HubConnection! connection) -> void
+static Observables.SignalR.HubService.RegisterProxyName(System.Type! hubInterfaceType, string! hubName) -> void

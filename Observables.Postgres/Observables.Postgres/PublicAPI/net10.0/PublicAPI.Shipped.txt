@@ -19,7 +19,6 @@ Observables.Postgres.NotifyAttribute.Channel.get -> string?
 Observables.Postgres.NotifyAttribute.NotifyAttribute(string? channel = null) -> void
 Observables.Postgres.PostgresAttribute
 Observables.Postgres.PostgresAttribute.PostgresAttribute() -> void
-Observables.Postgres.PostgresObservable
 Observables.Postgres.PostgresPayloadSerializerExtensions
 Observables.Postgres.PostgresPayloadSerializers
 Observables.Postgres.PostgresService
@@ -29,11 +28,6 @@ Observables.Postgres.PrimitivePostgresPayloadSerializer.Serialize(System.Type! p
 static Observables.Postgres.DefaultPostgresPayloadSerializer.Instance.get -> Observables.Postgres.DefaultPostgresPayloadSerializer!
 static Observables.Postgres.JsonPostgresPayloadSerializer.DefaultOptions.get -> System.Text.Json.JsonSerializerOptions!
 static Observables.Postgres.JsonPostgresPayloadSerializer.Instance.get -> Observables.Postgres.JsonPostgresPayloadSerializer!
-static Observables.Postgres.PostgresObservable.FromListen(Npgsql.NpgsqlConnection! connection, string! channel) -> R3.Observable<string!>!
-static Observables.Postgres.PostgresObservable.FromListen<T>(Npgsql.NpgsqlConnection! connection, string! channel) -> R3.Observable<T>!
-static Observables.Postgres.PostgresObservable.FromNotify(Npgsql.NpgsqlConnection! connection, string! channel, string? payload, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> R3.Observable<R3.Unit>!
-static Observables.Postgres.PostgresObservable.FromNotify(Npgsql.NpgsqlConnection! connection, string! channel, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> R3.Observable<R3.Unit>!
-static Observables.Postgres.PostgresObservable.FromNotify<T>(Npgsql.NpgsqlConnection! connection, string! channel, T payload, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> R3.Observable<R3.Unit>!
 static Observables.Postgres.PostgresPayloadSerializerExtensions.Deserialize(this Observables.Postgres.IPostgresPayloadSerializer! serializer, System.Type! payloadType, byte[]! payload) -> object!
 static Observables.Postgres.PostgresPayloadSerializerExtensions.Deserialize<T>(this Observables.Postgres.IPostgresPayloadSerializer! serializer, byte[]! payload) -> T
 static Observables.Postgres.PostgresPayloadSerializerExtensions.Deserialize<T>(this Observables.Postgres.IPostgresPayloadSerializer! serializer, System.ReadOnlySpan<byte> payload) -> T

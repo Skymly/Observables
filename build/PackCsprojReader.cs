@@ -25,7 +25,6 @@ static partial class PackCsprojReader
     internal static readonly HashSet<string> DomainsPendingBackendSplit = new(StringComparer.OrdinalIgnoreCase)
     {
         "Grpc",
-        "Postgres",
     };
 
     public static NupkgVerifyRequest FromPackProject(string packCsprojPath)

@@ -65,7 +65,7 @@
       "packageId": "Observables.Nats.Reactive"
     },
     {
-      "packProject": "Observables.Postgres/Observables.Postgres.Package/Observables.Postgres.R3.csproj",
+      "packProject": "Observables.Postgres/Observables.Postgres.Package/Observables.Postgres.R3.Pack.csproj",
       "packageId": "Observables.Postgres.R3"
     },
     {

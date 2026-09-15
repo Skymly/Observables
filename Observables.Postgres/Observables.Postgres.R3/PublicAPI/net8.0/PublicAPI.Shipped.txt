@@ -1,0 +1,7 @@
+#nullable enable
+Observables.Postgres.PostgresObservable
+static Observables.Postgres.PostgresObservable.FromListen(Npgsql.NpgsqlConnection! connection, string! channel) -> R3.Observable<string!>!
+static Observables.Postgres.PostgresObservable.FromListen<T>(Npgsql.NpgsqlConnection! connection, string! channel) -> R3.Observable<T>!
+static Observables.Postgres.PostgresObservable.FromNotify(Npgsql.NpgsqlConnection! connection, string! channel, string? payload, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> R3.Observable<R3.Unit>!
+static Observables.Postgres.PostgresObservable.FromNotify(Npgsql.NpgsqlConnection! connection, string! channel, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> R3.Observable<R3.Unit>!
+static Observables.Postgres.PostgresObservable.FromNotify<T>(Npgsql.NpgsqlConnection! connection, string! channel, T payload, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> R3.Observable<R3.Unit>!

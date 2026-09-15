@@ -279,6 +279,8 @@
 
     <Project Path="Observables.Postgres/Observables.Postgres/Observables.Postgres.csproj" />
 
+    <Project Path="Observables.Postgres/Observables.Postgres.R3/Observables.Postgres.R3.csproj" />
+
     <Project Path="Observables.Postgres/Observables.Postgres.Reactive/Observables.Postgres.Reactive.csproj" />
 
     <Project Path="Observables.Postgres/Observables.Postgres.Reactive.SourceGenerators/Observables.Postgres.Reactive.SourceGenerators.csproj" />

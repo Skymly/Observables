@@ -105,7 +105,8 @@ LISTEN 在会话上注册通道并占用连接上的 `Wait`/`WaitAsync` 循环�
 
 ```
 Observables.Postgres/
-├── Observables.Postgres/
+├── Observables.Postgres/            # 后端中立运行时
+├── Observables.Postgres.R3/         # R3 桥（PostgresObservable）
 ├── Observables.Postgres.Reactive/
 ├── Observables.Postgres.SourceGenerators.Shared/
 ├── Observables.Postgres.R3.SourceGenerators/
@@ -118,6 +119,16 @@ Observables.Postgres/
 ```
 
 登记：`Observables.slnx` `/Postgres/`、`eng/Observables.BuildManifest.json`（本地 **18** 包）、`ProxyDomainCatalog`、`ci.yml` postgres 矩阵、`eng/nuget-smoke`。
+
+三个运行时程序集按后端分层（[ADR-003](../adr/ADR-003-backend-neutral-domain-runtime.md)）：
+
+| 程序集 | 依赖 | 进哪个包 |
+|--------|------|----------|
+| `Observables.Postgres` | Npgsql | 两个包都进 |
+| `Observables.Postgres.R3`（`PostgresObservable`） | 上面那个 + R3 | 仅 `Observables.Postgres.R3` |
+| `Observables.Postgres.Reactive`（`SystemReactivePostgresAdapter`） | 上面第一个 + System.Reactive | 仅 `Observables.Postgres.Reactive` |
+
+命名空间都是 `Observables.Postgres`，拆分对消费者源码不可见。§4 那条「LISTEN 期间禁止 NOTIFY」的计数器是 internal 且留在中立运行时，两个桥接项目通过 `InternalsVisibleTo` 共用同一份，否则两个后端会各数各的。
 
 ## 8. 测试
 

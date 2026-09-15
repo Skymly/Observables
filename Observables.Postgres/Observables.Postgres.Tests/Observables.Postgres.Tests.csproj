@@ -17,7 +17,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Observables.Postgres\Observables.Postgres.csproj" />
+    <ProjectReference Include="..\Observables.Postgres.R3\Observables.Postgres.R3.csproj" />
     <ProjectReference Include="..\Observables.Postgres.R3.SourceGenerators\Observables.Postgres.R3.SourceGenerators.csproj"
                       OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
   </ItemGroup>

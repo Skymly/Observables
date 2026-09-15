@@ -21,6 +21,9 @@ internal static class GeneratorTestHarness
                 options.IncludeCoreReference ? null : "Observables.Sse.dll",
                 typeof(global::R3.Unit),
                 options.IncludeCoreReference
+                    ? typeof(global::Observables.Sse.SseObservable)
+                    : null,
+                options.IncludeCoreReference
                     ? typeof(global::Observables.Sse.SseService)
                     : null),
             static () => [new SseInterfaceStubGenerator()],

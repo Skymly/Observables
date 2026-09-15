@@ -29,7 +29,6 @@ static partial class PackCsprojReader
         "Postgres",
         "Redis",
         "SignalR",
-        "Sse",
         "WebSocket",
     };
 

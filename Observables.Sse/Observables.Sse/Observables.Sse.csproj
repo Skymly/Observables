@@ -3,20 +3,16 @@
   <PropertyGroup>
     <RootNamespace>Observables.Sse</RootNamespace>
     <AssemblyName>Observables.Sse</AssemblyName>
-    <Description>Server-Sent Events (SSE) client runtime and R3 stream bridges.</Description>
+    <Description>Server-Sent Events (SSE) client runtime, backend-neutral: R3 bridges live in Observables.Sse.R3.</Description>
   </PropertyGroup>
 
   <ItemGroup>
+    <InternalsVisibleTo Include="Observables.Sse.R3" />
     <InternalsVisibleTo Include="Observables.Sse.Reactive" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <PackageReference Include="R3" />
   </ItemGroup>
 
 
   <ItemGroup>
     <Compile Include="..\..\Observables.Shared\Observables.Core\GeneratedProxyFactoryRegistry.cs" Link="Shared/GeneratedProxyFactoryRegistry.cs" />
-    <Compile Include="..\..\Observables.Shared\Observables.R3.Runtime\R3AsyncCreate.cs" Link="Shared/R3AsyncCreate.cs" />
   </ItemGroup>
 </Project>

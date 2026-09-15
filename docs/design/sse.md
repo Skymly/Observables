@@ -115,7 +115,8 @@ SSE 解析（`text/event-stream`，见 [WHATWG HTML §9.2](https://html.spec.wha
 
 ```
 Observables.Sse/
-├── Observables.Sse/                          # 运行时（R3 桥 + SseConnection/SseProtocol）
+├── Observables.Sse/                          # 后端中立运行时（SseConnection/SseProtocol/SseService）
+├── Observables.Sse.R3/                       # R3 桥（SseObservable）
 ├── Observables.Sse.Reactive/                 # System.Reactive 桥
 ├── Observables.Sse.SourceGenerators.Shared/  # shproj（新 GUID）+ Parser/Emitter/Models/诊断
 ├── Observables.Sse.R3.SourceGenerators/      # SSE_R3
@@ -128,6 +129,16 @@ Observables.Sse/
 ```
 
 跨域登记：`eng/Observables.ProjectDefaults.props`（`/Observables.Sse/` 域文件夹）、`ProxyDomainCatalog`、`EmptyProxyInterfaceAnalyzer`、`Observables.slnx`（`/Sse/` 文件夹）、`eng/Observables.BuildManifest.json`（→ 14 包），以及 `eng/nuget-smoke/Sse.{R3,Reactive}.Consumer`。
+
+三个运行时程序集按后端分层（[ADR-003](../adr/ADR-003-backend-neutral-domain-runtime.md)）：
+
+| 程序集 | 依赖 | 进哪个包 |
+|--------|------|----------|
+| `Observables.Sse` | 无后端依赖 | 两个包都进 |
+| `Observables.Sse.R3`（`SseObservable`） | 上面那个 + R3 | 仅 `Observables.Sse.R3` |
+| `Observables.Sse.Reactive`（`SystemReactiveSseAdapter`） | 上面第一个 + System.Reactive | 仅 `Observables.Sse.Reactive` |
+
+命名空间都是 `Observables.Sse`，拆分对消费者源码不可见。`SseProtocol` 等 internal 类型留在中立运行时，两个桥接项目通过 `InternalsVisibleTo` 取用。
 
 ## 7. 后续（v1 之外）
 

@@ -15,7 +15,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Observables.Sse\Observables.Sse.csproj" />
+    <ProjectReference Include="..\Observables.Sse.R3\Observables.Sse.R3.csproj" />
     <ProjectReference Include="..\Observables.Sse.R3.SourceGenerators\Observables.Sse.R3.SourceGenerators.csproj"
                       OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
   </ItemGroup>

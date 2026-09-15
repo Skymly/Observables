@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <RootNamespace>Observables.Sse</RootNamespace>
+    <AssemblyName>Observables.Sse.R3</AssemblyName>
+    <Description>R3 bridges for Observables.Sse.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Observables.Sse\Observables.Sse.csproj" />
+    <PackageReference Include="R3" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Include="..\..\Observables.Shared\Observables.R3.Runtime\R3AsyncCreate.cs" Link="Shared/R3AsyncCreate.cs" />
+  </ItemGroup>
+
+</Project>

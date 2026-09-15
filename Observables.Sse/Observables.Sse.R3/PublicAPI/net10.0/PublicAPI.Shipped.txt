@@ -1,0 +1,3 @@
+#nullable enable
+Observables.Sse.SseObservable
+static Observables.Sse.SseObservable.FromEvent<T>(Observables.Sse.SseConnection! connection, string! eventName) -> R3.Observable<T>!

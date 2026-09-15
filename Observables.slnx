@@ -215,6 +215,8 @@
 
     <Project Path="Observables.Sse/Observables.Sse/Observables.Sse.csproj" />
 
+    <Project Path="Observables.Sse/Observables.Sse.R3/Observables.Sse.R3.csproj" />
+
     <Project Path="Observables.Sse/Observables.Sse.Reactive/Observables.Sse.Reactive.csproj" />
 
     <Project Path="Observables.Sse/Observables.Sse.Reactive.SourceGenerators/Observables.Sse.Reactive.SourceGenerators.csproj" />

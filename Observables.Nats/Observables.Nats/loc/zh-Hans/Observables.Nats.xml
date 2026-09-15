@@ -67,6 +67,16 @@
         <member name="T:Observables.Nats.NatsPayload">
             <summary>R3 与 Reactive NATS 桥接共享的负载转换辅助方法。</summary>
         </member>
+        <member name="T:Observables.Nats.NatsPayloadSerializerBridge`1">
+            <summary>
+            将 <see cref="T:Observables.Nats.NatsPayloadSerializers"/> 适配到 NATS 客户端的序列化器接口，
+            使生成代理的负载真正经过已注册的序列化器。
+            </summary>
+            <remarks>
+            当 <see cref="T:Observables.Nats.NatsPayloadSerializers"/> 无法往返 <typeparamref name="T"/> 时，
+            <c>ForOrNull</c> 返回 <see langword="null"/>，负载交回 NATS 客户端自己的序列化器注册表。
+            </remarks>
+        </member>
         <member name="T:Observables.Nats.NatsPayloadSerializerExtensions">
             <summary><see cref="T:Observables.Nats.INatsPayloadSerializer"/> 与 <see cref="T:Observables.Nats.INatsPayloadSerializer`1"/> 的便捷重载。</summary>
         </member>
@@ -102,6 +112,13 @@
         </member>
         <member name="M:Observables.Nats.NatsPayloadSerializers.Unregister``1">
             <summary>移除类型化注册（若存在）。</summary>
+        </member>
+        <member name="M:Observables.Nats.NatsPayloadSerializers.CanRoundTrip``1">
+            <summary>
+            <typeparamref name="T"/> 能否经由此处的注册往返。仅在 netstandard2.0 上、
+            对没有任何注册的非原始类型返回 false，因为该目标下
+            <see cref="T:Observables.Nats.DefaultNatsPayloadSerializer"/> 没有 JSON 回退。
+            </summary>
         </member>
         <member name="M:Observables.Nats.NatsPayloadSerializers.Deserialize(System.Type,System.ReadOnlySpan{System.Byte})">
             <summary>使用 <see cref="P:Observables.Nats.NatsPayloadSerializers.Current"/> 反序列化负载。</summary>

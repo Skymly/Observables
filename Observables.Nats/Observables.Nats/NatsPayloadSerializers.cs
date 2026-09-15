@@ -113,6 +113,25 @@ public static class NatsPayloadSerializers
         return Current.Serialize<T>(value);
     }
 
+    /// <summary>
+    /// Whether <typeparamref name="T"/> can round-trip through the registrations held here.
+    /// False only on netstandard2.0 for a non-primitive type with no registration, because
+    /// <see cref="DefaultNatsPayloadSerializer"/> has no JSON fallback on that target.
+    /// </summary>
+    internal static bool CanRoundTrip<T>()
+    {
+        if (s_typed.ContainsKey(typeof(T)) || !ReferenceEquals(s_current, DefaultNatsPayloadSerializer.Instance))
+        {
+            return true;
+        }
+
+#if NETSTANDARD2_0
+        return typeof(T) == typeof(byte[]) || typeof(T) == typeof(string);
+#else
+        return true;
+#endif
+    }
+
     static bool TryGetTypedSerializer<T>(out INatsPayloadSerializer<T> serializer)
     {
         if (s_typed.TryGetValue(typeof(T), out var instance) && instance is INatsPayloadSerializer<T> typed)

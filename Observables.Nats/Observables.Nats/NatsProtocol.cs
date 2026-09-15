@@ -47,7 +47,12 @@ internal static class NatsProtocol
         CancellationToken pumpToken)
     {
         using var linked = CancellationTokenSource.CreateLinkedTokenSource(userToken, pumpToken);
-        await connection.PublishAsync(subject, payload, cancellationToken: linked.Token).ConfigureAwait(false);
+        await connection.PublishAsync(
+                subject,
+                payload,
+                serializer: NatsPayloadSerializerBridge<T>.ForOrNull(),
+                cancellationToken: linked.Token)
+            .ConfigureAwait(false);
     }
 
 #if NET8_0_OR_GREATER
@@ -61,7 +66,10 @@ internal static class NatsProtocol
         Action onCompleted,
         CancellationToken cancellationToken)
     {
-        await foreach (var msg in connection.SubscribeAsync<T>(subject, cancellationToken: cancellationToken)
+        await foreach (var msg in connection.SubscribeAsync(
+                               subject,
+                               serializer: NatsPayloadSerializerBridge<T>.ForOrNull(),
+                               cancellationToken: cancellationToken)
                            .ConfigureAwait(false))
         {
             msg.EnsureSuccess();
@@ -84,7 +92,12 @@ internal static class NatsProtocol
     {
         using var linked = CancellationTokenSource.CreateLinkedTokenSource(userToken, pumpToken);
         var reply = await connection
-            .RequestAsync<TRequest, TResponse>(subject, request, cancellationToken: linked.Token)
+            .RequestAsync(
+                subject,
+                request,
+                requestSerializer: NatsPayloadSerializerBridge<TRequest>.ForOrNull(),
+                replySerializer: NatsPayloadSerializerBridge<TResponse>.ForOrNull(),
+                cancellationToken: linked.Token)
             .ConfigureAwait(false);
         return reply.Data ?? throw new InvalidOperationException("NATS request returned null payload.");
     }

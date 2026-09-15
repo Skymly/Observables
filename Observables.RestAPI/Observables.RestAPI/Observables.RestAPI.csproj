@@ -3,16 +3,12 @@
   <PropertyGroup>
     <RootNamespace>Observables.RestAPI</RootNamespace>
     <AssemblyName>Observables.RestAPI</AssemblyName>
-    <Description>Declarative type-safe HTTP client runtime (Task and R3 Observable).</Description>
+    <Description>Declarative type-safe HTTP client runtime, backend-neutral: R3 and System.Reactive types appear only in generated proxies.</Description>
   </PropertyGroup>
 
 
   <ItemGroup>
     <InternalsVisibleTo Include="Observables.RestAPI.Tests" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <PackageReference Include="R3" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">

@@ -6,4 +6,5 @@ internal sealed record HubInterfaceModel(
     string InterfaceDisplayName,
     string GeneratedNamespace,
     ImmutableEquatableArray<HubMemberModel> Members,
-    Nullability Nullability);
+    Nullability Nullability,
+    string? HubName);

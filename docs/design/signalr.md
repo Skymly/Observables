@@ -69,6 +69,7 @@ hub.Counter(10, 500).Subscribe(i => Console.WriteLine(i));
 设计要点：
 
 - **入口对齐 RestAPI**：`HubService.For<T>(HubConnection)`，配 `RegisterGeneratedFactory(Type, Func<HubConnection, object>)`（模块初始化器注册，运行期无反射，AOT 友好；见 `RestService.For<T>` 范式）。
+- **具名连接**：`[Hub(hubName)]` 上的名字由 Parser 读出、随 `RegisterProxyName(Type, string)` 一起发到模块初始化器（生成物 `HubProxyNames.g.cs`），`HubService.For<T>()` 这个不带连接参数的重载据此查 `RegisterConnection(name, connection)` 注册的连接。名字走生成代码而不是运行期读特性，是因为域运行时要对 trim / AOT 分析器零告警。未写名字的接口仍只能走 `For<T>(HubConnection)`；解析未命名接口、或名字没注册过连接，都抛 `InvalidOperationException` 并在消息里点名缺的是哪一个。
 - **调用 / 发送 / 流**为**方法**（可带参数）；**回调**为**属性**（无参，订阅即注册）。形态不符报诊断（见 §4）。
 - **回调流为多播热流**：内部包一份引用计数，首个订阅者触发 `connection.On`，最后一个订阅者释放时调用返回的 `IDisposable` 注销，避免重复注册。
 

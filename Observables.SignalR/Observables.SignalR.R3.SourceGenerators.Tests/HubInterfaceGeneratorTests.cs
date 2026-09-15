@@ -31,6 +31,45 @@ public sealed class HubInterfaceGeneratorTests
     }
 
     [Fact]
+    public void Hub_name_reaches_the_generated_registration()
+    {
+        const string userSource =
+            """
+            [Hub("primary")]
+            public interface IChatHub
+            {
+                [HubInvoke]
+                Observable<int> GetUserCount();
+            }
+            """;
+
+        var output = GeneratorTestHarness.Run(userSource);
+        var snapshot = GeneratorTestHarness.ToSnapshot(output);
+
+        Assert.Contains("RegisterProxyName", snapshot, StringComparison.Ordinal);
+        Assert.Contains("\"primary\"", snapshot, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Hub_without_a_name_emits_no_name_registration()
+    {
+        const string userSource =
+            """
+            [Hub]
+            public interface IChatHub
+            {
+                [HubInvoke]
+                Observable<int> GetUserCount();
+            }
+            """;
+
+        var output = GeneratorTestHarness.Run(userSource);
+        var snapshot = GeneratorTestHarness.ToSnapshot(output);
+
+        Assert.DoesNotContain("RegisterProxyName", snapshot, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void Hub_interface_OBS4004_on_hub_on_method()
     {
         const string userSource =

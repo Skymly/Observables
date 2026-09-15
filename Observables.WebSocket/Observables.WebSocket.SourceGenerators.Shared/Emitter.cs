@@ -47,11 +47,16 @@ internal static class Emitter
         switch (member.BoundaryKind)
         {
             case WebSocketBoundaryKind.Receive:
+                // A named receive reads the same JSON envelope a named send writes, so it filters on type
+                // instead of taking every frame. Unnamed receives keep the raw stream.
+                var receive = member.MessageName is { } receiveName
+                    ? $"{BridgeType}.FromReceiveNamed<{member.ResultTypeDisplay}>(_socket, {FormatLiteral(receiveName)})"
+                    : $"{BridgeType}.FromReceive<{member.ResultTypeDisplay}>(_socket)";
                 writer.WriteLine(
                     $$"""
-                        private {{member.ReturnTypeDisplay}}? {{IdentifierHelper.BackingFieldName(member.MemberName)}};
-                        public {{member.ReturnTypeDisplay}} {{member.MemberName}} =>
-                            {{IdentifierHelper.BackingFieldName(member.MemberName)}} ??= {{BridgeType}}.FromReceive<{{member.ResultTypeDisplay}}>(_socket);
+                    private {{member.ReturnTypeDisplay}}? {{IdentifierHelper.BackingFieldName(member.MemberName)}};
+                    public {{member.ReturnTypeDisplay}} {{member.MemberName}} =>
+                        {{IdentifierHelper.BackingFieldName(member.MemberName)}} ??= {{receive}};
 
                     """);
                 break;

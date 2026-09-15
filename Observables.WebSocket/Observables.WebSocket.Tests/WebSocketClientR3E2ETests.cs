@@ -74,6 +74,46 @@ public sealed class WebSocketClientR3E2ETests(WebSocketTestServerFixture fixture
     }
 
     [Fact]
+    public async Task Named_receive_unwraps_the_envelope_a_named_send_wrote()
+    {
+        using var socket = new ClientWebSocket();
+        var hub = WebSocketService.For<IE2EHub>(socket);
+
+        using var cts = new CancellationTokenSource(DefaultTimeout);
+        await hub.Connect(fixture.Server.Uri, cts.Token).FirstAsync(cts.Token);
+
+        var receiveTask = hub.Chats.FirstAsync(cts.Token);
+        await hub.SendChat("hello", cts.Token).FirstAsync(cts.Token);
+
+        Assert.Equal("hello", await receiveTask);
+    }
+
+    [Fact]
+    public async Task Named_receive_ignores_an_envelope_addressed_elsewhere()
+    {
+        using var socket = new ClientWebSocket();
+        var hub = WebSocketService.For<IE2EHub>(socket);
+
+        using var cts = new CancellationTokenSource(DefaultTimeout);
+        await hub.Connect(fixture.Server.Uri, cts.Token).FirstAsync(cts.Token);
+
+        var chats = new List<string>();
+        using var subscription = hub.Chats.Subscribe(value => chats.Add(value));
+
+        // "ping" is echoed back as {"type":"ping"}; the raw stream sees it, the chat stream must not.
+        var rawTask = hub.EchoText.FirstAsync(cts.Token);
+        await hub.Ping(cts.Token).FirstAsync(cts.Token);
+        Assert.Equal("{\"type\":\"ping\"}", await rawTask);
+
+        // Now a chat envelope, which must arrive — proving the stream was live all along.
+        var chatTask = hub.Chats.FirstAsync(cts.Token);
+        await hub.SendChat("hello", cts.Token).FirstAsync(cts.Token);
+        Assert.Equal("hello", await chatTask);
+
+        Assert.Equal(["hello"], chats);
+    }
+
+    [Fact]
     public async Task SendBytes_echoes_binary_content()
     {
         using var socket = new ClientWebSocket();

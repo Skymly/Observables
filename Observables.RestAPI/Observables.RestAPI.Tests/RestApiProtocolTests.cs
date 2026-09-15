@@ -1,3 +1,4 @@
+using System.Net;
 using RichardSzalay.MockHttp;
 
 namespace Observables.RestAPI.Tests;
@@ -86,6 +87,72 @@ public sealed class RestApiProtocolTests
 
         Assert.True(bound.Message.Headers.TryGetValues("X-Request-Id", out var requestIds));
         Assert.Equal("abc", Assert.Single(requestIds));
+    }
+
+    [Fact]
+    public void Bind_seeds_request_options_from_settings()
+    {
+        var spec = new RestApiBridge.MethodSpec("GET", "/users", []);
+        var settings = new RestApiSettings
+        {
+            HttpRequestMessageOptions = new Dictionary<string, object> { ["tenant"] = "acme" },
+        };
+
+        var bound = RestApiProtocol.Bind(settings, spec, []);
+
+        Assert.True(bound.Message.Options.TryGetValue(new HttpRequestOptionsKey<object>("tenant"), out var tenant));
+        Assert.Equal("acme", tenant);
+    }
+
+    [Fact]
+    public void Bind_lets_a_Property_parameter_win_over_the_settings_option()
+    {
+        var spec = new RestApiBridge.MethodSpec(
+            "GET",
+            "/users",
+            [new RestApiBridge.Binding(RestApiBridge.SlotKind.Property, 0, "tenant")]);
+        var settings = new RestApiSettings
+        {
+            HttpRequestMessageOptions = new Dictionary<string, object> { ["tenant"] = "acme" },
+        };
+
+        var bound = RestApiProtocol.Bind(settings, spec, ["contoso"]);
+
+        Assert.True(bound.Message.Options.TryGetValue(new HttpRequestOptionsKey<object>("tenant"), out var tenant));
+        Assert.Equal("contoso", tenant);
+    }
+
+    [Fact]
+    public void Bind_applies_the_version_and_version_policy()
+    {
+        var spec = new RestApiBridge.MethodSpec("GET", "/users", []);
+        var settings = new RestApiSettings
+        {
+            Version = HttpVersion.Version20,
+            VersionPolicy = HttpVersionPolicy.RequestVersionExact,
+        };
+
+        var bound = RestApiProtocol.Bind(settings, spec, []);
+
+        Assert.Equal(HttpVersion.Version20, bound.Message.Version);
+        Assert.Equal(HttpVersionPolicy.RequestVersionExact, bound.Message.VersionPolicy);
+    }
+
+    [Fact]
+    public void Bind_formats_query_keys_with_the_key_formatter()
+    {
+        var spec = new RestApiBridge.MethodSpec(
+            "GET",
+            "/users",
+            [new RestApiBridge.Binding(RestApiBridge.SlotKind.Query, 0, "UserName")]);
+        var settings = new RestApiSettings
+        {
+            UrlParameterKeyFormatter = new CamelCaseUrlParameterKeyFormatter(),
+        };
+
+        var bound = RestApiProtocol.Bind(settings, spec, ["ada"]);
+
+        Assert.Equal("users?userName=ada", bound.RelativeUri);
     }
 
     [Fact]

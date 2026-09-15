@@ -449,9 +449,10 @@ namespace Observables.RestAPI
                 return;
 
             // Apply prefix to key
+            var formattedKey = settings.UrlParameterKeyFormatter.Format(key);
             var finalKey = !string.IsNullOrWhiteSpace(prefix)
-                ? $"{prefix}{delimiter}{key}"
-                : key;
+                ? $"{prefix}{delimiter}{formattedKey}"
+                : formattedKey;
 
             // Determine effective collection format
             var effectiveFormat = isCollectionFormatSpecified

@@ -66,6 +66,24 @@ namespace Observables.RestAPI
 
             var request = new HttpRequestMessage { Method = GetHttpMethod(spec.HttpMethod) };
 
+            // Settings are defaults: a [Property] parameter below overwrites the same key.
+            if (settings.HttpRequestMessageOptions != null)
+            {
+                foreach (var option in settings.HttpRequestMessageOptions)
+                {
+#if NET6_0_OR_GREATER
+                    request.Options.Set(new HttpRequestOptionsKey<object>(option.Key), option.Value);
+#else
+                    request.Properties[option.Key] = option.Value;
+#endif
+                }
+            }
+
+#if NET6_0_OR_GREATER
+            request.Version = settings.Version;
+            request.VersionPolicy = settings.VersionPolicy;
+#endif
+
             var isMultipart = spec.Flags.IsMultipart;
             MultipartFormDataContent? multipart = null;
             if (isMultipart)

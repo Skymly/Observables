@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <RootNamespace>Observables.SignalR</RootNamespace>
+    <AssemblyName>Observables.SignalR.R3</AssemblyName>
+    <Description>R3 bridges for Observables.SignalR.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Observables.SignalR\Observables.SignalR.csproj" />
+    <PackageReference Include="Microsoft.AspNetCore.SignalR.Client" />
+    <PackageReference Include="R3" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Include="..\..\Observables.Shared\Observables.R3.Runtime\R3AsyncCreate.cs" Link="Shared/R3AsyncCreate.cs" />
+  </ItemGroup>
+
+</Project>

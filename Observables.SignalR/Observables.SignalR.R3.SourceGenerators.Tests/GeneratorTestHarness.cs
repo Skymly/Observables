@@ -22,6 +22,9 @@ internal static class GeneratorTestHarness
                 options.IncludeCoreReference ? null : "Observables.SignalR.dll",
                 typeof(global::R3.Unit),
                 options.IncludeCoreReference
+                    ? typeof(global::Observables.SignalR.SignalRObservable)
+                    : null,
+                options.IncludeCoreReference
                     ? typeof(global::Observables.SignalR.HubService)
                     : null,
                 typeof(global::Microsoft.AspNetCore.SignalR.Client.HubConnection)),

@@ -96,7 +96,17 @@ ISensorHub hub = MqttService.For<ISensorHub>(client);
 
 ## 5. 目录与打包（已实现）
 
-对齐 SignalR：`Observables.Mqtt`、`Observables.Mqtt.Reactive`、`SourceGenerators.Shared`、双路生成器、`Observables.Mqtt.Package`、Nuke PackVerify + `eng/nuget-smoke`。
+对齐 SignalR：`Observables.Mqtt`、`Observables.Mqtt.R3`、`Observables.Mqtt.Reactive`、`SourceGenerators.Shared`、双路生成器、`Observables.Mqtt.Package`、Nuke PackVerify + `eng/nuget-smoke`。
+
+三个运行时程序集按后端分层（[ADR-003](../adr/ADR-003-backend-neutral-domain-runtime.md)）：
+
+| 程序集 | 依赖 | 进哪个包 |
+|--------|------|----------|
+| `Observables.Mqtt` | MQTTnet（ns2.0 上另加 System.Memory） | 两个包都进 |
+| `Observables.Mqtt.R3`（`MqttObservable`） | 上面那个 + R3 | 仅 `Observables.Mqtt.R3` |
+| `Observables.Mqtt.Reactive`（`SystemReactiveMqttAdapter`） | 上面第一个 + System.Reactive | 仅 `Observables.Mqtt.Reactive` |
+
+命名空间都是 `Observables.Mqtt`，拆分对消费者源码不可见。`MqttProtocol` 等 internal 类型留在中立运行时，两个桥接项目通过 `InternalsVisibleTo` 取用。
 
 ## 6. 测试（已实现）
 

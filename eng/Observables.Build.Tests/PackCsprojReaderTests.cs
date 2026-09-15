@@ -118,12 +118,14 @@ public sealed class PackCsprojReaderTests
         Assert.Equal([expected], PackCsprojReader.ForbiddenBackendAssemblies(packageId));
     }
 
-    [Theory]
-    [InlineData("Observables.Mqtt.Reactive")]
-    [InlineData("Observables.WebSocket.Reactive")]
-    public void ForbiddenBackendAssemblies_is_empty_while_a_domain_awaits_its_split(string packageId)
+    [Fact]
+    public void ForbiddenBackendAssemblies_is_empty_while_a_domain_awaits_its_split()
     {
-        Assert.Empty(PackCsprojReader.ForbiddenBackendAssemblies(packageId));
+        foreach (string domain in PackCsprojReader.DomainsPendingBackendSplit)
+        {
+            Assert.Empty(PackCsprojReader.ForbiddenBackendAssemblies($"Observables.{domain}.R3"));
+            Assert.Empty(PackCsprojReader.ForbiddenBackendAssemblies($"Observables.{domain}.Reactive"));
+        }
     }
 
     [Fact]

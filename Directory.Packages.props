@@ -35,6 +35,11 @@
   <!-- netstandard2.0 source-only polyfills -->
   <ItemGroup>
     <PackageVersion Include="Polyfill" Version="10.8.0" />
+    <!--
+      Span<T> / ReadOnlySpan<T> on netstandard2.0. A backend-neutral domain runtime has to declare this
+      itself; it used to arrive transitively through R3, which ADR-003 removes from those projects.
+    -->
+    <PackageVersion Include="System.Memory" Version="4.6.3" />
   </ItemGroup>
 
   <!-- Roslyn (source generators, analyzers, code fixes) -->

@@ -16,7 +16,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Observables.Mqtt\Observables.Mqtt.csproj" />
+    <ProjectReference Include="..\Observables.Mqtt.R3\Observables.Mqtt.R3.csproj" />
     <ProjectReference Include="..\Observables.Mqtt.R3.SourceGenerators\Observables.Mqtt.R3.SourceGenerators.csproj"
                       OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
   </ItemGroup>

@@ -1,0 +1,5 @@
+#nullable enable
+Observables.Mqtt.MqttObservable
+static Observables.Mqtt.MqttObservable.FromPublish(MQTTnet.Client.IMqttClient! client, string! topic, byte[]! payload, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> R3.Observable<R3.Unit>!
+static Observables.Mqtt.MqttObservable.FromPublish(MQTTnet.Client.IMqttClient! client, string! topic, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> R3.Observable<R3.Unit>!
+static Observables.Mqtt.MqttObservable.FromSubscribe<T>(MQTTnet.Client.IMqttClient! client, string! topicFilter) -> R3.Observable<T>!

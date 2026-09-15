@@ -3,7 +3,7 @@
   <PropertyGroup>
     <RootNamespace>Observables.Mqtt</RootNamespace>
     <AssemblyName>Observables.Mqtt</AssemblyName>
-    <Description>MQTT client runtime and R3 stream bridges.</Description>
+    <Description>MQTT client runtime, backend-neutral: R3 bridges live in Observables.Mqtt.R3.</Description>
   </PropertyGroup>
 
 
@@ -11,18 +11,21 @@
   <Import Project="..\..\eng\NetStandard20.props" Condition="Exists('..\..\eng\NetStandard20.props')" />
 
   <ItemGroup>
+    <InternalsVisibleTo Include="Observables.Mqtt.R3" />
     <InternalsVisibleTo Include="Observables.Mqtt.Reactive" />
     <InternalsVisibleTo Include="Observables.Mqtt.Tests" />
   </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="MQTTnet" />
-    <PackageReference Include="R3" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">
+    <PackageReference Include="System.Memory" />
   </ItemGroup>
 
 
   <ItemGroup>
     <Compile Include="..\..\Observables.Shared\Observables.Core\GeneratedProxyFactoryRegistry.cs" Link="Shared/GeneratedProxyFactoryRegistry.cs" />
-    <Compile Include="..\..\Observables.Shared\Observables.R3.Runtime\R3AsyncCreate.cs" Link="Shared/R3AsyncCreate.cs" />
   </ItemGroup>
 </Project>

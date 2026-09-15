@@ -22,6 +22,7 @@
 
   <ItemGroup>
     <ObservablesPackLibProjectReference Include="..\Observables.Mqtt\Observables.Mqtt.csproj" />
+    <ObservablesPackLibProjectReference Include="..\Observables.Mqtt.R3\Observables.Mqtt.R3.csproj" />
     <PackageReference Include="R3" />
     <PackageReference Include="MQTTnet" />
     <None Include="README.Mqtt.R3.pack.md" Pack="true" PackagePath="README.md" Visible="false" />
@@ -29,6 +30,15 @@
           Pack="true"
           PackagePath="lib\netstandard2.0\zh-Hans\;lib\net8.0\zh-Hans\;lib\net9.0\zh-Hans\;lib\net10.0\zh-Hans\"
           Visible="false" />
+    <None Include="..\Observables.Mqtt.R3\loc\zh-Hans\Observables.Mqtt.R3.xml"
+          Pack="true"
+          PackagePath="lib\netstandard2.0\zh-Hans\;lib\net8.0\zh-Hans\;lib\net9.0\zh-Hans\;lib\net10.0\zh-Hans\"
+          Visible="false" />
+  </ItemGroup>
+
+  <!-- Span<T> for the netstandard2.0 runtime assembly; it no longer arrives through R3. -->
+  <ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">
+    <PackageReference Include="System.Memory" />
   </ItemGroup>
 
 </Project>

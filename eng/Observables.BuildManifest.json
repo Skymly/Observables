@@ -25,7 +25,7 @@
       "packageId": "Observables.SignalR.Reactive"
     },
     {
-      "packProject": "Observables.Mqtt/Observables.Mqtt.Package/Observables.Mqtt.R3.csproj",
+      "packProject": "Observables.Mqtt/Observables.Mqtt.Package/Observables.Mqtt.R3.Pack.csproj",
       "packageId": "Observables.Mqtt.R3"
     },
     {

@@ -67,8 +67,23 @@
         <member name="T:Observables.Sse.SseService">
             <summary>创建源生成的 SSE 代理实现。</summary>
         </member>
+        <member name="M:Observables.Sse.SseService.RegisterEndpoint(System.String,Observables.Sse.SseConnection)">
+            <summary>
+            以接口在 <c>[Sse(endpointName)]</c> 上声明的名字注册一个连接，使其可通过 <see cref="M:Observables.Sse.SseService.For``1"/> 解析。
+            同名重复注册会替换原连接。
+            </summary>
+        </member>
+        <member name="M:Observables.Sse.SseService.RegisterProxyName(System.Type,System.String)">
+            <summary>注册生成代理所声明的名字。</summary>
+        </member>
         <member name="M:Observables.Sse.SseService.RegisterGeneratedFactory(System.Type,System.Func{Observables.Sse.SseConnection,System.Object})">
             <summary>注册源生成的 SSE 代理工厂。</summary>
+        </member>
+        <member name="M:Observables.Sse.SseService.For``1">
+            <summary>基于 <typeparamref name="T"/> 在 <c>[Sse(endpointName)]</c> 中声明的名字所注册的连接创建代理。</summary>
+        </member>
+        <member name="M:Observables.Sse.SseService.For(System.Type)">
+            <summary>基于 <paramref name="sseInterfaceType"/> 在 <c>[Sse(endpointName)]</c> 中声明的名字所注册的连接创建代理。</summary>
         </member>
         <member name="T:Observables.GeneratedProxyFactoryRegistry`1">
             <summary>各 Feature *Service.For 共用的生成代理工厂登记表。</summary>

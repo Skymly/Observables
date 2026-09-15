@@ -54,6 +54,21 @@ static class NupkgVerifier
         {
             errors.Add($"{request.PackageId}: missing package README.md at package root");
         }
+        else if (request.RequireReadme)
+        {
+            ZipArchiveEntry? readmeEntry = zip.Entries.FirstOrDefault(static e =>
+                string.Equals(e.FullName.Replace('\\', '/'), "README.md", StringComparison.OrdinalIgnoreCase));
+            if (readmeEntry is not null)
+            {
+                using Stream readmeStream = readmeEntry.Open();
+                using var readmeReader = new StreamReader(readmeStream);
+                if (ReadmePinsObservablesPackageVersion(readmeReader.ReadToEnd()))
+                {
+                    errors.Add(
+                        $"{request.PackageId}: README.md must not pin Observables.* PackageReference Version");
+                }
+            }
+        }
 
         ZipArchiveEntry? nuspecEntry = zip.Entries.FirstOrDefault(static e =>
             e.FullName.EndsWith(".nuspec", StringComparison.OrdinalIgnoreCase));
@@ -91,6 +106,31 @@ static class NupkgVerifier
         }
 
         return errors;
+    }
+
+    internal static bool ReadmePinsObservablesPackageVersion(string readme)
+    {
+        foreach (string line in readme.Split('\n'))
+        {
+            if (LineIncludesObservablesPackage(line) && LineHasVersionAttribute(line))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    static bool LineIncludesObservablesPackage(string line)
+    {
+        return line.Contains("Include=\"Observables.", StringComparison.OrdinalIgnoreCase)
+            || line.Contains("Include='Observables.", StringComparison.OrdinalIgnoreCase);
+    }
+
+    static bool LineHasVersionAttribute(string line)
+    {
+        return line.Contains("Version=", StringComparison.OrdinalIgnoreCase)
+            || line.Contains("Version =", StringComparison.OrdinalIgnoreCase);
     }
 
     static Dictionary<string, HashSet<string>> ParseNuspecDependencyGroups(string nuspecText)

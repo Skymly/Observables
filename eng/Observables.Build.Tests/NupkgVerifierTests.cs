@@ -218,4 +218,120 @@ public sealed class NupkgVerifierTests
             File.Delete(nupkg);
         }
     }
+
+    [Fact]
+    public void Verify_fails_when_pack_readme_pins_observables_package_version()
+    {
+        string nupkg = NupkgFixture.Create(
+            EventsR3,
+            [
+                $"analyzers/dotnet/roslyn4.12/cs/{EventsGenerator}",
+                .. SharedAnalyzerFiles,
+                "build/Observables.Events.R3.props",
+            ],
+            nuspecDependenciesByTfm: new Dictionary<string, IReadOnlyList<string>>
+            {
+                ["netstandard2.0"] = ["R3"],
+            },
+            fileContents: new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["README.md"] =
+                    """
+                    # Observables.Events.R3
+
+                    ## Install
+
+                    ```xml
+                    <PackageReference Include="Observables.Events.R3" Version="0.1.2" />
+                    <PackageReference Include="R3" Version="1.3.0" />
+                    ```
+                    """,
+            });
+
+        try
+        {
+            IReadOnlyList<string> errors = NupkgVerifier.Verify(
+                nupkg,
+                new NupkgVerifyRequest
+                {
+                    PackageId = EventsR3,
+                    GeneratorAssemblyFileName = EventsGenerator,
+                });
+
+            Assert.Contains(
+                errors,
+                static e => e.Contains("README.md", StringComparison.OrdinalIgnoreCase)
+                    && e.Contains("Version", StringComparison.Ordinal));
+        }
+        finally
+        {
+            File.Delete(nupkg);
+        }
+    }
+
+    [Fact]
+    public void Verify_accepts_pack_readme_with_unpinned_observables_package_reference()
+    {
+        string nupkg = NupkgFixture.Create(
+            EventsR3,
+            [
+                $"analyzers/dotnet/roslyn4.12/cs/{EventsGenerator}",
+                .. SharedAnalyzerFiles,
+                "build/Observables.Events.R3.props",
+            ],
+            nuspecDependenciesByTfm: new Dictionary<string, IReadOnlyList<string>>
+            {
+                ["netstandard2.0"] = ["R3"],
+            },
+            fileContents: new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["README.md"] =
+                    """
+                    # Observables.Events.R3
+
+                    ## Install
+
+                    ```xml
+                    <PackageReference Include="Observables.Events.R3" />
+                    <PackageReference Include="R3" Version="1.3.0" />
+                    ```
+                    """,
+            });
+
+        try
+        {
+            IReadOnlyList<string> errors = NupkgVerifier.Verify(
+                nupkg,
+                new NupkgVerifyRequest
+                {
+                    PackageId = EventsR3,
+                    GeneratorAssemblyFileName = EventsGenerator,
+                });
+
+            Assert.Empty(errors);
+        }
+        finally
+        {
+            File.Delete(nupkg);
+        }
+    }
+
+    [Fact]
+    public void Pack_readme_sources_do_not_pin_observables_package_version()
+    {
+        string[] packReadmes = Directory.GetFiles(
+            RepoRoot.Find(),
+            "README.*.pack.md",
+            SearchOption.AllDirectories);
+
+        Assert.NotEmpty(packReadmes);
+
+        foreach (string path in packReadmes)
+        {
+            string relative = Path.GetRelativePath(RepoRoot.Find(), path);
+            Assert.False(
+                NupkgVerifier.ReadmePinsObservablesPackageVersion(File.ReadAllText(path)),
+                relative);
+        }
+    }
 }

@@ -191,6 +191,8 @@
 
     <Project Path="Observables.Grpc/Observables.Grpc/Observables.Grpc.csproj" />
 
+    <Project Path="Observables.Grpc/Observables.Grpc.R3/Observables.Grpc.R3.csproj" />
+
     <Project Path="Observables.Grpc/Observables.Grpc.Reactive/Observables.Grpc.Reactive.csproj" />
 
     <Project Path="Observables.Grpc/Observables.Grpc.Reactive.SourceGenerators/Observables.Grpc.Reactive.SourceGenerators.csproj" />

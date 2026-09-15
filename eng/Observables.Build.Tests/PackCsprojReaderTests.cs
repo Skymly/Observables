@@ -111,21 +111,22 @@ public sealed class PackCsprojReaderTests
     [InlineData("Observables.Events.Reactive", "R3")]
     [InlineData("Observables.Events.R3", "System.Reactive")]
     [InlineData("Observables.RestAPI.Reactive", "R3")]
-    public void ForbiddenBackendAssemblies_names_the_backend_a_split_domain_must_not_ship(
+    [InlineData("Observables.Grpc.Reactive", "R3")]
+    [InlineData("Observables.WebSocket.R3", "System.Reactive")]
+    public void ForbiddenBackendAssemblies_names_the_backend_a_package_must_not_ship(
         string packageId,
         string expected)
     {
         Assert.Equal([expected], PackCsprojReader.ForbiddenBackendAssemblies(packageId));
     }
 
-    [Fact]
-    public void ForbiddenBackendAssemblies_is_empty_while_a_domain_awaits_its_split()
+    [Theory]
+    [InlineData("Observables.Mqtt")]
+    [InlineData("Observables.Mqtt.R3.SourceGenerators")]
+    [InlineData("SomethingElse.Mqtt.R3")]
+    public void ForbiddenBackendAssemblies_is_empty_for_anything_that_is_not_a_consumer_package(string packageId)
     {
-        foreach (string domain in PackCsprojReader.DomainsPendingBackendSplit)
-        {
-            Assert.Empty(PackCsprojReader.ForbiddenBackendAssemblies($"Observables.{domain}.R3"));
-            Assert.Empty(PackCsprojReader.ForbiddenBackendAssemblies($"Observables.{domain}.Reactive"));
-        }
+        Assert.Empty(PackCsprojReader.ForbiddenBackendAssemblies(packageId));
     }
 
     [Fact]

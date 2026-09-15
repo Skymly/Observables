@@ -21,6 +21,9 @@ internal static class GeneratorTestHarness
                 options.IncludeCoreReference ? null : "Observables.Grpc.dll",
                 typeof(global::R3.Unit),
                 options.IncludeCoreReference
+                    ? typeof(global::Observables.Grpc.GrpcObservable)
+                    : null,
+                options.IncludeCoreReference
                     ? typeof(global::Observables.Grpc.GrpcService)
                     : null,
                 typeof(global::Grpc.Core.CallInvoker),

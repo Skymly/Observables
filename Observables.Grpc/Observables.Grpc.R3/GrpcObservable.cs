@@ -64,7 +64,7 @@ public static class GrpcObservable
                 (Action<TRequest>)(item =>
                     GrpcProtocol.ObserveWrite(writer.WriteAsync(item, linked.Token), writeCompleted)),
                 (Action<Exception>)(ex => writeCompleted.TrySetException(ex)),
-                (Action<Result>)(result => GrpcProtocol.ObserveCompleted(result, writeCompleted)));
+                (Action<Result>)(result => ObserveCompleted(result, writeCompleted)));
 
             await writeCompleted.Task.ConfigureAwait(false);
             await writer.CompleteAsync().ConfigureAwait(false);
@@ -94,7 +94,7 @@ public static class GrpcObservable
                 (Action<TRequest>)(item =>
                     GrpcProtocol.ObserveWrite(writer.WriteAsync(item, linked.Token), writeCompleted)),
                 (Action<Exception>)(ex => writeCompleted.TrySetException(ex)),
-                (Action<Result>)(result => GrpcProtocol.ObserveCompleted(result, writeCompleted)));
+                (Action<Result>)(result => ObserveCompleted(result, writeCompleted)));
 
             try
             {
@@ -111,4 +111,18 @@ public static class GrpcObservable
                 throw new OperationCanceledException(ct);
             }
         });
+
+    // R3 collapses completion and failure into one Result callback, so the request-stream writer needs this
+    // shim; the System.Reactive adapter gets separate onError / onCompleted delegates and inlines the same two
+    // lines. Lives here rather than in GrpcProtocol so the neutral runtime stays free of R3.
+    static void ObserveCompleted(Result result, TaskCompletionSource<bool> writeCompleted)
+    {
+        if (result.IsFailure)
+        {
+            writeCompleted.TrySetException(result.Exception ?? new InvalidOperationException("gRPC request source failed."));
+            return;
+        }
+
+        writeCompleted.TrySetResult(true);
+    }
 }

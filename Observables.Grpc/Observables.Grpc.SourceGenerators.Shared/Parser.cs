@@ -44,6 +44,21 @@ internal static class Parser
                 diagnostics),
             tryAddProperty: (marked, property, members, diagnostics) =>
             {
+                if (HasGrpcMethodBoundary(
+                        property,
+                        unaryAttribute,
+                        serverStreamAttribute,
+                        clientStreamAttribute,
+                        duplexAttribute))
+                {
+                    diagnostics.Add(
+                        Diagnostic.Create(
+                            DiagnosticDescriptors.MemberShapeMismatch,
+                            property.Locations.FirstOrDefault(),
+                            property.Name));
+                    return;
+                }
+
                 diagnostics.Add(
                     Diagnostic.Create(
                         DiagnosticDescriptors.InvalidGrpcMember,
@@ -61,12 +76,29 @@ internal static class Parser
                 marked.Nullability),
             createContext: static interfaces => new ContextGenerationModel(interfaces),
             tryAddOther: (marked, member, _, diagnostics) =>
+            {
+                if (HasGrpcMethodBoundary(
+                        member,
+                        unaryAttribute,
+                        serverStreamAttribute,
+                        clientStreamAttribute,
+                        duplexAttribute))
+                {
+                    diagnostics.Add(
+                        Diagnostic.Create(
+                            DiagnosticDescriptors.MemberShapeMismatch,
+                            member.Locations.FirstOrDefault(),
+                            member.Name));
+                    return;
+                }
+
                 diagnostics.Add(
                     Diagnostic.Create(
                         DiagnosticDescriptors.InvalidGrpcMember,
                         member.Locations.FirstOrDefault(),
                         marked.InterfaceSymbol.Name,
-                        member.Name)));
+                        member.Name));
+            });
     }
 
     static void TryAddMethod(
@@ -234,6 +266,17 @@ internal static class Parser
                 names.ToImmutableEquatableArray(),
                 ctName));
     }
+
+    static bool HasGrpcMethodBoundary(
+        ISymbol symbol,
+        INamedTypeSymbol? unaryAttribute,
+        INamedTypeSymbol? serverStreamAttribute,
+        INamedTypeSymbol? clientStreamAttribute,
+        INamedTypeSymbol? duplexAttribute) =>
+        (unaryAttribute is not null && IoProxyInterfaceWalk.HasAttribute(symbol, unaryAttribute))
+        || (serverStreamAttribute is not null && IoProxyInterfaceWalk.HasAttribute(symbol, serverStreamAttribute))
+        || (clientStreamAttribute is not null && IoProxyInterfaceWalk.HasAttribute(symbol, clientStreamAttribute))
+        || (duplexAttribute is not null && IoProxyInterfaceWalk.HasAttribute(symbol, duplexAttribute));
 
     static string? GetServiceName(INamedTypeSymbol ifaceSymbol)
     {

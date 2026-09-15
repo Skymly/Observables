@@ -176,6 +176,26 @@ public sealed class GrpcInterfaceGeneratorTests
     }
 
     [Fact]
+    public void Grpc_interface_OBS7004_on_unary_property()
+    {
+        const string userSource =
+            """
+            [Grpc("echo.Echo")]
+            public interface IEcho
+            {
+                [GrpcUnary("UnaryEcho")]
+                IObservable<string> UnaryEcho { get; }
+            }
+            """;
+
+        var output = GeneratorTestHarness.Run(userSource);
+        var snapshot = GeneratorTestHarness.ToSnapshot(output);
+
+        Assert.Contains("OBS7004", snapshot, StringComparison.Ordinal);
+        Assert.DoesNotContain("OBS7001", snapshot, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void Public_instance_event_reports_OBS7001()
     {
         const string userSource =
@@ -189,6 +209,24 @@ public sealed class GrpcInterfaceGeneratorTests
 
         var output = GeneratorTestHarness.Run(userSource);
         Assert.Contains(output.Diagnostics, static diagnostic => diagnostic.Id == "OBS7001");
+    }
+
+    [Fact]
+    public void Grpc_interface_OBS7004_on_unary_event()
+    {
+        const string userSource =
+            """
+            [Grpc]
+            public interface IEcho
+            {
+                [GrpcUnary("Tick")]
+                event System.Action Tick;
+            }
+            """;
+
+        var output = GeneratorTestHarness.Run(userSource);
+        Assert.Contains(output.Diagnostics, static diagnostic => diagnostic.Id == "OBS7004");
+        Assert.DoesNotContain(output.Diagnostics, static diagnostic => diagnostic.Id == "OBS7001");
     }
 
     [Fact]

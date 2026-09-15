@@ -135,8 +135,23 @@
         <member name="T:Observables.Nats.NatsService">
             <summary>创建源生成的 NATS 主题代理实现。</summary>
         </member>
+        <member name="M:Observables.Nats.NatsService.RegisterConnection(System.String,NATS.Client.Core.INatsConnection)">
+            <summary>
+            以接口在 <c>[Nats(connectionName)]</c> 上声明的名字注册一个连接，使其可通过 <see cref="M:Observables.Nats.NatsService.For``1"/> 解析。
+            同名重复注册会替换原连接。
+            </summary>
+        </member>
+        <member name="M:Observables.Nats.NatsService.RegisterProxyName(System.Type,System.String)">
+            <summary>注册生成代理所声明的名字。</summary>
+        </member>
         <member name="M:Observables.Nats.NatsService.RegisterGeneratedFactory(System.Type,System.Func{NATS.Client.Core.INatsConnection,System.Object})">
             <summary>注册源生成的主题代理工厂。</summary>
+        </member>
+        <member name="M:Observables.Nats.NatsService.For``1">
+            <summary>基于 <typeparamref name="T"/> 在 <c>[Nats(connectionName)]</c> 中声明的名字所注册的连接创建代理。</summary>
+        </member>
+        <member name="M:Observables.Nats.NatsService.For(System.Type)">
+            <summary>基于 <paramref name="natsInterfaceType"/> 在 <c>[Nats(connectionName)]</c> 中声明的名字所注册的连接创建代理。</summary>
         </member>
         <member name="T:Observables.Nats.NatsSubject">
             <summary>解析带有 <c>{parameter}</c> 占位符的主题模板。</summary>

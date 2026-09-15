@@ -35,8 +35,14 @@ namespace Observables.Nats;
 public static class NatsService
 {
     public static T For<T>(INatsConnection connection);
+
+    // 具名连接：名字来自 [Nats(connectionName)]
+    public static void RegisterConnection(string name, INatsConnection connection);
+    public static T For<T>();
 }
 ```
+
+具名连接：`[Nats(connectionName)]` 上的名字由 Parser 读出、随 `RegisterProxyName(Type, string)` 一起发到模块初始化器（生成物 `NatsProxyNames.g.cs`），无参 `For<T>()` 据此查 `RegisterConnection` 注册的连接。名字走生成代码而不是运行期读特性，是因为域运行时要对 trim / AOT 分析器零告警。未写名字的接口仍只能走 `For<T>(INatsConnection)`；解析未命名接口、或名字没注册过连接，都抛 `InvalidOperationException` 并在消息里点名缺的是哪一个。
 
 ### 消费者示例
 

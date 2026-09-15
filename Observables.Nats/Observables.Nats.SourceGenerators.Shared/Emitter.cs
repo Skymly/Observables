@@ -15,16 +15,65 @@ internal static class Emitter
         ContextGenerationModel model,
         Action<string, SourceText> addSource)
     {
+        var interfaces = model.Interfaces.AsArray();
+
         ProxyRegistrationEmitter.Emit(
             hintName: "NatsProxyRegistration.g.cs",
             registrationClassName: "NatsProxyRegistration",
             registerGeneratedFactoryMetadataName: "global::Observables.Nats.NatsService.RegisterGeneratedFactory",
-            registrations: model.Interfaces.AsArray().Select(static m =>
+            registrations: interfaces.Select(static m =>
                 new ProxyRegistrationEmitter.ProxyTypeRegistration(
                     m.InterfaceDisplayName,
                     m.GeneratedNamespace,
                     m.ClassName)).ToArray(),
             addSource);
+
+        EmitConnectionNames(interfaces, addSource);
+    }
+
+    /// <summary>
+    /// Emits the names carried by <c>[Nats(connectionName)]</c> so that <c>NatsService.For&lt;T&gt;()</c> can
+    /// resolve a registered connection without reading attributes reflectively, which the trim and AOT
+    /// analyzers reject.
+    /// </summary>
+    /// <remarks>
+    /// Relies on <see cref="ProxyRegistrationEmitter"/> having emitted the <c>ModuleInitializerAttribute</c>
+    /// polyfill that netstandard2.0 needs: a named interface is also a registered interface, so that file is
+    /// always present alongside this one.
+    /// </remarks>
+    static void EmitConnectionNames(
+        IReadOnlyList<NatsInterfaceModel> interfaces,
+        Action<string, SourceText> addSource)
+    {
+        var named = interfaces.Where(static m => m.ConnectionName is not null).ToArray();
+        if (named.Length == 0)
+        {
+            return;
+        }
+
+        var registrationCalls = string.Join(
+            "\n",
+            named.Select(static m =>
+                $"            global::Observables.Nats.NatsService.RegisterProxyName(typeof({m.InterfaceDisplayName}), {FormatLiteral(m.ConnectionName!)});"));
+
+        addSource(
+            "NatsProxyNames.g.cs",
+            GeneratedSourceHeader.ToSourceText(
+                $$"""
+                namespace {{named[0].GeneratedNamespace}}
+                {
+                    [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+                    [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
+                    internal static class NatsProxyNames
+                    {
+                        [global::System.Runtime.CompilerServices.ModuleInitializer]
+                        internal static void Initialize()
+                        {
+                {{registrationCalls}}
+                        }
+                    }
+                }
+                """));
     }
     public static SourceText EmitInterface(NatsInterfaceModel model) =>
         ProxyClassEmitter.Emit(

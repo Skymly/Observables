@@ -21,7 +21,7 @@ internal static class Parser
         ImmutableArray<MarkedInterfaceContext> markedInterfaces,
         CancellationToken cancellationToken)
     {
-        var mqttAttribute = compilation.GetTypeByMetadataName("Observables.Nats.NatsAttribute");
+        var natsAttribute = compilation.GetTypeByMetadataName("Observables.Nats.NatsAttribute");
         var publishAttribute = compilation.GetTypeByMetadataName("Observables.Nats.NatsPublishAttribute");
         var requestAttribute = compilation.GetTypeByMetadataName("Observables.Nats.NatsRequestAttribute");
         var subscribeAttribute = compilation.GetTypeByMetadataName("Observables.Nats.NatsSubscribeAttribute");
@@ -31,7 +31,7 @@ internal static class Parser
         return IoProxyModelAssembly.Parse<NatsMemberModel, NatsInterfaceModel, ContextGenerationModel>(
             markedInterfaces,
             cancellationToken,
-            coreReferenced: mqttAttribute is not null,
+            coreReferenced: natsAttribute is not null,
             coreNotReferenced: DiagnosticDescriptors.NatsCoreNotReferenced,
             emptyModel: static () => new ContextGenerationModel(ImmutableEquatableArray.Empty<NatsInterfaceModel>()),
             tryAddMethod: (marked, method, members, diagnostics) => TryAddMethod(
@@ -53,13 +53,14 @@ internal static class Parser
                 observableType,
                 members,
                 diagnostics),
-            createInterface: static (marked, className, members) => new NatsInterfaceModel(
+            createInterface: (marked, className, members) => new NatsInterfaceModel(
                 $"{marked.InterfaceSymbol.GetSafeHintName()}.Nats.g.cs",
                 className,
                 marked.InterfaceSymbol.ToDisplayString(DisplayFormat),
                 BackendTokens.QualifyGeneratedNamespace("Observables.Nats"),
                 members,
-                marked.Nullability),
+                marked.Nullability,
+                GetConnectionName(marked.InterfaceSymbol, natsAttribute)),
             createContext: static interfaces => new ContextGenerationModel(interfaces),
             tryAddOther: (marked, member, _, diagnostics) =>
                 diagnostics.Add(
@@ -68,6 +69,34 @@ internal static class Parser
                         member.Locations.FirstOrDefault(),
                         marked.InterfaceSymbol.Name,
                         member.Name)));
+    }
+
+    /// <summary>
+    /// Reads the name off <c>[Nats(connectionName)]</c>. A null or blank name means the interface opts out of
+    /// named resolution and stays reachable only through <c>NatsService.For&lt;T&gt;(INatsConnection)</c>.
+    /// </summary>
+    static string? GetConnectionName(INamedTypeSymbol interfaceSymbol, INamedTypeSymbol? natsAttribute)
+    {
+        if (natsAttribute is null)
+        {
+            return null;
+        }
+
+        foreach (var attribute in interfaceSymbol.GetAttributes())
+        {
+            if (!SymbolEqualityComparer.Default.Equals(attribute.AttributeClass, natsAttribute))
+            {
+                continue;
+            }
+
+            return attribute.ConstructorArguments.Length > 0
+                && attribute.ConstructorArguments[0].Value is string name
+                && !string.IsNullOrWhiteSpace(name)
+                    ? name
+                    : null;
+        }
+
+        return null;
     }
 
     static void TryAddMethod(

@@ -63,30 +63,34 @@ public static class SystemReactiveWebSocketAdapter
     [RequiresDynamicCode("JSON payload deserialization uses System.Text.Json reflection.")]
 #endif
     public static IObservable<T> FromReceive<T>(ClientWebSocket socket, int maxMessageBytes) =>
-        Observable.Create<T>(async (observer, ct) =>
+        Observable.Create<T>(observer =>
+            WebSocketReceivePump
+                .For(socket)
+                .Subscribe(
+                    new Sink<T>(
+                        observer,
+                        (payload, messageType) => WebSocketProtocol.DeserializePayload<T>(payload, messageType)),
+                    maxMessageBytes));
+
+    sealed class Sink<T>(IObserver<T> observer, Func<byte[], WebSocketMessageType, T> deserialize)
+        : IWebSocketReceiveSink
+    {
+        public void OnMessage(byte[] payload, WebSocketMessageType messageType)
         {
             try
             {
-                while (!ct.IsCancellationRequested && socket.State == WebSocketState.Open)
-                {
-                    var message = await WebSocketProtocol
-                        .ReceiveMessageAsync(socket, ct, maxMessageBytes)
-                        .ConfigureAwait(false);
-                    if (message is null)
-                    {
-                        observer.OnCompleted();
-                        return;
-                    }
-
-                    observer.OnNext(WebSocketProtocol.DeserializePayload<T>(message.Value.Payload, message.Value.MessageType));
-                }
-            }
-            catch (OperationCanceledException)
-            {
+                observer.OnNext(deserialize(payload, messageType));
             }
             catch (Exception ex)
             {
                 observer.OnError(ex);
             }
-        });
+        }
+
+        public void OnClosed() => observer.OnCompleted();
+
+        public void OnFailed(Exception error) => observer.OnError(error);
+
+        public void OnTransientError(Exception error) => observer.OnError(error);
+    }
 }

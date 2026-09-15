@@ -110,6 +110,57 @@ public sealed class WebSocketClientR3E2ETests(WebSocketTestServerFixture fixture
     }
 
     [Fact]
+    public async Task Two_subscribers_see_the_same_message()
+    {
+        using var socket = new ClientWebSocket();
+        using var cts = new CancellationTokenSource(DefaultTimeout);
+        await socket.ConnectAsync(fixture.Server.Uri, cts.Token);
+
+        var stream = WebSocketObservable.FromReceive<string>(socket);
+        var first = new TaskCompletionSource<string>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var second = new TaskCompletionSource<string>(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        using var firstSubscription = stream.Subscribe(value => first.TrySetResult(value));
+        using var secondSubscription = stream.Subscribe(value => second.TrySetResult(value));
+
+        var payload = Encoding.UTF8.GetBytes("shared");
+        await socket.SendAsync(new ArraySegment<byte>(payload), WebSocketMessageType.Text, true, cts.Token);
+
+        Assert.Equal("shared", await first.Task.WaitAsync(cts.Token));
+        Assert.Equal("shared", await second.Task.WaitAsync(cts.Token));
+    }
+
+    [Fact]
+    public async Task A_subscriber_arriving_after_the_last_one_left_still_receives()
+    {
+        using var socket = new ClientWebSocket();
+        using var cts = new CancellationTokenSource(DefaultTimeout);
+        await socket.ConnectAsync(fixture.Server.Uri, cts.Token);
+
+        var stream = WebSocketObservable.FromReceive<string>(socket);
+
+        var early = new TaskCompletionSource<string>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var earlySubscription = stream.Subscribe(value => early.TrySetResult(value));
+        await socket.SendAsync(
+            new ArraySegment<byte>(Encoding.UTF8.GetBytes("first")),
+            WebSocketMessageType.Text,
+            true,
+            cts.Token);
+        Assert.Equal("first", await early.Task.WaitAsync(cts.Token));
+        earlySubscription.Dispose();
+
+        var late = new TaskCompletionSource<string>(TaskCreationOptions.RunContinuationsAsynchronously);
+        using var lateSubscription = stream.Subscribe(value => late.TrySetResult(value));
+        await socket.SendAsync(
+            new ArraySegment<byte>(Encoding.UTF8.GetBytes("second")),
+            WebSocketMessageType.Text,
+            true,
+            cts.Token);
+
+        Assert.Equal("second", await late.Task.WaitAsync(cts.Token));
+    }
+
+    [Fact]
     public async Task FromReceive_message_over_cap_completes_with_error()
     {
         using var socket = new ClientWebSocket();

@@ -53,7 +53,8 @@ namespace Observables.RestAPI
                     format: query.Format,
                     treatAsString: query.TreatAsString,
                     collectionFormat: query.CollectionFormat,
-                    isCollectionFormatSpecified: query.CollectionFormatSpecified);
+                    isCollectionFormatSpecified: query.CollectionFormatSpecified,
+                    nameIsExplicit: query.NameIsExplicit);
             }
 
             if (queryParams != null)

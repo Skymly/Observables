@@ -28,6 +28,41 @@ public class CoreGeneratorTests
     }
 
     [Fact]
+    public void Explicit_query_name_is_marked_so_the_key_formatter_skips_it()
+    {
+        GeneratorRunOutput output = GeneratorTestHarness.Run(
+            """
+            public interface IUserApi
+            {
+                [Get("/users")]
+                Task<string> Search([AliasAs("UserName")] string userName);
+            }
+            """);
+
+        string generated = string.Concat(output.GeneratedSources.Select(static s => s.Source));
+
+        Assert.Contains("\"UserName\"", generated, StringComparison.Ordinal);
+        Assert.Contains(".WithExplicitName()", generated, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Inferred_query_name_is_left_to_the_key_formatter()
+    {
+        GeneratorRunOutput output = GeneratorTestHarness.Run(
+            """
+            public interface IUserApi
+            {
+                [Get("/users")]
+                Task<string> Search(string userName);
+            }
+            """);
+
+        string generated = string.Concat(output.GeneratedSources.Select(static s => s.Source));
+
+        Assert.DoesNotContain(".WithExplicitName()", generated, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public Task GetObservableUser_uses_from_async()
     {
         GeneratorRunOutput output = GeneratorTestHarness.Run(

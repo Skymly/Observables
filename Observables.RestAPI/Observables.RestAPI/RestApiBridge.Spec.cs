@@ -41,12 +41,37 @@ namespace Observables.RestAPI
                 CollectionFormatSpecified = collectionFormatSpecified;
             }
 
+            QueryOptions(QueryOptions other, bool nameIsExplicit)
+            {
+                Format = other.Format;
+                Prefix = other.Prefix;
+                Delimiter = other.Delimiter;
+                TreatAsString = other.TreatAsString;
+                CollectionFormat = other.CollectionFormat;
+                CollectionFormatSpecified = other.CollectionFormatSpecified;
+                NameIsExplicit = nameIsExplicit;
+            }
+
+            /// <summary>
+            /// Returns a copy with <see cref="NameIsExplicit"/> set. A method rather than another constructor
+            /// overload: the constructor above is a shipped signature whose optional parameters must stay the
+            /// widest public overload.
+            /// </summary>
+            public QueryOptions WithExplicitName() => new QueryOptions(this, nameIsExplicit: true);
+
             public string? Format { get; }
             public string? Prefix { get; }
             public string? Delimiter { get; }
             public bool TreatAsString { get; }
             public int CollectionFormat { get; }
             public bool CollectionFormatSpecified { get; }
+
+            /// <summary>
+            /// The key came from <c>[AliasAs]</c>, so
+            /// <see cref="RestApiSettings.UrlParameterKeyFormatter"/> leaves it alone: an explicit name is the
+            /// final wire name. Inferred names still go through the formatter.
+            /// </summary>
+            public bool NameIsExplicit { get; }
         }
 
         [EditorBrowsable(EditorBrowsableState.Never)]

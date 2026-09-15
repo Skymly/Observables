@@ -2039,5 +2039,17 @@
             </para>
             </remarks>
         </member>
+        <member name="M:Observables.RestAPI.RestApiBridge.QueryOptions.WithExplicitName">
+            <summary>
+            返回一份把 <see cref="P:Observables.RestAPI.RestApiBridge.QueryOptions.NameIsExplicit"/> 置位的副本。
+            用方法而不是再加一个构造重载：上面那个带可选参数的构造函数是已 ship 的签名，必须保持「公共重载里参数最多」。
+            </summary>
+        </member>
+        <member name="P:Observables.RestAPI.RestApiBridge.QueryOptions.NameIsExplicit">
+            <summary>
+            键来自 <c>[AliasAs]</c>，因此 <see cref="P:Observables.RestAPI.RestApiSettings.UrlParameterKeyFormatter"/> 不再改它：
+            显式写出的名字就是最终的线上名字。推断出来的名字仍走 formatter。
+            </summary>
+        </member>
     </members>
 </doc>

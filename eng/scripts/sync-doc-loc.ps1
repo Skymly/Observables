@@ -34,6 +34,7 @@ $defaultDomainProjects = @(
     'Observables.Mqtt/Observables.Mqtt.R3/Observables.Mqtt.R3.csproj',
     'Observables.Mqtt/Observables.Mqtt.Reactive/Observables.Mqtt.Reactive.csproj',
     'Observables.SignalR/Observables.SignalR/Observables.SignalR.csproj',
+    'Observables.SignalR/Observables.SignalR.R3/Observables.SignalR.R3.csproj',
     'Observables.SignalR/Observables.SignalR.Reactive/Observables.SignalR.Reactive.csproj',
     'Observables.RestAPI/Observables.RestAPI/Observables.RestAPI.csproj',
     'Observables.RestAPI/Observables.RestAPI.Reactive/Observables.RestAPI.Reactive.csproj'

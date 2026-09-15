@@ -179,8 +179,11 @@ R3 包不引用 System.Reactive，反之亦然（约定）。
 
 | 项目 | 内容 | 进哪个包 |
 |------|------|----------|
-| `Observables.SignalR` | 特性（`[Hub]` 等）、`HubService`（`For` / `RegisterGeneratedFactory`）、`SignalRObservable`（R3 桥接 helper）、对 `Microsoft.AspNetCore.SignalR.Client` 的引用 | `Observables.SignalR.R3`（`lib/`） |
-| `Observables.SignalR.Reactive` | `SystemReactiveSignalRAdapter`（`IObservable` 桥接） | `Observables.SignalR.Reactive`（`lib/`） |
+| `Observables.SignalR` | 特性（`[Hub]` 等）、`HubService`（`For` / `RegisterGeneratedFactory`）、`SignalRProtocol`（`ConnectionMux`）、对 `Microsoft.AspNetCore.SignalR.Client` 的引用。**后端中立** | 两个包都进（`lib/`） |
+| `Observables.SignalR.R3` | `SignalRObservable`（R3 桥接 helper） | 仅 `Observables.SignalR.R3`（`lib/`） |
+| `Observables.SignalR.Reactive` | `SystemReactiveSignalRAdapter`（`IObservable` 桥接） | 仅 `Observables.SignalR.Reactive`（`lib/`） |
+
+三个程序集的命名空间都是 `Observables.SignalR`，[ADR-003](../adr/ADR-003-backend-neutral-domain-runtime.md) 的拆分对消费者源码不可见；`SignalRProtocol` 等 internal 类型留在中立运行时，两个桥接项目通过 `InternalsVisibleTo` 取用。
 
 - `FromInvoke/FromSend` ≈ `Observable.FromAsync`（冷、单元素）；`FromStream` 桥接 `IAsyncEnumerable<T>`（R3 `Observable.Create` + `await foreach`）；`FromOn` 为引用计数多播（首订阅 `connection.On`，末订阅 `Dispose`）。
 - `Microsoft.AspNetCore.SignalR.Client` 作为运行时包的 **public 依赖**（消费者通过 `HubConnection` 传参，必须可见）。

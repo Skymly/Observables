@@ -3,22 +3,21 @@
   <PropertyGroup>
     <RootNamespace>Observables.SignalR</RootNamespace>
     <AssemblyName>Observables.SignalR</AssemblyName>
-    <Description>SignalR hub client runtime and R3 stream bridges.</Description>
+    <Description>SignalR hub client runtime, backend-neutral: R3 bridges live in Observables.SignalR.R3.</Description>
   </PropertyGroup>
 
 
   <ItemGroup>
+    <InternalsVisibleTo Include="Observables.SignalR.R3" />
     <InternalsVisibleTo Include="Observables.SignalR.Reactive" />
   </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.SignalR.Client" />
-    <PackageReference Include="R3" />
   </ItemGroup>
 
 
   <ItemGroup>
     <Compile Include="..\..\Observables.Shared\Observables.Core\GeneratedProxyFactoryRegistry.cs" Link="Shared/GeneratedProxyFactoryRegistry.cs" />
-    <Compile Include="..\..\Observables.Shared\Observables.R3.Runtime\R3AsyncCreate.cs" Link="Shared/R3AsyncCreate.cs" />
   </ItemGroup>
 </Project>

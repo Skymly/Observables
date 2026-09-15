@@ -21,7 +21,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Observables.SignalR\Observables.SignalR.csproj" />
+    <ProjectReference Include="..\Observables.SignalR.R3\Observables.SignalR.R3.csproj" />
     <ProjectReference Include="..\Observables.SignalR.R3.SourceGenerators\Observables.SignalR.R3.SourceGenerators.csproj"
                       OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
   </ItemGroup>

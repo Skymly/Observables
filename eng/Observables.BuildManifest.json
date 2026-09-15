@@ -17,7 +17,7 @@
       "packageId": "Observables.RestAPI.Reactive"
     },
     {
-      "packProject": "Observables.SignalR/Observables.SignalR.Package/Observables.SignalR.R3.csproj",
+      "packProject": "Observables.SignalR/Observables.SignalR.Package/Observables.SignalR.R3.Pack.csproj",
       "packageId": "Observables.SignalR.R3"
     },
     {

@@ -61,6 +61,7 @@ ISensorHub hub = MqttService.For<ISensorHub>(client);
 设计要点：
 
 - **入口对齐 SignalR / RestAPI**：`MqttService.For<T>(IMqttClient)` + `RegisterGeneratedFactory`（模块初始化器，无反射，AOT 友好）。
+- **具名客户端**：`[Mqtt(clientName)]` 上的名字由 Parser 读出、随 `RegisterProxyName(Type, string)` 一起发到模块初始化器（生成物 `MqttProxyNames.g.cs`），`MqttService.For<T>()` 这个不带客户端参数的重载据此查 `RegisterClient(name, client)` 注册的客户端。名字走生成代码而不是运行期读特性，是因为域运行时要对 trim / AOT 分析器零告警。未写名字的接口仍只能走 `For<T>(IMqttClient)`；解析未命名接口、或名字没注册过客户端，都抛 `InvalidOperationException` 并在消息里点名缺的是哪一个。
 - **订阅**为**属性**（无参）；**发布**为**方法**（参数用于 topic 模板占位符）。订阅 topic **不支持** `{param}` 占位符（OBS5006）。
 - **Topic 模板**：`{param}` 段与方法参数名绑定；`+` / `#` 通配符保留在模板字面量中。
 - **载荷**：`MqttPayloadSerializers`（默认 `DefaultMqttPayloadSerializer`：`string`/`byte[]` 原始 UTF-8，net8+ 其余类型走 STJ JSON）。可 `Register<T>` 或替换 `Current`（`IMqttPayloadSerializer` / `IMqttPayloadSerializer<T>`）；netstandard2.0 仅原始类型。

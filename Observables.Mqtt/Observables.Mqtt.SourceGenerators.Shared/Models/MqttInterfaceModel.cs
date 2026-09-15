@@ -6,4 +6,5 @@ internal sealed record MqttInterfaceModel(
     string InterfaceDisplayName,
     string GeneratedNamespace,
     ImmutableEquatableArray<MqttMemberModel> Members,
-    Nullability Nullability);
+    Nullability Nullability,
+    string? ClientName);

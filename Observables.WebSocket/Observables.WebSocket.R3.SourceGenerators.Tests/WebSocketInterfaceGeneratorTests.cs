@@ -32,6 +32,46 @@ public sealed class WebSocketInterfaceGeneratorTests
     }
 
     [Fact]
+    public void Send_message_name_reaches_the_generated_envelope()
+    {
+        const string userSource =
+            """
+            [WebSocket]
+            public interface IChatHub
+            {
+                [WebSocketSend("chat.send")]
+                Observable<Unit> SendMessage(string message);
+            }
+            """;
+
+        var output = GeneratorTestHarness.Run(userSource);
+        var snapshot = GeneratorTestHarness.ToSnapshot(output);
+
+        Assert.Contains("type = \"chat.send\"", snapshot, StringComparison.Ordinal);
+        Assert.Contains("payload = message", snapshot, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Send_without_a_message_name_keeps_the_raw_frame()
+    {
+        const string userSource =
+            """
+            [WebSocket]
+            public interface IChatHub
+            {
+                [WebSocketSend]
+                Observable<Unit> SendMessage(string message);
+            }
+            """;
+
+        var output = GeneratorTestHarness.Run(userSource);
+        var snapshot = GeneratorTestHarness.ToSnapshot(output);
+
+        Assert.Contains("FromSendText(_socket, message", snapshot, StringComparison.Ordinal);
+        Assert.DoesNotContain("type = ", snapshot, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void WebSocket_interface_string_send_generates_FromSendText()
     {
         // string parameter must produce a Text frame (FromSendText), not Binary (FromSend).

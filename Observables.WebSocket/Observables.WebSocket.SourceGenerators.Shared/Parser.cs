@@ -198,7 +198,38 @@ internal static class Parser
                 declarations.ToImmutableEquatableArray(),
                 names.ToImmutableEquatableArray(),
                 ctName,
-                ClassifySendPayload(boundary.Value, method)));
+                ClassifySendPayload(boundary.Value, method),
+                boundary.Value == WebSocketBoundaryKind.Send
+                    ? GetMessageName(method, sendAttribute)
+                    : null));
+    }
+
+    /// <summary>
+    /// Reads the name off <c>[WebSocketSend(messageName)]</c>. A null or blank name means the send keeps the
+    /// raw frame dispatch and puts nothing but its payload on the wire.
+    /// </summary>
+    static string? GetMessageName(IMethodSymbol method, INamedTypeSymbol? sendAttribute)
+    {
+        if (sendAttribute is null)
+        {
+            return null;
+        }
+
+        foreach (var attribute in method.GetAttributes())
+        {
+            if (!SymbolEqualityComparer.Default.Equals(attribute.AttributeClass, sendAttribute))
+            {
+                continue;
+            }
+
+            return attribute.ConstructorArguments.Length > 0
+                && attribute.ConstructorArguments[0].Value is string name
+                && !string.IsNullOrWhiteSpace(name)
+                    ? name
+                    : null;
+        }
+
+        return null;
     }
 
     static void TryAddProperty(
@@ -261,7 +292,8 @@ internal static class Parser
                 ImmutableEquatableArray.Empty<string>(),
                 ImmutableEquatableArray.Empty<string>(),
                 null,
-                WebSocketSendPayloadKind.None));
+                WebSocketSendPayloadKind.None,
+                null));
     }
 
     static bool HasMethodBoundaryOnProperty(

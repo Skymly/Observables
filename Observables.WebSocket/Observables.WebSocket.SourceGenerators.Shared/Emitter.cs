@@ -94,7 +94,11 @@ internal static class Emitter
                         ? string.Empty
                         : string.Join(", ", member.ParameterDeclarations.AsArray());
 
-                    if (member.ParameterNames.Count == 0)
+                    if (member.MessageName is { } messageName)
+                    {
+                        EmitNamedSend(writer, member, messageName, parameterList, cancellation);
+                    }
+                    else if (member.ParameterNames.Count == 0)
                     {
                         // No payload — send empty binary frame
                         writer.WriteLine(
@@ -168,5 +172,48 @@ internal static class Emitter
                     break;
                 }
         }
+    }
+
+    /// <summary>
+    /// Emits a send that declares a message name. The name only exists on the wire, so the payload is wrapped
+    /// in a <c>{"type":…,"payload":…}</c> envelope; a send with no arguments omits <c>payload</c>.
+    /// </summary>
+    static void EmitNamedSend(
+        SourceWriter writer,
+        WebSocketMemberModel member,
+        string messageName,
+        string parameterList,
+        string cancellation)
+    {
+        var envelope = member.ParameterNames.Count switch
+        {
+            0 => $"new {{ type = {FormatLiteral(messageName)} }}",
+            1 => $"new {{ type = {FormatLiteral(messageName)}, payload = {member.ParameterNames.AsArray()[0]} }}",
+            _ => $"new {{ type = {FormatLiteral(messageName)}, payload = new {{ {string.Join(", ", member.ParameterNames.AsArray())} }} }}",
+        };
+
+        writer.WriteLine(
+            $$"""
+            public {{member.ReturnTypeDisplay}} {{member.MemberName}}({{parameterList}})
+            {
+        #if NET8_0_OR_GREATER
+                return {{BridgeType}}.FromSendText(_socket, global::System.Text.Json.JsonSerializer.Serialize({{envelope}}){{cancellation}});
+        #else
+                throw new global::System.NotSupportedException(
+                    "Sending a WebSocket message that declares a message name requires net8.0 or later.");
+        #endif
+            }
+
+        """);
+    }
+
+    static string FormatLiteral(string value)
+    {
+        return "\u0022" + value
+            .Replace("\\", "\\\\")
+            .Replace("\u0022", "\\\u0022")
+            .Replace("\r", "\\r")
+            .Replace("\n", "\\n")
+            .Replace("\t", "\\t") + "\u0022";
     }
 }

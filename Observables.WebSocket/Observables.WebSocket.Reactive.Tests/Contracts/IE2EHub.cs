@@ -12,9 +12,13 @@ public interface IE2EHub
     [WebSocketClose]
     IObservable<Unit> Close(CancellationToken cancellationToken = default);
 
-    /// <summary>Send an empty binary frame (no payload).</summary>
+    /// <summary>Send a named envelope with no payload.</summary>
     [WebSocketSend("ping")]
     IObservable<Unit> Ping(CancellationToken cancellationToken = default);
+
+    /// <summary>Send a named envelope wrapping a text payload.</summary>
+    [WebSocketSend("chat")]
+    IObservable<Unit> SendChat(string message, CancellationToken cancellationToken = default);
 
     /// <summary>Send a UTF-8 text frame.</summary>
     [WebSocketSend]

@@ -61,6 +61,7 @@ Observable<Unit> SendMessage(string message);
 
 - 支持的参数类型：无（空载荷）、`string`（UTF-8 文本）、`byte[]`（二进制）。
 - 对于其他类型，载荷以 JSON 序列化（仅 net8+）。
+- 写了 `messageName` 时（上例的 `"ping"`），名字是它唯一能去的地方——WebSocket 没有 subject / topic 可绑，只有报文本身。此时该方法改发 JSON 信封文本帧 `{"type":"<messageName>","payload":<参数>}`，无参数时省略 `payload`，多参数时 `payload` 为参数组成的对象。信封走 JSON，因此和其他 JSON 发送一样仅 net8+，netstandard2.0 上抛 `NotSupportedException`；`byte[]` 参数在信封里会变成 base64 字符串而不再是二进制帧。没写名字的发送不受影响。
 
 ### 4.4 Receive
 
@@ -111,3 +112,7 @@ ClientWebSocket  ──►  WebSocketService.For<T>(socket)
 - **Receive 使用惰性缓存 observable**：重新订阅不会重新注册接收循环。
 - **Send 载荷分派**：`string` → 文本帧（UTF-8），`byte[]` → 二进制帧，其他类型
   → JSON 文本帧（仅 net8+；在 netstandard2.0 上抛出 `NotSupportedException`）。
+- **具名 Send 用 `{"type","payload"}` 信封**：名字在生成代码里直接成为匿名对象的字面量，运行时不读特性，
+  免得给 trim / AOT 分析器添告警。信封形状是本域自己定的约定——服务端协议千差万别，选一个写进文档，
+  比让 `messageName` 继续当摆设强。`[WebSocketReceive]` 上的同名参数目前仍未读，留给单接收泵那一票
+  （#361）连同按名分流一起处理。

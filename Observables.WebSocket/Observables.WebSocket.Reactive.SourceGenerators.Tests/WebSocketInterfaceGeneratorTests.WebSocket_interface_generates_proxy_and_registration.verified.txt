@@ -29,8 +29,15 @@ namespace Observables.WebSocket.Reactive.Generated
     public global::System.IObservable<global::System.Reactive.Unit> Close(global::System.Threading.CancellationToken cancellationToken = default) =>
         global::Observables.WebSocket.Reactive.SystemReactiveWebSocketAdapter.FromClose(_socket, cancellationToken);
 
-    public global::System.IObservable<global::System.Reactive.Unit> Ping(global::System.Threading.CancellationToken cancellationToken = default) =>
-        global::Observables.WebSocket.Reactive.SystemReactiveWebSocketAdapter.FromSend(_socket, global::System.Array.Empty<byte>(), cancellationToken);
+    public global::System.IObservable<global::System.Reactive.Unit> Ping(global::System.Threading.CancellationToken cancellationToken = default)
+    {
+#if NET8_0_OR_GREATER
+        return global::Observables.WebSocket.Reactive.SystemReactiveWebSocketAdapter.FromSendText(_socket, global::System.Text.Json.JsonSerializer.Serialize(new { type = "ping" }), cancellationToken);
+#else
+        throw new global::System.NotSupportedException(
+            "Sending a WebSocket message that declares a message name requires net8.0 or later.");
+#endif
+    }
 
     private global::System.IObservable<global::System.String>? _Messages;
     public global::System.IObservable<global::System.String> Messages =>

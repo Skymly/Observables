@@ -3,17 +3,17 @@
   <PropertyGroup>
     <RootNamespace>Observables.Postgres</RootNamespace>
     <AssemblyName>Observables.Postgres</AssemblyName>
-    <Description>PostgreSQL LISTEN/NOTIFY runtime and R3 stream bridges.</Description>
+    <Description>PostgreSQL LISTEN/NOTIFY runtime, backend-neutral: R3 bridges live in Observables.Postgres.R3.</Description>
     <!-- Npgsql 9+ dropped netstandard2.0; Postgres domain targets modern TFMs only. -->
     <TargetFrameworks>net8.0;net9.0;net10.0</TargetFrameworks>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="Npgsql" />
-    <PackageReference Include="R3" />
   </ItemGroup>
 
   <ItemGroup>
+    <InternalsVisibleTo Include="Observables.Postgres.R3" />
     <InternalsVisibleTo Include="Observables.Postgres.Reactive" />
     <InternalsVisibleTo Include="Observables.Postgres.Tests" />
   </ItemGroup>
@@ -21,6 +21,5 @@
 
   <ItemGroup>
     <Compile Include="..\..\Observables.Shared\Observables.Core\GeneratedProxyFactoryRegistry.cs" Link="Shared/GeneratedProxyFactoryRegistry.cs" />
-    <Compile Include="..\..\Observables.Shared\Observables.R3.Runtime\R3AsyncCreate.cs" Link="Shared/R3AsyncCreate.cs" />
   </ItemGroup>
 </Project>

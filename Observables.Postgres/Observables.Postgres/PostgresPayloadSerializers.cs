@@ -2,7 +2,7 @@ using System.Diagnostics.CodeAnalysis;
 
 namespace Observables.Postgres;
 
-/// <summary>Global PostgreSQL payload serializer used by <see cref="PostgresObservable"/> and generated proxies.</summary>
+/// <summary>Global PostgreSQL payload serializer used by the backend bridges and generated proxies.</summary>
 [RequiresUnreferencedCode(PostgresTrimAnnotations.JsonPayload)]
 [RequiresDynamicCode(PostgresTrimAnnotations.JsonPayload)]
 public static class PostgresPayloadSerializers

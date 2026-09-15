@@ -56,7 +56,7 @@ public static class SystemReactiveWebSocketAdapter
     [RequiresDynamicCode("JSON payload deserialization uses System.Text.Json reflection.")]
 #endif
     public static IObservable<T> FromReceive<T>(ClientWebSocket socket) =>
-        FromReceive<T>(socket, WebSocketObservable.DefaultMaxReceiveMessageBytes);
+        FromReceive<T>(socket, WebSocketProtocol.DefaultMaxReceiveMessageBytes);
 
 #if NET8_0_OR_GREATER
     [RequiresUnreferencedCode("JSON payload deserialization uses System.Text.Json reflection. Preserve payload type members when trimming.")]

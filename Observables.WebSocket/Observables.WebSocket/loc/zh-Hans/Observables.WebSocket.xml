@@ -25,12 +25,6 @@
         <member name="T:Observables.WebSocket.WebSocketCloseAttribute">
             <summary>WebSocket 连接关闭。</summary>
         </member>
-        <member name="T:Observables.WebSocket.WebSocketObservable">
-            <summary>将 <see cref="T:System.Net.WebSockets.ClientWebSocket"/> API 桥接到 R3 <see cref="T:R3.Observable`1"/>。</summary>
-        </member>
-        <member name="F:Observables.WebSocket.WebSocketObservable.DefaultMaxReceiveMessageBytes">
-            <summary>默认重组接收上限（1 MiB）。超出时接收流以错误结束。</summary>
-        </member>
         <member name="T:Observables.WebSocket.WebSocketService">
             <summary>创建源生成的 WebSocket 代理实现。</summary>
         </member>

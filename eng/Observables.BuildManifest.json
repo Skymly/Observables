@@ -33,7 +33,7 @@
       "packageId": "Observables.Mqtt.Reactive"
     },
     {
-      "packProject": "Observables.WebSocket/Observables.WebSocket.Package/Observables.WebSocket.R3.csproj",
+      "packProject": "Observables.WebSocket/Observables.WebSocket.Package/Observables.WebSocket.R3.Pack.csproj",
       "packageId": "Observables.WebSocket.R3"
     },
     {

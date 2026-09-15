@@ -1,0 +1,14 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>Observables.WebSocket.R3</name>
+    </assembly>
+    <members>
+        <member name="T:Observables.WebSocket.WebSocketObservable">
+            <summary>将 <see cref="T:System.Net.WebSockets.ClientWebSocket"/> API 桥接到 R3 <see cref="T:R3.Observable`1"/>。</summary>
+        </member>
+        <member name="F:Observables.WebSocket.WebSocketObservable.DefaultMaxReceiveMessageBytes">
+            <summary>默认重组接收上限（1 MiB）。超出时接收流以错误结束。</summary>
+        </member>
+    </members>
+</doc>

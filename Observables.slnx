@@ -131,6 +131,8 @@
 
     <Project Path="Observables.WebSocket/Observables.WebSocket/Observables.WebSocket.csproj" />
 
+    <Project Path="Observables.WebSocket/Observables.WebSocket.R3/Observables.WebSocket.R3.csproj" />
+
     <Project Path="Observables.WebSocket/Observables.WebSocket.Reactive/Observables.WebSocket.Reactive.csproj" />
 
     <Project Path="Observables.WebSocket/Observables.WebSocket.Reactive.SourceGenerators/Observables.WebSocket.Reactive.SourceGenerators.csproj" />

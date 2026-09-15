@@ -6,6 +6,8 @@
 
   <ItemGroup>
     <Using Include="Xunit" />
+    <!-- The generated R3 proxies need R3; the runtime no longer supplies it transitively. -->
+    <PackageReference Include="R3" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" />
     <PackageReference Include="RichardSzalay.MockHttp" />
     <PackageReference Include="xunit.v3" />

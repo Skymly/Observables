@@ -5,7 +5,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="Observables.Postgres.R3.csproj" />
+    <ProjectReference Include="Observables.Postgres.R3.Pack.csproj" />
     <ProjectReference Include="Observables.Postgres.Reactive.Pack.csproj" />
   </ItemGroup>
 

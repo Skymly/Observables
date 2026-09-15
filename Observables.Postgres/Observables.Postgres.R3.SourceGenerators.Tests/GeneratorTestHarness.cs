@@ -22,6 +22,9 @@ internal static class GeneratorTestHarness
                 options.IncludeCoreReference ? null : "Observables.Postgres.dll",
                 typeof(global::R3.Unit),
                 options.IncludeCoreReference
+                    ? typeof(global::Observables.Postgres.PostgresObservable)
+                    : null,
+                options.IncludeCoreReference
                     ? typeof(global::Observables.Postgres.PostgresService)
                     : null,
                 typeof(global::Npgsql.NpgsqlConnection)),

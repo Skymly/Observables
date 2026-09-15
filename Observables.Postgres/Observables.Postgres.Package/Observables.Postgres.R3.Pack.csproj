@@ -24,6 +24,7 @@
 
   <ItemGroup>
     <ObservablesPackLibProjectReference Include="..\Observables.Postgres\Observables.Postgres.csproj" />
+    <ObservablesPackLibProjectReference Include="..\Observables.Postgres.R3\Observables.Postgres.R3.csproj" />
     <PackageReference Include="R3" />
     <PackageReference Include="Npgsql" />
     <None Include="README.Postgres.R3.pack.md" Pack="true" PackagePath="README.md" Visible="false" />

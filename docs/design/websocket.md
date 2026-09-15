@@ -86,6 +86,8 @@ Observable<string> Messages { get; }
 - 当服务器发送 Close 帧时完成。
 - 重组后的单条消息默认上限 **1 MiB**（`WebSocketObservable.DefaultMaxReceiveMessageBytes`）。`FromReceive(socket, maxMessageBytes)` 可覆盖。超出则接收流以错误完成，避免无界缓冲。
 - 每个 `ClientWebSocket` 只有一个接收循环（`WebSocketReceivePump`），多个 `[WebSocketReceive]` 成员、多个订阅者共用它，各自反序列化自己的 `T`。上限由启动该循环的那次订阅决定，后来者沿用。
+- 写了 `messageName` 时（上例的 `"message"`），该成员改走 `FromReceiveNamed`：只认 §4.3 具名发送写出的那个 JSON 信封，`type` 对得上才把 `payload` 反序列化为 `T` 发出去。名字对不上、或者压根不是信封的帧，直接跳过而不是报错——同一个 socket 上别的成员还要用它们。信封走 JSON，因此和具名发送一样仅 net8+，netstandard2.0 上抛 `NotSupportedException`；`payload` 恒按 JSON 解，所以 `string` 也走序列化器、`byte[]` 收的是 base64，正好和发送端对称。没写名字的接收拿到的仍是原始帧。
+- 具名发送不带参数时信封里没有 `payload`，此时具名接收无从构造 `T`，抛 `InvalidOperationException`。要观察这类纯信号，用不具名接收看原始帧。
 
 ## 5. 诊断 ID（OBS6xxx）
 
@@ -126,5 +128,8 @@ ClientWebSocket  ──►  WebSocketService.For<T>(socket)
   → JSON 文本帧（仅 net8+；在 netstandard2.0 上抛出 `NotSupportedException`）。
 - **具名 Send 用 `{"type","payload"}` 信封**：名字在生成代码里直接成为匿名对象的字面量，运行时不读特性，
   免得给 trim / AOT 分析器添告警。信封形状是本域自己定的约定——服务端协议千差万别，选一个写进文档，
-  比让 `messageName` 继续当摆设强。`[WebSocketReceive]` 上的同名参数目前仍未读，留给单接收泵那一票
-  （#361）连同按名分流一起处理。
+  比让 `messageName` 继续当摆设强。
+- **具名 Receive 读同一个信封**：`[WebSocketReceive(messageName)]` 认的就是具名 Send 写的那个 `type`，两边共用一套约定。
+  过滤放在成员层而不是泵里：泵仍然只管收原始帧，每个具名成员自己试着拆信封。否则为了给一个成员分流，
+  整条链路上的 `byte[]` / `string` 成员都得先被当成 JSON 试一遍。名字对不上就跳过而不是报错，正因为同一个
+  socket 上的其他成员还指望这些帧。

@@ -28,9 +28,15 @@ public interface IE2EHub
     [WebSocketSend]
     Observable<Unit> SendBytes(byte[] data, CancellationToken cancellationToken = default);
 
-    [WebSocketReceive("echo")]
+    /// <summary>Raw text frames, unfiltered.</summary>
+    [WebSocketReceive]
     Observable<string> EchoText { get; }
 
-    [WebSocketReceive("bytes")]
+    /// <summary>Raw binary frames, unfiltered.</summary>
+    [WebSocketReceive]
     Observable<byte[]> EchoBytes { get; }
+
+    /// <summary>Only the envelopes <see cref="SendChat"/> writes; the echo server bounces them back.</summary>
+    [WebSocketReceive("chat")]
+    Observable<string> Chats { get; }
 }

@@ -61,6 +61,46 @@ public sealed class WebSocketClientReactiveE2ETests(WebSocketTestServerFixture f
     }
 
     [Fact]
+    public async Task Named_receive_unwraps_the_envelope_a_named_send_wrote()
+    {
+        using var socket = new ClientWebSocket();
+        var hub = WebSocketService.For<IE2EHub>(socket);
+
+        using var cts = new CancellationTokenSource(DefaultTimeout);
+        await hub.Connect(fixture.Server.Uri, cts.Token).Timeout(DefaultTimeout).FirstAsync().ToTask();
+
+        var receiveTask = hub.Chats.Timeout(DefaultTimeout).FirstAsync().ToTask();
+        await hub.SendChat("hello", cts.Token).Timeout(DefaultTimeout).FirstAsync().ToTask();
+
+        Assert.Equal("hello", await receiveTask);
+    }
+
+    [Fact]
+    public async Task Named_receive_ignores_an_envelope_addressed_elsewhere()
+    {
+        using var socket = new ClientWebSocket();
+        var hub = WebSocketService.For<IE2EHub>(socket);
+
+        using var cts = new CancellationTokenSource(DefaultTimeout);
+        await hub.Connect(fixture.Server.Uri, cts.Token).Timeout(DefaultTimeout).FirstAsync().ToTask();
+
+        var chats = new List<string>();
+        using var subscription = hub.Chats.Subscribe(value => chats.Add(value));
+
+        // "ping" is echoed back as {"type":"ping"}; the raw stream sees it, the chat stream must not.
+        var rawTask = hub.EchoText.Timeout(DefaultTimeout).FirstAsync().ToTask();
+        await hub.Ping(cts.Token).Timeout(DefaultTimeout).FirstAsync().ToTask();
+        Assert.Equal("{\"type\":\"ping\"}", await rawTask);
+
+        // Now a chat envelope, which must arrive — proving the stream was live all along.
+        var chatTask = hub.Chats.Timeout(DefaultTimeout).FirstAsync().ToTask();
+        await hub.SendChat("hello", cts.Token).Timeout(DefaultTimeout).FirstAsync().ToTask();
+        Assert.Equal("hello", await chatTask);
+
+        Assert.Equal(["hello"], chats);
+    }
+
+    [Fact]
     public async Task SendBytes_echoes_binary_content()
     {
         using var socket = new ClientWebSocket();

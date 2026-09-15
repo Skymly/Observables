@@ -39,9 +39,9 @@ namespace Observables.WebSocket.Generated
 #endif
     }
 
-    private global::R3.Observable<global::System.String>? _Messages;
-    public global::R3.Observable<global::System.String> Messages =>
-        _Messages ??= global::Observables.WebSocket.WebSocketObservable.FromReceive<global::System.String>(_socket);
+private global::R3.Observable<global::System.String>? _Messages;
+public global::R3.Observable<global::System.String> Messages =>
+    _Messages ??= global::Observables.WebSocket.WebSocketObservable.FromReceiveNamed<global::System.String>(_socket, "message");
 
     }
 }

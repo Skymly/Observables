@@ -69,17 +69,53 @@ public static class SystemReactiveWebSocketAdapter
                 .Subscribe(
                     new Sink<T>(
                         observer,
-                        (payload, messageType) => WebSocketProtocol.DeserializePayload<T>(payload, messageType)),
+                        (byte[] payload, WebSocketMessageType messageType, out T value) =>
+                        {
+                            value = WebSocketProtocol.DeserializePayload<T>(payload, messageType);
+                            return true;
+                        }),
                     maxMessageBytes));
 
-    sealed class Sink<T>(IObserver<T> observer, Func<byte[], WebSocketMessageType, T> deserialize)
+#if NET8_0_OR_GREATER
+    [RequiresUnreferencedCode("JSON payload deserialization uses System.Text.Json reflection. Preserve payload type members when trimming.")]
+    [RequiresDynamicCode("JSON payload deserialization uses System.Text.Json reflection.")]
+#endif
+    public static IObservable<T> FromReceiveNamed<T>(ClientWebSocket socket, string messageName) =>
+        FromReceiveNamed<T>(socket, messageName, WebSocketProtocol.DefaultMaxReceiveMessageBytes);
+
+    /// <summary>
+    /// Emits only the frames carrying the <c>{"type":…}</c> envelope written by a send that declares
+    /// <paramref name="messageName"/>. Frames addressed elsewhere, and frames that are not envelopes at all,
+    /// are skipped rather than reported as errors.
+    /// </summary>
+#if NET8_0_OR_GREATER
+    [RequiresUnreferencedCode("JSON payload deserialization uses System.Text.Json reflection. Preserve payload type members when trimming.")]
+    [RequiresDynamicCode("JSON payload deserialization uses System.Text.Json reflection.")]
+#endif
+    public static IObservable<T> FromReceiveNamed<T>(ClientWebSocket socket, string messageName, int maxMessageBytes) =>
+        Observable.Create<T>(observer =>
+            WebSocketReceivePump
+                .For(socket)
+                .Subscribe(
+                    new Sink<T>(
+                        observer,
+                        (byte[] payload, WebSocketMessageType _, out T value) =>
+                            WebSocketProtocol.TryUnwrapEnvelope(payload, messageName, out value)),
+                    maxMessageBytes));
+
+    delegate bool TryDeserialize<T>(byte[] payload, WebSocketMessageType messageType, out T value);
+
+    sealed class Sink<T>(IObserver<T> observer, TryDeserialize<T> tryDeserialize)
         : IWebSocketReceiveSink
     {
         public void OnMessage(byte[] payload, WebSocketMessageType messageType)
         {
             try
             {
-                observer.OnNext(deserialize(payload, messageType));
+                if (tryDeserialize(payload, messageType, out var value))
+                {
+                    observer.OnNext(value);
+                }
             }
             catch (Exception ex)
             {

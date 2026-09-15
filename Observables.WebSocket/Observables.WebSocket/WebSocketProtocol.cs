@@ -114,6 +114,61 @@ internal static class WebSocketProtocol
         return new WebSocketReceivedMessage(ms.ToArray(), messageType);
     }
 
+    // Reads the {"type":…,"payload":…} envelope a named send writes and deserializes payload as T. Returns
+    // false when the frame is not an envelope or carries a different name, which is how a named receive skips
+    // traffic meant for its siblings.
+    //
+    // The payload is JSON, so it goes through the serializer even for string and byte[] — the mirror of a
+    // named send, which JSON-encodes those too and turns a byte[] into base64. That is why this does not
+    // reuse DeserializePayload<T>, which reads a raw frame.
+#if NET8_0_OR_GREATER
+    [RequiresUnreferencedCode("JSON payload deserialization uses System.Text.Json reflection. Preserve payload type members when trimming.")]
+    [RequiresDynamicCode("JSON payload deserialization uses System.Text.Json reflection.")]
+#endif
+    internal static bool TryUnwrapEnvelope<T>(byte[] frame, string messageName, out T value)
+    {
+        value = default!;
+
+#if NETSTANDARD2_0
+        throw new NotSupportedException(
+            "Receiving a WebSocket message that declares a message name requires net8.0 or later.");
+#else
+        try
+        {
+            using var document = JsonDocument.Parse(frame);
+            if (document.RootElement.ValueKind != JsonValueKind.Object
+                || !document.RootElement.TryGetProperty("type", out var type)
+                || type.ValueKind != JsonValueKind.String
+                || !string.Equals(type.GetString(), messageName, StringComparison.Ordinal))
+            {
+                return false;
+            }
+
+            if (!document.RootElement.TryGetProperty("payload", out var body))
+            {
+                // A named send with no arguments omits payload, so there is nothing to hand the subscriber.
+                throw new InvalidOperationException(
+                    $"WebSocket message '{messageName}' carries no payload to deserialize as {typeof(T)}.");
+            }
+
+            var deserialized = body.Deserialize<T>(JsonOptions);
+            if (deserialized is null)
+            {
+                throw new InvalidOperationException(
+                    $"WebSocket message '{messageName}' payload deserialized to null.");
+            }
+
+            value = deserialized;
+            return true;
+        }
+        catch (JsonException)
+        {
+            // A non-JSON frame is simply not addressed to this member.
+            return false;
+        }
+#endif
+    }
+
 #if NET8_0_OR_GREATER
     [RequiresUnreferencedCode("JSON payload deserialization uses System.Text.Json reflection. Preserve payload type members when trimming.")]
     [RequiresDynamicCode("JSON payload deserialization uses System.Text.Json reflection.")]

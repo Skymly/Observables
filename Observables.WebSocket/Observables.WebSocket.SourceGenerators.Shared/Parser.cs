@@ -208,16 +208,16 @@ internal static class Parser
     /// Reads the name off <c>[WebSocketSend(messageName)]</c>. A null or blank name means the send keeps the
     /// raw frame dispatch and puts nothing but its payload on the wire.
     /// </summary>
-    static string? GetMessageName(IMethodSymbol method, INamedTypeSymbol? sendAttribute)
+    static string? GetMessageName(ISymbol member, INamedTypeSymbol? boundaryAttribute)
     {
-        if (sendAttribute is null)
+        if (boundaryAttribute is null)
         {
             return null;
         }
 
-        foreach (var attribute in method.GetAttributes())
+        foreach (var attribute in member.GetAttributes())
         {
-            if (!SymbolEqualityComparer.Default.Equals(attribute.AttributeClass, sendAttribute))
+            if (!SymbolEqualityComparer.Default.Equals(attribute.AttributeClass, boundaryAttribute))
             {
                 continue;
             }
@@ -293,7 +293,7 @@ internal static class Parser
                 ImmutableEquatableArray.Empty<string>(),
                 null,
                 WebSocketSendPayloadKind.None,
-                null));
+                GetMessageName(property, receiveAttribute)));
     }
 
     static bool HasMethodBoundaryOnProperty(

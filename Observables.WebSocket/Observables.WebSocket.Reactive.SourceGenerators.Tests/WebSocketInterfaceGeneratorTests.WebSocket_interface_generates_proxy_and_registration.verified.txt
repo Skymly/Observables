@@ -39,9 +39,9 @@ namespace Observables.WebSocket.Reactive.Generated
 #endif
     }
 
-    private global::System.IObservable<global::System.String>? _Messages;
-    public global::System.IObservable<global::System.String> Messages =>
-        _Messages ??= global::Observables.WebSocket.Reactive.SystemReactiveWebSocketAdapter.FromReceive<global::System.String>(_socket);
+private global::System.IObservable<global::System.String>? _Messages;
+public global::System.IObservable<global::System.String> Messages =>
+    _Messages ??= global::Observables.WebSocket.Reactive.SystemReactiveWebSocketAdapter.FromReceiveNamed<global::System.String>(_socket, "message");
 
     }
 }

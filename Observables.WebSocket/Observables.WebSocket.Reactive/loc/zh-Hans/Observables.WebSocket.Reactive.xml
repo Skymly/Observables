@@ -7,5 +7,10 @@
         <member name="T:Observables.WebSocket.Reactive.SystemReactiveWebSocketAdapter">
             <summary>将 <see cref="T:System.Net.WebSockets.ClientWebSocket"/> API 桥接到 <see cref="T:System.IObservable`1"/>。</summary>
         </member>
+        <member name="M:Observables.WebSocket.Reactive.SystemReactiveWebSocketAdapter.FromReceiveNamed``1(System.Net.WebSockets.ClientWebSocket,System.String,System.Int32)">
+            <summary>
+            只发出带有具名发送所写 <c>{"type":…}</c> 信封的帧。发给别的名字、以及压根不是信封的帧一律跳过，而不是当成错误。
+            </summary>
+        </member>
     </members>
 </doc>

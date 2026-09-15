@@ -435,4 +435,43 @@ public sealed class WebSocketInterfaceGeneratorTests
         var output = GeneratorTestHarness.Run(userSource);
         Assert.Contains(output.Diagnostics, static diagnostic => diagnostic.Id == "OBS6001");
     }
+    [Fact]
+    public void Receive_message_name_reaches_the_generated_filter()
+    {
+        const string userSource =
+            """
+            [WebSocket]
+            public interface IChatHub
+            {
+                [WebSocketReceive("chat.received")]
+                Observable<string> Messages { get; }
+            }
+            """;
+
+        var output = GeneratorTestHarness.Run(userSource);
+        var snapshot = GeneratorTestHarness.ToSnapshot(output);
+
+        Assert.Contains("FromReceiveNamed", snapshot, StringComparison.Ordinal);
+        Assert.Contains("\"chat.received\"", snapshot, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Receive_without_a_message_name_takes_every_frame()
+    {
+        const string userSource =
+            """
+            [WebSocket]
+            public interface IChatHub
+            {
+                [WebSocketReceive]
+                Observable<string> Messages { get; }
+            }
+            """;
+
+        var output = GeneratorTestHarness.Run(userSource);
+        var snapshot = GeneratorTestHarness.ToSnapshot(output);
+
+        Assert.DoesNotContain("FromReceiveNamed", snapshot, StringComparison.Ordinal);
+        Assert.Contains("FromReceive<", snapshot, StringComparison.Ordinal);
+    }
 }

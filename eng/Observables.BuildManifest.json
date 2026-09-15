@@ -41,7 +41,7 @@
       "packageId": "Observables.WebSocket.Reactive"
     },
     {
-      "packProject": "Observables.Grpc/Observables.Grpc.Package/Observables.Grpc.R3.csproj",
+      "packProject": "Observables.Grpc/Observables.Grpc.Package/Observables.Grpc.R3.Pack.csproj",
       "packageId": "Observables.Grpc.R3"
     },
     {

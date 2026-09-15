@@ -3,19 +3,16 @@
   <PropertyGroup>
     <RootNamespace>Observables.Grpc</RootNamespace>
     <AssemblyName>Observables.Grpc</AssemblyName>
-    <Description>gRPC client runtime and R3 stream bridges.</Description>
+    <Description>gRPC client runtime, backend-neutral: R3 bridges live in Observables.Grpc.R3.</Description>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="Grpc.Core.Api" />
     <PackageReference Include="Google.Protobuf" />
-    <PackageReference Include="R3" />
   </ItemGroup>
 
 
   <ItemGroup>
     <Compile Include="..\..\Observables.Shared\Observables.Core\GeneratedProxyFactoryRegistry.cs" Link="Shared/GeneratedProxyFactoryRegistry.cs" />
-    <Compile Include="..\..\Observables.Shared\Observables.R3.Runtime\R3AsyncCreate.cs" Link="Shared/R3AsyncCreate.cs" />
   </ItemGroup>
 </Project>
-

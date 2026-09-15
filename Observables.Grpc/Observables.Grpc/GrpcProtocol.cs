@@ -1,5 +1,4 @@
 using Grpc.Core;
-using R3;
 
 namespace Observables.Grpc;
 
@@ -86,17 +85,6 @@ internal static class GrpcProtocol
         await writeCompleted.ConfigureAwait(false);
         await writer.CompleteAsync().ConfigureAwait(false);
         await readTask.ConfigureAwait(false);
-    }
-
-    internal static void ObserveCompleted(Result result, TaskCompletionSource<bool> writeCompleted)
-    {
-        if (result.IsFailure)
-        {
-            writeCompleted.TrySetException(result.Exception ?? new InvalidOperationException("gRPC request source failed."));
-            return;
-        }
-
-        writeCompleted.TrySetResult(true);
     }
 
     internal static void ObserveWrite(Task write, TaskCompletionSource<bool> writeCompleted)

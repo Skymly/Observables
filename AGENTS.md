@@ -58,8 +58,8 @@
 | **`Observables.<Feature>.R3`** | R3 + 域运行时 + 本域 `.R3`（若有） | `*.R3.SourceGenerators` |
 | **`Observables.<Feature>.Reactive`** | System.Reactive + 域运行时 + 本域 `.Reactive`（若有） | `*.Reactive.SourceGenerators` |
 
-- R3 包 **不** 引用 System.Reactive；Reactive 包 **不** 引用 R3。这条管的是包里 **每一个** 程序集，不只是 nuspec：两个包共享的域运行时因此必须后端中立。PackVerify 读 `lib/**/*.dll` 的程序集引用表来验（`PackCsprojReader.ForbiddenBackendAssemblies`）。
-- 八个域（Grpc / Mqtt / Nats / Postgres / Redis / SignalR / Sse / WebSocket）的 R3 桥接仍在域运行时里，见 [ADR-003](docs/adr/ADR-003-backend-neutral-domain-runtime.md)。它们暂列在 `PackCsprojReader.DomainsPendingBackendSplit` 里豁免；拆一个划掉一个，名单空了连名单一起删。**新域不得进这张名单。**
+- R3 包 **不** 引用 System.Reactive；Reactive 包 **不** 引用 R3。这条管的是包里 **每一个** 程序集，不只是 nuspec：两个包共享的域运行时因此必须后端中立。PackVerify 读 `lib/**/*.dll` 的程序集引用表来验（`PackCsprojReader.ForbiddenBackendAssemblies`），**全部 20 个包无豁免**。
+- 域运行时保持后端中立、R3 桥接单独成 `Observables.<Feature>.R3` 程序集，见 [ADR-003](docs/adr/ADR-003-backend-neutral-domain-runtime.md)。十个域已全部就位。
 - 生成器仅编译期；发布后消费者通过 **`.Package` 元包** 获得「运行时 + 对应分析器」。开发阶段用 `ProjectReference` + `OutputItemType="Analyzer"`。
 
 ### 运行时类型放在哪

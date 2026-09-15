@@ -28,7 +28,6 @@ static partial class PackCsprojReader
         "Nats",
         "Postgres",
         "Redis",
-        "WebSocket",
     };
 
     public static NupkgVerifyRequest FromPackProject(string packCsprojPath)

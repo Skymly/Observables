@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <RootNamespace>Observables.WebSocket</RootNamespace>
+    <AssemblyName>Observables.WebSocket.R3</AssemblyName>
+    <Description>R3 bridges for Observables.WebSocket.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Observables.WebSocket\Observables.WebSocket.csproj" />
+    <PackageReference Include="R3" />
+  </ItemGroup>
+
+</Project>

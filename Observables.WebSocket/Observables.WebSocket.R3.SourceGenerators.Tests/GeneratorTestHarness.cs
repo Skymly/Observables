@@ -22,6 +22,9 @@ internal static class GeneratorTestHarness
                 options.IncludeCoreReference ? null : "Observables.WebSocket.dll",
                 typeof(global::R3.Unit),
                 options.IncludeCoreReference
+                    ? typeof(global::Observables.WebSocket.WebSocketObservable)
+                    : null,
+                options.IncludeCoreReference
                     ? typeof(global::Observables.WebSocket.WebSocketService)
                     : null),
             static () => [new WebSocketInterfaceStubGenerator()],

@@ -29,6 +29,7 @@ $defaultDomainProjects = @(
     'Observables.Grpc/Observables.Grpc/Observables.Grpc.csproj',
     'Observables.Grpc/Observables.Grpc.Reactive/Observables.Grpc.Reactive.csproj',
     'Observables.WebSocket/Observables.WebSocket/Observables.WebSocket.csproj',
+    'Observables.WebSocket/Observables.WebSocket.R3/Observables.WebSocket.R3.csproj',
     'Observables.WebSocket/Observables.WebSocket.Reactive/Observables.WebSocket.Reactive.csproj',
     'Observables.Mqtt/Observables.Mqtt/Observables.Mqtt.csproj',
     'Observables.Mqtt/Observables.Mqtt.R3/Observables.Mqtt.R3.csproj',

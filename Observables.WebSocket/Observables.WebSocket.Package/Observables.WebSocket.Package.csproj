@@ -5,7 +5,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="Observables.WebSocket.R3.csproj" />
+    <ProjectReference Include="Observables.WebSocket.R3.Pack.csproj" />
     <ProjectReference Include="Observables.WebSocket.Reactive.Pack.csproj" />
   </ItemGroup>
 

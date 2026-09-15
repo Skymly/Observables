@@ -15,6 +15,16 @@
 | `Observables.WebSocket.R3` | R3 `Observable<T>` |
 | `Observables.WebSocket.Reactive` | System.Reactive `IObservable<T>` |
 
+三个运行时程序集按后端分层（[ADR-003](../adr/ADR-003-backend-neutral-domain-runtime.md)）：
+
+| 程序集 | 依赖 | 进哪个包 |
+|--------|------|----------|
+| `Observables.WebSocket`（`WebSocketProtocol`、`WebSocketReceivePump`、`WebSocketService`） | 无后端依赖 | 两个包都进 |
+| `Observables.WebSocket.R3`（`WebSocketObservable`） | 上面那个 + R3 | 仅 `Observables.WebSocket.R3` |
+| `Observables.WebSocket.Reactive`（`SystemReactiveWebSocketAdapter`） | 上面第一个 + System.Reactive | 仅 `Observables.WebSocket.Reactive` |
+
+命名空间都是 `Observables.WebSocket`，拆分对消费者源码不可见。接收泵是 internal 且后端中立，留在第一个程序集里，两个桥接项目通过 `InternalsVisibleTo` 共用同一张 per-socket 表——这正是 §7 那条「每 socket 一个泵」得以跨后端成立的前提。
+
 两个包均包含运行时（`Observables.WebSocket`）、适配层以及对应的 Roslyn 源生成器。
 
 ## 3. 边界特性

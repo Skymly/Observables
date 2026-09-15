@@ -19,7 +19,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\Observables.Shared\Observables.TestSupport\Observables.TestSupport.csproj" />
-    <ProjectReference Include="..\Observables.WebSocket\Observables.WebSocket.csproj" />
+    <ProjectReference Include="..\Observables.WebSocket.R3\Observables.WebSocket.R3.csproj" />
     <ProjectReference Include="..\Observables.WebSocket.R3.SourceGenerators\Observables.WebSocket.R3.SourceGenerators.csproj" />
   </ItemGroup>
 

@@ -3,16 +3,13 @@
   <PropertyGroup>
     <RootNamespace>Observables.WebSocket</RootNamespace>
     <AssemblyName>Observables.WebSocket</AssemblyName>
-    <Description>WebSocket client runtime and R3 stream bridges.</Description>
+    <Description>WebSocket client runtime, backend-neutral: R3 bridges live in Observables.WebSocket.R3.</Description>
   </PropertyGroup>
 
 
   <ItemGroup>
+    <InternalsVisibleTo Include="Observables.WebSocket.R3" />
     <InternalsVisibleTo Include="Observables.WebSocket.Reactive" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <PackageReference Include="R3" />
   </ItemGroup>
 
 

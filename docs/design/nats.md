@@ -77,6 +77,12 @@ Reactive 桥：`SystemReactiveNatsAdapter` 同名方法，返回 `IObservable<T>
 
 `NatsPayloadSerializers` 镜像 Mqtt：`string`/`byte[]` 原始；net8+ 其余类型 STJ JSON；可注册自定义序列化器。
 
+生成代理经 `NatsProtocol` 的泛型 publish / subscribe / request 路径，把 `NatsPayloadSerializerBridge<T>`（internal，实现 NATS 的 `INatsSerialize<T>` / `INatsDeserialize<T>`）交给 NATS 客户端，因此注册在 `NatsPayloadSerializers` 的序列化器决定线上字节。非泛型的 `PublishEmptyAsync` / `PublishBytesAsync` 不经过它——那两条路已经是原始字节。
+
+桥接在一种情况下退让：`NatsPayloadSerializers.CanRoundTrip<T>()` 为 `false` 时传 `null` 给 NATS 客户端，回落到它自己的序列化器注册表。只有 netstandard2.0 上「非 `string`/`byte[]` 且无任何注册」会命中，因为该 TFM 下 `DefaultNatsPayloadSerializer` 没有 JSON 回退。
+
+接上之前，POCO payload 在默认 `NatsOpts` 下直接抛 `NatsException: Can't serialize …`：NATS 客户端默认只装 `NatsRawSerializer` / `NatsUtf8PrimitivesSerializer`，而 `NATS.Client.Serializers.Json` 需要消费者自己设 `NatsOpts.SerializerRegistry`（[#359](https://github.com/Skymly/Observables/issues/359)）。
+
 ## 6. 诊断（OBS9xxx）
 
 | ID | 严重性 | 触发 |

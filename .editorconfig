@@ -1,6 +1,7 @@
 # Code Root — shared EditorConfig template for meta + Skymly product repos.
 # Install per repo: docs/scripts/install-editorconfig.ps1
-# Pair with .gitattributes (LF in Git index) and core.autocrlf=input.
+# Pair with .gitattributes (LF in Git index) and core.autocrlf=false —
+# .gitattributes pins eol per pattern, so Git must not also guess.
 
 root = true
 
@@ -53,5 +54,7 @@ indent_size = 2
 [*.{bat,cmd}]
 end_of_line = crlf
 
-[*.sln]
-end_of_line = crlf
+# .sln / .slnx deliberately inherit LF from [*] to match .gitattributes.
+# Do not re-add an `end_of_line = crlf` override here: the editor would
+# rewrite on save while Git stores LF, and every save shows up as a
+# whole-file diff.

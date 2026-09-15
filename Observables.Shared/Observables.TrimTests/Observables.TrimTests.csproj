@@ -48,7 +48,7 @@
     <ProjectReference Include="..\..\Observables.SignalR\Observables.SignalR\Observables.SignalR.csproj" />
     <ProjectReference Include="..\..\Observables.WebSocket\Observables.WebSocket\Observables.WebSocket.csproj" />
     <ProjectReference Include="..\..\Observables.Grpc\Observables.Grpc\Observables.Grpc.csproj" />
-    <ProjectReference Include="..\..\Observables.Sse\Observables.Sse\Observables.Sse.csproj" />
+    <ProjectReference Include="..\..\Observables.Sse\Observables.Sse.R3\Observables.Sse.R3.csproj" />
     <ProjectReference Include="..\..\Observables.Postgres\Observables.Postgres\Observables.Postgres.csproj" />
     <ProjectReference Include="..\..\Observables.Redis\Observables.Redis\Observables.Redis.csproj" />
   </ItemGroup>

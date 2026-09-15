@@ -5,7 +5,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="Observables.Sse.R3.csproj" />
+    <ProjectReference Include="Observables.Sse.R3.Pack.csproj" />
     <ProjectReference Include="Observables.Sse.Reactive.Pack.csproj" />
   </ItemGroup>
 

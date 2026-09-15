@@ -49,7 +49,7 @@
       "packageId": "Observables.Grpc.Reactive"
     },
     {
-      "packProject": "Observables.Sse/Observables.Sse.Package/Observables.Sse.R3.csproj",
+      "packProject": "Observables.Sse/Observables.Sse.Package/Observables.Sse.R3.Pack.csproj",
       "packageId": "Observables.Sse.R3"
     },
     {

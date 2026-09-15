@@ -24,6 +24,7 @@ $defaultDomainProjects = @(
     'Observables.Nats/Observables.Nats/Observables.Nats.csproj',
     'Observables.Nats/Observables.Nats.Reactive/Observables.Nats.Reactive.csproj',
     'Observables.Sse/Observables.Sse/Observables.Sse.csproj',
+    'Observables.Sse/Observables.Sse.R3/Observables.Sse.R3.csproj',
     'Observables.Sse/Observables.Sse.Reactive/Observables.Sse.Reactive.csproj',
     'Observables.Grpc/Observables.Grpc/Observables.Grpc.csproj',
     'Observables.Grpc/Observables.Grpc.Reactive/Observables.Grpc.Reactive.csproj',

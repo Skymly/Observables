@@ -26,6 +26,45 @@ public sealed class SseInterfaceGeneratorTests
     }
 
     [Fact]
+    public void Endpoint_name_reaches_the_generated_registration()
+    {
+        const string userSource =
+            """
+            [Sse("primary")]
+            public interface IPriceFeed
+            {
+                [SseEvent("price")]
+                IObservable<string> Prices { get; }
+            }
+            """;
+
+        var output = GeneratorTestHarness.Run(userSource);
+        var snapshot = GeneratorTestHarness.ToSnapshot(output);
+
+        Assert.Contains("RegisterProxyName", snapshot, StringComparison.Ordinal);
+        Assert.Contains("\"primary\"", snapshot, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Sse_interface_without_a_name_emits_no_name_registration()
+    {
+        const string userSource =
+            """
+            [Sse]
+            public interface IPriceFeed
+            {
+                [SseEvent("price")]
+                IObservable<string> Prices { get; }
+            }
+            """;
+
+        var output = GeneratorTestHarness.Run(userSource);
+        var snapshot = GeneratorTestHarness.ToSnapshot(output);
+
+        Assert.DoesNotContain("RegisterProxyName", snapshot, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void Sse_interface_OBS8004_on_event_method()
     {
         const string userSource =

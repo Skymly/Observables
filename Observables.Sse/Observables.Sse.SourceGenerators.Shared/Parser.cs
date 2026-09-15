@@ -38,13 +38,14 @@ internal static class Parser
                 observableType,
                 members,
                 diagnostics),
-            createInterface: static (marked, className, members) => new SseInterfaceModel(
+            createInterface: (marked, className, members) => new SseInterfaceModel(
                 $"{marked.InterfaceSymbol.GetSafeHintName()}.Sse.g.cs",
                 className,
                 marked.InterfaceSymbol.ToDisplayString(DisplayFormat),
                 BackendTokens.QualifyGeneratedNamespace("Observables.Sse"),
                 members,
-                marked.Nullability),
+                marked.Nullability,
+                GetEndpointName(marked.InterfaceSymbol, sseAttribute)),
             createContext: static interfaces => new ContextGenerationModel(interfaces),
             tryAddOther: (marked, member, _, diagnostics) =>
                 diagnostics.Add(
@@ -53,6 +54,34 @@ internal static class Parser
                         member.Locations.FirstOrDefault(),
                         marked.InterfaceSymbol.Name,
                         member.Name)));
+    }
+
+    /// <summary>
+    /// Reads the name off <c>[Sse(endpointName)]</c>. A null or blank name means the interface opts out of
+    /// named resolution and stays reachable only through <c>SseService.For&lt;T&gt;(SseConnection)</c>.
+    /// </summary>
+    static string? GetEndpointName(INamedTypeSymbol interfaceSymbol, INamedTypeSymbol? sseAttribute)
+    {
+        if (sseAttribute is null)
+        {
+            return null;
+        }
+
+        foreach (var attribute in interfaceSymbol.GetAttributes())
+        {
+            if (!SymbolEqualityComparer.Default.Equals(attribute.AttributeClass, sseAttribute))
+            {
+                continue;
+            }
+
+            return attribute.ConstructorArguments.Length > 0
+                && attribute.ConstructorArguments[0].Value is string name
+                && !string.IsNullOrWhiteSpace(name)
+                    ? name
+                    : null;
+        }
+
+        return null;
     }
 
     static void TryAddMethod(

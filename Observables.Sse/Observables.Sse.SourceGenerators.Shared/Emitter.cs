@@ -15,16 +15,64 @@ internal static class Emitter
         ContextGenerationModel model,
         Action<string, SourceText> addSource)
     {
+        var interfaces = model.Interfaces.AsArray();
+
         ProxyRegistrationEmitter.Emit(
             hintName: "SseProxyRegistration.g.cs",
             registrationClassName: "SseProxyRegistration",
             registerGeneratedFactoryMetadataName: "global::Observables.Sse.SseService.RegisterGeneratedFactory",
-            registrations: model.Interfaces.AsArray().Select(static m =>
+            registrations: interfaces.Select(static m =>
                 new ProxyRegistrationEmitter.ProxyTypeRegistration(
                     m.InterfaceDisplayName,
                     m.GeneratedNamespace,
                     m.ClassName)).ToArray(),
             addSource);
+
+        EmitEndpointNames(interfaces, addSource);
+    }
+
+    /// <summary>
+    /// Emits the names carried by <c>[Sse(endpointName)]</c> so that <c>SseService.For&lt;T&gt;()</c> can resolve a
+    /// registered endpoint without reading attributes reflectively, which the trim and AOT analyzers reject.
+    /// </summary>
+    /// <remarks>
+    /// Relies on <see cref="ProxyRegistrationEmitter"/> having emitted the <c>ModuleInitializerAttribute</c>
+    /// polyfill that netstandard2.0 needs: a named interface is also a registered interface, so that file is
+    /// always present alongside this one.
+    /// </remarks>
+    static void EmitEndpointNames(
+        IReadOnlyList<SseInterfaceModel> interfaces,
+        Action<string, SourceText> addSource)
+    {
+        var named = interfaces.Where(static m => m.EndpointName is not null).ToArray();
+        if (named.Length == 0)
+        {
+            return;
+        }
+
+        var registrationCalls = string.Join(
+            "\n",
+            named.Select(static m =>
+                $"            global::Observables.Sse.SseService.RegisterProxyName(typeof({m.InterfaceDisplayName}), {FormatLiteral(m.EndpointName!)});"));
+
+        addSource(
+            "SseProxyNames.g.cs",
+            GeneratedSourceHeader.ToSourceText(
+                $$"""
+                namespace {{named[0].GeneratedNamespace}}
+                {
+                    [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+                    [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
+                    internal static class SseProxyNames
+                    {
+                        [global::System.Runtime.CompilerServices.ModuleInitializer]
+                        internal static void Initialize()
+                        {
+                {{registrationCalls}}
+                        }
+                    }
+                }
+                """));
     }
     public static SourceText EmitInterface(SseInterfaceModel model) =>
         ProxyClassEmitter.Emit(

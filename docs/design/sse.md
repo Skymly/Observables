@@ -42,10 +42,16 @@ public sealed class SseConnection
 public static class SseService
 {
     public static T For<T>(SseConnection connection);
+
+    // 具名端点：名字来自 [Sse(endpointName)]
+    public static void RegisterEndpoint(string name, SseConnection connection);
+    public static T For<T>();
 }
 ```
 
 工厂入参为单一 `SseConnection`（绑定 `HttpClient` + 端点 `Uri`），与 WebSocket 的 `For<T>(ClientWebSocket)` 单参一致，使生成的注册委托保持 `Func<SseConnection, object>`。
+
+具名端点：`[Sse(endpointName)]` 上的名字由 Parser 读出、随 `RegisterProxyName(Type, string)` 一起发到模块初始化器（生成物 `SseProxyNames.g.cs`），无参 `For<T>()` 据此查 `RegisterEndpoint` 注册的连接。名字走生成代码而不是运行期读特性，是因为域运行时要对 trim / AOT 分析器零告警。未写名字的接口仍只能走 `For<T>(SseConnection)`；解析未命名接口、或名字没注册过连接，都抛 `InvalidOperationException` 并在消息里点名缺的是哪一个。
 
 ### 消费者示例
 

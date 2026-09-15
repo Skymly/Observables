@@ -6,4 +6,5 @@ internal sealed record SseInterfaceModel(
     string InterfaceDisplayName,
     string GeneratedNamespace,
     ImmutableEquatableArray<SseMemberModel> Members,
-    Nullability Nullability);
+    Nullability Nullability,
+    string? EndpointName);

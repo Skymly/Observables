@@ -1,1 +1,5 @@
 #nullable enable
+static Observables.Sse.SseService.For(System.Type! sseInterfaceType) -> object!
+static Observables.Sse.SseService.For<T>() -> T
+static Observables.Sse.SseService.RegisterEndpoint(string! name, Observables.Sse.SseConnection! connection) -> void
+static Observables.Sse.SseService.RegisterProxyName(System.Type! sseInterfaceType, string! endpointName) -> void

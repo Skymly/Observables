@@ -158,6 +158,8 @@ public sealed partial class ObservableEventsGenerator
         Action<string, Location?, string> reportDiagnostic = (id, loc, arg) =>
             capturedDiagnostics.Add((id, loc, arg));
 
+        ReportIncompatibleEventMerges(hierarchy, reportDiagnostic);
+
         foreach (var type in callSiteTypes)
         {
             var source = GenerateEventImplAndExtensionSource(

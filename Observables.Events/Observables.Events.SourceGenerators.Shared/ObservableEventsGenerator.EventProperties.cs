@@ -7,6 +7,7 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Text;
+using Observables.SourceGenerators.Shared;
 using Observables.SourceGenerators.Shared.Diagnostics;
 using Observables.SourceGenerators.Shared.Extensions;
 
@@ -35,12 +36,18 @@ public sealed partial class ObservableEventsGenerator
             return false;
         }
 
+        if (invoke.Parameters.Any(static p => p.RefKind != RefKind.None))
+        {
+            ReportInvalidDelegate(evt, reportDiagnostic, entryKind);
+            return false;
+        }
+
         var returnType = ObservableEventsSyntaxFactory.GetObservableReturnTypeSyntax(invoke.Parameters);
         var bodyExpression = ObservableEventsSyntaxFactory.BuildEventObservableExpression(
             delegateType,
             invoke.Parameters,
             eventAccessorExpression);
-        property = SyntaxFactory.PropertyDeclaration(returnType, evt.Name)
+        property = SyntaxFactory.PropertyDeclaration(returnType, SyntaxFactory.Identifier(IdentifierHelper.Escape(evt.Name)))
             .AddModifiers(SyntaxFactory.Token(SyntaxKind.PublicKeyword))
             .WithExpressionBody(SyntaxFactory.ArrowExpressionClause(bodyExpression))
             .WithSemicolonToken(SyntaxFactory.Token(SyntaxKind.SemicolonToken));
@@ -105,7 +112,7 @@ public sealed partial class ObservableEventsGenerator
             return false;
         }
 
-        property = SyntaxFactory.PropertyDeclaration(returnType, evt.Name)
+        property = SyntaxFactory.PropertyDeclaration(returnType, SyntaxFactory.Identifier(IdentifierHelper.Escape(evt.Name)))
             .AddModifiers(SyntaxFactory.Token(SyntaxKind.PublicKeyword))
             .WithExpressionBody(
                 SyntaxFactory.ArrowExpressionClause(bodyExpression))

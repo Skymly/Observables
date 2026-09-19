@@ -111,18 +111,19 @@ public sealed partial class ObservableEventsGenerator
         eventArgsType = null!;
 
         if (evt.Type is INamedTypeSymbol { DelegateInvokeMethod: { } invoke }
-            && invoke.Parameters.Length > 0
-            && invoke.Parameters[invoke.Parameters.Length - 1].Type is INamedTypeSymbol argsFromHandler)
+            && invoke.ReturnsVoid
+            && invoke.Parameters.Length == 2
+            && invoke.Parameters[0].RefKind == RefKind.None
+            && invoke.Parameters[1].RefKind == RefKind.None
+            && invoke.Parameters[0].Type.SpecialType == SpecialType.System_Object
+            && invoke.Parameters[1].Type is INamedTypeSymbol argsFromHandler)
         {
-            eventArgsType = argsFromHandler;
-            return true;
-        }
-
-        var routedEventArgs = compilation.GetTypeByMetadataName("System.Windows.RoutedEventArgs");
-        if (routedEventArgs is not null)
-        {
-            eventArgsType = routedEventArgs;
-            return true;
+            var routedEventArgs = compilation.GetTypeByMetadataName("System.Windows.RoutedEventArgs");
+            if (routedEventArgs is not null && IsOrDerivedFrom(argsFromHandler, routedEventArgs))
+            {
+                eventArgsType = argsFromHandler;
+                return true;
+            }
         }
 
         return false;
@@ -212,6 +213,21 @@ public sealed partial class ObservableEventsGenerator
         return false;
     }
 
+
+    private static bool IsOrDerivedFrom(INamedTypeSymbol type, INamedTypeSymbol baseType)
+    {
+        for (INamedTypeSymbol? current = type; current is not null; current = current.BaseType)
+        {
+            if (SymbolEqualityComparer.Default.Equals(
+                    current.OriginalDefinition,
+                    baseType.OriginalDefinition))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
     private static bool IsWpfRoutedEventType(ITypeSymbol type, Compilation compilation)
     {
         var routedEventType = compilation.GetTypeByMetadataName("System.Windows.RoutedEvent");

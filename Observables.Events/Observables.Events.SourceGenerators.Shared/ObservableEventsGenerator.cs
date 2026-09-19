@@ -123,6 +123,7 @@ public sealed partial class ObservableEventsGenerator : IIncrementalGenerator
                 "OBS2003" => DiagnosticDescriptors.InvalidRoutedEventDelegate,
                 "OBS2004" => DiagnosticDescriptors.InvalidRoutedEventHandlersDelegate,
                 "OBS2005" => DiagnosticDescriptors.InternalGeneratorError,
+                "OBS2006" => DiagnosticDescriptors.IncompatibleEventMerge,
                 _ => null,
             };
             if (descriptor is null) continue;

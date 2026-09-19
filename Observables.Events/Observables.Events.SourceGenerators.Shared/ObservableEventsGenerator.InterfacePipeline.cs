@@ -132,6 +132,52 @@ public sealed partial class ObservableEventsGenerator
         return ImmutableArray.Create(type);
     }
 
+
+    private static void ReportIncompatibleEventMerges(
+        Dictionary<INamedTypeSymbol, EventInterfaceDescriptor> hierarchy,
+        Action<string, Location?, string> reportDiagnostic)
+    {
+        foreach (var desc in hierarchy.Values)
+        {
+            var byName = new Dictionary<string, IEventSymbol>(System.StringComparer.Ordinal);
+            CollectExclusiveEventsRecursive(desc, hierarchy, byName, reportDiagnostic);
+            foreach (var declared in desc.SourceType.GetMembers().OfType<IEventSymbol>()
+                         .Where(static e => e is { IsStatic: false, DeclaredAccessibility: Accessibility.Public }))
+            {
+                if (byName.TryGetValue(declared.Name, out var existing)
+                    && !SymbolEqualityComparer.Default.Equals(existing.Type, declared.Type))
+                {
+                    reportDiagnostic(DiagnosticDescriptors.IncompatibleEventMerge.Id, declared.Locations.FirstOrDefault(), declared.Name);
+                }
+            }
+        }
+    }
+
+    private static void CollectExclusiveEventsRecursive(
+        EventInterfaceDescriptor desc,
+        Dictionary<INamedTypeSymbol, EventInterfaceDescriptor> hierarchy,
+        Dictionary<string, IEventSymbol> byName,
+        Action<string, Location?, string> reportDiagnostic)
+    {
+        foreach (var evt in desc.ExclusiveEvents)
+        {
+            if (byName.TryGetValue(evt.Name, out var existing)
+                && !SymbolEqualityComparer.Default.Equals(existing.Type, evt.Type))
+            {
+                reportDiagnostic(DiagnosticDescriptors.IncompatibleEventMerge.Id, evt.Locations.FirstOrDefault(), evt.Name);
+                continue;
+            }
+
+            byName[evt.Name] = evt;
+        }
+
+        foreach (var parentType in desc.ParentTypes)
+        {
+            if (hierarchy.TryGetValue(HierarchyKey(parentType), out var pd))
+                CollectExclusiveEventsRecursive(pd, hierarchy, byName, reportDiagnostic);
+        }
+    }
+
     private static INamedTypeSymbol HierarchyKey(INamedTypeSymbol type) =>
         type.IsGenericType ? (INamedTypeSymbol)type.OriginalDefinition : type;
 
@@ -194,11 +240,10 @@ public sealed partial class ObservableEventsGenerator
             foreach (var type in group.Value)
             {
                 var desc = hierarchy[type];
-                var nsPrefix = type.ContainingNamespace is { IsGlobalNamespace: false } ns
-                    ? ns.ToDisplayString().Replace('.', '_')
-                    : string.Empty;
-                var prefix = string.IsNullOrEmpty(nsPrefix) ? desc.InterfaceName : $"I{nsPrefix}_{type.Name}";
-                desc.InterfaceName = $"{prefix}{suffix}";
+                var identity = TypeIdentityPrefix(type);
+                desc.InterfaceName = string.IsNullOrEmpty(identity)
+                    ? $"{desc.InterfaceName}_{type.Name}{suffix}"
+                    : $"I{identity}_{type.Name}{suffix}";
             }
         }
     }
@@ -282,7 +327,8 @@ public sealed partial class ObservableEventsGenerator
     {
         if (evt.Type is not INamedTypeSymbol delegateType
             || delegateType.DelegateInvokeMethod is not IMethodSymbol invoke
-            || !invoke.ReturnsVoid)
+            || !invoke.ReturnsVoid
+            || invoke.Parameters.Any(static p => p.RefKind != RefKind.None))
             return null;
 
         if (entryKind is ObservableEventsEntryKind.Events or ObservableEventsEntryKind.RoutedEvents)

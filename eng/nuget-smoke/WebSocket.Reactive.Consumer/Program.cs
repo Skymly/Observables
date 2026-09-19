@@ -1,3 +1,4 @@
+using System.Net.WebSockets;
 using Observables.WebSocket;
 using System.Reactive;
 
@@ -21,5 +22,15 @@ public interface ISmokeHub
 
 public static class Program
 {
-    public static void Main() => Console.WriteLine("Observables.WebSocket.Reactive consumer smoke OK");
+    public static void Main()
+    {
+        using ClientWebSocket socket = new();
+        ISmokeHub hub = WebSocketService.For<ISmokeHub>(socket);
+        if (hub is null)
+        {
+            throw new InvalidOperationException("WebSocket Reactive generated proxy was not created.");
+        }
+
+        Console.WriteLine("Observables.WebSocket.Reactive consumer smoke OK");
+    }
 }

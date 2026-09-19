@@ -356,7 +356,16 @@ namespace Observables.RestAPI
         {
             if (itemValue is HttpContent content)
             {
-                multiPartContent.Add(content);
+                var disposition = content.Headers.ContentDisposition;
+                if (disposition is null || string.IsNullOrEmpty(disposition.Name))
+                {
+                    multiPartContent.Add(content, parameterName);
+                }
+                else
+                {
+                    multiPartContent.Add(content);
+                }
+
                 return;
             }
             if (itemValue is MultipartItem multipartItem)
@@ -558,7 +567,7 @@ namespace Observables.RestAPI
             if (queryParams == null || queryParams.Count == 0)
                 return null;
 
-            var escape = uriFormat == UriFormat.UriEscaped;
+            var escape = uriFormat != UriFormat.Unescaped;
             var sb = new StringBuilder();
             var first = true;
             foreach (var kvp in queryParams)
@@ -622,10 +631,19 @@ namespace Observables.RestAPI
                 return (T)(object)s;
             }
 
+            if (IsUnitType(typeof(T)))
+            {
+                return default;
+            }
+
             return await settings.ContentSerializer
                 .FromHttpContentAsync<T>(content, cancellationToken)
                 .ConfigureAwait(false);
         }
+
+        static bool IsUnitType(Type type) =>
+            type.Name == "Unit"
+            && (type.Namespace == "R3" || type.Namespace == "System.Reactive");
 
         static bool IsRestApiResponseWrapper(Type returnType) =>
             returnType.IsGenericType

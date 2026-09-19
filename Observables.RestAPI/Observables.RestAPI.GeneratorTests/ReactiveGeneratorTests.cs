@@ -1,3 +1,4 @@
+using System.Linq;
 using Microsoft.CodeAnalysis;
 using Observables.TestSupport;
 
@@ -165,5 +166,56 @@ public class ReactiveGeneratorTests
         Assert.True(
             reason is IncrementalStepRunReason.Modified or IncrementalStepRunReason.New,
             $"Expected cache miss (Modified/New), got {reason}");
+    }
+
+    [Fact]
+    public void Query_then_AliasAs_keeps_explicit_name()
+    {
+        GeneratorRunOutput output = GeneratorTestHarness.RunReactive(
+            """
+            public interface IUserApi
+            {
+                [Get("/users")]
+                IObservable<string> Search([Query] [AliasAs("q")] string search);
+            }
+            """);
+
+        string generated = string.Concat(output.GeneratedSources.Select(static s => s.Source));
+        Assert.Contains("\"q\"", generated, StringComparison.Ordinal);
+        Assert.Contains(".WithExplicitName()", generated, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void AliasAs_then_Query_keeps_explicit_name()
+    {
+        GeneratorRunOutput output = GeneratorTestHarness.RunReactive(
+            """
+            public interface IUserApi
+            {
+                [Get("/users")]
+                IObservable<string> Search([AliasAs("q")] [Query] string search);
+            }
+            """);
+
+        string generated = string.Concat(output.GeneratedSources.Select(static s => s.Source));
+        Assert.Contains("\"q\"", generated, StringComparison.Ordinal);
+        Assert.Contains(".WithExplicitName()", generated, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void IObservable_Unit_delete_uses_send_void()
+    {
+        GeneratorRunOutput output = GeneratorTestHarness.RunReactive(
+            """
+            public interface IUserApi
+            {
+                [Delete("/users/{id}")]
+                IObservable<global::System.Reactive.Unit> DeleteUser(int id);
+            }
+            """);
+
+        string generated = string.Concat(output.GeneratedSources.Select(static s => s.Source));
+        Assert.Contains("SendVoidAsync", generated, StringComparison.Ordinal);
+        Assert.DoesNotContain("SendAsync<global::System.Reactive.Unit", generated, StringComparison.Ordinal);
     }
 }

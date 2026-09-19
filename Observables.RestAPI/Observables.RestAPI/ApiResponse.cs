@@ -83,11 +83,10 @@ namespace Observables.RestAPI
         public bool IsSuccessStatusCode => response?.IsSuccessStatusCode ?? false;
 
         /// <summary>
-        /// Indicates whether the request was successful and there wasn't any other error (for example, during content deserialization).
+        /// Indicates whether the request was successful and there wasn't any other error (for example, during content deserialization). JSON null content can still yield a null Content value.
         /// </summary>
 #if NET6_0_OR_GREATER
         [MemberNotNullWhen(true, nameof(Headers))]
-        [MemberNotNullWhen(true, nameof(Content))]
         [MemberNotNullWhen(true, nameof(ContentHeaders))]
         [MemberNotNullWhen(true, nameof(StatusCode))]
         [MemberNotNullWhen(true, nameof(Version))]
@@ -309,9 +308,8 @@ namespace Observables.RestAPI
         new bool IsSuccessStatusCode { get; }
 
         /// <summary>
-        /// Indicates whether the request was successful and there wasn't any other error (for example, during content deserialization).
+        /// Indicates whether the request was successful and there wasn't any other error (for example, during content deserialization). JSON null content can still yield a null Content value.
         /// </summary>
-        [MemberNotNullWhen(true, nameof(Content))]
         [MemberNotNullWhen(true, nameof(ContentHeaders))]
         [MemberNotNullWhen(false, nameof(Error))]
         new bool IsSuccessful { get; }
@@ -351,7 +349,7 @@ namespace Observables.RestAPI
         bool IsSuccessStatusCode { get; }
 
         /// <summary>
-        /// Indicates whether the request was successful and there wasn't any other error (for example, during content deserialization).
+        /// Indicates whether the request was successful and there wasn't any other error (for example, during content deserialization). JSON null content can still yield a null Content value.
         /// </summary>
 #if NET6_0_OR_GREATER
         [MemberNotNullWhen(true, nameof(Headers))]

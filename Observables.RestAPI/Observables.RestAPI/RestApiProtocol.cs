@@ -133,10 +133,15 @@ namespace Observables.RestAPI
                         break;
                     case RestApiBridge.SlotKind.Body:
                         hasBody = true;
+                        var previousContent = request.Content;
                         request.Content = (BodySerializationMethod)spec.Flags.BodySerializationMethod
                             == BodySerializationMethod.UrlEncoded
                             ? RestApiBridge.CreateFormUrlEncodedContent(value!, settings)
                             : RestApiBridge.SerializeBody(value!, settings, spec.Flags.BodySerializationMethod);
+                        if (!ReferenceEquals(previousContent, request.Content))
+                        {
+                            previousContent?.Dispose();
+                        }
                         break;
                     case RestApiBridge.SlotKind.Multipart:
                         hasBody = true;

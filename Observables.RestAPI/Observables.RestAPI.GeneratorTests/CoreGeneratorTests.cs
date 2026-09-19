@@ -488,4 +488,56 @@ public class CoreGeneratorTests
             reason is IncrementalStepRunReason.Modified or IncrementalStepRunReason.New,
             $"Expected cache miss (Modified/New), got {reason}");
     }
+
+    [Fact]
+    public void Query_then_AliasAs_keeps_explicit_name()
+    {
+        GeneratorRunOutput output = GeneratorTestHarness.Run(
+            """
+            public interface IUserApi
+            {
+                [Get("/users")]
+                Task<string> Search([Query] [AliasAs("q")] string search);
+            }
+            """);
+
+        string generated = string.Concat(output.GeneratedSources.Select(static s => s.Source));
+        Assert.Contains("\"q\"", generated, StringComparison.Ordinal);
+        Assert.Contains(".WithExplicitName()", generated, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void AliasAs_then_Query_keeps_explicit_name()
+    {
+        GeneratorRunOutput output = GeneratorTestHarness.Run(
+            """
+            public interface IUserApi
+            {
+                [Get("/users")]
+                Task<string> Search([AliasAs("q")] [Query] string search);
+            }
+            """);
+
+        string generated = string.Concat(output.GeneratedSources.Select(static s => s.Source));
+        Assert.Contains("\"q\"", generated, StringComparison.Ordinal);
+        Assert.Contains(".WithExplicitName()", generated, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Observable_Unit_delete_uses_send_void()
+    {
+        GeneratorRunOutput output = GeneratorTestHarness.Run(
+            """
+            public interface IUserApi
+            {
+                [Delete("/users/{id}")]
+                Observable<Unit> DeleteUser(int id);
+            }
+            """);
+
+        string generated = string.Concat(output.GeneratedSources.Select(static s => s.Source));
+        Assert.Contains("SendVoidAsync", generated, StringComparison.Ordinal);
+        Assert.DoesNotContain("SendAsync<global::R3.Unit", generated, StringComparison.Ordinal);
+    }
 }
+

@@ -39,10 +39,28 @@ public sealed class SystemReactiveRuntimeTests
         await Assert.ThrowsAsync<ApiException>(() => api.GetUser(404).FirstAsync().ToTask());
     }
 
+    [Theory]
+    [InlineData(HttpStatusCode.NoContent)]
+    [InlineData(HttpStatusCode.ResetContent)]
+    [InlineData(HttpStatusCode.OK)]
+    public async Task IObservableDelete_unit_succeeds_on_empty_success(HttpStatusCode status)
+    {
+        var mockHttp = new MockHttpMessageHandler();
+        mockHttp.When(HttpMethod.Delete, "https://api.example.com/users/1")
+            .Respond(status);
+
+        var client = mockHttp.ToHttpClient();
+        client.BaseAddress = new Uri("https://api.example.com");
+        var api = RestService.For<IIoUserApi>(client);
+        await api.DeleteUser(1).FirstAsync().ToTask();
+    }
     public interface IIoUserApi
     {
         [Get("/users/{id}")]
         IObservable<User> GetUser(int id);
+
+        [Delete("/users/{id}")]
+        IObservable<System.Reactive.Unit> DeleteUser(int id);
     }
 
     public sealed class User

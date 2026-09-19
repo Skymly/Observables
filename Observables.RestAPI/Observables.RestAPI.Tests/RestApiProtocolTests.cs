@@ -204,4 +204,24 @@ public sealed class RestApiProtocolTests
         Assert.Equal(42, user!.Id);
         Assert.Equal("Ada", user.Name);
     }
+
+
+    [Fact]
+    public void SafeUnescaped_encodes_hash_so_the_query_does_not_become_a_fragment()
+    {
+        var query = RestApiBridge.BuildQueryString(
+            [new KeyValuePair<string, string?>("q", "a#b")],
+            UriFormat.SafeUnescaped);
+        Assert.Equal("q=a%23b", query);
+        Assert.DoesNotContain("#", query);
+    }
+
+    [Fact]
+    public void Unescaped_leaves_hash_raw()
+    {
+        var query = RestApiBridge.BuildQueryString(
+            [new KeyValuePair<string, string?>("q", "a#b")],
+            UriFormat.Unescaped);
+        Assert.Equal("q=a#b", query);
+    }
 }

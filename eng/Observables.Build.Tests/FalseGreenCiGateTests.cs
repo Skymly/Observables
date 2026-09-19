@@ -31,6 +31,19 @@ public sealed class FalseGreenCiGateTests
     }
 
     [Fact]
+    public void Redis_e2e_projects_keep_the_net8_garnet_override()
+    {
+        string root = RepoRoot.Find();
+        IReadOnlyList<string> r3 = TestProjectTfms.GetFrameworks(
+            Path.Combine(root, "Observables.Redis", "Observables.Redis.Tests", "Observables.Redis.Tests.csproj"));
+        IReadOnlyList<string> reactive = TestProjectTfms.GetFrameworks(
+            Path.Combine(root, "Observables.Redis", "Observables.Redis.Reactive.Tests", "Observables.Redis.Reactive.Tests.csproj"));
+
+        Assert.Equal(new[] { "net8.0" }, r3);
+        Assert.Equal(new[] { "net8.0" }, reactive);
+    }
+
+    [Fact]
     public void TrimTests_are_not_a_testhost_trx_project()
     {
         string path = "Observables.Shared/Observables.TrimTests/Observables.TrimTests.csproj";

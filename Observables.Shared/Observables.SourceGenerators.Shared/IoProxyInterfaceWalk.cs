@@ -1,3 +1,4 @@
+using System.Linq;
 using System.Collections.Immutable;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
@@ -59,7 +60,7 @@ internal static class IoProxyInterfaceWalk
                     continue;
                 }
 
-                var nullability = semanticModel.GetNullableContext(interfaceSyntax.SpanStart) == NullableContext.Enabled
+                var nullability = semanticModel.GetNullableContext(interfaceSyntax.SpanStart).HasFlag(NullableContext.Enabled)
                     ? Nullability.Enabled
                     : Nullability.Disabled;
 
@@ -78,7 +79,7 @@ internal static class IoProxyInterfaceWalk
 
     internal static ImmutableArray<ISymbol> CollectPublicInstanceMembers(INamedTypeSymbol interfaceSymbol)
     {
-        var seen = new HashSet<ISymbol>(SymbolEqualityComparer.Default);
+        var seen = new HashSet<string>(StringComparer.Ordinal);
         var members = ImmutableArray.CreateBuilder<ISymbol>();
         AddPublicInstanceMembers(interfaceSymbol, seen, members);
         foreach (var inherited in interfaceSymbol.AllInterfaces)
@@ -91,7 +92,7 @@ internal static class IoProxyInterfaceWalk
 
     static void AddPublicInstanceMembers(
         INamedTypeSymbol type,
-        HashSet<ISymbol> seen,
+        HashSet<string> seen,
         ImmutableArray<ISymbol>.Builder members)
     {
         foreach (var member in type.GetMembers())
@@ -106,11 +107,29 @@ internal static class IoProxyInterfaceWalk
                 continue;
             }
 
-            if (seen.Add(member))
+            if (seen.Add(MemberSignature(member)))
             {
                 members.Add(member);
             }
         }
+    }
+
+    static string MemberSignature(ISymbol member)
+    {
+        if (member is IMethodSymbol method)
+        {
+            var parameters = string.Join(
+                ",",
+                method.Parameters.Select(static p => p.Type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)));
+            return "M:" + method.Name + "(" + parameters + ")";
+        }
+
+        if (member is IPropertySymbol property)
+        {
+            return "P:" + property.Name;
+        }
+
+        return "E:" + member.Name;
     }
 
     internal static bool HasAttribute(ISymbol symbol, INamedTypeSymbol attributeType)

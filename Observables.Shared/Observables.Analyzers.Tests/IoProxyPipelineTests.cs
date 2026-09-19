@@ -448,4 +448,33 @@ public sealed class IoProxyPipelineTests
             .ToImmutableArray();
         return (compilation, interfaces);
     }
+
+    [Fact]
+    public void Walk_hidden_derived_member_wins_over_base()
+    {
+        const string source =
+            """
+            using Observables.Mqtt;
+
+            [Mqtt]
+            public interface IBaseHub
+            {
+                [MqttPublish("base/{id}")]
+                void Publish(int id);
+            }
+
+            [Mqtt]
+            public interface IDerivedHub : IBaseHub
+            {
+                [MqttPublish("derived/{id}")]
+                new void Publish(int id);
+            }
+            """;
+
+        var (compilation, interfaces) = CompileInterfaces(source);
+        var mqtt = compilation.GetTypeByMetadataName("Observables.Mqtt.MqttAttribute")!;
+        var marked = IoProxyInterfaceWalk.Collect(compilation, interfaces, mqtt, CancellationToken.None);
+        var derived = marked.Single(m => m.InterfaceSymbol.Name == "IDerivedHub");
+        Assert.Equal(1, derived.PublicInstanceMembers.Count(m => m.Name == "Publish"));
+    }
 }

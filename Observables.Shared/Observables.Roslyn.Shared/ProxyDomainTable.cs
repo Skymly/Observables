@@ -356,6 +356,21 @@ internal static class ProxyDomainTable
             d => d.R3PackageName,
             StringComparer.Ordinal);
 
+    internal static bool TryGetByMissingRuntimeDiagnosticId(string diagnosticId, out ProxyDomainDefinition domain)
+    {
+        foreach (var candidate in InterfaceProxyDomains)
+        {
+            if (candidate.MissingRuntimePackageDiagnosticId == diagnosticId)
+            {
+                domain = candidate;
+                return true;
+            }
+        }
+
+        domain = null!;
+        return false;
+    }
+
     internal static bool TryGetByDiagnosticId(string diagnosticId, out ProxyDomainDefinition domain)
     {
         foreach (var candidate in MemberBoundaryDomains)

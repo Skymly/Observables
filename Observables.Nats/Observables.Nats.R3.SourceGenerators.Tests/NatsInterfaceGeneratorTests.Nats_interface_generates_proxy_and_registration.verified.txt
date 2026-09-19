@@ -61,7 +61,6 @@ namespace Observables.Nats.Generated
 #if !NET5_0_OR_GREATER
 namespace System.Runtime.CompilerServices
 {
-    [global::System.AttributeUsage(global::System.AttributeTargets.Method, Inherited = false)]
     internal sealed partial class ModuleInitializerAttribute : global::System.Attribute
     {
     }

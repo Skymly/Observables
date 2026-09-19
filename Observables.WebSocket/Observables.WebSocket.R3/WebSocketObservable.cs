@@ -29,6 +29,10 @@ public static class WebSocketObservable
             return Unit.Default;
         });
 
+    /// <summary>
+    /// Sends <paramref name="payload"/> when the observable is subscribed. The byte array is captured when
+    /// this method is called, not when a later subscriber arrives.
+    /// </summary>
     public static Observable<Unit> FromSend(
         ClientWebSocket socket,
         byte[] payload,
@@ -41,6 +45,10 @@ public static class WebSocketObservable
             return Unit.Default;
         });
 
+    /// <summary>
+    /// Sends <paramref name="text"/> when the observable is subscribed. The string is captured when this
+    /// method is called. JSON payloads other than string/byte[] require net8.0 or later.
+    /// </summary>
     public static Observable<Unit> FromSendText(
         ClientWebSocket socket,
         string text,
@@ -61,6 +69,12 @@ public static class WebSocketObservable
     public static Observable<T> FromReceive<T>(ClientWebSocket socket) =>
         FromReceive<T>(socket, DefaultMaxReceiveMessageBytes);
 
+    /// <summary>
+    /// Receives frames from a shared per-socket pump. Subscribe may happen before Connect; the pump waits
+    /// while any sink is attached. Abort and other unrecoverable socket faults complete the stream once.
+    /// A non-positive <paramref name="maxMessageBytes"/> fails this subscription immediately.
+    /// One observer throwing does not stop the others.
+    /// </summary>
 #if NET8_0_OR_GREATER
     [RequiresUnreferencedCode("JSON payload deserialization uses System.Text.Json reflection. Preserve payload type members when trimming.")]
     [RequiresDynamicCode("JSON payload deserialization uses System.Text.Json reflection.")]

@@ -215,4 +215,90 @@ public sealed class WebSocketClientReactiveE2ETests(WebSocketTestServerFixture f
         Assert.IsAssignableFrom<InvalidOperationException>(ex);
         Assert.Contains("maximum size", ex.Message, StringComparison.Ordinal);
     }
+
+    [Fact]
+    public async Task FromReceive_subscribe_before_connect_still_receives()
+    {
+        using var socket = new ClientWebSocket();
+        using var cts = new CancellationTokenSource(DefaultTimeout);
+        var received = new TaskCompletionSource<string>(TaskCreationOptions.RunContinuationsAsynchronously);
+        using var subscription = SystemReactiveWebSocketAdapter.FromReceive<string>(socket)
+            .Subscribe(value => received.TrySetResult(value));
+
+        await socket.ConnectAsync(fixture.Server.Uri, cts.Token);
+        await socket.SendAsync(
+            new ArraySegment<byte>(Encoding.UTF8.GetBytes("after-connect")),
+            WebSocketMessageType.Text,
+            true,
+            cts.Token);
+
+        Assert.Equal("after-connect", await received.Task.WaitAsync(cts.Token));
+    }
+
+    [Fact]
+    public async Task FromReceive_abort_is_terminal()
+    {
+        using var socket = new ClientWebSocket();
+        using var cts = new CancellationTokenSource(DefaultTimeout);
+        await socket.ConnectAsync(fixture.Server.Uri, cts.Token);
+
+        var error = new TaskCompletionSource<Exception>(TaskCreationOptions.RunContinuationsAsynchronously);
+        using var subscription = SystemReactiveWebSocketAdapter.FromReceive<string>(socket)
+            .Subscribe(_ => { }, ex => error.TrySetResult(ex), () => { });
+        socket.Abort();
+
+        Assert.NotNull(await error.Task.WaitAsync(cts.Token));
+    }
+
+    [Fact]
+    public async Task FromReceiveNamed_matching_bad_payload_is_observable()
+    {
+        using var socket = new ClientWebSocket();
+        using var cts = new CancellationTokenSource(DefaultTimeout);
+        await socket.ConnectAsync(fixture.Server.Uri, cts.Token);
+
+        var error = new TaskCompletionSource<Exception>(TaskCreationOptions.RunContinuationsAsynchronously);
+        using var subscription = SystemReactiveWebSocketAdapter.FromReceiveNamed<int>(socket, "tick")
+            .Subscribe(_ => { }, ex => error.TrySetResult(ex), () => { });
+
+        var frame = Encoding.UTF8.GetBytes("""{"type":"tick","payload":"bad"}""");
+        await socket.SendAsync(new ArraySegment<byte>(frame), WebSocketMessageType.Text, true, cts.Token);
+
+        Assert.NotNull(await error.Task.WaitAsync(cts.Token));
+    }
+
+    [Fact]
+    public async Task First_subscriber_still_receives_after_a_second_attaches()
+    {
+        using var socket = new ClientWebSocket();
+        using var cts = new CancellationTokenSource(DefaultTimeout);
+        await socket.ConnectAsync(fixture.Server.Uri, cts.Token);
+
+        var stream = SystemReactiveWebSocketAdapter.FromReceive<string>(socket);
+        var first = new TaskCompletionSource<string>(TaskCreationOptions.RunContinuationsAsynchronously);
+        using var firstSubscription = stream.Subscribe(value => first.TrySetResult(value));
+        var second = new TaskCompletionSource<string>(TaskCreationOptions.RunContinuationsAsynchronously);
+        using var secondSubscription = stream.Subscribe(value => second.TrySetResult(value));
+
+        await socket.SendAsync(
+            new ArraySegment<byte>(Encoding.UTF8.GetBytes("both")),
+            WebSocketMessageType.Text,
+            true,
+            cts.Token);
+
+        Assert.Equal("both", await first.Task.WaitAsync(cts.Token));
+        Assert.Equal("both", await second.Task.WaitAsync(cts.Token));
+    }
+
+    [Fact]
+    public async Task FromReceive_non_positive_max_fails_once()
+    {
+        using var socket = new ClientWebSocket();
+        var error = new TaskCompletionSource<Exception>(TaskCreationOptions.RunContinuationsAsynchronously);
+        using var subscription = SystemReactiveWebSocketAdapter.FromReceive<string>(socket, maxMessageBytes: 0)
+            .Subscribe(_ => { }, ex => error.TrySetResult(ex), () => { });
+
+        var ex = await error.Task.WaitAsync(TimeSpan.FromSeconds(2), TestContext.Current.CancellationToken);
+        Assert.IsType<ArgumentOutOfRangeException>(ex);
+    }
 }

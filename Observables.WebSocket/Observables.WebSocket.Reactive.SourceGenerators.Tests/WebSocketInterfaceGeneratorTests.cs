@@ -344,4 +344,22 @@ public sealed class WebSocketInterfaceGeneratorTests
         Assert.DoesNotContain("FromReceiveNamed", snapshot, StringComparison.Ordinal);
         Assert.Contains("FromReceive<", snapshot, StringComparison.Ordinal);
     }
+
+    [Fact]
+    public void Multiple_boundary_attributes_report_OBS6006()
+    {
+        const string userSource =
+            """
+            [WebSocket]
+            public interface IFeed
+            {
+                [WebSocketSend]
+                [WebSocketClose]
+                IObservable<global::System.Reactive.Unit> SendOrClose(string payload);
+            }
+            """;
+
+        var output = GeneratorTestHarness.Run(userSource);
+        Assert.Contains(output.Diagnostics, static diagnostic => diagnostic.Id == "OBS6006");
+    }
 }

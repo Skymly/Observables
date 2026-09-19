@@ -82,6 +82,17 @@ internal static class DiagnosticDescriptors
             description: "gRPC request or response types must be string or a protobuf IMessage<T> with a public parameterless constructor.",
             helpLinkUri: DiagnosticHelpLink.For("OBS7009"));
 
+
+    public static readonly DiagnosticDescriptor MultipleGrpcBoundaries =
+        new(
+            "OBS7010",
+            "Multiple Grpc boundary attributes",
+            "Member '{0}.{1}' has more than one GrpcUnary, GrpcServerStream, GrpcClientStream, or GrpcDuplex attribute",
+            "Observables.Grpc",
+            DiagnosticSeverity.Error,
+            isEnabledByDefault: true,
+            description: "A gRPC member may declare only one boundary attribute.",
+            helpLinkUri: DiagnosticHelpLink.For("OBS7010"));
     public static readonly DiagnosticDescriptor InternalGeneratorError =
         new(
             "OBS7008",

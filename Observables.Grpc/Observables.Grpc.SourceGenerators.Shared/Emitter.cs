@@ -62,10 +62,11 @@ internal static class Emitter
             _ => "global::Grpc.Core.MethodType.Unary",
         };
 
-        var requestType = member.BoundaryKind is GrpcBoundaryKind.ClientStream or GrpcBoundaryKind.Duplex
-            ? member.StreamRequestTypeDisplay!
-            : member.RequestTypeDisplay!;
-        var responseType = member.ResultTypeDisplay;
+        var requestType = NonNullableIfString(
+            member.BoundaryKind is GrpcBoundaryKind.ClientStream or GrpcBoundaryKind.Duplex
+                ? member.StreamRequestTypeDisplay!
+                : member.RequestTypeDisplay!);
+        var responseType = NonNullableIfString(member.ResultTypeDisplay);
         var requestMarshaller = MarshallerExpression(requestType);
         var responseMarshaller = MarshallerExpression(responseType);
 
@@ -102,10 +103,21 @@ internal static class Emitter
             """);
     }
 
-    static string MarshallerExpression(string typeDisplay) =>
-        typeDisplay is "global::System.String" or "string"
+    static string NonNullableIfString(string typeDisplay)
+    {
+        var core = typeDisplay.EndsWith("?", StringComparison.Ordinal)
+            ? typeDisplay.Substring(0, typeDisplay.Length - 1)
+            : typeDisplay;
+        return core is "global::System.String" or "string" ? core : typeDisplay;
+    }
+
+    static string MarshallerExpression(string typeDisplay)
+    {
+        var core = NonNullableIfString(typeDisplay);
+        return core is "global::System.String" or "string"
             ? "global::Observables.Grpc.GrpcMarshallers.String"
             : $"global::Observables.Grpc.GrpcMarshallers.ForMessage<{typeDisplay}>()";
+    }
 
     static string FormatLiteral(string value)
     {

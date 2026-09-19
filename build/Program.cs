@@ -364,28 +364,23 @@ sealed class Build : NukeBuild
 
     Target Publish => _ => _
         .DependsOn(Test, PackVerify)
-        .Requires(() => !string.IsNullOrWhiteSpace(NuGetApiKey) || !string.IsNullOrWhiteSpace(GitHubToken))
+        .Requires(() => !string.IsNullOrWhiteSpace(NuGetApiKey))
+        .Requires(() => !string.IsNullOrWhiteSpace(GitHubToken))
         .Executes(() =>
         {
             AbsolutePath packages = PackageOutputDirectory / "*.nupkg";
 
-            if (!string.IsNullOrWhiteSpace(NuGetApiKey))
-            {
-                DotNetNuGetPush(s => s
-                    .SetTargetPath(packages)
-                    .SetApiKey(NuGetApiKey)
-                    .SetSource("https://api.nuget.org/v3/index.json")
-                    .EnableSkipDuplicate());
-            }
+            DotNetNuGetPush(s => s
+                .SetTargetPath(packages)
+                .SetApiKey(NuGetApiKey)
+                .SetSource("https://api.nuget.org/v3/index.json")
+                .EnableSkipDuplicate());
 
-            if (!string.IsNullOrWhiteSpace(GitHubToken))
-            {
-                DotNetNuGetPush(s => s
-                    .SetTargetPath(packages)
-                    .SetApiKey(GitHubToken)
-                    .SetSource("https://nuget.pkg.github.com/Skymly/index.json")
-                    .EnableSkipDuplicate());
-            }
+            DotNetNuGetPush(s => s
+                .SetTargetPath(packages)
+                .SetApiKey(GitHubToken)
+                .SetSource("https://nuget.pkg.github.com/Skymly/index.json")
+                .EnableSkipDuplicate());
         });
 
     Target FormatWhitespace => _ => _

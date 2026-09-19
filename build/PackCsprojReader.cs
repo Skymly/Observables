@@ -32,7 +32,7 @@ static partial class PackCsprojReader
             .Select(include => ResolveIncludePath(packDir, include!))
             .ToArray();
 
-        string[] libTfms = ReadLibTfms(libProjects);
+        string[] libTfms = libProjects.Length > 0 ? DefaultLibTfms : [];
 
         string[] tfmsForDeps = libTfms.Length > 0 ? libTfms : ["netstandard2.0"];
         var depsByTfm = tfmsForDeps.ToDictionary(
@@ -88,6 +88,7 @@ static partial class PackCsprojReader
                 static pair => (IReadOnlyList<string>)pair.Value,
                 StringComparer.OrdinalIgnoreCase),
             ForbiddenNuspecSubstrings = isRedis ? ["Garnet"] : [],
+            ForbiddenNuspecDependencyIds = ForbiddenBackendAssemblies(packageId),
             ForbiddenLibAssemblyReferences = ForbiddenBackendAssemblies(packageId),
         };
     }
@@ -110,41 +111,6 @@ static partial class PackCsprojReader
             "Reactive" => ["R3"],
             _ => [],
         };
-    }
-
-    static string[] ReadLibTfms(string[] libProjects)
-    {
-        if (libProjects.Length == 0)
-        {
-            return [];
-        }
-
-        var declared = new List<string>();
-        foreach (string libPath in libProjects)
-        {
-            XDocument lib = XDocument.Load(libPath);
-            string? frameworks = Property(lib, "TargetFrameworks");
-            if (!string.IsNullOrWhiteSpace(frameworks))
-            {
-                declared.AddRange(frameworks.Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries));
-                continue;
-            }
-
-            string? framework = Property(lib, "TargetFramework");
-            if (!string.IsNullOrWhiteSpace(framework))
-            {
-                declared.Add(framework);
-            }
-        }
-
-        if (declared.Count == 0)
-        {
-            return DefaultLibTfms;
-        }
-
-        return declared
-            .Distinct(StringComparer.OrdinalIgnoreCase)
-            .ToArray();
     }
 
     static IEnumerable<PackageRef> ReadPackageReferences(XDocument document)

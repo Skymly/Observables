@@ -14,6 +14,11 @@ sealed class NupkgVerifyRequest
     public IReadOnlyList<string> ForbiddenNuspecSubstrings { get; init; } = [];
 
     /// <summary>
+    /// Package IDs that must not appear in any nuspec dependency group (reverse backend).
+    /// </summary>
+    public IReadOnlyList<string> ForbiddenNuspecDependencyIds { get; init; } = [];
+
+    /// <summary>
     /// Assembly names that no <c>lib/</c> assembly in the package may reference. Catches a dependency that
     /// hides inside a shipped DLL instead of showing up in the nuspec.
     /// </summary>

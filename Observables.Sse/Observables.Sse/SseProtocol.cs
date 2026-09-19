@@ -19,19 +19,24 @@ public readonly struct SseEvent
         Id = id;
     }
 
-    /// <summary>The event type ("message" when the wire <c>event</c> field is absent).</summary>
+    /// <summary>The event type ("message" when the wire <c>event</c> field is absent or whitespace).</summary>
     public string EventName { get; }
 
-    /// <summary>The concatenated <c>data</c> payload (without the trailing newline).</summary>
+    /// <summary>The concatenated <c>data</c> payload (without the trailing newline). Empty when a <c>data:</c> field was present with no value.</summary>
     public string Data { get; }
 
-    /// <summary>The last <c>id</c> field, if any.</summary>
+    /// <summary>
+    /// The <c>id</c> field from this dispatched block, if any.
+    /// This is not the EventSource Last-Event-ID string; Observables does not persist last-id across blocks or reconnect.
+    /// </summary>
     public string? Id { get; }
 }
 
 /// <summary>
 /// Minimal <c>text/event-stream</c> parser shared by the R3 and System.Reactive SSE bridges.
 /// Follows the WHATWG SSE field grammar (event / data / id / comment).
+/// An event is dispatched only after a blank line; a half-event at EOF is dropped.
+/// A <c>data:</c> field with an empty value is dispatched as empty data.
 /// </summary>
 public static class SseProtocol
 {
@@ -48,30 +53,47 @@ public static class SseProtocol
             throw new ArgumentNullException(nameof(reader));
         }
 
-        return ReadEventAsync(reader, CancellationToken.None);
+        return ReadEventAsync(
+            reader,
+            SseConnection.DefaultMaxLineBytes,
+            SseConnection.DefaultMaxEventBytes,
+            CancellationToken.None);
     }
 
     internal static async System.Threading.Tasks.Task<SseEvent?> ReadEventAsync(
         StreamReader reader,
+        int maxLineBytes,
+        int maxEventBytes,
         CancellationToken cancellationToken)
     {
+        if (maxLineBytes <= 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(maxLineBytes));
+        }
+
+        if (maxEventBytes <= 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(maxEventBytes));
+        }
+
         string? eventName = null;
         var data = new StringBuilder();
         string? id = null;
-        var hasFields = false;
+        var hasDataField = false;
+        var eventBytes = 0;
 
         while (true)
         {
-            var line = await ReadLineAsync(reader, cancellationToken).ConfigureAwait(false);
+            var line = await ReadLineAsync(reader, maxLineBytes, cancellationToken).ConfigureAwait(false);
 
             if (line is null)
             {
-                return TryDispatch(hasFields, eventName, data, id);
+                return null;
             }
 
             if (line.Length == 0)
             {
-                var dispatched = TryDispatch(hasFields, eventName, data, id);
+                var dispatched = TryDispatch(hasDataField, eventName, data, id);
                 if (dispatched is not null)
                 {
                     return dispatched;
@@ -80,7 +102,8 @@ public static class SseProtocol
                 eventName = null;
                 data.Clear();
                 id = null;
-                hasFields = false;
+                hasDataField = false;
+                eventBytes = 0;
                 continue;
             }
 
@@ -89,7 +112,6 @@ public static class SseProtocol
                 continue;
             }
 
-            hasFields = true;
             var colon = line.IndexOf(':');
             string field;
             string value;
@@ -108,12 +130,20 @@ public static class SseProtocol
                 }
             }
 
+            var lineBytes = Encoding.UTF8.GetByteCount(line);
+            eventBytes += lineBytes + 1;
+            if (eventBytes > maxEventBytes)
+            {
+                throw new InvalidOperationException($"SSE event exceeded the maximum size of {maxEventBytes} bytes.");
+            }
+
             switch (field)
             {
                 case "event":
                     eventName = value;
                     break;
                 case "data":
+                    hasDataField = true;
                     data.Append(value).Append('\n');
                     break;
                 case "id":
@@ -123,7 +153,11 @@ public static class SseProtocol
         }
     }
 
-    /// <summary>Deserializes an SSE <c>data</c> payload into <typeparamref name="T"/>.</summary>
+    /// <summary>
+    /// Deserializes an SSE <c>data</c> payload into <typeparamref name="T"/>.
+    /// String payloads pass through on every TFM. Other CLR shapes require net8.0 or later
+    /// (the netstandard2.0 runtime throws <see cref="NotSupportedException"/>).
+    /// </summary>
 #if NET8_0_OR_GREATER
     [RequiresUnreferencedCode("JSON payload deserialization uses System.Text.Json reflection. Preserve payload type members when trimming.")]
     [RequiresDynamicCode("JSON payload deserialization uses System.Text.Json reflection.")]
@@ -149,9 +183,9 @@ public static class SseProtocol
 #endif
     }
 
-    static SseEvent? TryDispatch(bool hasFields, string? eventName, StringBuilder data, string? id)
+    static SseEvent? TryDispatch(bool hasDataField, string? eventName, StringBuilder data, string? id)
     {
-        if (!hasFields)
+        if (!hasDataField)
         {
             return null;
         }
@@ -162,22 +196,49 @@ public static class SseProtocol
             payload = payload.Substring(0, payload.Length - 1);
         }
 
-        if (payload.Length == 0)
-        {
-            return null;
-        }
-
-        return new SseEvent(string.IsNullOrEmpty(eventName) ? "message" : eventName!, payload, id);
+        return new SseEvent(string.IsNullOrWhiteSpace(eventName) ? "message" : eventName!, payload, id);
     }
 
-    static async System.Threading.Tasks.Task<string?> ReadLineAsync(StreamReader reader, CancellationToken cancellationToken)
+    static async System.Threading.Tasks.Task<string?> ReadLineAsync(
+        StreamReader reader,
+        int maxLineBytes,
+        CancellationToken cancellationToken)
     {
+        var sb = new StringBuilder();
+        var buffer = new char[1];
+        var lineBytes = 0;
+
+        while (true)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
 #if NET8_0_OR_GREATER
-        return await reader.ReadLineAsync(cancellationToken).ConfigureAwait(false);
+            var n = await reader.ReadAsync(buffer.AsMemory(0, 1), cancellationToken).ConfigureAwait(false);
 #else
-        _ = cancellationToken;
-        return await reader.ReadLineAsync().ConfigureAwait(false);
+            var n = await reader.ReadAsync(buffer, 0, 1).ConfigureAwait(false);
 #endif
+            if (n == 0)
+            {
+                return sb.Length == 0 ? null : sb.ToString();
+            }
+
+            var ch = buffer[0];
+            if (ch == '\n')
+            {
+                if (sb.Length > 0 && sb[sb.Length - 1] == '\r')
+                {
+                    sb.Length--;
+                }
+
+                return sb.ToString();
+            }
+
+            sb.Append(ch);
+            lineBytes += Encoding.UTF8.GetByteCount(buffer, 0, 1);
+            if (lineBytes > maxLineBytes)
+            {
+                throw new InvalidOperationException($"SSE line exceeded the maximum size of {maxLineBytes} bytes.");
+            }
+        }
     }
 
 #if NET8_0_OR_GREATER
@@ -191,6 +252,16 @@ public static class SseProtocol
         Action onCompleted,
         CancellationToken cancellationToken)
     {
+        if (connection.MaxLineBytes <= 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(connection), connection.MaxLineBytes, "MaxLineBytes must be positive.");
+        }
+
+        if (connection.MaxEventBytes <= 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(connection), connection.MaxEventBytes, "MaxEventBytes must be positive.");
+        }
+
         using var request = new HttpRequestMessage(HttpMethod.Get, connection.Endpoint);
         request.Headers.Accept.ParseAdd("text/event-stream");
 
@@ -229,7 +300,12 @@ public static class SseProtocol
             SseEvent? sseEvent;
             try
             {
-                sseEvent = await ReadEventAsync(reader, cancellationToken).ConfigureAwait(false);
+                sseEvent = await ReadEventAsync(
+                        reader,
+                        connection.MaxLineBytes,
+                        connection.MaxEventBytes,
+                        cancellationToken)
+                    .ConfigureAwait(false);
             }
             catch (Exception) when (cancellationToken.IsCancellationRequested)
             {

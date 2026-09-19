@@ -1,4 +1,5 @@
 using System.Reactive.Linq;
+using System.Net.Http;
 using Observables.Sse;
 #if NET8_0_OR_GREATER
 using System.Diagnostics.CodeAnalysis;
@@ -12,6 +13,9 @@ public static class SystemReactiveSseAdapter
     /// <summary>
     /// Opens a connection per subscription and emits payloads of the named event,
     /// deserialized to <typeparamref name="T"/> (string passthrough; JSON on net8.0+).
+    /// Header-phase <see cref="HttpClient.Timeout"/> and other non-subscription faults
+    /// terminate through <c>OnError</c>. Payload deserialization errors are also terminal.
+    /// Local subscription cancellation stays silent.
     /// </summary>
 #if NET8_0_OR_GREATER
     [RequiresUnreferencedCode("JSON payload deserialization uses System.Text.Json reflection. Preserve payload type members when trimming.")]
@@ -26,7 +30,7 @@ public static class SystemReactiveSseAdapter
                     .SubscribeAsync<T>(connection, eventName, observer.OnNext, observer.OnCompleted, ct)
                     .ConfigureAwait(false);
             }
-            catch (OperationCanceledException)
+            catch (OperationCanceledException oce) when (oce.CancellationToken == ct)
             {
             }
             catch (Exception ex)

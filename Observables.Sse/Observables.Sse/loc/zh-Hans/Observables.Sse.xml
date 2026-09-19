@@ -25,6 +25,21 @@
         <member name="T:Observables.Sse.SseConnection">
             <summary>将 <see cref="P:Observables.Sse.SseConnection.HttpClient"/> 绑定到 SSE 端点，供生成代理使用。</summary>
         </member>
+        <member name="F:Observables.Sse.SseConnection.DefaultMaxLineBytes">
+            <summary>默认单行上限（1 MiB）。超出则该事件失败。</summary>
+        </member>
+        <member name="F:Observables.Sse.SseConnection.DefaultMaxEventBytes">
+            <summary>默认重组事件上限（1 MiB）。超出则该事件失败。</summary>
+        </member>
+        <member name="M:Observables.Sse.SseConnection.#ctor(System.Net.Http.HttpClient,System.Uri,System.Int32,System.Int32)">
+            <summary>绑定 HTTP 客户端、端点以及行/事件大小上限。</summary>
+        </member>
+        <member name="P:Observables.Sse.SseConnection.MaxLineBytes">
+            <summary>单条 SSE 行的最大 UTF-8 大小。非正值会使订阅失败。</summary>
+        </member>
+        <member name="P:Observables.Sse.SseConnection.MaxEventBytes">
+            <summary>单个重组 SSE 事件的最大 UTF-8 大小。非正值会使订阅失败。</summary>
+        </member>
         <member name="P:Observables.Sse.SseConnection.HttpClient">
             <summary>用于打开 <c>text/event-stream</c> 连接的 HTTP 客户端。</summary>
         </member>
@@ -35,25 +50,29 @@
             <summary>单个已解析的 Server-Sent Event。</summary>
         </member>
         <member name="P:Observables.Sse.SseEvent.EventName">
-            <summary>事件类型（当线上 <c>event</c> 字段不存在时为 "message"）。</summary>
+            <summary>事件类型（当线上 <c>event</c> 字段不存在或为空白时为 "message"）。</summary>
         </member>
         <member name="P:Observables.Sse.SseEvent.Data">
-            <summary>拼接后的 <c>data</c> 负载（不含尾部换行符）。</summary>
+            <summary>拼接后的 <c>data</c> 负载（不含尾部换行符）。存在空的 <c>data:</c> 字段时为空字符串。</summary>
         </member>
         <member name="P:Observables.Sse.SseEvent.Id">
-            <summary>最后一个 <c>id</c> 字段（若有）。</summary>
+            <summary>本分发块中的 <c>id</c> 字段（若有）。不是 EventSource 的 Last-Event-ID；本库不会在块之间或重连时持久化 last-id。</summary>
         </member>
         <member name="T:Observables.Sse.SseProtocol">
             <summary>
             R3 与 System.Reactive SSE 桥接共享的最小 <c>text/event-stream</c> 解析器。
             遵循 WHATWG SSE 字段语法（event / data / id / comment）。
+            事件只在空行之后分发；EOF 处的半事件会被丢弃。空值的 <c>data:</c> 字段会作为空数据分发。
             </summary>
         </member>
         <member name="M:Observables.Sse.SseProtocol.ReadEventAsync(System.IO.StreamReader)">
             <summary>从流中读取下一个已分发的事件，流末尾返回 null。</summary>
         </member>
         <member name="M:Observables.Sse.SseProtocol.Deserialize``1(System.String)">
-            <summary>将 SSE <c>data</c> 负载反序列化为 <typeparamref name="T"/>。</summary>
+            <summary>
+            将 SSE <c>data</c> 负载反序列化为 <typeparamref name="T"/>。
+            字符串负载在所有 TFM 上直通。其他 CLR 形状需要 net8.0 或更高版本（netstandard2.0 运行时抛出 <see cref="T:System.NotSupportedException"/>）。
+            </summary>
         </member>
         <member name="T:Observables.Sse.SseService">
             <summary>创建源生成的 SSE 代理实现。</summary>

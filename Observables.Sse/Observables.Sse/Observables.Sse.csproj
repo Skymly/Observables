@@ -9,6 +9,7 @@
   <ItemGroup>
     <InternalsVisibleTo Include="Observables.Sse.R3" />
     <InternalsVisibleTo Include="Observables.Sse.Reactive" />
+    <InternalsVisibleTo Include="Observables.Sse.Tests" />
   </ItemGroup>
 
 
@@ -16,3 +17,4 @@
     <Compile Include="..\..\Observables.Shared\Observables.Core\GeneratedProxyFactoryRegistry.cs" Link="Shared/GeneratedProxyFactoryRegistry.cs" />
   </ItemGroup>
 </Project>
+

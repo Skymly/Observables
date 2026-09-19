@@ -139,6 +139,29 @@ public sealed class MqttPayloadSerializerTests
         }
     }
 
+
+    [Fact]
+    public void Non_generic_entry_points_use_current_not_typed_registration()
+    {
+        var previous = MqttPayloadSerializers.Current;
+        try
+        {
+            MqttPayloadSerializers.Current = PrimitiveMqttPayloadSerializer.Instance;
+            MqttPayloadSerializers.Register<string>(
+                static _ => "typed",
+                static _ => "typed"u8.ToArray());
+
+            Assert.Equal("typed", MqttPayloadSerializers.Deserialize<string>(Array.Empty<byte>()));
+            Assert.Equal(string.Empty, MqttPayloadSerializers.Deserialize(typeof(string), Array.Empty<byte>()));
+            Assert.Equal("typed"u8.ToArray(), MqttPayloadSerializers.Serialize<string>("x"));
+            Assert.Equal("x"u8.ToArray(), MqttPayloadSerializers.Serialize(typeof(string), "x"));
+        }
+        finally
+        {
+            MqttPayloadSerializers.Unregister<string>();
+            MqttPayloadSerializers.Current = previous;
+        }
+    }
     sealed class PrefixSerializer : IMqttPayloadSerializer
     {
         public object Deserialize(Type payloadType, ReadOnlySpan<byte> payload)

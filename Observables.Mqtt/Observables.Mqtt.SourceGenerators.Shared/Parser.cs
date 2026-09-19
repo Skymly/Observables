@@ -151,6 +151,17 @@ internal static class Parser
             return;
         }
 
+        if (!IsValidMqttTopicLiteral(topicTemplate, allowWildcards: false))
+        {
+            diagnostics.Add(
+                Diagnostic.Create(
+                    DiagnosticDescriptors.UnsupportedMqttOption,
+                    method.Locations.FirstOrDefault(),
+                    ifaceSymbol.Name,
+                    method.Name));
+            return;
+        }
+
         if (!ObservableReturnTypeParser.TryParse(
                 method.ReturnType,
                 compilation,
@@ -235,6 +246,17 @@ internal static class Parser
         }
 
         if (PlaceholderRegex.IsMatch(topicTemplate))
+        {
+            diagnostics.Add(
+                Diagnostic.Create(
+                    DiagnosticDescriptors.UnsupportedMqttOption,
+                    property.Locations.FirstOrDefault(),
+                    property.ContainingType.Name,
+                    property.Name));
+            return;
+        }
+
+        if (!IsValidMqttTopicLiteral(topicTemplate, allowWildcards: true))
         {
             diagnostics.Add(
                 Diagnostic.Create(
@@ -401,5 +423,41 @@ internal static class Parser
         }
 
         return (declarations, ctName);
+    }
+
+    static bool IsValidMqttTopicLiteral(string topic, bool allowWildcards)
+    {
+        var parts = topic.Split('/');
+        for (var i = 0; i < parts.Length; i++)
+        {
+            var part = parts[i];
+            if (part.Length == 0)
+            {
+                return false;
+            }
+
+            if (part == "+" || part == "#")
+            {
+                if (!allowWildcards)
+                {
+                    return false;
+                }
+
+                if (part == "#" && i != parts.Length - 1)
+                {
+                    return false;
+                }
+
+                continue;
+            }
+
+            var withoutPlaceholders = PlaceholderRegex.Replace(part, string.Empty);
+            if (withoutPlaceholders.IndexOf('+') >= 0 || withoutPlaceholders.IndexOf('#') >= 0)
+            {
+                return false;
+            }
+        }
+
+        return true;
     }
 }

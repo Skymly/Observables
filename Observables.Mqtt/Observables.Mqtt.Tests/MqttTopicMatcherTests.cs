@@ -48,4 +48,22 @@ public sealed class MqttTopicMatcherTests
     {
         Assert.False(MqttTopicMatcher.Matches("a/#", null));
     }
+
+    [Theory]
+    [InlineData("#", "$SYS/uptime")]
+    [InlineData("+", "$SYS")]
+    [InlineData("+/uptime", "$SYS/uptime")]
+    public void Leading_wildcard_does_not_match_dollar_topics(string filter, string topic)
+    {
+        Assert.False(MqttTopicMatcher.Matches(filter, topic));
+    }
+
+    [Theory]
+    [InlineData("$SYS/uptime", "$SYS/uptime")]
+    [InlineData("$SYS/#", "$SYS/uptime")]
+    [InlineData("$SYS/+", "$SYS/uptime")]
+    public void Dollar_prefix_filters_match_dollar_topics(string filter, string topic)
+    {
+        Assert.True(MqttTopicMatcher.Matches(filter, topic));
+    }
 }

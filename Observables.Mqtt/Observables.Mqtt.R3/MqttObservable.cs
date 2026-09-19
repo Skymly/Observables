@@ -9,12 +9,20 @@ namespace Observables.Mqtt;
 /// <summary>Bridges MQTT client APIs to R3 <see cref="Observable{T}"/>.</summary>
 public static class MqttObservable
 {
+    /// <summary>
+    /// Publishes an empty payload to <paramref name="topic"/> at QoS 1.
+    /// A rejected PUBACK (any reason other than Success or NoMatchingSubscribers) fails the observable.
+    /// </summary>
     public static Observable<Unit> FromPublish(
         IMqttClient client,
         string topic,
         CancellationToken cancellationToken = default) =>
         FromPublish(client, topic, Array.Empty<byte>(), cancellationToken);
 
+    /// <summary>
+    /// Publishes <paramref name="payload"/> to <paramref name="topic"/> at QoS 1.
+    /// A rejected PUBACK (any reason other than Success or NoMatchingSubscribers) fails the observable.
+    /// </summary>
     public static Observable<Unit> FromPublish(
         IMqttClient client,
         string topic,
@@ -27,6 +35,11 @@ public static class MqttObservable
             return Unit.Default;
         });
 
+    /// <summary>
+    /// Subscribes to <paramref name="topicFilter"/>. Payload deserialization errors are reported with
+    /// OnErrorResume and the subscription keeps receiving later messages.
+    /// This library does not re-issue <c>SubscribeAsync</c> after the client reconnects.
+    /// </summary>
 #if NET8_0_OR_GREATER
     [RequiresUnreferencedCode("JSON payload serialization uses System.Text.Json reflection. Preserve payload type members when trimming.")]
     [RequiresDynamicCode("JSON payload serialization uses System.Text.Json reflection.")]

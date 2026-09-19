@@ -1,3 +1,4 @@
+using System.Net.Http;
 using R3;
 #if NET8_0_OR_GREATER
 using System.Diagnostics.CodeAnalysis;
@@ -11,6 +12,9 @@ public static class SseObservable
     /// <summary>
     /// Opens a connection per subscription and emits payloads of the named event,
     /// deserialized to <typeparamref name="T"/> (string passthrough; JSON on net8.0+).
+    /// Header-phase <see cref="HttpClient.Timeout"/> and other non-subscription faults
+    /// complete the observable with failure. Payload deserialization errors are also terminal.
+    /// Local subscription cancellation stays silent.
     /// </summary>
 #if NET8_0_OR_GREATER
     [RequiresUnreferencedCode("JSON payload deserialization uses System.Text.Json reflection. Preserve payload type members when trimming.")]

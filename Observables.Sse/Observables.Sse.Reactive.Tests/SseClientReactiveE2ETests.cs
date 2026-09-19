@@ -72,4 +72,42 @@ public sealed class SseClientReactiveE2ETests(SseTestServerFixture fixture)
         Assert.Equal(0, Volatile.Read(ref completed));
         Assert.Equal(0, Volatile.Read(ref errored));
     }
+
+    [Fact]
+    public async Task FromEvent_header_timeout_errors()
+    {
+        var handler = new DelayedHeadersSseHandler(TimeSpan.FromSeconds(30));
+        using var http = new HttpClient(handler) { Timeout = TimeSpan.FromMilliseconds(200) };
+        var connection = new SseConnection(http, new Uri("http://sse.test/stream"));
+
+        var errored = new TaskCompletionSource<Exception>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var completed = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        using var subscription = SystemReactiveSseAdapter.FromEvent<string>(connection, "price")
+            .Subscribe(
+                _ => { },
+                ex => errored.TrySetResult(ex),
+                () => completed.TrySetResult());
+
+        var finished = await Task.WhenAny(errored.Task, completed.Task)
+            .WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+        Assert.Same(errored.Task, finished);
+        Assert.False(completed.Task.IsCompleted);
+        var error = await errored.Task;
+        Assert.True(error is OperationCanceledException or TimeoutException or HttpRequestException);
+    }
+
+    [Fact]
+    public async Task FromEvent_slow_body_after_headers_still_reads()
+    {
+        var handler = new SlowBodySseHandler(TimeSpan.FromMilliseconds(400));
+        using var http = new HttpClient(handler) { Timeout = TimeSpan.FromMilliseconds(150) };
+        var connection = new SseConnection(http, new Uri("http://sse.test/stream"));
+        var ready = new TaskCompletionSource<string>(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        using var subscription = SystemReactiveSseAdapter.FromEvent<string>(connection, "price")
+            .Subscribe(value => ready.TrySetResult(value));
+
+        Assert.Equal("late", await ready.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken));
+    }
 }

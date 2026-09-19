@@ -29,6 +29,9 @@
              Link="Infrastructure\SseTestServerFixture.cs" />
     <Compile Include="..\Observables.Sse.Tests\Infrastructure\HoldOpenSseHandler.cs"
              Link="Infrastructure\HoldOpenSseHandler.cs" />
+    <Compile Include="..\Observables.Sse.Tests\Infrastructure\TimeoutSseHandlers.cs"
+             Link="Infrastructure\TimeoutSseHandlers.cs" />
   </ItemGroup>
 
 </Project>
+

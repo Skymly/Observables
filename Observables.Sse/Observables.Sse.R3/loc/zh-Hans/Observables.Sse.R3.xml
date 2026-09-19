@@ -11,6 +11,8 @@
             <summary>
             为每个订阅打开连接，发出命名事件的负载，
             反序列化为 <typeparamref name="T"/>（字符串直通；net8.0+ 上使用 JSON）。
+            报头阶段的 HttpClient.Timeout 以及其他非订阅故障会终止流（R3 以失败完成；Rx <c>OnError</c>）。
+            负载反序列化错误也是终止性的。本地订阅取消保持静默。
             </summary>
         </member>
         <member name="T:Observables.R3AsyncCreate">

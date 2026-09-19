@@ -179,4 +179,22 @@ public sealed class SseInterfaceGeneratorTests
         var output = GeneratorTestHarness.Run(userSource);
         Assert.Contains(output.Diagnostics, static diagnostic => diagnostic.Id == "OBS8001");
     }
+
+    [Fact]
+    public void Whitespace_event_name_folds_to_message()
+    {
+        const string userSource =
+            """
+            [Sse]
+            public interface IFeed
+            {
+                [SseEvent("   ")]
+                IObservable<string> Heartbeats { get; }
+            }
+            """;
+
+        var output = GeneratorTestHarness.Run(userSource);
+        var snapshot = GeneratorTestHarness.ToSnapshot(output);
+        Assert.Contains(@"FromEvent<global::System.String>(_connection, ""message"")", snapshot, StringComparison.Ordinal);
+    }
 }

@@ -71,7 +71,7 @@ internal static class Parser
                 className,
                 marked.InterfaceSymbol.ToDisplayString(DisplayFormat),
                 BackendTokens.QualifyGeneratedNamespace("Observables.Grpc"),
-                GetServiceName(marked.InterfaceSymbol) ?? marked.InterfaceSymbol.Name.TrimStart('I'),
+                GetServiceName(marked.InterfaceSymbol) ?? DefaultServiceName(marked.InterfaceSymbol.Name),
                 members,
                 marked.Nullability),
             createContext: static interfaces => new ContextGenerationModel(interfaces),
@@ -113,6 +113,38 @@ internal static class Parser
         List<GrpcMemberModel> members,
         List<Diagnostic> diagnostics)
     {
+        var boundaryCount = 0;
+        if (unaryAttribute is not null && IoProxyInterfaceWalk.HasAttribute(method, unaryAttribute))
+        {
+            boundaryCount++;
+        }
+
+        if (serverStreamAttribute is not null && IoProxyInterfaceWalk.HasAttribute(method, serverStreamAttribute))
+        {
+            boundaryCount++;
+        }
+
+        if (clientStreamAttribute is not null && IoProxyInterfaceWalk.HasAttribute(method, clientStreamAttribute))
+        {
+            boundaryCount++;
+        }
+
+        if (duplexAttribute is not null && IoProxyInterfaceWalk.HasAttribute(method, duplexAttribute))
+        {
+            boundaryCount++;
+        }
+
+        if (boundaryCount > 1)
+        {
+            diagnostics.Add(
+                Diagnostic.Create(
+                    DiagnosticDescriptors.MultipleGrpcBoundaries,
+                    method.Locations.FirstOrDefault(),
+                    ifaceSymbol.Name,
+                    method.Name));
+            return;
+        }
+
         GrpcBoundaryKind? boundary = null;
         string rpcName = method.Name;
 
@@ -278,6 +310,18 @@ internal static class Parser
         || (clientStreamAttribute is not null && IoProxyInterfaceWalk.HasAttribute(symbol, clientStreamAttribute))
         || (duplexAttribute is not null && IoProxyInterfaceWalk.HasAttribute(symbol, duplexAttribute));
 
+
+    static string DefaultServiceName(string interfaceName)
+    {
+        if (interfaceName.Length >= 2
+            && interfaceName[0] == 'I'
+            && char.IsUpper(interfaceName[1]))
+        {
+            return interfaceName.Substring(1);
+        }
+
+        return interfaceName;
+    }
     static string? GetServiceName(INamedTypeSymbol ifaceSymbol)
     {
         foreach (var attr in ifaceSymbol.GetAttributes())

@@ -35,7 +35,7 @@ public static class GrpcObservable
             {
                 throw new OperationCanceledException(ct);
             }
-            catch (RpcException ex) when (ex.StatusCode == StatusCode.Cancelled)
+            catch (RpcException ex) when (ex.StatusCode == StatusCode.Cancelled && ct.IsCancellationRequested)
             {
                 throw new OperationCanceledException(ct);
             }
@@ -66,9 +66,18 @@ public static class GrpcObservable
                 (Action<Exception>)(ex => writeCompleted.TrySetException(ex)),
                 (Action<Result>)(result => ObserveCompleted(result, writeCompleted)));
 
+            var responseTask = call.ResponseAsync;
+            var finished = await Task.WhenAny(responseTask, writeCompleted.Task).ConfigureAwait(false);
+            if (finished == responseTask)
+            {
+                subscription.Dispose();
+                linked.Cancel();
+                return await responseTask.ConfigureAwait(false);
+            }
+
             await writeCompleted.Task.ConfigureAwait(false);
             await writer.CompleteAsync().ConfigureAwait(false);
-            return await call.ResponseAsync.ConfigureAwait(false);
+            return await responseTask.ConfigureAwait(false);
         });
 
     public static Observable<TResponse> FromDuplexStreaming<TRequest, TResponse>(
@@ -106,7 +115,7 @@ public static class GrpcObservable
             {
                 throw new OperationCanceledException(ct);
             }
-            catch (RpcException ex) when (ex.StatusCode == StatusCode.Cancelled)
+            catch (RpcException ex) when (ex.StatusCode == StatusCode.Cancelled && ct.IsCancellationRequested)
             {
                 throw new OperationCanceledException(ct);
             }

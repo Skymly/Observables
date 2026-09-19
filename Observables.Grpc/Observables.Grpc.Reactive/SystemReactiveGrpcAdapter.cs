@@ -32,10 +32,10 @@ public static class SystemReactiveGrpcAdapter
                     .ReadServerStreamAsync(invoker, method, request, observer.OnNext, observer.OnCompleted, cancellationToken, ct)
                     .ConfigureAwait(false);
             }
-            catch (OperationCanceledException)
+            catch (OperationCanceledException oce) when (oce.CancellationToken == ct)
             {
             }
-            catch (RpcException ex) when (ex.StatusCode == StatusCode.Cancelled)
+            catch (RpcException ex) when (ex.StatusCode == StatusCode.Cancelled && ct.IsCancellationRequested)
             {
             }
             catch (Exception ex)
@@ -68,9 +68,18 @@ public static class SystemReactiveGrpcAdapter
                 ex => writeCompleted.TrySetException(ex),
                 () => writeCompleted.TrySetResult(true));
 
+            var responseTask = call.ResponseAsync;
+            var finished = await Task.WhenAny(responseTask, writeCompleted.Task).ConfigureAwait(false);
+            if (finished == responseTask)
+            {
+                subscription.Dispose();
+                linked.Cancel();
+                return await responseTask.ConfigureAwait(false);
+            }
+
             await writeCompleted.Task.ConfigureAwait(false);
             await writer.CompleteAsync().ConfigureAwait(false);
-            return await call.ResponseAsync.ConfigureAwait(false);
+            return await responseTask.ConfigureAwait(false);
         });
 
     public static IObservable<TResponse> FromDuplexStreaming<TRequest, TResponse>(
@@ -104,10 +113,10 @@ public static class SystemReactiveGrpcAdapter
                     .ConfigureAwait(false);
                 observer.OnCompleted();
             }
-            catch (OperationCanceledException)
+            catch (OperationCanceledException oce) when (oce.CancellationToken == ct)
             {
             }
-            catch (RpcException ex) when (ex.StatusCode == StatusCode.Cancelled)
+            catch (RpcException ex) when (ex.StatusCode == StatusCode.Cancelled && ct.IsCancellationRequested)
             {
             }
             catch (Exception ex)

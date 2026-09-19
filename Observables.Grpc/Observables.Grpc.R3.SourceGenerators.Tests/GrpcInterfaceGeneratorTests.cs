@@ -403,4 +403,77 @@ public sealed class GrpcInterfaceGeneratorTests
         Assert.Contains(output.Diagnostics, static diagnostic => diagnostic.Id == "OBS7004");
         Assert.DoesNotContain(output.Diagnostics, static diagnostic => diagnostic.Id == "OBS7001");
     }
+
+    [Fact]
+    public void Default_service_name_strips_a_single_I_prefix()
+    {
+        const string userSource =
+            """
+            [Grpc]
+            public interface IInventory
+            {
+                [GrpcUnary]
+                Observable<string> Get(string request);
+            }
+            """;
+
+        var snapshot = GeneratorTestHarness.ToSnapshot(GeneratorTestHarness.Run(userSource));
+        Assert.Contains("\"Inventory\"", snapshot, StringComparison.Ordinal);
+        Assert.DoesNotContain("\"nventory\"", snapshot, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Nullable_string_uses_the_string_marshaller()
+    {
+        const string userSource =
+            """
+            [Grpc("echo.Echo")]
+            public interface IEcho
+            {
+                [GrpcUnary("UnaryEcho")]
+                Observable<string?> Echo(string? request);
+            }
+            """;
+
+        var snapshot = GeneratorTestHarness.ToSnapshot(GeneratorTestHarness.Run(userSource));
+        Assert.Contains("GrpcMarshallers.String", snapshot, StringComparison.Ordinal);
+        Assert.DoesNotContain("ForMessage<global::System.String?>", snapshot, StringComparison.Ordinal);
+        Assert.DoesNotContain("ForMessage<string?>", snapshot, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Explicit_service_name_is_unchanged()
+    {
+        const string userSource =
+            """
+            [Grpc("echo.Echo")]
+            public interface IInventory
+            {
+                [GrpcUnary]
+                Observable<string> Get(string request);
+            }
+            """;
+
+        var snapshot = GeneratorTestHarness.ToSnapshot(GeneratorTestHarness.Run(userSource));
+        Assert.Contains("\"echo.Echo\"", snapshot, StringComparison.Ordinal);
+        Assert.DoesNotContain("\"Inventory\"", snapshot, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Multiple_boundary_attributes_report_OBS7010()
+    {
+        const string userSource =
+            """
+            [Grpc("echo.Echo")]
+            public interface IEcho
+            {
+                [GrpcUnary("UnaryEcho")]
+                [GrpcServerStream("StreamEcho")]
+                Observable<string> Echo(string request);
+            }
+            """;
+
+        var output = GeneratorTestHarness.Run(userSource);
+        Assert.Contains(output.Diagnostics, static diagnostic => diagnostic.Id == "OBS7010");
+    }
 }

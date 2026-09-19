@@ -104,15 +104,33 @@ public sealed class GrpcObservableLifecycleTests
         public Task WriteAsync(T message) => Task.CompletedTask;
     }
 
+    sealed class CompletingClientStreamWriter<T> : IClientStreamWriter<T>
+    {
+        public TaskCompletionSource Completed { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        public WriteOptions? WriteOptions { get; set; }
+
+        public Task CompleteAsync()
+        {
+            Completed.TrySetResult();
+            return Task.CompletedTask;
+        }
+
+        public Task WriteAsync(T message) => Task.CompletedTask;
+    }
+
     sealed class FakeCallInvoker : CallInvoker
     {
         readonly object? _reader;
         readonly object? _writer;
 
-        public FakeCallInvoker(object? reader = null, object? writer = null)
+        readonly bool _completeClientStreamingImmediately;
+
+        public FakeCallInvoker(object? reader = null, object? writer = null, bool completeClientStreamingImmediately = false)
         {
             _reader = reader;
             _writer = writer;
+            _completeClientStreamingImmediately = completeClientStreamingImmediately;
         }
 
         public TaskCompletionSource CallDisposed { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -129,12 +147,27 @@ public sealed class GrpcObservableLifecycleTests
             string? host,
             CallOptions options)
         {
-            var writer = _writer is IClientStreamWriter<TRequest> typed
-                ? typed
-                : (IClientStreamWriter<TRequest>)(object)new NoopClientStreamWriter<TRequest>();
+            if (_completeClientStreamingImmediately)
+            {
+                var immediateWriter = _writer is IClientStreamWriter<TRequest> typedImmediate
+                    ? typedImmediate
+                    : (IClientStreamWriter<TRequest>)(object)new NoopClientStreamWriter<TRequest>();
+                return new AsyncClientStreamingCall<TRequest, TResponse>(
+                    immediateWriter,
+                    Task.FromResult((TResponse)(object)"reply"),
+                    Task.FromResult(new Metadata()),
+                    () => Status.DefaultSuccess,
+                    () => new Metadata(),
+                    () => CallDisposed.TrySetResult());
+            }
+
+            var completing = new CompletingClientStreamWriter<TRequest>();
+            var response = completing.Completed.Task.ContinueWith(
+                static _ => (TResponse)(object)"reply",
+                TaskScheduler.Default);
             return new AsyncClientStreamingCall<TRequest, TResponse>(
-                writer,
-                Task.FromResult((TResponse)(object)"reply"),
+                completing,
+                response,
                 Task.FromResult(new Metadata()),
                 () => Status.DefaultSuccess,
                 () => new Metadata(),
@@ -158,7 +191,12 @@ public sealed class GrpcObservableLifecycleTests
             string? host,
             CallOptions options,
             TRequest request) =>
-            throw new NotSupportedException();
+            new(
+                (IAsyncStreamReader<TResponse>)_reader!,
+                Task.FromResult(new Metadata()),
+                () => Status.DefaultSuccess,
+                () => new Metadata(),
+                () => CallDisposed.TrySetResult());
 
         public override AsyncUnaryCall<TResponse> AsyncUnaryCall<TRequest, TResponse>(
             Method<TRequest, TResponse> method,
@@ -189,5 +227,41 @@ public sealed class GrpcObservableLifecycleTests
         }
 
         protected override void OnCompletedCore(Result result) => _completed.TrySetResult(result);
+    }
+
+    [Fact]
+    public async Task FromServerStreaming_remote_cancelled_without_local_cancel_fails()
+    {
+        var reader = new FailingStreamReader<string>(new RpcException(new Status(StatusCode.Cancelled, "peer")));
+        var invoker = new FakeCallInvoker(reader);
+        var observer = new RecordingObserver<string>();
+
+        using var subscription = GrpcObservable
+            .FromServerStreaming(invoker, CreateMethod(MethodType.ServerStreaming), "ping", TestContext.Current.CancellationToken)
+            .Subscribe(observer);
+
+        var result = await observer.Completed.WaitAsync(TimeSpan.FromSeconds(2), TestContext.Current.CancellationToken);
+        Assert.True(result.IsFailure);
+        Assert.IsType<RpcException>(result.Exception);
+        Assert.Equal(StatusCode.Cancelled, ((RpcException)result.Exception).StatusCode);
+    }
+
+    [Fact]
+    public async Task FromClientStreaming_never_requests_still_complete_when_response_is_ready()
+    {
+        var invoker = new FakeCallInvoker(completeClientStreamingImmediately: true);
+        var observer = new RecordingObserver<string>();
+
+        using var subscription = GrpcObservable
+            .FromClientStreaming(
+                invoker,
+                CreateMethod(MethodType.ClientStreaming),
+                Observable.Never<string>(), TestContext.Current.CancellationToken)
+            .Subscribe(observer);
+
+        var result = await observer.Completed.WaitAsync(TimeSpan.FromSeconds(2), TestContext.Current.CancellationToken);
+        Assert.False(result.IsFailure);
+        Assert.Equal(new[] { "reply" }, observer.Values);
+        await invoker.CallDisposed.Task.WaitAsync(TimeSpan.FromSeconds(2), TestContext.Current.CancellationToken);
     }
 }

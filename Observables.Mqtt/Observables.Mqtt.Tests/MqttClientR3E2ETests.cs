@@ -104,4 +104,42 @@ public sealed class MqttClientR3E2ETests(MqttTestBrokerFixture fixture)
             subscription.Dispose();
         }
     }
+
+
+    [Fact]
+    public async Task FromSubscribe_clean_session_reconnect_does_not_restore_broker_subscription()
+    {
+        await using var session = await fixture.Broker.ConnectAsync(TestContext.Current.CancellationToken);
+        using var cts = new CancellationTokenSource(DefaultTimeout);
+        var waitSubscription = fixture.Broker.WaitForSubscriptionAsync(
+            session.ClientId,
+            "e2e/ping",
+            cts.Token);
+        var received = new TaskCompletionSource<string>(TaskCreationOptions.RunContinuationsAsynchronously);
+        using var subscription = MqttObservable.FromSubscribe<string>(session.Client, "e2e/ping")
+            .Subscribe(value => received.TrySetResult(value));
+        await waitSubscription;
+
+        await session.Client.DisconnectAsync(cancellationToken: cts.Token);
+        var reconnect = await session.Client.ConnectAsync(
+            new MqttClientOptionsBuilder()
+                .WithTcpServer("127.0.0.1", fixture.Broker.Port)
+                .WithClientId(session.ClientId)
+                .WithCleanSession()
+                .Build(),
+            cts.Token);
+        Assert.Equal(MqttClientConnectResultCode.Success, reconnect.ResultCode);
+
+        await using var publisher = await fixture.Broker.ConnectAsync(cts.Token);
+        await publisher.Client.PublishAsync(
+            new MqttApplicationMessageBuilder()
+                .WithTopic("e2e/ping")
+                .WithPayload("hello"u8.ToArray())
+                .Build(),
+            cts.Token);
+
+        var finished = await Task.WhenAny(received.Task, Task.Delay(500, cts.Token));
+        Assert.NotSame(received.Task, finished);
+        Assert.False(received.Task.IsCompleted);
+    }
 }

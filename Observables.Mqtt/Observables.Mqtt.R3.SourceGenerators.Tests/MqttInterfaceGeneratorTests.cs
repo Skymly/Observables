@@ -362,4 +362,98 @@ public sealed class MqttInterfaceGeneratorTests
         var output = GeneratorTestHarness.Run(userSource);
         Assert.Contains(output.Diagnostics, static diagnostic => diagnostic.Id == "OBS5001");
     }
+
+    [Fact]
+    public void Mqtt_publish_int_placeholder_converts_to_string()
+    {
+        const string userSource =
+            """
+            [Mqtt]
+            public interface ISensorTopics
+            {
+                [MqttPublish("commands/{id}/restart")]
+                Observable<Unit> Restart(int id);
+            }
+            """;
+
+        var output = GeneratorTestHarness.Run(userSource);
+        var snapshot = GeneratorTestHarness.ToSnapshot(output);
+
+        Assert.DoesNotContain("OBS5", snapshot, StringComparison.Ordinal);
+        Assert.Contains(
+            @"MqttTopic.Format(""commands/{id}/restart"", (""id"", global::System.Convert.ToString((object?)id, global::System.Globalization.CultureInfo.InvariantCulture)))",
+            snapshot,
+            StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Mqtt_publish_string_placeholder_keeps_working()
+    {
+        const string userSource =
+            """
+            [Mqtt]
+            public interface ISensorTopics
+            {
+                [MqttPublish("commands/{deviceId}/restart")]
+                Observable<Unit> Restart(string deviceId);
+            }
+            """;
+
+        var output = GeneratorTestHarness.Run(userSource);
+        var snapshot = GeneratorTestHarness.ToSnapshot(output);
+        Assert.DoesNotContain("OBS5", snapshot, StringComparison.Ordinal);
+        Assert.Contains("MqttTopic.Format", snapshot, StringComparison.Ordinal);
+        Assert.Contains("deviceId", snapshot, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Mqtt_publish_wildcard_reports_OBS5006()
+    {
+        const string userSource =
+            """
+            [Mqtt]
+            public interface ISensorTopics
+            {
+                [MqttPublish("commands/+/restart")]
+                Observable<Unit> Restart();
+            }
+            """;
+
+        var output = GeneratorTestHarness.Run(userSource);
+        Assert.Contains(output.Diagnostics, static diagnostic => diagnostic.Id == "OBS5006");
+    }
+
+    [Fact]
+    public void Mqtt_publish_empty_token_reports_OBS5006()
+    {
+        const string userSource =
+            """
+            [Mqtt]
+            public interface ISensorTopics
+            {
+                [MqttPublish("commands//restart")]
+                Observable<Unit> Restart();
+            }
+            """;
+
+        var output = GeneratorTestHarness.Run(userSource);
+        Assert.Contains(output.Diagnostics, static diagnostic => diagnostic.Id == "OBS5006");
+    }
+
+    [Fact]
+    public void Mqtt_subscribe_hash_not_last_reports_OBS5006()
+    {
+        const string userSource =
+            """
+            [Mqtt]
+            public interface ISensorTopics
+            {
+                [MqttSubscribe("sensors/#/temperature")]
+                Observable<string> Temperature { get; }
+            }
+            """;
+
+        var output = GeneratorTestHarness.Run(userSource);
+        Assert.Contains(output.Diagnostics, static diagnostic => diagnostic.Id == "OBS5006");
+    }
 }

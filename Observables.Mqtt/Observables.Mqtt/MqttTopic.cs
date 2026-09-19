@@ -1,4 +1,4 @@
-using System.Text;
+using System.Globalization;
 
 namespace Observables.Mqtt;
 
@@ -38,7 +38,11 @@ public static class MqttTopic
         var pairs = new (string Name, string? Value)[parameterNames.Count];
         for (var i = 0; i < parameterNames.Count; i++)
         {
-            pairs[i] = (parameterNames[i], argumentValues[i]?.ToString());
+            pairs[i] = (
+                parameterNames[i],
+                argumentValues[i] is null
+                    ? null
+                    : Convert.ToString(argumentValues[i], CultureInfo.InvariantCulture));
         }
 
         return Format(template, pairs);

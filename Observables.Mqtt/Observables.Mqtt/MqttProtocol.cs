@@ -23,7 +23,11 @@ internal static class MqttProtocol
             .WithPayload(payload ?? Array.Empty<byte>())
             .WithQualityOfServiceLevel(MqttQualityOfServiceLevel.AtLeastOnce)
             .Build();
-        await client.PublishAsync(message, cancellationToken).ConfigureAwait(false);
+        var result = await client.PublishAsync(message, cancellationToken).ConfigureAwait(false);
+        if (!result.IsSuccess)
+        {
+            throw new InvalidOperationException($"MQTT publish rejected: {result.ReasonCode}");
+        }
     }
 
 #if NET8_0_OR_GREATER
@@ -69,54 +73,118 @@ internal static class MqttProtocol
         }
 
         var key = new FilterKey(client, topicFilter);
-        var gate = Filters.GetOrAdd(key, static _ => new FilterGate());
-
         client.ApplicationMessageReceivedAsync += Handler;
         try
         {
-            Task subscribeTask;
-            lock (gate.Sync)
-            {
-                gate.Count++;
-                if (gate.Count == 1)
-                {
-                    gate.SubscribeTask = SubscribeBrokerAsync(client, topicFilter, CancellationToken.None);
-                }
-
-                subscribeTask = gate.SubscribeTask;
-            }
-
-            await subscribeTask.ConfigureAwait(false);
-
+            await AddSubscriberAsync(key, client, topicFilter).ConfigureAwait(false);
             await Task.Delay(Timeout.Infinite, cancellationToken).ConfigureAwait(false);
         }
         finally
         {
             client.ApplicationMessageReceivedAsync -= Handler;
-            var shouldUnsubscribe = false;
-            Task subscribeTask;
+            await RemoveSubscriberAsync(key, client, topicFilter).ConfigureAwait(false);
+        }
+    }
+
+    static Task AddSubscriberAsync(FilterKey key, IMqttClient client, string topicFilter)
+    {
+        while (true)
+        {
+            var gate = Filters.GetOrAdd(key, static _ => new FilterGate());
             lock (gate.Sync)
             {
-                gate.Count--;
-                subscribeTask = gate.SubscribeTask;
-                if (gate.Count <= 0)
+                if (gate.Removed)
                 {
-                    shouldUnsubscribe = true;
-                    Filters.TryRemove(key, out _);
+                    continue;
                 }
+
+                gate.Count++;
+                if (gate.Count == 1)
+                {
+                    gate.BrokerWork = ContinueSubscribe(gate.BrokerWork, client, topicFilter);
+                }
+
+                return gate.BrokerWork;
+            }
+        }
+    }
+
+    static Task RemoveSubscriberAsync(FilterKey key, IMqttClient client, string topicFilter)
+    {
+        if (!Filters.TryGetValue(key, out var gate))
+        {
+            return Task.CompletedTask;
+        }
+
+        lock (gate.Sync)
+        {
+            gate.Count--;
+            if (gate.Count > 0)
+            {
+                return Task.CompletedTask;
             }
 
-            if (shouldUnsubscribe)
+            gate.Count = 0;
+            gate.BrokerWork = ContinueUnsubscribe(gate.BrokerWork, client, topicFilter, key, gate);
+            return gate.BrokerWork;
+        }
+    }
+
+    static async Task ContinueSubscribe(Task previous, IMqttClient client, string topicFilter)
+    {
+        try
+        {
+            await previous.ConfigureAwait(false);
+        }
+        catch (Exception)
+        {
+            // A failed previous generation must not block a new subscribe.
+        }
+
+        await SubscribeBrokerAsync(client, topicFilter, CancellationToken.None).ConfigureAwait(false);
+    }
+
+    static async Task ContinueUnsubscribe(
+        Task previous,
+        IMqttClient client,
+        string topicFilter,
+        FilterKey key,
+        FilterGate gate)
+    {
+        try
+        {
+            await previous.ConfigureAwait(false);
+        }
+        catch (Exception)
+        {
+            // best-effort if subscribe never completed
+        }
+
+        lock (gate.Sync)
+        {
+            if (gate.Count > 0)
             {
-                try
+                return;
+            }
+        }
+
+        try
+        {
+            using var unsubCts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+            await client.UnsubscribeAsync(topicFilter, unsubCts.Token).ConfigureAwait(false);
+        }
+        catch (Exception)
+        {
+            // best-effort if the client is already down
+        }
+        finally
+        {
+            lock (gate.Sync)
+            {
+                if (gate.Count == 0)
                 {
-                    await subscribeTask.ConfigureAwait(false);
-                    using var unsubCts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
-                    await client.UnsubscribeAsync(topicFilter, unsubCts.Token).ConfigureAwait(false);
-                }
-                catch (Exception)
-                {
-                    // best-effort if the client is already down or subscribe never completed
+                    gate.Removed = true;
+                    Filters.TryRemove(key, out _);
                 }
             }
         }
@@ -154,6 +222,7 @@ internal static class MqttProtocol
     {
         public readonly object Sync = new();
         public int Count;
-        public Task SubscribeTask = Task.CompletedTask;
+        public bool Removed;
+        public Task BrokerWork = Task.CompletedTask;
     }
 }

@@ -41,7 +41,7 @@ public static class MqttPayloadSerializers
     /// <summary>Removes a typed registration, if present.</summary>
     public static bool Unregister<T>() => s_typed.TryRemove(typeof(T), out _);
 
-    /// <summary>Deserializes a payload using <see cref="Current"/>.</summary>
+    /// <summary>Deserializes a payload using <see cref="Current"/> only. Typed <see cref="Register{T}(IMqttPayloadSerializer{T})"/> entries apply to the generic overloads, not this entry point.</summary>
 #if NET8_0_OR_GREATER
     [RequiresUnreferencedCode("JSON payload serialization uses System.Text.Json reflection. Preserve payload type members when trimming.")]
     [RequiresDynamicCode("JSON payload serialization uses System.Text.Json reflection.")]
@@ -53,7 +53,7 @@ public static class MqttPayloadSerializers
         ReadOnlySpan<byte> payload) =>
         Current.Deserialize(payloadType, payload);
 
-    /// <summary>Deserializes a payload buffer using <see cref="Current"/>.</summary>
+    /// <summary>Deserializes a payload buffer using <see cref="Current"/> only. Typed registrations do not apply here.</summary>
 #if NET8_0_OR_GREATER
     [RequiresUnreferencedCode(MqttTrimAnnotations.JsonPayload)]
     [RequiresDynamicCode(MqttTrimAnnotations.JsonPayload)]
@@ -87,7 +87,7 @@ public static class MqttPayloadSerializers
     public static T Deserialize<T>(byte[] payload) =>
         Deserialize<T>((ReadOnlySpan<byte>)payload);
 
-    /// <summary>Serializes <paramref name="value"/> using <see cref="Current"/>.</summary>
+    /// <summary>Serializes <paramref name="value"/> using <see cref="Current"/> only. Typed registrations do not apply here.</summary>
 #if NET8_0_OR_GREATER
     [RequiresUnreferencedCode("JSON payload serialization uses System.Text.Json reflection. Preserve payload type members when trimming.")]
     [RequiresDynamicCode("JSON payload serialization uses System.Text.Json reflection.")]

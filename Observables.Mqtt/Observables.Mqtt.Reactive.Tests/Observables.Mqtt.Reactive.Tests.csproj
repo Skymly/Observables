@@ -23,6 +23,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Compile Include="..\Observables.Mqtt.Tests\Infrastructure\FakeMqtt.cs" Link="Infrastructure\FakeMqtt.cs" />
     <Compile Include="..\Observables.Mqtt.Tests\Infrastructure\MqttTestBroker.cs" Link="Infrastructure\MqttTestBroker.cs" />
     <Compile Include="..\Observables.Mqtt.Tests\Infrastructure\MqttTestBrokerFixture.cs" Link="Infrastructure\MqttTestBrokerFixture.cs" />
   </ItemGroup>

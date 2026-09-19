@@ -16,7 +16,9 @@ public static class MqttService
 
     /// <summary>
     /// Registers a client under the name an interface declares with <c>[Mqtt(clientName)]</c>, making it
-    /// resolvable through <see cref="For{T}()"/>. Registering the same name twice replaces the client.
+    /// resolvable through <see cref="For{T}()"/>. Registering the same name twice replaces the client
+    /// without disposing the previous instance. The table is process-wide for this load context; there
+    /// is no Unregister API.
     /// </summary>
     public static void RegisterClient(string name, IMqttClient client)
     {

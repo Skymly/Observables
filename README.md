@@ -352,7 +352,7 @@ dotnet build Observables.slnx
 dotnet run --project build/_build.csproj -- --target Ci --configuration Release
 ```
 
-需 **.NET 10 SDK**（`global.json` 用于 Nuke `build/`）；库与测试目标为 **netstandard2.0** / **net8.0** 等，另需 **.NET 8 SDK**。本地打包、发版与贡献规范见 [CONTRIBUTING.md](./CONTRIBUTING.md)。
+完整 Nuke `Ci` 需要同时安装 **.NET 8、.NET 9 和 .NET 10 SDK** 以及对应 runtime / testhost。`global.json` 将 Nuke `build/` 钉在 **.NET 10 SDK**（`rollForward` 仅为同 major 的 `latestFeature`）。库目标为 **netstandard2.0** / **net8.0** / **net9.0** / **net10.0**；运行时 E2E 默认在 **net8.0、net9.0、net10.0** 上执行，因此 **.NET 9 testhost 是显式要求**——只装 8+10 不够。跨 major 的 `DOTNET_ROLL_FORWARD` **不能**代替原生 net9 测试。这是贡献者本机契约，不是库安装失败。本地打包、发版与贡献规范见 [CONTRIBUTING.md](./CONTRIBUTING.md)。
 
 ## License
 

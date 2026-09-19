@@ -339,6 +339,8 @@ git push origin v0.1.0-preview1
 
 ## 构建与测试
 
+完整 `Ci` 的本机环境：**同时安装 .NET 8 / 9 / 10 SDK 与对应 testhost**。E2E 默认 `net8.0;net9.0;net10.0`；**.NET 9 testhost 是显式要求**，不能用仅 8+10 或跨 major roll-forward 代替原生 net9 测试。`global.json` 将 Nuke `build/` 钉在 .NET 10 SDK（同 major `latestFeature`）。这是贡献者本机契约，不是库安装失败。
+
 ```powershell
 # 与 CI 一致（Nuke）
 dotnet run --project build/_build.csproj -- --target Ci --configuration Release

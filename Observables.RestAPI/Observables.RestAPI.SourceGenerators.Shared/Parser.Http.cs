@@ -291,6 +291,18 @@ internal static partial class Parser
 
         foreach (var attr in param.GetAttributes())
         {
+            var aliasName = attr.AttributeClass?.Name;
+            var aliasNs = attr.AttributeClass?.ContainingNamespace?.ToDisplayString();
+            if (aliasName == "AliasAsAttribute" && aliasNs == "Observables.RestAPI"
+                && attr.ConstructorArguments is { Length: >= 1 } aliasArgs
+                && aliasArgs[0].Value is string alias)
+            {
+                result.AliasAs = alias;
+            }
+        }
+
+        foreach (var attr in param.GetAttributes())
+        {
             var attrName = attr.AttributeClass?.Name;
             var attrNs = attr.AttributeClass?.ContainingNamespace?.ToDisplayString();
 

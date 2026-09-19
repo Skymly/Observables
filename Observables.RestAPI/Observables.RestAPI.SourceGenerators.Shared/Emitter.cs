@@ -385,11 +385,21 @@ internal static class Emitter
             sendCt = "______linked.Token";
         }
 
-        source.WriteLine($"return await global::Observables.RestAPI.RestApiBridge.SendAsync<{methodModel.ReturnResultType}, {methodModel.DeserializedResultType}>(Client, _settings, in {specField}, {sendCt}{args}).ConfigureAwait(false);");
+        if (IsUnitResult(methodModel.DeserializedResultType))
+        {
+            source.WriteLine($"await global::Observables.RestAPI.RestApiBridge.SendVoidAsync(Client, _settings, in {specField}, {sendCt}{args}).ConfigureAwait(false);");
+            source.WriteLine($"return default({methodModel.ReturnResultType});");
+        }
+        else
+        {
+            source.WriteLine($"return await global::Observables.RestAPI.RestApiBridge.SendAsync<{methodModel.ReturnResultType}, {methodModel.DeserializedResultType}>(Client, _settings, in {specField}, {sendCt}{args}).ConfigureAwait(false);");
+        }
         source.Indentation--;
         source.WriteLine("});");
     }
 
+    static bool IsUnitResult(string deserializedResultType) =>
+        deserializedResultType is "global::R3.Unit" or "global::System.Reactive.Unit";
     static string FormatSendArgs(MethodModel methodModel)
     {
         var names = new List<string>();

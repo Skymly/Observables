@@ -390,6 +390,46 @@ public sealed class RuntimeTests
         Task<int> Ping();
     }
 
+    [Theory]
+    [InlineData(HttpStatusCode.NoContent)]
+    [InlineData(HttpStatusCode.ResetContent)]
+    [InlineData(HttpStatusCode.OK)]
+    public async Task ObservableDelete_unit_succeeds_on_empty_success(HttpStatusCode status)
+    {
+        var mockHttp = new MockHttpMessageHandler();
+        mockHttp.When(HttpMethod.Delete, "https://api.example.com/users/1")
+            .Respond(status);
+
+        var client = mockHttp.ToHttpClient();
+        client.BaseAddress = new Uri("https://api.example.com");
+        var api = RestService.For<IUserApi>(client);
+
+        await api.DeleteUserObservable(1).FirstAsync(TestContext.Current.CancellationToken);
+    }
+
+    [Fact]
+    public void Multipart_http_content_gets_parameter_name()
+    {
+        using var multi = new MultipartFormDataContent();
+        var part = new StringContent("x");
+        RestApiBridge.AddMultipartItem(multi, "blob.bin", "field", part, new RestApiSettings());
+        var content = Assert.Single(multi);
+        Assert.Equal("field", content.Headers.ContentDisposition?.Name?.Trim('"'));
+    }
+
+    [Fact]
+    public void Multipart_http_content_keeps_caller_disposition_name()
+    {
+        using var multi = new MultipartFormDataContent();
+        var part = new StringContent("x");
+        part.Headers.ContentDisposition = new System.Net.Http.Headers.ContentDispositionHeaderValue("form-data")
+        {
+            Name = "\"kept\"",
+        };
+        RestApiBridge.AddMultipartItem(multi, "blob.bin", "field", part, new RestApiSettings());
+        var content = Assert.Single(multi);
+        Assert.Equal("kept", content.Headers.ContentDisposition?.Name?.Trim('"'));
+    }
     public interface IUserApi
     {
         [Get("/users/{id}")]
@@ -403,6 +443,9 @@ public sealed class RuntimeTests
 
         [Delete("/users/{id}")]
         Task DeleteUser(int id, CancellationToken cancellationToken = default);
+
+        [Delete("/users/{id}")]
+        Observable<Unit> DeleteUserObservable(int id);
 
         [Get("/search")]
         Task<string> Search([Query] string q, CancellationToken cancellationToken = default);

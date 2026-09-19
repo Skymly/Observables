@@ -146,7 +146,15 @@ namespace Observables.RestAPI
         {
             var client = CreateHttpClient(hostUrl, settings);
             MarkHttpClientOwned(client);
-            return For<T>(client, settings);
+            try
+            {
+                return For<T>(client, settings);
+            }
+            catch
+            {
+                client.Dispose();
+                throw;
+            }
         }
 
         /// <summary>
@@ -260,7 +268,15 @@ namespace Observables.RestAPI
         {
             var client = CreateHttpClient(hostUrl, settings);
             MarkHttpClientOwned(client);
-            return For(interfaceType, client, settings);
+            try
+            {
+                return For(interfaceType, client, settings);
+            }
+            catch
+            {
+                client.Dispose();
+                throw;
+            }
         }
 
         /// <summary>

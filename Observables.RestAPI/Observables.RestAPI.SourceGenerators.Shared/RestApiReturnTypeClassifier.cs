@@ -69,7 +69,7 @@ internal static class RestApiReturnTypeClassifier
             return ReturnTypeInfo.Unsupported;
         }
 
-        if (metadata == "IObservable`1")
+        if (metadata == "IObservable`1" && def.ContainingNamespace?.ToDisplayString() == "System")
         {
             if (isR3)
             {

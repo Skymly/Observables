@@ -7,5 +7,15 @@
         <member name="T:Observables.Nats.Reactive.SystemReactiveNatsAdapter">
             <summary>将 NATS 客户端 API 桥接到 <see cref="T:System.IObservable`1"/>。</summary>
         </member>
+        <member name="M:Observables.Nats.Reactive.SystemReactiveNatsAdapter.FromSubscribe``1(NATS.Client.Core.INatsConnection,System.String)">
+            <summary>
+            订阅 <paramref name="subject"/>。反序列化与协议错误通过 <c>OnError</c> 终止。
+            </summary>
+        </member>
+        <member name="M:Observables.Nats.Reactive.SystemReactiveNatsAdapter.FromRequest``2(NATS.Client.Core.INatsConnection,System.String,``0,System.Threading.CancellationToken)">
+            <summary>
+            发送请求并发出回复。畸形或错误回复会使 observable 失败，而不是返回 <c>default(TResponse)</c>。
+            </summary>
+        </member>
     </members>
 </doc>

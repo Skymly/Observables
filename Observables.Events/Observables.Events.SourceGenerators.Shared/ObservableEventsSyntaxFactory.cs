@@ -3,6 +3,7 @@ using System.Linq;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+using Observables.SourceGenerators.Shared;
 using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 
 namespace Observables.Events.Generators;
@@ -355,14 +356,14 @@ internal static class ObservableEventsSyntaxFactory
         MemberAccessExpression(
             SyntaxKind.SimpleMemberAccessExpression,
             IdentifierName("_sender"),
-            IdentifierName(eventName));
+            IdentifierName(IdentifierHelper.Escape(eventName)));
 
     public static ExpressionSyntax CastSenderMemberAccess(TypeSyntax castType, string eventName) =>
         MemberAccessExpression(
             SyntaxKind.SimpleMemberAccessExpression,
             ParenthesizedExpression(
                 CastExpression(castType, IdentifierName("_sender"))),
-            IdentifierName(eventName));
+            IdentifierName(IdentifierHelper.Escape(eventName)));
 
     public static ExpressionSyntax EventSubscriptionAdd(ExpressionSyntax target, string handlerParameter = "e") =>
         SimpleLambdaExpression(
@@ -634,7 +635,7 @@ internal static class ObservableEventsSyntaxFactory
                 unsubscribeHandler);
         }
 
-        var property = PropertyDeclaration(returnType, Identifier(evt.Name))
+        var property = PropertyDeclaration(returnType, Identifier(IdentifierHelper.Escape(evt.Name)))
             .AddModifiers(Token(SyntaxKind.PublicKeyword))
             .WithExpressionBody(ArrowExpressionClause(body))
             .WithSemicolonToken(Token(SyntaxKind.SemicolonToken));
@@ -705,7 +706,7 @@ internal static class ObservableEventsSyntaxFactory
                 unsubscribeHandler);
         }
 
-        var property = PropertyDeclaration(returnType, Identifier(evt.Name))
+        var property = PropertyDeclaration(returnType, Identifier(IdentifierHelper.Escape(evt.Name)))
             .AddModifiers(Token(SyntaxKind.PublicKeyword))
             .WithExpressionBody(ArrowExpressionClause(body))
             .WithSemicolonToken(Token(SyntaxKind.SemicolonToken));

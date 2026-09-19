@@ -119,8 +119,7 @@ public sealed partial class ObservableEventsGenerator
         var avaloniaRoutedEventType = compilation.GetTypeByMetadataName("Avalonia.Interactivity.RoutedEvent`1");
         var avaloniaRoutedEventTypeNonGeneric = compilation.GetTypeByMetadataName("Avalonia.Interactivity.RoutedEvent");
         var useAvalonia = avaloniaRoutedEventType is not null
-            || avaloniaRoutedEventTypeNonGeneric is not null
-            || string.Equals(compilation.AssemblyName, "Observables.Samples.Events.Routed", System.StringComparison.Ordinal);
+            || avaloniaRoutedEventTypeNonGeneric is not null;
 
         foreach (var candidate in candidates)
         {

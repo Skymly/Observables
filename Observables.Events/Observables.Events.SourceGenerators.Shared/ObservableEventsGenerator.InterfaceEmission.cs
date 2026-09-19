@@ -84,7 +84,7 @@ public sealed partial class ObservableEventsGenerator
             var returnType = GetEventInterfacePropertyType(evt, entryKind, compilation);
             if (returnType is null) continue;
             props.Add(
-                SyntaxFactory.PropertyDeclaration(returnType, evt.Name)
+                SyntaxFactory.PropertyDeclaration(returnType, SyntaxFactory.Identifier(IdentifierHelper.Escape(evt.Name)))
                     .WithLeadingTrivia(ObservableEventsSyntaxFactory.CreateEventInheritDocTrivia(
                         $"{ObservableEventsConstants.QualifiedType(evt.ContainingType)}.{evt.Name}"))
                     .AddAccessorListAccessors(
@@ -121,7 +121,18 @@ public sealed partial class ObservableEventsGenerator
         var implName = desc.ImplName;
         var implClass = CreateEventImplClass(type, desc, implName, hierarchy, compilation, reportDiagnostic, entryKind);
         if (CreateEventInterface(desc, hierarchy, compilation, entryKind) is null)
+        {
+            foreach (var evt in desc.ExclusiveEvents)
+            {
+                _ = GetEventInterfacePropertyType(evt, entryKind, compilation);
+                if (entryKind is ObservableEventsEntryKind.Events or ObservableEventsEntryKind.RoutedEvents)
+                    ReportInvalidDelegate(evt, reportDiagnostic, entryKind);
+                else
+                    ReportInvalidEventHandlersDelegate(evt, reportDiagnostic, entryKind);
+            }
+
             return string.Empty;
+        }
         var typeParamList = type.IsGenericType
             ? $"<{string.Join(", ", type.TypeParameters.Select(static tp => tp.Name))}>"
             : string.Empty;
@@ -441,19 +452,18 @@ public sealed partial class ObservableEventsGenerator
         INamedTypeSymbol callSiteType,
         Dictionary<INamedTypeSymbol, EventInterfaceDescriptor> hierarchy)
     {
-        var accessible = new System.Collections.Generic.HashSet<string>(
-            GetPublicInstanceEventsFromTypeAndBases(callSiteType).Select(static e => e.Name),
-            System.StringComparer.Ordinal);
+        var runtimeEvents = GetPublicInstanceEventsFromTypeAndBases(callSiteType)
+            .ToDictionary(static e => e.Name, System.StringComparer.Ordinal);
         var result = new Dictionary<string, (IEventSymbol, ExpressionSyntax)>(System.StringComparer.Ordinal);
         if (hierarchy.TryGetValue(callSiteType, out var desc))
-            CollectEventsRecursive(desc, hierarchy, accessible, result, callSiteType);
+            CollectEventsRecursive(desc, hierarchy, runtimeEvents, result, callSiteType);
         return result.Values.OrderBy(static x => x.Item1.Name, System.StringComparer.Ordinal);
     }
 
     private static void CollectEventsRecursive(
         EventInterfaceDescriptor desc,
         Dictionary<INamedTypeSymbol, EventInterfaceDescriptor> hierarchy,
-        System.Collections.Generic.HashSet<string> accessible,
+        Dictionary<string, IEventSymbol> runtimeEvents,
         Dictionary<string, (IEventSymbol, ExpressionSyntax)> result,
         INamedTypeSymbol constructedType)
     {
@@ -461,7 +471,9 @@ public sealed partial class ObservableEventsGenerator
         {
             if (result.ContainsKey(evt.Name)) continue;
             var mapped = MapEventToConstructedType(evt, constructedType);
-            var accessor = accessible.Contains(mapped.Name)
+            var canUseDirect = runtimeEvents.TryGetValue(mapped.Name, out var runtime)
+                && SymbolEqualityComparer.Default.Equals(runtime.Type, mapped.Type);
+            var accessor = canUseDirect
                 ? ObservableEventsSyntaxFactory.SenderMemberAccess(mapped.Name)
                 : ObservableEventsSyntaxFactory.CastSenderMemberAccess(
                     SyntaxFactory.ParseTypeName(ObservableEventsConstants.QualifiedType(mapped.ContainingType)),
@@ -472,7 +484,7 @@ public sealed partial class ObservableEventsGenerator
         foreach (var parentType in desc.ParentTypes)
         {
             if (hierarchy.TryGetValue(HierarchyKey(parentType), out var pd))
-                CollectEventsRecursive(pd, hierarchy, accessible, result, parentType);
+                CollectEventsRecursive(pd, hierarchy, runtimeEvents, result, parentType);
         }
     }
 

@@ -47,6 +47,17 @@ internal static class DiagnosticDescriptors
         description: "RoutedEventHandlers() — unsupported routed handler delegate.",
         helpLinkUri: DiagnosticHelpLink.For("OBS2004"));
 
+
+    public static readonly DiagnosticDescriptor IncompatibleEventMerge = new(
+        id: "OBS2006",
+        title: "Incompatible event signatures cannot be merged",
+        messageFormat: "The event '{0}' has incompatible delegate signatures and cannot be expressed on one Events interface",
+        category: Category,
+        defaultSeverity: DiagnosticSeverity.Warning,
+        isEnabledByDefault: true,
+        description: "Hidden or multi-interface events that share a name must use the same delegate signature.",
+        helpLinkUri: DiagnosticHelpLink.For("OBS2006"));
+
     public static readonly DiagnosticDescriptor InternalGeneratorError = new(
         id: "OBS2005",
         title: "Internal source generator error",

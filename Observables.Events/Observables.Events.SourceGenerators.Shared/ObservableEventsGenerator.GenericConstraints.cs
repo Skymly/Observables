@@ -15,17 +15,26 @@ namespace Observables.Events.Generators;
 
 public sealed partial class ObservableEventsGenerator
 {
-    private static IEnumerable<IEventSymbol> GetGenericConstraintEvents(GenericConstraintTarget target)
+    private static IEnumerable<IEventSymbol> GetGenericConstraintEvents(
+        GenericConstraintTarget target,
+        Action<string, Location?, string> reportDiagnostic)
     {
         var byName = new Dictionary<string, IEventSymbol>(System.StringComparer.Ordinal);
         foreach (var constraintType in target.ConstraintTypes)
         {
             foreach (var evt in GetPublicInstanceEventsFromTypeAndBases(constraintType))
             {
-                if (!byName.ContainsKey(evt.Name))
+                if (byName.TryGetValue(evt.Name, out var existing))
                 {
-                    byName[evt.Name] = evt;
+                    if (!SymbolEqualityComparer.Default.Equals(existing.Type, evt.Type))
+                    {
+                        reportDiagnostic(DiagnosticDescriptors.IncompatibleEventMerge.Id, evt.Locations.FirstOrDefault(), evt.Name);
+                    }
+
+                    continue;
                 }
+
+                byName[evt.Name] = evt;
             }
         }
 
@@ -57,6 +66,10 @@ public sealed partial class ObservableEventsGenerator
                 parentBases.Add(GetParentInterfaceReference(pd, ct));
         }
 
+        var reuseParent = parentBases.Count == 1
+            && string.Equals(StripGenericArity(parentBases[0]), combinedIfaceName, System.StringComparison.Ordinal);
+        var ifaceRef = reuseParent ? parentBases[0] : combinedIfaceName;
+
         var unit = SyntaxFactory.CompilationUnit()
 #if EVENTS_R3
             .AddUsings(SyntaxFactory.UsingDirective(SyntaxFactory.ParseName("R3")))
@@ -65,33 +78,39 @@ public sealed partial class ObservableEventsGenerator
 
         var members = new List<MemberDeclarationSyntax>();
 
-        var combinedIface = SyntaxFactory.InterfaceDeclaration(combinedIfaceName)
-            .AddModifiers(SyntaxFactory.Token(SyntaxKind.InternalKeyword));
-        if (parentBases.Count > 0)
+        if (!reuseParent)
         {
-            combinedIface = combinedIface.AddBaseListTypes(
-                parentBases.Select(static n => (BaseTypeSyntax)SyntaxFactory.SimpleBaseType(SyntaxFactory.ParseTypeName(n))).ToArray());
-        }
+            var combinedIface = SyntaxFactory.InterfaceDeclaration(combinedIfaceName)
+                .AddModifiers(SyntaxFactory.Token(SyntaxKind.InternalKeyword));
+            if (parentBases.Count > 0)
+            {
+                combinedIface = combinedIface.AddBaseListTypes(
+                    parentBases.Select(static n => (BaseTypeSyntax)SyntaxFactory.SimpleBaseType(SyntaxFactory.ParseTypeName(n))).ToArray());
+            }
 
-        members.Add(combinedIface);
+            members.Add(combinedIface);
+        }
 
         var methodName = entryKind == ObservableEventsEntryKind.Events
             ? ObservableEventsConstants.EventsEntryMethodName
             : ObservableEventsConstants.EventHandlersEntryMethodName;
         var extensionMethod = ObservableEventsSyntaxFactory.CreateFromSenderExtensionMethod(
             methodName,
-            SyntaxFactory.ParseTypeName(combinedIfaceName),
+            SyntaxFactory.ParseTypeName(ifaceRef),
             SyntaxFactory.ParseTypeName("TSource"),
             ObservableEventsSyntaxFactory.NamedGenericType(implName, "TSource"),
             SyntaxFactory.TypeParameterList(
                 SyntaxFactory.SingletonSeparatedList(SyntaxFactory.TypeParameter("TSource"))),
             SyntaxFactory.SingletonList(CreateGenericConstraintClauseSyntax(target)));
         members.Add(
-            ObservableEventsSyntaxFactory.BootstrapExtensionsClassDeclaration()
+            SyntaxFactory.ClassDeclaration("ObservableEventsBootstrapExtensions_" + ToIdentifier(target.Key))
+                .AddModifiers(
+                    SyntaxFactory.Token(SyntaxKind.InternalKeyword),
+                    SyntaxFactory.Token(SyntaxKind.StaticKeyword))
                 .AddMembers(extensionMethod));
 
         members.Add(CreateGenericConstraintImplClass(
-            target, combinedIfaceName, implName, compilation, reportDiagnostic, entryKind));
+            target, ifaceRef, implName, compilation, reportDiagnostic, entryKind));
 
         var ns = SyntaxFactory.FileScopedNamespaceDeclaration(SyntaxFactory.ParseName(ObservableEventsConstants.GeneratedNamespace))
             .AddMembers(members.ToArray());
@@ -132,7 +151,7 @@ public sealed partial class ObservableEventsGenerator
             .WithBody(SyntaxFactory.Block(ObservableEventsSyntaxFactory.SenderAssignmentStatement()));
 
         var memberList = new List<MemberDeclarationSyntax> { field, ctor };
-        foreach (var evt in GetGenericConstraintEvents(target))
+        foreach (var evt in GetGenericConstraintEvents(target, reportDiagnostic))
         {
             var accessor = ObservableEventsSyntaxFactory.CastSenderMemberAccess(
                 SyntaxFactory.ParseTypeName(ObservableEventsConstants.QualifiedType(evt.ContainingType)),
@@ -149,5 +168,11 @@ public sealed partial class ObservableEventsGenerator
         }
 
         return classDecl.AddMembers(memberList.ToArray());
+    }
+
+    private static string StripGenericArity(string typeName)
+    {
+        var index = typeName.IndexOf('<');
+        return index < 0 ? typeName : typeName.Substring(0, index);
     }
 }

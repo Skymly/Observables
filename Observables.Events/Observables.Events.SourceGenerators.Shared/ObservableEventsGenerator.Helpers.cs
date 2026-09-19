@@ -28,12 +28,12 @@ public sealed partial class ObservableEventsGenerator
             var constraints = new List<TypeParameterConstraintSyntax>();
             if (tp.HasReferenceTypeConstraint)
                 constraints.Add(SyntaxFactory.ClassOrStructConstraint(SyntaxKind.ClassConstraint));
-            if (tp.HasValueTypeConstraint)
+            if (tp.HasUnmanagedTypeConstraint)
+                constraints.Add(SyntaxFactory.TypeConstraint(SyntaxFactory.IdentifierName("unmanaged")));
+            else if (tp.HasValueTypeConstraint)
                 constraints.Add(SyntaxFactory.ClassOrStructConstraint(SyntaxKind.StructConstraint));
             if (tp.HasNotNullConstraint)
                 constraints.Add(SyntaxFactory.TypeConstraint(SyntaxFactory.IdentifierName("notnull")));
-            if (tp.HasUnmanagedTypeConstraint)
-                constraints.Add(SyntaxFactory.TypeConstraint(SyntaxFactory.IdentifierName("unmanaged")));
             foreach (var constraintType in tp.ConstraintTypes)
                 constraints.Add(SyntaxFactory.TypeConstraint(SyntaxFactory.ParseTypeName(ObservableEventsConstants.QualifiedType(constraintType))));
             if (tp.HasConstructorConstraint)

@@ -348,7 +348,7 @@ dotnet run --project build/_build.csproj -- --target Ci --configuration Release
 
 | Nuke 目标 | 说明 |
 |-----------|------|
-| **Ci** | `Clean` → `Restore` → `Compile` → **UnitTest** |
+| **Ci** | `Clean` → `Restore` → `Compile` → **UnitTest** + **TrimPublish** (ILLink) |
 | **Test** | 同 `Ci`（`Compile` + `UnitTest`）；可附加 `--test-domains <逗号分隔>` 过滤测试项目（例如 `--test-domains mqtt,shared`） |
 | **Pack** | 打包 pack 子项目 → `artifacts/package/`（**不**依赖 UnitTest）；可附加 `--pack-domains <逗号分隔>` 过滤包（按 `PackageId` 前缀 `Observables.<d>.` 匹配） |
 | **PackOnly** | `Pack` + `PackVerify`（**不**跑 UnitTest） |

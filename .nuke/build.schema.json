@@ -45,6 +45,7 @@
         "Publish",
         "Restore",
         "Test",
+        "TrimPublish",
         "UnitTest"
       ]
     },

@@ -148,6 +148,8 @@ sealed class Build : NukeBuild
             {
                 RunTestProject(projectFile);
             }
+
+            AssertTrxCompleteness(testProjects);
         });
 
     static bool IsE2ETestProject(AbsolutePath projectFile)
@@ -165,12 +167,47 @@ sealed class Build : NukeBuild
 
     void RunTestProject(AbsolutePath projectFile)
     {
-        DotNetTest(s => s
-            .SetProjectFile(projectFile)
-            .SetConfiguration(Configuration)
-            .EnableNoRestore()
-            .SetResultsDirectory(TestResultsDirectory)
-            .SetLoggers("trx;LogFileName=" + projectFile.NameWithoutExtension + ".trx"));
+        foreach (string tfm in TestProjectTfms.GetFrameworks(projectFile))
+        {
+            DotNetTest(s => s
+                .SetProjectFile(projectFile)
+                .SetConfiguration(Configuration)
+                .SetFramework(tfm)
+                .EnableNoRestore()
+                .SetResultsDirectory(TestResultsDirectory)
+                .SetLoggers("trx;LogFileName=" + TestProjectTfms.TrxFileName(projectFile, tfm)));
+        }
+    }
+
+    void AssertTrxCompleteness(IEnumerable<AbsolutePath> testProjects)
+    {
+        var missing = new List<string>();
+        foreach (AbsolutePath projectFile in testProjects)
+        {
+            foreach (string tfm in TestProjectTfms.GetFrameworks(projectFile))
+            {
+                string fileName = TestProjectTfms.TrxFileName(projectFile, tfm);
+                AbsolutePath trx = TestResultsDirectory / fileName;
+                if (!trx.FileExists())
+                {
+                    missing.Add(fileName);
+                    continue;
+                }
+
+                string contents = File.ReadAllText(trx);
+                if (contents.IndexOf("<ResultSummary", StringComparison.Ordinal) < 0)
+                {
+                    missing.Add(fileName + " (no ResultSummary)");
+                }
+            }
+        }
+
+        if (missing.Count > 0)
+        {
+            throw new InvalidOperationException(
+                "Missing per-TFM TRX results (last-writer-wins would drop net8/net9 history): "
+                + string.Join(", ", missing));
+        }
     }
 
     Target Pack => _ => _
@@ -277,6 +314,22 @@ sealed class Build : NukeBuild
 
                     return s;
                 });
+
+                DotNetRun(s =>
+                {
+                    s = s
+                        .SetProjectFile(projectFile)
+                        .SetConfiguration(Configuration)
+                        .EnableNoBuild()
+                        .SetProperty("ObservablesConsumerPackageVersion", packageVersion);
+
+                    if (ConsumerFeed == NuGetConsumerFeed.Local)
+                    {
+                        s = s.SetProperty("RestoreConfigFile", NuGetSmokeLocalConfig);
+                    }
+
+                    return s;
+                });
             }
         });
 
@@ -345,8 +398,37 @@ sealed class Build : NukeBuild
             DotNet($"format whitespace {SolutionFile} --verify-no-changes --no-restore");
         });
 
+    Target TrimPublish => _ => _
+        .DependsOn(UnitTest)
+        .Executes(() =>
+        {
+            AbsolutePath projectFile = Root / "Observables.Shared" / "Observables.TrimTests" / "Observables.TrimTests.csproj";
+            string rid = OperatingSystem.IsWindows()
+                ? "win-x64"
+                : OperatingSystem.IsLinux()
+                    ? "linux-x64"
+                    : OperatingSystem.IsMacOS()
+                        ? "osx-arm64"
+                        : throw new PlatformNotSupportedException("Trim publish requires Windows, Linux, or macOS.");
+
+            foreach (string tfm in new[] { "net8.0", "net10.0" })
+            {
+                DotNetPublish(s => s
+                    .SetProject(projectFile)
+                    .SetConfiguration(Configuration)
+                    .SetFramework(tfm)
+                    .SetRuntime(rid)
+                    .SetSelfContained(true)
+                    .EnableNoRestore()
+                    .SetProperty("BuildProjectReferences", "false")
+                    .SetProperty("PublishTrimmed", "true")
+                    .SetProperty("TrimMode", "full")
+                    .SetOutput(Root / "artifacts" / "trim" / tfm));
+            }
+        });
+
     Target Ci => _ => _
-        .DependsOn(UnitTest);
+        .DependsOn(TrimPublish);
 
     Target Test => _ => _
         .DependsOn(UnitTest);

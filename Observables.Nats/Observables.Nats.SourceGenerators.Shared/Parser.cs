@@ -178,6 +178,17 @@ internal static class Parser
             return;
         }
 
+        if (!IsValidNatsSubjectLiteral(subjectTemplate, allowWildcards: false))
+        {
+            diagnostics.Add(
+                Diagnostic.Create(
+                    DiagnosticDescriptors.UnsupportedNatsOption,
+                    method.Locations.FirstOrDefault(),
+                    ifaceSymbol.Name,
+                    method.Name));
+            return;
+        }
+
         if (!ObservableReturnTypeParser.TryParse(
                 method.ReturnType,
                 compilation,
@@ -275,6 +286,17 @@ internal static class Parser
         }
 
         if (PlaceholderRegex.IsMatch(subjectTemplate))
+        {
+            diagnostics.Add(
+                Diagnostic.Create(
+                    DiagnosticDescriptors.UnsupportedNatsOption,
+                    property.Locations.FirstOrDefault(),
+                    property.ContainingType.Name,
+                    property.Name));
+            return;
+        }
+
+        if (!IsValidNatsSubjectLiteral(subjectTemplate, allowWildcards: true))
         {
             diagnostics.Add(
                 Diagnostic.Create(
@@ -518,5 +540,41 @@ internal static class Parser
         }
 
         return (declarations, ctName);
+    }
+
+    static bool IsValidNatsSubjectLiteral(string subject, bool allowWildcards)
+    {
+        var parts = subject.Split('.');
+        for (var i = 0; i < parts.Length; i++)
+        {
+            var part = parts[i];
+            if (part.Length == 0)
+            {
+                return false;
+            }
+
+            if (part == "*" || part == ">")
+            {
+                if (!allowWildcards)
+                {
+                    return false;
+                }
+
+                if (part == ">" && i != parts.Length - 1)
+                {
+                    return false;
+                }
+
+                continue;
+            }
+
+            var withoutPlaceholders = PlaceholderRegex.Replace(part, string.Empty);
+            if (withoutPlaceholders.IndexOf('*') >= 0 || withoutPlaceholders.IndexOf('>') >= 0)
+            {
+                return false;
+            }
+        }
+
+        return true;
     }
 }

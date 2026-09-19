@@ -24,42 +24,82 @@ public sealed class NatsTestServer : IAsyncDisposable
 
     public static async Task<NatsTestServer> StartAsync(CancellationToken cancellationToken = default)
     {
-        var port = ReserveFreeTcpPort();
         var serverPath = await EnsureNatsServerPathAsync(cancellationToken).ConfigureAwait(false);
-        var configPath = Path.Combine(Path.GetTempPath(), $"observables-nats-{port}.conf");
-        await File.WriteAllTextAsync(
-            configPath,
-            $"port: {port}\n",
-            cancellationToken).ConfigureAwait(false);
-
-        var process = new Process
+        Exception? last = null;
+        for (var attempt = 0; attempt < 5; attempt++)
         {
-            StartInfo = new ProcessStartInfo
+            cancellationToken.ThrowIfCancellationRequested();
+            var port = ReserveFreeTcpPort();
+            var configPath = Path.Combine(Path.GetTempPath(), $"observables-nats-{port}.conf");
+            await File.WriteAllTextAsync(
+                configPath,
+                $"port: {port}\n",
+                cancellationToken).ConfigureAwait(false);
+
+            var process = new Process
             {
-                FileName = serverPath,
-                Arguments = $"-c \"{configPath}\"",
-                UseShellExecute = false,
-                CreateNoWindow = true,
-                RedirectStandardOutput = true,
-                RedirectStandardError = true,
-            },
-            EnableRaisingEvents = true,
-        };
+                StartInfo = new ProcessStartInfo
+                {
+                    FileName = serverPath,
+                    Arguments = $"-c \"{configPath}\"",
+                    UseShellExecute = false,
+                    CreateNoWindow = true,
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true,
+                },
+                EnableRaisingEvents = true,
+            };
 
-        process.OutputDataReceived += static (_, _) => { };
-        process.ErrorDataReceived += static (_, _) => { };
+            process.OutputDataReceived += static (_, _) => { };
+            process.ErrorDataReceived += static (_, _) => { };
 
-        if (!process.Start())
-        {
-            throw new InvalidOperationException("Failed to start nats-server.");
+            try
+            {
+                if (!process.Start())
+                {
+                    throw new InvalidOperationException("Failed to start nats-server.");
+                }
+
+                process.BeginOutputReadLine();
+                process.BeginErrorReadLine();
+
+                var url = $"nats://127.0.0.1:{port}";
+                await WaitForPortAsync(port, cancellationToken).ConfigureAwait(false);
+                return new NatsTestServer(process, url);
+            }
+            catch (Exception ex) when (ex is not OperationCanceledException)
+            {
+                last = ex;
+                TryStop(process);
+                TryDelete(configPath);
+            }
         }
 
-        process.BeginOutputReadLine();
-        process.BeginErrorReadLine();
+        throw new InvalidOperationException("Failed to start nats-server.", last);
+    }
 
-        var url = $"nats://127.0.0.1:{port}";
-        await WaitForPortAsync(port, cancellationToken).ConfigureAwait(false);
-        return new NatsTestServer(process, url);
+    static void TryStop(Process process)
+    {
+        try
+        {
+            if (!process.HasExited)
+            {
+                process.Kill(entireProcessTree: true);
+            }
+        }
+        catch
+        {
+            // ignored
+        }
+
+        try
+        {
+            process.Dispose();
+        }
+        catch
+        {
+            // ignored
+        }
     }
 
     static Task<string> EnsureNatsServerPathAsync(CancellationToken cancellationToken) =>
@@ -74,6 +114,7 @@ public sealed class NatsTestServer : IAsyncDisposable
         await ServerBinaryGate.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
+            using var fileLock = OperatingSystem.IsWindows() ? null : AcquireFileLock();
             WaitForCrossProcessGate();
             try
             {
@@ -113,6 +154,25 @@ public sealed class NatsTestServer : IAsyncDisposable
         }
     }
 
+    static FileStream AcquireFileLock()
+    {
+        var directory = Path.Combine(Path.GetTempPath(), "observables-nats-test", NatsServerVersion);
+        Directory.CreateDirectory(directory);
+        var path = Path.Combine(directory, ".lock");
+        for (var i = 0; i < 50; i++)
+        {
+            try
+            {
+                return new FileStream(path, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None);
+            }
+            catch (IOException)
+            {
+                Thread.Sleep(50);
+            }
+        }
+
+        throw new TimeoutException("Timed out waiting for the NATS test-server binary lock.");
+    }
     static void WaitForCrossProcessGate()
     {
         CrossProcessServerBinaryGate.WaitOne();

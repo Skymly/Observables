@@ -8,6 +8,7 @@ public sealed class NatsAttribute(string? connectionName = null) : Attribute
 }
 
 /// <summary>Client publish mapped to NATS publish.</summary>
+/// <remarks>Subject placeholder values are literal tokens. See <see cref="NatsSubject"/>.</remarks>
 [AttributeUsage(AttributeTargets.Method)]
 public sealed class NatsPublishAttribute(string? subjectTemplate = null) : Attribute
 {
@@ -15,6 +16,7 @@ public sealed class NatsPublishAttribute(string? subjectTemplate = null) : Attri
 }
 
 /// <summary>Request-reply mapped to NATS request.</summary>
+/// <remarks>Subject placeholder values are literal tokens. See <see cref="NatsSubject"/>.</remarks>
 [AttributeUsage(AttributeTargets.Method)]
 public sealed class NatsRequestAttribute(string? subjectTemplate = null) : Attribute
 {

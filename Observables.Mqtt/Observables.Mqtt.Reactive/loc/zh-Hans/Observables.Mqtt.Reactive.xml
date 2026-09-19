@@ -7,5 +7,18 @@
         <member name="T:Observables.Mqtt.Reactive.SystemReactiveMqttAdapter">
             <summary>将 MQTT 客户端 API 桥接到 <see cref="T:System.IObservable`1"/>。</summary>
         </member>
+        <member name="M:Observables.Mqtt.Reactive.SystemReactiveMqttAdapter.FromPublish(MQTTnet.Client.IMqttClient,System.String,System.Threading.CancellationToken)">
+            <summary>
+            以 QoS 1 向 <paramref name="topic"/> 发布空负载。
+            被拒绝的 PUBACK（除 Success 或 NoMatchingSubscribers 以外的原因）会使 observable 失败。
+            生成的 v1 发布成员使用此空负载命令契约。
+            </summary>
+        </member>
+        <member name="M:Observables.Mqtt.Reactive.SystemReactiveMqttAdapter.FromSubscribe``1(MQTTnet.Client.IMqttClient,System.String)">
+            <summary>
+            订阅 <paramref name="topicFilter"/>。负载反序列化错误通过 <c>OnError</c> 终止订阅；该终止错误之后不再发出值。
+            客户端重连后本库不会重新发出 <c>SubscribeAsync</c>。
+            </summary>
+        </member>
     </members>
 </doc>

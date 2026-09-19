@@ -7,6 +7,24 @@
         <member name="T:Observables.Mqtt.MqttObservable">
             <summary>将 MQTT 客户端 API 桥接到 R3 <see cref="T:R3.Observable`1"/>。</summary>
         </member>
+        <member name="M:Observables.Mqtt.MqttObservable.FromPublish(MQTTnet.Client.IMqttClient,System.String,System.Threading.CancellationToken)">
+            <summary>
+            以 QoS 1 向 <paramref name="topic"/> 发布空负载。
+            被拒绝的 PUBACK（除 Success 或 NoMatchingSubscribers 以外的原因）会使 observable 失败。
+            </summary>
+        </member>
+        <member name="M:Observables.Mqtt.MqttObservable.FromPublish(MQTTnet.Client.IMqttClient,System.String,System.Byte[],System.Threading.CancellationToken)">
+            <summary>
+            以 QoS 1 向 <paramref name="topic"/> 发布 <paramref name="payload"/>。
+            被拒绝的 PUBACK（除 Success 或 NoMatchingSubscribers 以外的原因）会使 observable 失败。
+            </summary>
+        </member>
+        <member name="M:Observables.Mqtt.MqttObservable.FromSubscribe``1(MQTTnet.Client.IMqttClient,System.String)">
+            <summary>
+            订阅 <paramref name="topicFilter"/>。负载反序列化错误通过 OnErrorResume 报告，订阅继续接收后续消息。
+            客户端重连后本库不会重新发出 <c>SubscribeAsync</c>。
+            </summary>
+        </member>
         <member name="T:Observables.R3AsyncCreate">
             <summary>
             R3 1.3.0 的 <c>Observable.Create</c> 不会等待或捕获异步订阅委托。

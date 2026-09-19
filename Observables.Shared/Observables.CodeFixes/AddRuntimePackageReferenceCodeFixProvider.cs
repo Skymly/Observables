@@ -21,11 +21,17 @@ public sealed class AddRuntimePackageReferenceCodeFixProvider : CodeFixProvider
         if (diagnostic is null)
             return Task.CompletedTask;
 
-        if (!ProxyDomainTable.RuntimePackageByDiagnosticId.TryGetValue(
-                diagnostic.Id,
-                out var packageId))
+        if (!ProxyDomainTable.TryGetByMissingRuntimeDiagnosticId(diagnostic.Id, out var domain))
             return Task.CompletedTask;
 
+        RegisterPackageFix(context, diagnostic, domain.R3PackageName);
+        RegisterPackageFix(context, diagnostic, domain.ReactivePackageName);
+
+        return Task.CompletedTask;
+    }
+
+    static void RegisterPackageFix(CodeFixContext context, Diagnostic diagnostic, string packageId)
+    {
         context.RegisterCodeFix(
             CodeAction.Create(
                 title: $"Add package reference to '{packageId}'",
@@ -33,8 +39,6 @@ public sealed class AddRuntimePackageReferenceCodeFixProvider : CodeFixProvider
                     AddPackageReferenceAsync(context.Document.Project, packageId, version: null, cancellationToken),
                 equivalenceKey: $"{nameof(AddRuntimePackageReferenceCodeFixProvider)}:{packageId}"),
             diagnostic);
-
-        return Task.CompletedTask;
     }
 
     internal static Task<Solution> AddPackageReferenceAsync(

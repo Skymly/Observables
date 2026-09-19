@@ -184,6 +184,8 @@ jobs:
               - 'Observables.slnx'
             shared:
               - 'Observables.Shared/**'
+              - 'Observables.SourceGenerators.props'
+              - 'Observables.SourceGenerators.R3.props'
               - 'Directory.Build.props'
               - 'Directory.Packages.props'
               - 'eng/**'

@@ -33,11 +33,14 @@ static class NupkgVerifier
         }
 
         string propsFileName = request.PackageId + ".props";
-        bool hasPackageIdProps = entries.Contains("build/" + propsFileName)
-            || entries.Contains("buildTransitive/" + propsFileName);
-        if (!hasPackageIdProps)
+        if (!entries.Contains("build/" + propsFileName))
         {
-            errors.Add($"{request.PackageId}: missing {propsFileName} under build/ or buildTransitive/");
+            errors.Add($"{request.PackageId}: missing build/{propsFileName}");
+        }
+
+        if (!entries.Contains("buildTransitive/" + propsFileName))
+        {
+            errors.Add($"{request.PackageId}: missing buildTransitive/{propsFileName}");
         }
 
         foreach (string tfm in request.RequiredLibTfms)
@@ -100,6 +103,17 @@ static class NupkgVerifier
         }
 
         Dictionary<string, HashSet<string>> groups = ParseNuspecDependencyGroups(nuspecText);
+        foreach (string forbiddenId in request.ForbiddenNuspecDependencyIds)
+        {
+            foreach ((string tfm, HashSet<string> ids) in groups)
+            {
+                if (ids.Contains(forbiddenId))
+                {
+                    errors.Add($"{request.PackageId}: nuspec {tfm} group must not depend on {forbiddenId}");
+                }
+            }
+        }
+
         foreach ((string tfm, IReadOnlyList<string> requiredIds) in request.RequiredDependenciesByTfm)
         {
             HashSet<string> actual = ResolveGroup(groups, tfm);

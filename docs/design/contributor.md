@@ -8,7 +8,7 @@
 
 | 工具 | 要求 |
 |------|------|
-| .NET SDK | 8.0+（仓库 CI 亦装 9.x / 10.x 用于矩阵） |
+| .NET SDK / runtime | **8.0、9.0 与 10.0** 均需安装（含 net9 testhost）。完整 Nuke `Ci` 在 E2E 上跑 `net8.0;net9.0;net10.0`；只装 8+10 会在默认 net9 testhost 以退出码 1 失败。跨 major 的 `DOTNET_ROLL_FORWARD` **不能**代替原生 net9 测试。`global.json` 将 Nuke `build/` 钉在 10.0 SDK（同 major `latestFeature`）。这是贡献者本机契约，不是库安装失败。 |
 | Git | 2.x |
 | IDE | Visual Studio 2022、Rider 或 VS Code + C# Dev Kit |
 

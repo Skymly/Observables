@@ -4,6 +4,16 @@ Thank you for your interest in Observables. This document covers contribution wo
 
 ## Contributing
 
+### Environment
+
+Full Nuke `Ci` requires **.NET 8, .NET 9, and .NET 10 SDKs** plus matching runtimes/testhosts.
+
+- `global.json` pins Nuke `build/` to the **.NET 10 SDK** (`rollForward` is same-major `latestFeature` only).
+- Runtime E2E projects target `net8.0;net9.0;net10.0`. The **net9 testhost is an explicit requirement**; installing only SDK 8 + 10 is not enough.
+- Cross-major roll-forward (`DOTNET_ROLL_FORWARD=Major` onto another runtime) is **not** a substitute for native net9 test execution.
+
+Library consumers do not need this matrix. This is a contributor environment contract, not a library install failure.
+
 ### Before you open a PR
 
 1. Build and test locally (same as CI):

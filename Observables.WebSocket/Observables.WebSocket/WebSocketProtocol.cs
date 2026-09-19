@@ -133,9 +133,19 @@ internal static class WebSocketProtocol
         throw new NotSupportedException(
             "Receiving a WebSocket message that declares a message name requires net8.0 or later.");
 #else
+        JsonDocument document;
         try
         {
-            using var document = JsonDocument.Parse(frame);
+            document = JsonDocument.Parse(frame);
+        }
+        catch (JsonException)
+        {
+            // A non-JSON frame is simply not addressed to this member.
+            return false;
+        }
+
+        using (document)
+        {
             if (document.RootElement.ValueKind != JsonValueKind.Object
                 || !document.RootElement.TryGetProperty("type", out var type)
                 || type.ValueKind != JsonValueKind.String
@@ -160,11 +170,6 @@ internal static class WebSocketProtocol
 
             value = deserialized;
             return true;
-        }
-        catch (JsonException)
-        {
-            // A non-JSON frame is simply not addressed to this member.
-            return false;
         }
 #endif
     }

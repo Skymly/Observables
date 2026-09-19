@@ -219,19 +219,135 @@ public sealed class WebSocketClientR3E2ETests(WebSocketTestServerFixture fixture
         Assert.Contains("maximum size", result.Exception.Message, StringComparison.Ordinal);
     }
 
+    [Fact]
+    public async Task FromReceive_subscribe_before_connect_still_receives()
+    {
+        using var socket = new ClientWebSocket();
+        using var cts = new CancellationTokenSource(DefaultTimeout);
+        var received = new TaskCompletionSource<string>(TaskCreationOptions.RunContinuationsAsynchronously);
+        using var subscription = WebSocketObservable.FromReceive<string>(socket)
+            .Subscribe(value => received.TrySetResult(value));
+
+        await socket.ConnectAsync(fixture.Server.Uri, cts.Token);
+        await socket.SendAsync(
+            new ArraySegment<byte>(Encoding.UTF8.GetBytes("after-connect")),
+            WebSocketMessageType.Text,
+            true,
+            cts.Token);
+
+        Assert.Equal("after-connect", await received.Task.WaitAsync(cts.Token));
+    }
+
+    [Fact]
+    public async Task FromReceive_abort_completes_with_failure()
+    {
+        using var socket = new ClientWebSocket();
+        using var cts = new CancellationTokenSource(DefaultTimeout);
+        await socket.ConnectAsync(fixture.Server.Uri, cts.Token);
+
+        var observer = new RecordingObserver<string>();
+        using var subscription = WebSocketObservable.FromReceive<string>(socket).Subscribe(observer);
+        socket.Abort();
+
+        var result = await observer.Completed.WaitAsync(cts.Token);
+        Assert.True(result.IsFailure);
+        Assert.NotNull(result.Exception);
+    }
+
+    [Fact]
+    public async Task FromReceiveNamed_matching_bad_payload_is_observable()
+    {
+        using var socket = new ClientWebSocket();
+        using var cts = new CancellationTokenSource(DefaultTimeout);
+        await socket.ConnectAsync(fixture.Server.Uri, cts.Token);
+
+        var observer = new RecordingObserver<int>();
+        using var subscription = WebSocketObservable.FromReceiveNamed<int>(socket, "tick").Subscribe(observer);
+
+        var frame = Encoding.UTF8.GetBytes("""{"type":"tick","payload":"bad"}""");
+        await socket.SendAsync(new ArraySegment<byte>(frame), WebSocketMessageType.Text, true, cts.Token);
+
+        var error = await observer.Error.WaitAsync(cts.Token);
+        Assert.NotNull(error);
+    }
+
+    [Fact]
+    public async Task First_subscriber_still_receives_after_a_second_attaches()
+    {
+        using var socket = new ClientWebSocket();
+        using var cts = new CancellationTokenSource(DefaultTimeout);
+        await socket.ConnectAsync(fixture.Server.Uri, cts.Token);
+
+        var stream = WebSocketObservable.FromReceive<string>(socket);
+        var first = new TaskCompletionSource<string>(TaskCreationOptions.RunContinuationsAsynchronously);
+        using var firstSubscription = stream.Subscribe(value => first.TrySetResult(value));
+        var second = new TaskCompletionSource<string>(TaskCreationOptions.RunContinuationsAsynchronously);
+        using var secondSubscription = stream.Subscribe(value => second.TrySetResult(value));
+
+        await socket.SendAsync(
+            new ArraySegment<byte>(Encoding.UTF8.GetBytes("both")),
+            WebSocketMessageType.Text,
+            true,
+            cts.Token);
+
+        Assert.Equal("both", await first.Task.WaitAsync(cts.Token));
+        Assert.Equal("both", await second.Task.WaitAsync(cts.Token));
+    }
+
+    [Fact]
+    public async Task FromReceive_non_positive_max_fails_once()
+    {
+        using var socket = new ClientWebSocket();
+        var observer = new RecordingObserver<string>();
+        using var subscription = WebSocketObservable.FromReceive<string>(socket, maxMessageBytes: 0)
+            .Subscribe(observer);
+
+        var result = await observer.Completed.WaitAsync(TimeSpan.FromSeconds(2), TestContext.Current.CancellationToken);
+        Assert.True(result.IsFailure);
+        Assert.IsType<ArgumentOutOfRangeException>(result.Exception);
+    }
+
+    [Fact]
+    public async Task FromReceive_oversize_then_resubscribe_receives_next_message()
+    {
+        using var socket = new ClientWebSocket();
+        using var cts = new CancellationTokenSource(DefaultTimeout);
+        await socket.ConnectAsync(fixture.Server.Uri, cts.Token);
+
+        var observer = new RecordingObserver<string>();
+        var subscription = WebSocketObservable.FromReceive<string>(socket, maxMessageBytes: 8).Subscribe(observer);
+        await socket.SendAsync(
+            new ArraySegment<byte>(Encoding.UTF8.GetBytes(new string('x', 64))),
+            WebSocketMessageType.Text,
+            true,
+            cts.Token);
+        var failed = await observer.Completed.WaitAsync(cts.Token);
+        Assert.True(failed.IsFailure);
+        subscription.Dispose();
+
+        var next = new TaskCompletionSource<string>(TaskCreationOptions.RunContinuationsAsynchronously);
+        using var nextSubscription = WebSocketObservable.FromReceive<string>(socket).Subscribe(value => next.TrySetResult(value));
+        await socket.SendAsync(
+            new ArraySegment<byte>(Encoding.UTF8.GetBytes("ok")),
+            WebSocketMessageType.Text,
+            true,
+            cts.Token);
+        Assert.Equal("ok", await next.Task.WaitAsync(cts.Token));
+    }
     sealed class RecordingObserver<T> : Observer<T>
     {
         readonly TaskCompletionSource<Result> _completed = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        readonly TaskCompletionSource<Exception> _error = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
         public Task<Result> Completed => _completed.Task;
+
+        public Task<Exception> Error => _error.Task;
 
         protected override void OnNextCore(T value)
         {
         }
 
-        protected override void OnErrorResumeCore(Exception error)
-        {
-        }
+        protected override void OnErrorResumeCore(Exception error) => _error.TrySetResult(error);
 
         protected override void OnCompletedCore(Result result) => _completed.TrySetResult(result);
     }

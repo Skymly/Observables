@@ -95,6 +95,33 @@ internal static class Parser
             return;
         }
 
+        var boundaryCount = 0;
+        if (sendAttribute is not null && IoProxyInterfaceWalk.HasAttribute(method, sendAttribute))
+        {
+            boundaryCount++;
+        }
+
+        if (connectAttribute is not null && IoProxyInterfaceWalk.HasAttribute(method, connectAttribute))
+        {
+            boundaryCount++;
+        }
+
+        if (closeAttribute is not null && IoProxyInterfaceWalk.HasAttribute(method, closeAttribute))
+        {
+            boundaryCount++;
+        }
+
+        if (boundaryCount > 1)
+        {
+            diagnostics.Add(
+                Diagnostic.Create(
+                    DiagnosticDescriptors.UnsupportedWebSocketOption,
+                    method.Locations.FirstOrDefault(),
+                    ifaceSymbol.Name,
+                    method.Name));
+            return;
+        }
+
         WebSocketBoundaryKind? boundary = null;
 
         if (sendAttribute is not null && IoProxyInterfaceWalk.HasAttribute(method, sendAttribute))

@@ -24,10 +24,9 @@ internal interface IWebSocketReceiveSink
 // ClientWebSocket forbids concurrent receives, so a loop per subscription races: the BCL hands each message to
 // exactly one of the pending ReceiveAsync calls and the other subscribers never see it.
 //
-// The loop starts on the first subscription and then runs until the socket closes or fails. It is deliberately
-// not stopped when the last sink detaches: cancelling a pending ReceiveAsync aborts the whole socket, which
-// would take sends down with it. A pump with no sinks reads and discards, which is what a WebSocket client has
-// to do anyway to keep control frames flowing.
+// The loop starts on the first subscription. If the socket is not Open yet, the pump waits while any sink is
+// attached (subscribe-then-Connect). It keeps running until the socket closes or fails even if sinks detach:
+// cancelling a pending ReceiveAsync aborts the whole socket.
 internal sealed class WebSocketReceivePump
 {
     static readonly ConditionalWeakTable<ClientWebSocket, WebSocketReceivePump> Pumps = new();
@@ -55,8 +54,15 @@ internal sealed class WebSocketReceivePump
 
     // Attaches the sink and starts the loop if it is not already running. When it starts, it takes
     // maxMessageBytes as its cap; a sink that attaches later inherits that cap.
+    // Non-positive caps fail this sink once and do not start the loop.
     internal IDisposable Subscribe(IWebSocketReceiveSink sink, int maxMessageBytes)
     {
+        if (maxMessageBytes <= 0)
+        {
+            sink.OnFailed(new ArgumentOutOfRangeException(nameof(maxMessageBytes)));
+            return EmptyDisposable.Instance;
+        }
+
         var start = false;
         lock (gate)
         {
@@ -84,10 +90,24 @@ internal sealed class WebSocketReceivePump
         }
     }
 
+    bool HasSinks()
+    {
+        lock (gate)
+        {
+            return sinks.Count > 0;
+        }
+    }
+
     async Task RunAsync(int maxMessageBytes)
     {
         try
         {
+            if (!await WaitUntilOpenAsync().ConfigureAwait(false))
+            {
+                DispatchTerminalForCurrentState();
+                return;
+            }
+
             while (socket.State == WebSocketState.Open)
             {
                 WebSocketReceivedMessage? message;
@@ -97,11 +117,21 @@ internal sealed class WebSocketReceivePump
                         .ReceiveMessageAsync(socket, CancellationToken.None, maxMessageBytes)
                         .ConfigureAwait(false);
                 }
-                catch (OperationCanceledException)
+                catch (OperationCanceledException ex)
                 {
+                    if (IsTerminal(socket.State))
+                    {
+                        Dispatch(sink => sink.OnFailed(ex));
+                    }
+
                     return;
                 }
                 catch (WebSocketProtocol.MessageTooLargeException ex)
+                {
+                    Dispatch(sink => sink.OnFailed(ex));
+                    return;
+                }
+                catch (Exception ex) when (IsUnrecoverable(ex))
                 {
                     Dispatch(sink => sink.OnFailed(ex));
                     return;
@@ -121,6 +151,8 @@ internal sealed class WebSocketReceivePump
                 var received = message.Value;
                 Dispatch(sink => sink.OnMessage(received.Payload, received.MessageType));
             }
+
+            DispatchTerminalForCurrentState();
         }
         finally
         {
@@ -130,6 +162,61 @@ internal sealed class WebSocketReceivePump
             }
         }
     }
+
+    async Task<bool> WaitUntilOpenAsync()
+    {
+        while (true)
+        {
+            var state = socket.State;
+            if (state == WebSocketState.Open)
+            {
+                return true;
+            }
+
+            if (IsTerminal(state) || !HasSinks())
+            {
+                return false;
+            }
+
+            await Task.Delay(15).ConfigureAwait(false);
+        }
+    }
+
+    void DispatchTerminalForCurrentState()
+    {
+        if (!HasSinks())
+        {
+            return;
+        }
+
+        if (socket.State == WebSocketState.Aborted)
+        {
+            Dispatch(static sink => sink.OnFailed(
+                new WebSocketException("The WebSocket was aborted.")));
+            return;
+        }
+
+        if (IsTerminal(socket.State))
+        {
+            Dispatch(static sink => sink.OnClosed());
+        }
+    }
+
+    bool IsUnrecoverable(Exception exception)
+    {
+        if (exception is WebSocketException or ObjectDisposedException)
+        {
+            return true;
+        }
+
+        return IsTerminal(socket.State);
+    }
+
+    static bool IsTerminal(WebSocketState state) =>
+        state is WebSocketState.Aborted
+            or WebSocketState.Closed
+            or WebSocketState.CloseReceived
+            or WebSocketState.CloseSent;
 
     void Dispatch(Action<IWebSocketReceiveSink> notification)
     {
@@ -146,7 +233,23 @@ internal sealed class WebSocketReceivePump
 
         foreach (var sink in snapshot)
         {
-            notification(sink);
+            try
+            {
+                notification(sink);
+            }
+            catch (Exception)
+            {
+                // One sink must not prevent the others from seeing the same event.
+            }
+        }
+    }
+
+    sealed class EmptyDisposable : IDisposable
+    {
+        internal static readonly EmptyDisposable Instance = new();
+
+        public void Dispose()
+        {
         }
     }
 

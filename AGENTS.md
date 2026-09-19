@@ -358,7 +358,7 @@ dotnet run --project build/_build.csproj -- --target Ci --configuration Release
 
 | Workflow | 触发 | 作用 |
 |----------|------|------|
-| [`ci.yml`](.github/workflows/ci.yml) | PR / push `main` | **changes** job（`dorny/paths-filter`）→ 域 `test-domain` 矩阵（含 postgres / redis；**Shared 改动 → 全域跑**）+ `test-shared`（仅 Shared 改动时跑）+ 域 `pack-domain` 矩阵（push main / PR 带 `pack` label，且域命中）；各 job **完全并行**，未命中的域整列跳过 |
+| [`ci.yml`](.github/workflows/ci.yml) | PR / push `main` | **changes** job（`dorny/paths-filter`）→ 域 `test-domain` 矩阵（含 postgres / redis；**Shared 改动 → 全域跑**）+ `test-shared`（仅 Shared 改动时跑）+ 域 `pack-domain` 矩阵（push main / PR 带 `pack` label，且域命中）；各 job **完全并行**，未命中的域整列跳过。**`ci-full` always runs** (Windows/Ubuntu). Incremental pack/test follows domain **or** shared; shared includes root `Observables.SourceGenerators*.props`. |
 | [`release.yml`](.github/workflows/release.yml) | push tag `v*` / `workflow_dispatch` | **Publish**（须 Secrets + 维护者 `actor`/`triggering_actor`；内部 `Test` → `PackVerify` → push） |
 
 ## 工作约定

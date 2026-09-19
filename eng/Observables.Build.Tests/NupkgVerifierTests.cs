@@ -228,6 +228,7 @@ public sealed class NupkgVerifierTests
                 $"analyzers/dotnet/roslyn4.12/cs/{EventsGenerator}",
                 .. SharedAnalyzerFiles,
                 "build/Observables.Events.R3.props",
+                "buildTransitive/Observables.Events.R3.props",
             ],
             nuspecDependenciesByTfm: new Dictionary<string, IReadOnlyList<string>>
             {
@@ -278,6 +279,7 @@ public sealed class NupkgVerifierTests
                 $"analyzers/dotnet/roslyn4.12/cs/{EventsGenerator}",
                 .. SharedAnalyzerFiles,
                 "build/Observables.Events.R3.props",
+                "buildTransitive/Observables.Events.R3.props",
             ],
             nuspecDependenciesByTfm: new Dictionary<string, IReadOnlyList<string>>
             {
@@ -370,6 +372,7 @@ public sealed class NupkgVerifierTests
                 $"analyzers/dotnet/roslyn4.12/cs/{GrpcGenerator}",
                 .. SharedAnalyzerFiles,
                 "build/Observables.Grpc.R3.props",
+                "buildTransitive/Observables.Grpc.R3.props",
                 "lib/net8.0/Observables.Grpc.dll",
             ],
             fileSources: new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
@@ -420,4 +423,111 @@ public sealed class NupkgVerifierTests
                 relative);
         }
     }
+
+    [Fact]
+    public void Verify_fails_when_package_id_props_are_only_in_build()
+    {
+        string nupkg = NupkgFixture.Create(
+            EventsR3,
+            [
+                $"analyzers/dotnet/roslyn4.12/cs/{EventsGenerator}",
+                .. SharedAnalyzerFiles,
+                "build/Observables.Events.R3.props",
+            ],
+            nuspecDependenciesByTfm: new Dictionary<string, IReadOnlyList<string>>
+            {
+                ["netstandard2.0"] = ["R3"],
+            });
+
+        try
+        {
+            IReadOnlyList<string> errors = NupkgVerifier.Verify(
+                nupkg,
+                new NupkgVerifyRequest
+                {
+                    PackageId = EventsR3,
+                    GeneratorAssemblyFileName = EventsGenerator,
+                });
+
+            Assert.Contains(errors, static e => e.Contains("buildTransitive/Observables.Events.R3.props", StringComparison.Ordinal));
+        }
+        finally
+        {
+            File.Delete(nupkg);
+        }
+    }
+
+    [Fact]
+    public void Verify_fails_when_nuspec_depends_on_the_forbidden_backend()
+    {
+        string nupkg = NupkgFixture.Create(
+            EventsR3,
+            [
+                $"analyzers/dotnet/roslyn4.12/cs/{EventsGenerator}",
+                .. SharedAnalyzerFiles,
+                "build/Observables.Events.R3.props",
+                "buildTransitive/Observables.Events.R3.props",
+            ],
+            nuspecDependenciesByTfm: new Dictionary<string, IReadOnlyList<string>>
+            {
+                ["netstandard2.0"] = ["R3", "System.Reactive"],
+            });
+
+        try
+        {
+            IReadOnlyList<string> errors = NupkgVerifier.Verify(
+                nupkg,
+                new NupkgVerifyRequest
+                {
+                    PackageId = EventsR3,
+                    GeneratorAssemblyFileName = EventsGenerator,
+                    ForbiddenNuspecDependencyIds = ["System.Reactive"],
+                });
+
+            Assert.Contains(errors, static e => e.Contains("must not depend on System.Reactive", StringComparison.Ordinal));
+        }
+        finally
+        {
+            File.Delete(nupkg);
+        }
+    }
+
+    [Fact]
+    public void Verify_fails_when_a_required_lib_tfm_is_missing()
+    {
+        string nupkg = NupkgFixture.Create(
+            GrpcR3,
+            [
+                $"analyzers/dotnet/roslyn4.12/cs/{GrpcGenerator}",
+                .. SharedAnalyzerFiles,
+                "build/Observables.Grpc.R3.props",
+                "buildTransitive/Observables.Grpc.R3.props",
+                "lib/net8.0/Observables.Grpc.dll",
+            ],
+            nuspecDependenciesByTfm: new Dictionary<string, IReadOnlyList<string>>
+            {
+                ["net8.0"] = ["Grpc.Core.Api"],
+            });
+
+        try
+        {
+            IReadOnlyList<string> errors = NupkgVerifier.Verify(
+                nupkg,
+                new NupkgVerifyRequest
+                {
+                    PackageId = GrpcR3,
+                    GeneratorAssemblyFileName = GrpcGenerator,
+                    RequiredLibTfms = PackCsprojReader.DefaultLibTfms,
+                });
+
+            Assert.Contains(errors, static e => e.Contains("lib/net9.0/", StringComparison.Ordinal));
+            Assert.Contains(errors, static e => e.Contains("lib/net10.0/", StringComparison.Ordinal));
+            Assert.Contains(errors, static e => e.Contains("lib/netstandard2.0/", StringComparison.Ordinal));
+        }
+        finally
+        {
+            File.Delete(nupkg);
+        }
+    }
+
 }

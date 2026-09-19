@@ -88,6 +88,7 @@ static partial class PackCsprojReader
                 static pair => (IReadOnlyList<string>)pair.Value,
                 StringComparer.OrdinalIgnoreCase),
             ForbiddenNuspecSubstrings = isRedis ? ["Garnet"] : [],
+            ForbiddenNuspecDependencyIds = ForbiddenBackendAssemblies(packageId),
             ForbiddenLibAssemblyReferences = ForbiddenBackendAssemblies(packageId),
         };
     }
@@ -111,6 +112,7 @@ static partial class PackCsprojReader
             _ => [],
         };
     }
+
 
     static string[] ReadLibTfms(string[] libProjects)
     {

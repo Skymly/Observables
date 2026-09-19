@@ -74,6 +74,47 @@ public sealed class NatsClientR3E2ETests(NatsTestServerFixture fixture)
         Assert.Equal("hello", reply);
     }
 
+    [Fact]
+    public async Task NatsRequest_malformed_int_reply_fails()
+    {
+        await using var responder = new NatsConnection(CreateOpts(fixture.Server.Url));
+        await using var client = new NatsConnection(CreateOpts(fixture.Server.Url));
+        var subject = "e2e.int." + Guid.NewGuid().ToString("N");
+
+        using var cts = new CancellationTokenSource(DefaultTimeout);
+        var subscribed = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var respondTask = RespondRawAsync(responder, subject, "not-json", subscribed, cts.Token);
+        await subscribed.Task.WaitAsync(cts.Token);
+
+        var ex = await Assert.ThrowsAnyAsync<Exception>(
+            async () => await NatsE2EHelpers.RequestUntilRespondedAsync(
+                async ct => await NatsObservable.FromRequest<string, int>(client, subject, "q", ct).FirstAsync(ct),
+                cts.Token));
+
+        await respondTask;
+        Assert.IsNotType<NatsNoRespondersException>(ex);
+    }
+
+    [Fact]
+    public async Task NatsRequest_well_formed_int_reply_succeeds()
+    {
+        await using var responder = new NatsConnection(CreateOpts(fixture.Server.Url));
+        await using var client = new NatsConnection(CreateOpts(fixture.Server.Url));
+        var subject = "e2e.intok." + Guid.NewGuid().ToString("N");
+
+        using var cts = new CancellationTokenSource(DefaultTimeout);
+        var subscribed = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var respondTask = RespondRawAsync(responder, subject, "7", subscribed, cts.Token);
+        await subscribed.Task.WaitAsync(cts.Token);
+
+        var reply = await NatsE2EHelpers.RequestUntilRespondedAsync(
+            async ct => await NatsObservable.FromRequest<string, int>(client, subject, "q", ct).FirstAsync(ct),
+            cts.Token);
+
+        await respondTask;
+        Assert.Equal(7, reply);
+    }
+
     static async Task RespondEchoAsync(
         INatsConnection connection,
         TaskCompletionSource subscribed,
@@ -89,6 +130,31 @@ public sealed class NatsClientR3E2ETests(NatsTestServerFixture fixture)
 
             var msg = await sub.Msgs.ReadAsync(cancellationToken).ConfigureAwait(false);
             await msg.ReplyAsync(msg.Data, cancellationToken: cancellationToken).ConfigureAwait(false);
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            subscribed.TrySetException(ex);
+            throw;
+        }
+    }
+
+    static async Task RespondRawAsync(
+        INatsConnection connection,
+        string subject,
+        string payload,
+        TaskCompletionSource subscribed,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            await using var sub = await connection
+                .SubscribeCoreAsync<string>(subject, cancellationToken: cancellationToken)
+                .ConfigureAwait(false);
+            await connection.PingAsync(cancellationToken).ConfigureAwait(false);
+            subscribed.TrySetResult();
+
+            var msg = await sub.Msgs.ReadAsync(cancellationToken).ConfigureAwait(false);
+            await msg.ReplyAsync(payload, cancellationToken: cancellationToken).ConfigureAwait(false);
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
         {

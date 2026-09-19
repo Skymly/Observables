@@ -175,4 +175,96 @@ public sealed class NatsInterfaceGeneratorTests
         var output = GeneratorTestHarness.RunWithoutReactiveAdapter(userSource);
         Assert.Contains(output.Diagnostics, static diagnostic => diagnostic.Id == "OBS9005");
     }
+
+    [Fact]
+    public void Nats_publish_int_placeholder_converts_to_string()
+    {
+        const string userSource =
+            """
+            [Nats]
+            public interface IOrderHub
+            {
+                [NatsPublish("orders.{id}.cancel")]
+                IObservable<global::System.Reactive.Unit> Cancel(int id);
+            }
+            """;
+
+        var output = GeneratorTestHarness.Run(userSource);
+        var snapshot = GeneratorTestHarness.ToSnapshot(output);
+        Assert.DoesNotContain("OBS9", snapshot, StringComparison.Ordinal);
+        Assert.Contains(
+            @"NatsSubject.Format(""orders.{id}.cancel"", (""id"", global::System.Convert.ToString((object?)id, global::System.Globalization.CultureInfo.InvariantCulture)))",
+            snapshot,
+            StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Nats_publish_string_placeholder_keeps_working()
+    {
+        const string userSource =
+            """
+            [Nats]
+            public interface IOrderHub
+            {
+                [NatsPublish("orders.{id}.cancel")]
+                IObservable<global::System.Reactive.Unit> Cancel(string id);
+            }
+            """;
+
+        var output = GeneratorTestHarness.Run(userSource);
+        var snapshot = GeneratorTestHarness.ToSnapshot(output);
+        Assert.DoesNotContain("OBS9", snapshot, StringComparison.Ordinal);
+        Assert.Contains("NatsSubject.Format", snapshot, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Nats_publish_wildcard_reports_OBS9006()
+    {
+        const string userSource =
+            """
+            [Nats]
+            public interface IOrderHub
+            {
+                [NatsPublish("orders.*.cancel")]
+                IObservable<global::System.Reactive.Unit> Cancel();
+            }
+            """;
+
+        var output = GeneratorTestHarness.Run(userSource);
+        Assert.Contains(output.Diagnostics, static diagnostic => diagnostic.Id == "OBS9006");
+    }
+
+    [Fact]
+    public void Nats_publish_empty_token_reports_OBS9006()
+    {
+        const string userSource =
+            """
+            [Nats]
+            public interface IOrderHub
+            {
+                [NatsPublish("orders..cancel")]
+                IObservable<global::System.Reactive.Unit> Cancel();
+            }
+            """;
+
+        var output = GeneratorTestHarness.Run(userSource);
+        Assert.Contains(output.Diagnostics, static diagnostic => diagnostic.Id == "OBS9006");
+    }
+
+    [Fact]
+    public void Nats_subscribe_gt_not_last_reports_OBS9006()
+    {
+        const string userSource =
+            """
+            [Nats]
+            public interface IOrderHub
+            {
+                [NatsSubscribe("orders.>.created")]
+                IObservable<string> Created { get; }
+            }
+            """;
+
+        var output = GeneratorTestHarness.Run(userSource);
+        Assert.Contains(output.Diagnostics, static diagnostic => diagnostic.Id == "OBS9006");
+    }
 }

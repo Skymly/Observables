@@ -147,7 +147,8 @@ internal static class Emitter
 
         var args = string.Join(
             ", ",
-            member.SubjectParameterNames.AsArray().Select(static n => $"({FormatLiteral(n)}, {IdentifierHelper.Escape(n)})"));
+            member.SubjectParameterNames.AsArray().Select(static n =>
+                $"({FormatLiteral(n)}, global::System.Convert.ToString((object?){IdentifierHelper.Escape(n)}, global::System.Globalization.CultureInfo.InvariantCulture))"));
         return $"global::Observables.Nats.NatsSubject.Format({FormatLiteral(member.SubjectTemplate)}, {args})";
     }
 

@@ -1,4 +1,4 @@
-Diagnostics:
+﻿Diagnostics:
   OBS9006: Member 'IKeywordHub.Query' uses an unsupported subject template, extra parameters, or subscribe placeholder syntax
 
 Generated Sources:
@@ -24,7 +24,7 @@ namespace Observables.Nats.Generated
         }
 
     public global::R3.Observable<global::R3.Unit> Cancel(global::System.String @class) =>
-        global::Observables.Nats.NatsObservable.FromPublish(_connection, global::Observables.Nats.NatsSubject.Format("orders.{class}.cancel", ("class", @class)), default);
+        global::Observables.Nats.NatsObservable.FromPublish(_connection, global::Observables.Nats.NatsSubject.Format("orders.{class}.cancel", ("class", global::System.Convert.ToString((object?)@class, global::System.Globalization.CultureInfo.InvariantCulture))), default);
 
     }
 }

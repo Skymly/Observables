@@ -99,6 +99,7 @@ internal static class NatsProtocol
                 replySerializer: NatsPayloadSerializerBridge<TResponse>.ForOrNull(),
                 cancellationToken: linked.Token)
             .ConfigureAwait(false);
+        reply.EnsureSuccess();
         return reply.Data ?? throw new InvalidOperationException("NATS request returned null payload.");
     }
 }

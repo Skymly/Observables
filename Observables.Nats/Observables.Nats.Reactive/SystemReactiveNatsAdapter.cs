@@ -35,6 +35,9 @@ public static class SystemReactiveNatsAdapter
             return System.Reactive.Unit.Default;
         });
 
+    /// <summary>
+    /// Subscribes to <paramref name="subject"/>. Deserialize and protocol errors terminate through <c>OnError</c>.
+    /// </summary>
 #if NET8_0_OR_GREATER
     [RequiresUnreferencedCode("NATS payload serialization may use reflection. Preserve payload type members when trimming.")]
     [RequiresDynamicCode("NATS payload serialization may use reflection.")]
@@ -54,6 +57,10 @@ public static class SystemReactiveNatsAdapter
             }
         });
 
+    /// <summary>
+    /// Sends a request and emits the reply. Malformed or error replies fail the observable instead of
+    /// returning <c>default(TResponse)</c>.
+    /// </summary>
 #if NET8_0_OR_GREATER
     [RequiresUnreferencedCode("NATS payload serialization may use reflection. Preserve payload type members when trimming.")]
     [RequiresDynamicCode("NATS payload serialization may use reflection.")]

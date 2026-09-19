@@ -41,6 +41,10 @@ public static class NatsObservable
             return Unit.Default;
         });
 
+    /// <summary>
+    /// Subscribes to <paramref name="subject"/>. Reply and deserialize errors are terminal on both
+    /// backends (R3 completes with failure; Rx <c>OnError</c>). Unlike MQTT, later messages are not delivered after an error.
+    /// </summary>
 #if NET8_0_OR_GREATER
     [RequiresUnreferencedCode("NATS payload serialization may use reflection. Preserve payload type members when trimming.")]
     [RequiresDynamicCode("NATS payload serialization may use reflection.")]
@@ -53,6 +57,10 @@ public static class NatsObservable
                 .ConfigureAwait(false);
         });
 
+    /// <summary>
+    /// Sends a request and emits the reply. Malformed or error replies fail the observable instead of
+    /// returning <c>default(TResponse)</c>.
+    /// </summary>
 #if NET8_0_OR_GREATER
     [RequiresUnreferencedCode("NATS payload serialization may use reflection. Preserve payload type members when trimming.")]
     [RequiresDynamicCode("NATS payload serialization may use reflection.")]

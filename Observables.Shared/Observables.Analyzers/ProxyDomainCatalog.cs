@@ -59,10 +59,18 @@ internal static class ProxyDomainCatalog
         ProxyDomainTable.RestApi,
         DiagnosticDescriptors.EmptyRestApiInterface);
 
+    /// <summary>
+    /// Events has no empty-interface diagnostic; OBS0001 still needs a catalog row.
+    /// </summary>
+    internal static readonly ProxyDomain Events = new(
+        ProxyDomainTable.Events,
+        DiagnosticDescriptors.ConflictingReactivePackages);
+
     internal static readonly IReadOnlyList<ProxyDomain> InterfaceProxyDomains =
         [SignalR, Mqtt, WebSocket, Grpc, Sse, Nats, Postgres, Redis, RestApi];
 
-    internal static readonly IReadOnlyList<ProxyDomain> ReactiveConflictDomains = InterfaceProxyDomains;
+    internal static readonly IReadOnlyList<ProxyDomain> ReactiveConflictDomains =
+        [SignalR, Mqtt, WebSocket, Grpc, Sse, Nats, Postgres, Redis, RestApi, Events];
 
     internal static bool HasAttribute(ISymbol symbol, INamedTypeSymbol attributeType)
     {

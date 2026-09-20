@@ -19,7 +19,12 @@ public sealed class OpenGenericProxyInterfaceAnalyzer : DiagnosticAnalyzer
 
     static void AnalyzeInterface(SymbolAnalysisContext context)
     {
-        if (context.Symbol is not INamedTypeSymbol { TypeKind: TypeKind.Interface, TypeParameters.Length: > 0 } interfaceSymbol)
+        if (context.Symbol is not INamedTypeSymbol { TypeKind: TypeKind.Interface } interfaceSymbol)
+        {
+            return;
+        }
+
+        if (!IsOpenGeneric(interfaceSymbol))
         {
             return;
         }
@@ -35,5 +40,18 @@ public sealed class OpenGenericProxyInterfaceAnalyzer : DiagnosticAnalyzer
             DiagnosticDescriptors.OpenGenericProxyInterface,
             location,
             interfaceSymbol.Name));
+    }
+
+    internal static bool IsOpenGeneric(INamedTypeSymbol type)
+    {
+        for (var current = type; current is not null; current = current.ContainingType)
+        {
+            if (current.TypeParameters.Length > 0)
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

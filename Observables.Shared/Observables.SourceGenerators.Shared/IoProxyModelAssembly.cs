@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Collections.Immutable;
 using Microsoft.CodeAnalysis;
 using Observables.SourceGenerators.Shared.Extensions;
@@ -10,10 +11,10 @@ namespace Observables.SourceGenerators.Shared;
 /// </summary>
 internal static class IoProxyModelAssembly
 {
-    internal static string GeneratedProxyClassName(INamedTypeSymbol iface)
+    internal static string GeneratedProxyClassName(INamedTypeSymbol iface, bool keepInterfacePrefix = false)
     {
         var name = iface.Name;
-        if (name.Length >= 2 && name[0] == 'I' && char.IsUpper(name[1]))
+        if (!keepInterfacePrefix && name.Length >= 2 && name[0] == 'I' && char.IsUpper(name[1]))
         {
             name = name.Substring(1);
         }
@@ -71,11 +72,11 @@ internal static class IoProxyModelAssembly
             return (diagnostics, emptyModel());
         }
 
-        var interfaces = new List<TInterfaceModel>();
+        var pending = new List<(MarkedInterfaceContext Marked, List<TMember> Members, string ClassName)>();
         foreach (var marked in markedInterfaces)
         {
             cancellationToken.ThrowIfCancellationRequested();
-            if (marked.InterfaceSymbol.TypeParameters.Length > 0)
+            if (IoProxyInterfaceWalk.IsOpenGeneric(marked.InterfaceSymbol))
             {
                 continue;
             }
@@ -103,11 +104,26 @@ internal static class IoProxyModelAssembly
                 continue;
             }
 
+            pending.Add((marked, members, GeneratedProxyClassName(marked.InterfaceSymbol)));
+        }
+
+        var nameCounts = new Dictionary<string, int>(StringComparer.Ordinal);
+        foreach (var item in pending)
+        {
+            nameCounts[item.ClassName] = nameCounts.TryGetValue(item.ClassName, out var count) ? count + 1 : 1;
+        }
+
+        var interfaces = new List<TInterfaceModel>(pending.Count);
+        foreach (var item in pending)
+        {
+            var className = nameCounts[item.ClassName] > 1
+                ? GeneratedProxyClassName(item.Marked.InterfaceSymbol, keepInterfacePrefix: true)
+                : item.ClassName;
             interfaces.Add(
                 createInterface(
-                    marked,
-                    GeneratedProxyClassName(marked.InterfaceSymbol),
-                    members.ToImmutableEquatableArray()));
+                    item.Marked,
+                    className,
+                    item.Members.ToImmutableEquatableArray()));
         }
 
         return (diagnostics, createContext(interfaces.ToImmutableEquatableArray()));

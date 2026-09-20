@@ -1,3 +1,5 @@
+# Pin GitHub Actions to commit SHAs (not floating tags).
+# Upgrade: resolve the release commit on the action repo, replace the SHA, re-run CI.
 name: CI
 
 env:
@@ -26,10 +28,10 @@ jobs:
       matrix:
         os: [windows-latest, ubuntu-latest]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262  # v4
 
       - name: Setup .NET SDKs
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9  # v4
         with:
           dotnet-version: |
             8.0.x
@@ -37,7 +39,7 @@ jobs:
             10.0.300
 
       - name: Cache NuGet packages
-        uses: actions/cache@v4
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830  # v4
         with:
           path: ~/.nuget/packages
           key: ${{ runner.os }}-nuget-${{ hashFiles('**/Directory.Packages.props', '**/global.json') }}
@@ -52,7 +54,7 @@ jobs:
 
       - name: Upload CI log
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02  # v4
         with:
           name: ci-log-${{ matrix.os }}
           path: ci-${{ matrix.os }}.log
@@ -60,7 +62,7 @@ jobs:
 
       - name: Upload test results
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02  # v4
         with:
           name: test-results-${{ matrix.os }}
           path: TestResults/
@@ -70,15 +72,18 @@ jobs:
     name: Lint GitHub Actions
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262  # v4
 
       - name: Install actionlint
         shell: bash
         run: |
           version=1.7.12
-          curl --fail --silent --show-error --location \
-            "https://github.com/rhysd/actionlint/releases/download/v${version}/actionlint_${version}_linux_amd64.tar.gz" \
-            | tar -xz -C "$RUNNER_TEMP"
+          # Pin the tarball. Upgrade: bump version, replace sha256, re-run CI.
+          tarball="actionlint_${version}_linux_amd64.tar.gz"
+          expected_sha256="8aca8db96f1b94770f1b0d72b6dddcb1ebb8123cb3712530b08cc387b349a3d8"
+          curl --fail --silent --show-error --location             "https://github.com/rhysd/actionlint/releases/download/v${version}/${tarball}"             -o "${RUNNER_TEMP}/${tarball}"
+          echo "${expected_sha256}  ${RUNNER_TEMP}/${tarball}" | sha256sum --check --strict
+          tar -xz -C "$RUNNER_TEMP" -f "${RUNNER_TEMP}/${tarball}"
           echo "$RUNNER_TEMP" >> "$GITHUB_PATH"
 
       - name: Lint workflows
@@ -88,10 +93,10 @@ jobs:
     name: Format whitespace verify
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262  # v4
 
       - name: Setup .NET SDK
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9  # v4
         with:
           dotnet-version: |
             8.0.x
@@ -104,7 +109,7 @@ jobs:
     name: Line ending guard
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262  # v4
 
       # .gitattributes pins every text pattern to eol=lf, so the index must be
       # pure LF. Two failure modes slip past `dotnet format whitespace`, which
@@ -142,13 +147,13 @@ jobs:
       shared: ${{ steps.filter.outputs.shared }}
       any: ${{ steps.filter.outputs.any }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262  # v4
         with:
           fetch-depth: 0
 
       - name: Detect changed files per domain
         id: filter
-        uses: dorny/paths-filter@v3
+        uses: dorny/paths-filter@15192bc058cc28a13dbf6cde61f19e18988b7af6  # v3
         with:
           predicate-quantifier: some
           filters: |
@@ -207,10 +212,10 @@ jobs:
     if: needs.changes.outputs.shared == 'true'
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262  # v4
 
       - name: Setup .NET SDKs
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9  # v4
         with:
           dotnet-version: |
             8.0.x
@@ -218,7 +223,7 @@ jobs:
             10.0.300
 
       - name: Cache NuGet packages
-        uses: actions/cache@v4
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830  # v4
         with:
           path: ~/.nuget/packages
           key: ${{ runner.os }}-nuget-${{ hashFiles('**/Directory.Packages.props', '**/global.json') }}
@@ -233,7 +238,7 @@ jobs:
 
       - name: Upload test log
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02  # v4
         with:
           name: test-log-shared
           path: test-shared.log
@@ -241,7 +246,7 @@ jobs:
 
       - name: Upload test results
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02  # v4
         with:
           name: test-results-shared
           path: TestResults/
@@ -273,10 +278,10 @@ jobs:
 
       - name: Proceed only if gate passed
         if: steps.gate.outcome == 'success'
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262  # v4
 
       - name: Setup .NET SDKs
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9  # v4
         with:
           dotnet-version: |
             8.0.x
@@ -284,7 +289,7 @@ jobs:
             10.0.300
 
       - name: Cache NuGet packages
-        uses: actions/cache@v4
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830  # v4
         with:
           path: ~/.nuget/packages
           key: ${{ runner.os }}-nuget-${{ hashFiles('**/Directory.Packages.props', '**/global.json') }}
@@ -300,7 +305,7 @@ jobs:
 
       - name: Upload test log
         if: always() && steps.gate.outcome == 'success'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02  # v4
         with:
           name: test-log-${{ matrix.domain }}
           path: test-${{ matrix.domain }}.log
@@ -308,7 +313,7 @@ jobs:
 
       - name: Upload test results
         if: always() && steps.gate.outcome == 'success'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02  # v4
         with:
           name: test-results-${{ matrix.domain }}
           path: TestResults/
@@ -333,11 +338,11 @@ jobs:
 
       - name: Proceed only if gate passed
         if: steps.gate.outcome == 'success'
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262  # v4
 
       - name: Setup .NET SDKs
         if: steps.gate.outcome == 'success'
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9  # v4
         with:
           dotnet-version: |
             8.0.x
@@ -346,7 +351,7 @@ jobs:
 
       - name: Cache NuGet packages
         if: steps.gate.outcome == 'success'
-        uses: actions/cache@v4
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830  # v4
         with:
           path: ~/.nuget/packages
           key: ${{ runner.os }}-nuget-${{ hashFiles('**/Directory.Packages.props', '**/global.json') }}
@@ -362,7 +367,7 @@ jobs:
 
       - name: Upload pack log
         if: always() && steps.gate.outcome == 'success'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02  # v4
         with:
           name: pack-log-${{ matrix.domain }}
           path: pack-${{ matrix.domain }}.log
@@ -370,7 +375,7 @@ jobs:
 
       - name: Upload packages
         if: always() && steps.gate.outcome == 'success'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02  # v4
         with:
           name: nuget-packages-${{ matrix.domain }}
           path: artifacts/package/*.nupkg
@@ -384,10 +389,10 @@ jobs:
       needs.changes.outputs.any == 'true'
       && (github.event_name == 'push' || github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'pack')))
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262  # v4
 
       - name: Setup .NET SDKs
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9  # v4
         with:
           dotnet-version: |
             8.0.x
@@ -395,7 +400,7 @@ jobs:
             10.0.300
 
       - name: Cache NuGet packages
-        uses: actions/cache@v4
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830  # v4
         with:
           path: ~/.nuget/packages
           key: ${{ runner.os }}-nuget-${{ hashFiles('**/Directory.Packages.props', '**/global.json') }}
@@ -410,7 +415,7 @@ jobs:
 
       - name: Upload smoke log
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02  # v4
         with:
           name: smoke-log
           path: smoke.log
@@ -422,10 +427,10 @@ jobs:
     if: needs.changes.outputs.any == 'true'
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262  # v4
 
       - name: Setup .NET SDKs
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9  # v4
         with:
           dotnet-version: |
             8.0.x
@@ -433,7 +438,7 @@ jobs:
             10.0.300
 
       - name: Cache NuGet packages
-        uses: actions/cache@v4
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830  # v4
         with:
           path: ~/.nuget/packages
           key: ${{ runner.os }}-nuget-${{ hashFiles('**/Directory.Packages.props', '**/global.json') }}
@@ -454,7 +459,7 @@ jobs:
 
       - name: Upload doc-loc log
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02  # v4
         with:
           name: doc-loc-log
           path: doc-loc.log

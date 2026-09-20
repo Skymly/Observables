@@ -26,6 +26,7 @@
 
   <ItemGroup>
     <None Include="$(MSBuildThisFileDirectory)../LICENSE" Pack="true" PackagePath="\" Visible="false" Condition="Exists('$(MSBuildThisFileDirectory)../LICENSE')" />
+    <None Include="$(MSBuildThisFileDirectory)../NOTICE.md" Pack="true" PackagePath="NOTICE.md" Visible="false" Condition="$(PackageId.StartsWith('Observables.RestAPI.'))" />
     <None Include="$(MSBuildThisFileDirectory)../assets/logo-128.png" Pack="true" PackagePath="\logo.png" Visible="false" />
     <PackageReference Include="Microsoft.SourceLink.GitHub" PrivateAssets="all" />
   </ItemGroup>

@@ -5,7 +5,7 @@
 ## 项目状态
 
 - **类型**：个人项目（Skymly 工作区）
-- **远端**：https://github.com/Skymly/Observables（私有）；文件夹名 `Observables` = 仓库名；同步状态以 `git status` 为准
+- **远端**：https://github.com/Skymly/Observables（公开）；文件夹名 `Observables` = 仓库名；同步状态以 `git status` 为准
 - **阶段**：**Events**、**RestAPI**、**SignalR**、**Mqtt**、**WebSocket**、**Grpc**、**Sse**、**Nats**、**Postgres**、**Redis** 已实现（运行时 + 双路生成器 + 测试）；共享层另含 `Observables.CodeFixes` 与 `Observables.Analyzers`；**nuget.org 已发** `0.2.2`（**20 包**）；Nuke `PackVerify` + `eng/nuget-smoke` 覆盖 manifest 包清单
 - **下一里程碑**：post-1.0 维护期（M1–M7 全部完成；`0.1.9` = Redis，`0.2.0` = Shared IO 生成器加深，`0.2.1` = 生命周期修复 + 协议桥，`0.2.2` = RestAPI HTTP 桥 + IO 字面量/取消令牌 + 诊断）；待定项见 [`docs/ROADMAP.md`](docs/ROADMAP.md) 末尾
 - **路线图**：里程碑与发版顺序见 [`docs/ROADMAP.md`](docs/ROADMAP.md)（M1 ✅ … M7 ✅，0.1.7 = Postgres，0.1.9 = Redis，0.2.0 = Shared deepening，0.2.1 / 0.2.2 = patch）
@@ -38,7 +38,7 @@
 | **`Observables.<Feature>.SourceGenerators.Shared`** | 双生成器时 | 本域共享生成器逻辑（`.projitems`），由 R3 与 Reactive 两路生成器 Import。 |
 | **`Observables.<Feature>.R3.SourceGenerators`** | 是 | R3 源生成器（`IsRoslynComponent`）。 |
 | **`Observables.<Feature>.Reactive.SourceGenerators`** | 是 | System.Reactive 源生成器。 |
-| **`Observables.<Feature>.Package`** | 发布时 | **Traversal 根** + 两个可 pack 子项目（`Observables.<Feature>.R3.csproj` 等），产出 **`Observables.<Feature>.R3`** 与 **`Observables.<Feature>.Reactive`**。Events、RestAPI 已实现；其余域待补。 |
+| **`Observables.<Feature>.Package`** | 发布时 | **Traversal 根** + 两个可 pack 子项目（`Observables.<Feature>.R3.csproj` 等），产出 **`Observables.<Feature>.R3`** 与 **`Observables.<Feature>.Reactive`**。十个域均已有 Package（Events 到 Redis）。 |
 
 可选扩展（**不**算第三个消费者主包）：如 `Observables.RestAPI.HttpClientFactory`，依赖域运行时，不捆绑生成器。
 
@@ -143,7 +143,7 @@ Observables/
 |--------|------|
 | **Solution Items** | `AGENTS.md`、`README.md`、`CONTRIBUTING.md`、公共 MSBuild props |
 | **Shared** | `Observables.Core`、`Observables.SourceGenerators.Shared` |
-| **Events** | 双路生成器、测试、`Events.Package`；`Observables.Events/Observables.Events/targets/observables.events.props`（`ObservableRoutedEvents` 默认 `false`） |
+| **Events** | 双路生成器、测试、Events.Package；源树 	argets/observables.events.props（ObservableRoutedEvents 默认 alse）；nupkg 为 Observables.Events.R3.props / Observables.Events.Reactive.props |
 | **RestAPI** / **SignalR** / … | 该域全部项目；RestAPI 含 `SourceGenerators.Shared`（shproj，`Id` 固定）、`RestAPI.Package`、**Tests** |
 | **RestAPI/Tests** | `RestAPI.Tests`、`Reactive.Tests`、`GeneratorTests`、`HttpClientFactory.Tests` |
 
@@ -352,7 +352,7 @@ dotnet run --project build/_build.csproj -- --target Ci --configuration Release
 | **Test** | 同 `Ci`（`Compile` + `UnitTest`）；可附加 `--test-domains <逗号分隔>` 过滤测试项目（例如 `--test-domains mqtt,shared`） |
 | **Pack** | 打包 pack 子项目 → `artifacts/package/`（**不**依赖 UnitTest）；可附加 `--pack-domains <逗号分隔>` 过滤包（按 `PackageId` 前缀 `Observables.<d>.` 匹配） |
 | **PackOnly** | `Pack` + `PackVerify`（**不**跑 UnitTest） |
-| **PackVerify** | 断言 nupkg 含 analyzer、Events `observables.events.props`、RestAPI/SignalR/Mqtt/WebSocket/Sse/Grpc/Nats/Postgres/Redis `lib/`（manifest 当前 **20** 包） |
+| **PackVerify** | 断言 nupkg 含 analyzer、Events Observables.Events.*.props（不是源树 observables.events.props）、RestAPI/SignalR/Mqtt/WebSocket/Sse/Grpc/Nats/Postgres/Redis lib/（manifest 当前 **20** 包） |
 | **CiPack** | CI 完整流水线：`Test` + `PackOnly` + `NuGetConsumerSmoke`（本地包）；保留供本地或 release.yml 全链路调试 |
 | **Publish** | 推送到 nuget.org（`NUGET_API_KEY`）与 GitHub Packages（`GITHUB_TOKEN`，`packages:write`）；`DependsOn(Test, PackVerify)` 确保发版前测试已通过 |
 

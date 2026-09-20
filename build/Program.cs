@@ -26,6 +26,7 @@ sealed class Build : NukeBuild
     [Parameter("NuGet API key (required for nuget.org Publish)")]
     readonly string? NuGetApiKey =
         Environment.GetEnvironmentVariable("NUGET_API_KEY")
+        // Legacy alias. Prefer NUGET_API_KEY. Do not log either value.
         ?? Environment.GetEnvironmentVariable("APIKEY");
 
     [Parameter("GitHub token with packages:write (required for GitHub Packages Publish)")]

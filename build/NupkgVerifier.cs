@@ -5,6 +5,7 @@ using System.Xml.Linq;
 
 static class NupkgVerifier
 {
+    // Keep in sync with ObservablesAnalyzerRoslynFolder in eng/Observables.Package.props.
     public const string AnalyzerFolder = "analyzers/dotnet/roslyn4.12/cs/";
 
     public static IReadOnlyList<string> Verify(string nupkgPath, NupkgVerifyRequest request)

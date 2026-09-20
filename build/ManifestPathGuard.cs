@@ -12,8 +12,17 @@ static class ManifestPathGuard
             throw new ArgumentException("Repository root is required.", nameof(repoRoot));
         }
 
+        string rootFull = Path.GetFullPath(repoRoot);
         string full = Path.GetFullPath(
-            Path.Combine(repoRoot, relativePath.Replace('/', Path.DirectorySeparatorChar)));
+            Path.Combine(rootFull, relativePath.Replace('/', Path.DirectorySeparatorChar)));
+        string prefix = rootFull.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar)
+            + Path.DirectorySeparatorChar;
+        if (!full.StartsWith(prefix, StringComparison.OrdinalIgnoreCase)
+            && !string.Equals(full, rootFull, StringComparison.OrdinalIgnoreCase))
+        {
+            throw new InvalidOperationException($"Build manifest path escapes the repository root: {relativePath}");
+        }
+
         if (!File.Exists(full))
         {
             throw new InvalidOperationException($"Build manifest path does not exist: {relativePath}");

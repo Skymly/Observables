@@ -50,10 +50,12 @@ internal static class RedisProtocol
         CancellationToken cancellationToken)
     {
         ChannelMessageQueue? queue = null;
+        Task<ChannelMessageQueue>? subscribeTask = null;
         try
         {
             var subscriber = multiplexer.GetSubscriber();
-            queue = await subscriber.SubscribeAsync(channel).WaitAsync(cancellationToken).ConfigureAwait(false);
+            subscribeTask = subscriber.SubscribeAsync(channel);
+            queue = await subscribeTask.WaitAsync(cancellationToken).ConfigureAwait(false);
 
             // ChannelMessageQueue enumeration is sequential (SER OnMessage / queue path).
             await foreach (var message in queue.WithCancellation(cancellationToken).ConfigureAwait(false))
@@ -65,17 +67,38 @@ internal static class RedisProtocol
         }
         finally
         {
-            if (queue is not null)
+            await UnsubscribeBestEffortAsync(queue, subscribeTask).ConfigureAwait(false);
+        }
+    }
+
+    static async Task UnsubscribeBestEffortAsync(
+        ChannelMessageQueue? queue,
+        Task<ChannelMessageQueue>? subscribeTask)
+    {
+        if (queue is null && subscribeTask is not null)
+        {
+            try
             {
-                try
-                {
-                    await queue.UnsubscribeAsync().ConfigureAwait(false);
-                }
-                catch (Exception)
-                {
-                    // best-effort unsubscribe on dispose / fault
-                }
+                queue = await subscribeTask.ConfigureAwait(false);
             }
+            catch (Exception)
+            {
+                return;
+            }
+        }
+
+        if (queue is null)
+        {
+            return;
+        }
+
+        try
+        {
+            await queue.UnsubscribeAsync().ConfigureAwait(false);
+        }
+        catch (Exception)
+        {
+            // best-effort unsubscribe on dispose / fault
         }
     }
 }

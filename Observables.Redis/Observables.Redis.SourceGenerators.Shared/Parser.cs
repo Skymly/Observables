@@ -270,7 +270,9 @@ internal static class Parser
             return;
         }
 
-        var isPattern = channelTemplate.IndexOf('*') >= 0 || channelTemplate.IndexOf('?') >= 0;
+        var isPattern = IsExplicitPatternSubscribe(property)
+            || channelTemplate.IndexOf('*') >= 0
+            || channelTemplate.IndexOf('?') >= 0;
 
         if (!ObservableReturnTypeParser.TryParse(
                 property.Type,
@@ -309,6 +311,27 @@ internal static class Parser
                 null,
                 IsPatternSubscribe: isPattern,
                 UseEnvelope: useEnvelope));
+    }
+
+    static bool IsExplicitPatternSubscribe(IPropertySymbol property)
+    {
+        foreach (var candidate in property.GetAttributes())
+        {
+            if (candidate.AttributeClass?.Name != "RedisSubscribeAttribute")
+            {
+                continue;
+            }
+
+            foreach (var argument in candidate.NamedArguments)
+            {
+                if (argument.Key == "Pattern" && argument.Value.Value is true)
+                {
+                    return true;
+                }
+            }
+        }
+
+        return false;
     }
 
     static bool TryUnwrapRedisMessage(

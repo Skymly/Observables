@@ -75,6 +75,65 @@ internal static class HangingRedis
         }
     }
 
+    public static DelayedSubscribe CreateDelayedSubscribe(IConnectionMultiplexer inner)
+    {
+        var started = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var release = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var subscriber = DispatchProxy.Create<ISubscriber, DelayedSubscriberProxy>();
+        var delayed = (DelayedSubscriberProxy)(object)subscriber;
+        delayed.Inner = inner.GetSubscriber();
+        delayed.Started = started;
+        delayed.Release = release;
+
+        var multiplexer = DispatchProxy.Create<IConnectionMultiplexer, HangingMultiplexerProxy>();
+        ((HangingMultiplexerProxy)(object)multiplexer).Subscriber = subscriber;
+        return new DelayedSubscribe(multiplexer, started.Task, release);
+    }
+
+    public sealed class DelayedSubscribe
+    {
+        internal DelayedSubscribe(
+            IConnectionMultiplexer multiplexer,
+            Task subscribeStarted,
+            TaskCompletionSource release)
+        {
+            Multiplexer = multiplexer;
+            SubscribeStarted = subscribeStarted;
+            Release = release;
+        }
+
+        public IConnectionMultiplexer Multiplexer { get; }
+        public Task SubscribeStarted { get; }
+        public TaskCompletionSource Release { get; }
+    }
+
+    public class DelayedSubscriberProxy : DispatchProxy
+    {
+        public ISubscriber Inner { get; set; } = null!;
+        public TaskCompletionSource Started { get; set; } = null!;
+        public TaskCompletionSource Release { get; set; } = null!;
+
+        protected override object? Invoke(MethodInfo? targetMethod, object?[]? args)
+        {
+            if (targetMethod?.Name == nameof(ISubscriber.SubscribeAsync)
+                && typeof(Task<ChannelMessageQueue>).IsAssignableFrom(targetMethod.ReturnType))
+            {
+                return DelaySubscribeAsync(targetMethod, args);
+            }
+
+            return targetMethod!.Invoke(Inner, args);
+        }
+
+        async Task<ChannelMessageQueue> DelaySubscribeAsync(MethodInfo method, object?[]? args)
+        {
+            var task = (Task<ChannelMessageQueue>)method.Invoke(Inner, args)!;
+            var queue = await task.ConfigureAwait(false);
+            Started.TrySetResult();
+            await Release.Task.ConfigureAwait(false);
+            return queue;
+        }
+    }
+
     public static IConnectionMultiplexer CreateThrowingSubscribe()
     {
         var subscriber = DispatchProxy.Create<ISubscriber, ThrowingSubscriberProxy>();

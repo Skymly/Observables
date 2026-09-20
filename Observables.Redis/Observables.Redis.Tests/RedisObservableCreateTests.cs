@@ -1,3 +1,4 @@
+using Observables.Redis;
 using Observables.Redis.Tests.Infrastructure;
 using R3;
 
@@ -17,6 +18,23 @@ public sealed class RedisObservableCreateTests
         Assert.True(result.IsFailure);
         Assert.IsType<InvalidOperationException>(result.Exception);
         Assert.Equal("subscribe-failed", result.Exception.Message);
+    }
+
+
+    [Fact]
+    public void FromPublish_serializes_payload_when_observable_is_created()
+    {
+        var hang = HangingRedis.CreateForPublish();
+        var cyclic = new CyclicPayload();
+        cyclic.Self = cyclic;
+
+        Assert.ThrowsAny<Exception>(() => RedisObservable.FromPublish(hang.Multiplexer, "orders", cyclic, TestContext.Current.CancellationToken));
+        Assert.Null(hang.LastPublishArgs);
+    }
+
+    sealed class CyclicPayload
+    {
+        public CyclicPayload Self { get; set; } = null!;
     }
 
     sealed class RecordingObserver<T> : Observer<T>

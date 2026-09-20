@@ -9,14 +9,18 @@ namespace Observables.TestSupport;
 
 public static class GeneratorTestRunner
 {
+    public static readonly ImmutableArray<string> Net8PreprocessorSymbols =
+        ["NET", "NET8_0", "NET8_0_OR_GREATER", "NET7_0_OR_GREATER", "NET6_0_OR_GREATER", "NET5_0_OR_GREATER", "NETCOREAPP"];
+
     public static (CSharpCompilation Compilation, SyntaxTree Tree) CreateHarnessCompilation(
         string userSource,
         Func<string, string> buildHarnessDocument,
         IEnumerable<MetadataReference> references,
         LanguageVersion languageVersion = LanguageVersion.Preview,
-        string? syntaxTreePath = null)
+        string? syntaxTreePath = null,
+        IEnumerable<string>? preprocessorSymbols = null)
     {
-        var parseOptions = CSharpParseOptions.Default.WithLanguageVersion(languageVersion);
+        var parseOptions = CreateParseOptions(languageVersion, preprocessorSymbols);
         var syntaxTree = CSharpSyntaxTree.ParseText(
             buildHarnessDocument(userSource),
             parseOptions,
@@ -39,16 +43,18 @@ public static class GeneratorTestRunner
         LanguageVersion languageVersion = LanguageVersion.Preview,
         AnalyzerConfigOptionsProvider? optionsProvider = null,
         string? syntaxTreePath = null,
-        bool includeResultDiagnostics = false)
+        bool includeResultDiagnostics = false,
+        IEnumerable<string>? preprocessorSymbols = null)
     {
         (CSharpCompilation compilation, _) = CreateHarnessCompilation(
             userSource,
             buildHarnessDocument,
             references,
             languageVersion,
-            syntaxTreePath);
+            syntaxTreePath,
+            preprocessorSymbols);
 
-        var parseOptions = CSharpParseOptions.Default.WithLanguageVersion(languageVersion);
+        var parseOptions = CreateParseOptions(languageVersion, preprocessorSymbols);
         GeneratorDriver driver = CSharpGeneratorDriver.Create(
             generators: generators.Select(static generator => generator.AsSourceGenerator()),
             parseOptions: parseOptions,
@@ -88,15 +94,17 @@ public static class GeneratorTestRunner
         IEnumerable<MetadataReference> references,
         IEnumerable<IIncrementalGenerator> generators,
         string? syntaxTreePath = null,
-        AnalyzerConfigOptionsProvider? optionsProvider = null)
+        AnalyzerConfigOptionsProvider? optionsProvider = null,
+        IEnumerable<string>? preprocessorSymbols = null)
     {
         (CSharpCompilation compilation, _) = CreateHarnessCompilation(
             userSource,
             buildHarnessDocument,
             references,
-            syntaxTreePath: syntaxTreePath);
+            syntaxTreePath: syntaxTreePath,
+            preprocessorSymbols: preprocessorSymbols);
 
-        var parseOptions = CSharpParseOptions.Default.WithLanguageVersion(LanguageVersion.Preview);
+        var parseOptions = CreateParseOptions(LanguageVersion.Preview, preprocessorSymbols);
         GeneratorDriver driver = CSharpGeneratorDriver.Create(
             generators: generators.Select(static generator => generator.AsSourceGenerator()),
             parseOptions: parseOptions,
@@ -122,9 +130,15 @@ public static class GeneratorTestRunner
         return steps[^1].Outputs[^1].Reason;
     }
 
+    public static string GetGeneratedSource(GeneratorRunOutput output)
+    {
+        AssertCompiled(output);
+        return string.Concat(output.GeneratedSources.Select(static source => source.Source));
+    }
+
     public static string ToSnapshot(GeneratorRunOutput output, SnapshotOptions options)
     {
-        ThrowIfCompilerErrors(output);
+        AssertCompiled(output);
 
         IEnumerable<Diagnostic> diagnostics = output.Diagnostics
             .Where(diagnostic => diagnostic.Id.StartsWith(options.DiagnosticPrefix, StringComparison.Ordinal));
@@ -201,7 +215,40 @@ public static class GeneratorTestRunner
         return references.ToArray();
     }
 
-    static void ThrowIfCompilerErrors(GeneratorRunOutput output)
+    public static Diagnostic RequireDiagnostic(
+        GeneratorRunOutput output,
+        string id,
+        DiagnosticSeverity? severity = null)
+    {
+        Diagnostic[] matches = output.Diagnostics
+            .Where(diagnostic => diagnostic.Id == id)
+            .ToArray();
+        if (matches.Length == 0)
+        {
+            throw new InvalidOperationException($"Expected diagnostic '{id}'.");
+        }
+
+        Diagnostic diagnostic = matches[0];
+        if (severity is { } expected && diagnostic.Severity != expected)
+        {
+            throw new InvalidOperationException(
+                $"Diagnostic '{id}' severity was {diagnostic.Severity}, expected {expected}.");
+        }
+
+        return diagnostic;
+    }
+
+    static CSharpParseOptions CreateParseOptions(
+        LanguageVersion languageVersion,
+        IEnumerable<string>? preprocessorSymbols)
+    {
+        IEnumerable<string> symbols = preprocessorSymbols ?? Net8PreprocessorSymbols;
+        return CSharpParseOptions.Default
+            .WithLanguageVersion(languageVersion)
+            .WithPreprocessorSymbols(symbols);
+    }
+
+    public static void AssertCompiled(GeneratorRunOutput output)
     {
         Diagnostic[] compilerErrors = output.Diagnostics
             .Where(diagnostic => IsGeneratedCompilerError(diagnostic, output))

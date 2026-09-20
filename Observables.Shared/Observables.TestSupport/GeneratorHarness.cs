@@ -54,6 +54,12 @@ public sealed class GeneratorHarnessRunOptions
     public bool? IncludeResultDiagnostics { get; init; }
 
     public string? SyntaxTreePath { get; init; }
+
+    /// <summary>
+    /// Preprocessor symbols for the harness compilation. <see langword="null"/> uses
+    /// <see cref="GeneratorTestRunner.Net8PreprocessorSymbols"/>; an empty sequence omits TFM symbols (polyfill).
+    /// </summary>
+    public IReadOnlyList<string>? PreprocessorSymbols { get; init; }
 }
 
 public sealed class GeneratorHarness
@@ -79,7 +85,8 @@ public sealed class GeneratorHarness
             options.LanguageVersion,
             options.OptionsProvider ?? _definition.CreateOptionsProvider?.Invoke(options),
             options.SyntaxTreePath ?? _definition.SyntaxTreePath,
-            options.IncludeResultDiagnostics ?? _definition.IncludeResultDiagnostics);
+            options.IncludeResultDiagnostics ?? _definition.IncludeResultDiagnostics,
+            options.PreprocessorSymbols);
     }
 
     public CacheTrackingDriver RunWithCacheTracking(
@@ -94,7 +101,8 @@ public sealed class GeneratorHarness
             BuildMetadataReferences(options),
             options.Generators ?? _definition.CreateGenerators(),
             options.SyntaxTreePath ?? _definition.SyntaxTreePath,
-            options.OptionsProvider ?? _definition.CreateOptionsProvider?.Invoke(options));
+            options.OptionsProvider ?? _definition.CreateOptionsProvider?.Invoke(options),
+            options.PreprocessorSymbols);
     }
 
     public (CSharpCompilation Compilation, SyntaxTree Tree) CreateHarnessCompilation(
@@ -108,7 +116,8 @@ public sealed class GeneratorHarness
             _definition.BuildHarnessDocument,
             BuildMetadataReferences(options),
             options.LanguageVersion,
-            options.SyntaxTreePath ?? _definition.SyntaxTreePath);
+            options.SyntaxTreePath ?? _definition.SyntaxTreePath,
+            options.PreprocessorSymbols);
     }
 
     public IncrementalStepRunReason GetStepReason(

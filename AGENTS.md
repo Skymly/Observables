@@ -422,7 +422,7 @@ GitHub Issues, routed by surface: library â†’ `Skymly/Observables`; user Docs â†
 
 ### Triage labels
 
-Default five roles: `needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix`. See `docs/agents/triage-labels.md`.
+Default five roles (live labels on this tracker): `needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix`. See `docs/agents/triage-labels.md`.
 
 ### Domain docs
 

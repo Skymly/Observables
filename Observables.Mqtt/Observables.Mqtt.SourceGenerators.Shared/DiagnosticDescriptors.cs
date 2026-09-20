@@ -19,12 +19,21 @@ internal static class DiagnosticDescriptors
     public static readonly DiagnosticDescriptor MqttCoreNotReferenced =
         new(
             "OBS5002",
-            "Observables.Mqtt must be referenced",
-            "Observables.Mqtt is not referenced. Add a PackageReference to Observables.Mqtt.",
+#if OBSERVABLES_R3
+            "Observables.Mqtt.R3 must be referenced",
+            "Observables.Mqtt.R3 is not referenced. Add a PackageReference to Observables.Mqtt.R3.",
+#else
+            "Observables.Mqtt.Reactive must be referenced",
+            "Observables.Mqtt.Reactive is not referenced. Add a PackageReference to Observables.Mqtt.Reactive.",
+#endif
             "Observables.Mqtt",
             DiagnosticSeverity.Error,
             isEnabledByDefault: true,
-            description: "Observables.Mqtt runtime package is not referenced.",
+#if OBSERVABLES_R3
+            description: "Observables.Mqtt.R3 package is not referenced.",
+#else
+            description: "Observables.Mqtt.Reactive package is not referenced.",
+#endif
             helpLinkUri: DiagnosticHelpLink.For("OBS5002"));
 
     public static readonly DiagnosticDescriptor UnsupportedReturnType =

@@ -147,7 +147,11 @@ public sealed class MqttInterfaceGeneratorTests
         var output = GeneratorTestHarness.Run(userSource, includeCoreReference: false);
         var snapshot = GeneratorTestHarness.ToSnapshot(output);
 
-        Assert.Contains("OBS5002", snapshot, StringComparison.Ordinal);
+        Assert.Contains(
+            "OBS5002: Observables.Mqtt.R3 is not referenced. Add a PackageReference to Observables.Mqtt.R3.",
+            snapshot,
+            StringComparison.Ordinal);
+        Assert.DoesNotContain("Observables.Mqtt is not referenced", snapshot, StringComparison.Ordinal);
     }
 
     [Fact]

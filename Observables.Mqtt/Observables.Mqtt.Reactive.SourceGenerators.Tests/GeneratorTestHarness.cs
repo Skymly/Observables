@@ -16,10 +16,15 @@ internal static class GeneratorTestHarness
                 "System",
                 "Observables.Mqtt",
                 "MQTTnet.Client"),
-            _ => MetadataReferenceBuilder.Build(
+            options => MetadataReferenceBuilder.Build(
+                options.IncludeCoreReference ? null : "Observables.Mqtt.dll",
                 typeof(global::System.Reactive.Unit),
-                typeof(global::Observables.Mqtt.MqttService),
-                typeof(global::Observables.Mqtt.Reactive.SystemReactiveMqttAdapter),
+                options.IncludeCoreReference
+                    ? typeof(global::Observables.Mqtt.MqttService)
+                    : null,
+                options.IncludeCoreReference
+                    ? typeof(global::Observables.Mqtt.Reactive.SystemReactiveMqttAdapter)
+                    : null,
                 typeof(global::MQTTnet.MqttFactory)),
             static () => [new MqttInterfaceStubGenerator()],
             new SnapshotOptions(
@@ -46,8 +51,13 @@ internal static class GeneratorTestHarness
                 WriteNoneForEmptyDiagnostics: false,
                 DiagnosticIdComparer: Comparer<string>.Default)));
 
-    internal static GeneratorRunOutput Run(string userSource) =>
-        Harness.Run(userSource);
+    internal static GeneratorRunOutput Run(string userSource, bool includeCoreReference = true) =>
+        Harness.Run(
+            userSource,
+            new GeneratorHarnessRunOptions
+            {
+                IncludeCoreReference = includeCoreReference,
+            });
 
     internal static GeneratorRunOutput RunWithoutReactiveAdapter(string userSource) =>
         HarnessWithoutReactiveAdapter.Run(userSource);

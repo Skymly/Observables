@@ -120,7 +120,7 @@ _ = obj.EventHandlers().PropertyChanged.Subscribe(t => Console.WriteLine(t.e.Pro
 
 ## RestAPI
 
-声明式类型安全 HTTP 客户端。用 `[Get]` / `[Post]` / `[Put]` / `[Delete]` / `[Patch]` 等特性标注接口方法，生成器自动产出 `HttpClient` 代理实现。支持路径模板 `{param}`、JSON 序列化、`Observable<T>` / `IObservable<T>` / `Task<T>` 返回类型。
+声明式类型安全 HTTP 客户端。用 `[Get]` / `[Post]` / `[Put]` / `[Delete]` / `[Patch]` 等特性标注接口方法，生成器自动产出 `HttpClient` 代理实现。支持路径模板 `{param}`、JSON 序列化。返回类型随所选包而定：`Observables.RestAPI.R3` 使用 `Observable<T>` / `Task<T>`（R3 生成器拒绝 `IObservable<T>`）；`Observables.RestAPI.Reactive` 使用 `IObservable<T>` / `Task<T>`。
 
 ### 基本用法
 

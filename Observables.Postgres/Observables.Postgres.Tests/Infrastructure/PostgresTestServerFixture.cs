@@ -7,7 +7,13 @@ public sealed class PostgresTestServerFixture : IAsyncLifetime, IAsyncDisposable
     public async ValueTask InitializeAsync() =>
         Server = await PostgresTestServer.StartAsync().ConfigureAwait(false);
 
-    public async ValueTask DisposeAsync() => await Server.DisposeAsync().ConfigureAwait(false);
+    public async ValueTask DisposeAsync()
+    {
+        if (Server is not null)
+        {
+            await Server.DisposeAsync().ConfigureAwait(false);
+        }
+    }
 }
 
 /// <summary>

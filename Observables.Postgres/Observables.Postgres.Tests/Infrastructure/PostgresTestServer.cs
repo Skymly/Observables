@@ -46,43 +46,102 @@ public sealed class PostgresTestServer : IAsyncDisposable
 
     public static async Task<PostgresTestServer> StartAsync(CancellationToken cancellationToken = default)
     {
-        var port = ReserveFreeTcpPort();
         var binDirectory = await EnsurePostgresBinDirectoryAsync(cancellationToken).ConfigureAwait(false);
-        var instanceRoot = Path.Combine(
-            Path.GetTempPath(),
-            $"observables-postgres-{port}-{Guid.NewGuid():N}");
-        var dataDirectory = Path.Combine(instanceRoot, "data");
-        Directory.CreateDirectory(instanceRoot);
+        Exception? last = null;
+        for (var attempt = 0; attempt < 5; attempt++)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            var port = ReserveFreeTcpPort();
+            var instanceRoot = Path.Combine(
+                Path.GetTempPath(),
+                $"observables-postgres-{port}-{Guid.NewGuid():N}");
+            var dataDirectory = Path.Combine(instanceRoot, "data");
+            Directory.CreateDirectory(instanceRoot);
+            var started = false;
+            try
+            {
+                await RunPostgresToolAsync(
+                    binDirectory,
+                    "initdb",
+                    [
+                        "-D", dataDirectory,
+                        "-U", "postgres",
+                        "--auth=trust",
+                        "--no-locale",
+                        "-E", "UTF8",
+                    ],
+                    cancellationToken).ConfigureAwait(false);
 
-        await RunPostgresToolAsync(
-            binDirectory,
-            "initdb",
-            [
-                "-D", dataDirectory,
-                "-U", "postgres",
-                "--auth=trust",
-                "--no-locale",
-                "-E", "UTF8",
-            ],
-            cancellationToken).ConfigureAwait(false);
+                var logPath = Path.Combine(instanceRoot, "postgres.log");
+                // Do not use pg_ctl -w with redirected stdio — on Windows the waiter can hang
+                // after the server is already accepting connections. Port polling is the readiness gate.
+                StartPostgresDetached(
+                    binDirectory,
+                    [
+                        "-D", dataDirectory,
+                        "-l", logPath,
+                        "-o", $"-p {port} -h 127.0.0.1",
+                        "start",
+                    ]);
+                started = true;
 
-        var logPath = Path.Combine(instanceRoot, "postgres.log");
-        // Do not use pg_ctl -w with redirected stdio — on Windows the waiter can hang
-        // after the server is already accepting connections. Port polling is the readiness gate.
-        StartPostgresDetached(
-            binDirectory,
-            [
-                "-D", dataDirectory,
-                "-l", logPath,
-                "-o", $"-p {port} -h 127.0.0.1",
-                "start",
-            ]);
+                await WaitForPortAsync(port, cancellationToken).ConfigureAwait(false);
 
-        await WaitForPortAsync(port, cancellationToken).ConfigureAwait(false);
+                var connectionString =
+                    $"Host=127.0.0.1;Port={port};Username=postgres;Database=postgres;Pooling=false;SSL Mode=Disable";
+                return new PostgresTestServer(dataDirectory, binDirectory, port, connectionString);
+            }
+            catch (Exception ex)
+            {
+                if (started)
+                {
+                    TryStopPostgres(binDirectory, dataDirectory);
+                }
 
-        var connectionString =
-            $"Host=127.0.0.1;Port={port};Username=postgres;Database=postgres;Pooling=false;SSL Mode=Disable";
-        return new PostgresTestServer(dataDirectory, binDirectory, port, connectionString);
+                TryDeleteDirectory(instanceRoot);
+                if (ex is OperationCanceledException)
+                {
+                    throw;
+                }
+
+                last = ex;
+            }
+        }
+
+        throw new InvalidOperationException("Failed to start PostgreSQL test peer.", last);
+    }
+
+    static void TryStopPostgres(string binDirectory, string dataDirectory)
+    {
+        try
+        {
+            var startInfo = CreatePostgresStartInfo(
+                binDirectory,
+                OperatingSystem.IsWindows() ? "pg_ctl.exe" : "pg_ctl",
+                ["-D", dataDirectory, "-m", "fast", "-w", "stop"],
+                redirect: false);
+            using var process = Process.Start(startInfo);
+            process?.WaitForExit(30_000);
+        }
+        catch
+        {
+            // best-effort rollback of a failed start
+        }
+    }
+
+    static void TryDeleteDirectory(string path)
+    {
+        try
+        {
+            if (Directory.Exists(path))
+            {
+                Directory.Delete(path, recursive: true);
+            }
+        }
+        catch
+        {
+            // instance data only — never the zonky binary cache
+        }
     }
 
     static async Task<string> EnsurePostgresBinDirectoryAsync(CancellationToken cancellationToken)
@@ -133,8 +192,7 @@ public sealed class PostgresTestServer : IAsyncDisposable
             await using var stream = await client
                 .GetStreamAsync(downloadUrl, cancellationToken)
                 .ConfigureAwait(false);
-            await using var file = File.Create(jarPath);
-            await stream.CopyToAsync(file, cancellationToken).ConfigureAwait(false);
+            await DownloadAtomicallyAsync(stream, jarPath, cancellationToken).ConfigureAwait(false);
         }
 
         var txzName = OperatingSystem.IsWindows()
@@ -189,6 +247,40 @@ public sealed class PostgresTestServer : IAsyncDisposable
 
         EnsureUnixExecutables(binDirectory);
         return binDirectory;
+    }
+
+
+    static async Task DownloadAtomicallyAsync(
+        Stream source,
+        string destinationPath,
+        CancellationToken cancellationToken)
+    {
+        var partialPath = destinationPath + ".partial";
+        try
+        {
+            await using (var file = new FileStream(partialPath, FileMode.Create, FileAccess.Write, FileShare.None))
+            {
+                await source.CopyToAsync(file, cancellationToken).ConfigureAwait(false);
+            }
+
+            File.Move(partialPath, destinationPath, overwrite: true);
+        }
+        catch
+        {
+            try
+            {
+                if (File.Exists(partialPath))
+                {
+                    File.Delete(partialPath);
+                }
+            }
+            catch
+            {
+                // ignored
+            }
+
+            throw;
+        }
     }
 
     static void EnsureUnixExecutables(string binDirectory)
@@ -332,6 +424,7 @@ public sealed class PostgresTestServer : IAsyncDisposable
         }
 
         stopped = true;
+        Exception? stopError = null;
         try
         {
             var startInfo = CreatePostgresStartInfo(
@@ -343,24 +436,27 @@ public sealed class PostgresTestServer : IAsyncDisposable
             if (process is not null)
             {
                 await process.WaitForExitAsync().ConfigureAwait(false);
+                if (process.ExitCode != 0)
+                {
+                    stopError = new InvalidOperationException(
+                        $"pg_ctl stop exited with code {process.ExitCode}.");
+                }
             }
         }
-        catch
+        catch (Exception ex)
         {
-            // ignored — best-effort shutdown
+            stopError ??= ex;
         }
 
         var instanceRoot = Path.GetDirectoryName(dataDirectory);
         if (instanceRoot is not null)
         {
-            try
-            {
-                Directory.Delete(instanceRoot, recursive: true);
-            }
-            catch
-            {
-                // ignored
-            }
+            TryDeleteDirectory(instanceRoot);
+        }
+
+        if (stopError is InvalidOperationException)
+        {
+            throw stopError;
         }
     }
 }

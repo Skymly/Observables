@@ -10,7 +10,7 @@ public static class PostgresObservable
     /// <summary>
     /// Hot stream: <c>LISTEN</c> on <paramref name="channel"/> and emit notification payloads until disposed.
     /// Runs a WaitAsync loop on <paramref name="connection"/> for the
-    /// subscription lifetime. Use a dedicated non-pooled connection; do not share it with concurrent commands.
+    /// subscription lifetime. Use a dedicated non-pooled connection; do not share it with concurrent commands. A second LISTEN on the same connection is rejected with <see cref="InvalidOperationException"/>.
     /// </summary>
     public static Observable<string> FromListen(NpgsqlConnection connection, string channel) =>
         R3AsyncCreate.Create<string>(async (observer, ct) =>

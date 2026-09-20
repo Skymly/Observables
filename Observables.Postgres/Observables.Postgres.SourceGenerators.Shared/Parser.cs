@@ -102,7 +102,7 @@ internal static class Parser
             return;
         }
 
-        if (!TryGetLiteralChannel(method, "NotifyAttribute", method.Name, out var channel, out var location))
+        if (!TryGetLiteralChannel(method, notifyAttribute, method.Name, out var channel, out var location))
         {
             diagnostics.Add(
                 Diagnostic.Create(
@@ -212,7 +212,7 @@ internal static class Parser
             return;
         }
 
-        if (!TryGetLiteralChannel(property, "ListenAttribute", property.Name, out var channel, out var location))
+        if (!TryGetLiteralChannel(property, listenAttribute, property.Name, out var channel, out var location))
         {
             diagnostics.Add(
                 Diagnostic.Create(
@@ -305,18 +305,21 @@ internal static class Parser
         channel.Length is > 0 and <= 63 && ChannelNameRegex.IsMatch(channel);
     static bool TryGetLiteralChannel(
         ISymbol member,
-        string attributeClassName,
+        INamedTypeSymbol? attributeType,
         string fallbackName,
         out string channel,
         out Location? badLocation)
     {
         AttributeData? attribute = null;
-        foreach (var candidate in member.GetAttributes())
+        if (attributeType is not null)
         {
-            if (candidate.AttributeClass?.Name == attributeClassName)
+            foreach (var candidate in member.GetAttributes())
             {
-                attribute = candidate;
-                break;
+                if (SymbolEqualityComparer.Default.Equals(candidate.AttributeClass, attributeType))
+                {
+                    attribute = candidate;
+                    break;
+                }
             }
         }
 

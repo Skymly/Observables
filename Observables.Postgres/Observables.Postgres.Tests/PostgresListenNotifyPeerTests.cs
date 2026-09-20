@@ -4,6 +4,11 @@ using Observables.Postgres.Tests.Infrastructure;
 namespace Observables.Postgres.Tests;
 
 [Collection(nameof(PostgresTestServerCollection))]
+/// <summary>
+/// Infrastructure canary: raw Npgsql LISTEN/NOTIFY against the B-tier peer.
+/// Proxy E2E lives in <see cref="PostgresClientR3E2ETests"/> and the Reactive client tests;
+/// this file does not use <c>PostgresService.For&lt;T&gt;</c>.
+/// </summary>
 public sealed class PostgresListenNotifyPeerTests(PostgresTestServerFixture fixture)
 {
     [Fact]

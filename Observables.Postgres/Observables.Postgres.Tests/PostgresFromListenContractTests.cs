@@ -41,6 +41,41 @@ public sealed class PostgresFromListenContractTests(PostgresTestServerFixture fi
         await WaitUntilIdleAndNotListeningAsync(listener, channel, timeout.Token);
     }
 
+
+    [Fact]
+    public async Task FromListen_second_listen_on_same_connection_is_rejected()
+    {
+        const string channel = "r3_listen_exclusive";
+        var cancellation = TestContext.Current.CancellationToken;
+
+        await using var listener = new NpgsqlConnection(fixture.Server.ConnectionString);
+        await listener.OpenAsync(cancellation);
+
+        var ready = new TaskCompletionSource<string>(TaskCreationOptions.RunContinuationsAsynchronously);
+        using var first = PostgresObservable.FromListen(listener, channel)
+            .Subscribe(payload => ready.TrySetResult(payload));
+
+        using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellation);
+        timeout.CancelAfter(DefaultTimeout);
+
+        await using var notifier = new NpgsqlConnection(fixture.Server.ConnectionString);
+        await notifier.OpenAsync(cancellation);
+        await NotifyUntilAsync(
+            notifier,
+            channel,
+            "ready",
+            () => ready.Task.IsCompleted,
+            timeout.Token);
+        Assert.Equal("ready", await ready.Task.WaitAsync(timeout.Token));
+
+        var observer = new RecordingObserver<string>();
+        using var second = PostgresObservable.FromListen(listener, channel).Subscribe(observer);
+        var result = await observer.Completed.WaitAsync(timeout.Token);
+        Assert.True(result.IsFailure);
+        Assert.IsType<InvalidOperationException>(result.Exception);
+        Assert.Contains("second LISTEN", result.Exception.Message, StringComparison.Ordinal);
+    }
+
     static async Task NotifyUntilAsync(
         NpgsqlConnection notifier,
         string channel,
@@ -115,5 +150,22 @@ public sealed class PostgresFromListenContractTests(PostgresTestServerFixture fi
 
         Assert.Fail(
             $"Connection still listening on '{channel}' or WaitAsync is still in progress. lastCount={lastCount}, sawInProgress={sawInProgress}.");
+    }
+
+    sealed class RecordingObserver<T> : Observer<T>
+    {
+        readonly TaskCompletionSource<Result> _completed = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        public Task<Result> Completed => _completed.Task;
+
+        protected override void OnNextCore(T value)
+        {
+        }
+
+        protected override void OnErrorResumeCore(Exception error)
+        {
+        }
+
+        protected override void OnCompletedCore(Result result) => _completed.TrySetResult(result);
     }
 }

@@ -54,9 +54,9 @@ internal static class PostgresProtocol
             }
         }
 
+        EnterListen(connection);
         connection.Notification += Handler;
         Exception? error = null;
-        EnterListen(connection);
         try
         {
             await using (var listen = new NpgsqlCommand(
@@ -145,17 +145,17 @@ internal static class PostgresProtocol
 
     static readonly ConcurrentDictionary<NpgsqlConnection, int> ActiveListens = new();
 
-    static void EnterListen(NpgsqlConnection connection) =>
-        ActiveListens.AddOrUpdate(connection, 1, static (_, count) => count + 1);
-
-    static void ExitListen(NpgsqlConnection connection)
+    static void EnterListen(NpgsqlConnection connection)
     {
-        var remaining = ActiveListens.AddOrUpdate(connection, 0, static (_, count) => count - 1);
-        if (remaining <= 0)
+        if (!ActiveListens.TryAdd(connection, 1))
         {
-            ActiveListens.TryRemove(connection, out _);
+            throw new InvalidOperationException(
+                "This NpgsqlConnection is occupied by LISTEN; a second LISTEN requires another session.");
         }
     }
+
+    static void ExitListen(NpgsqlConnection connection) =>
+        ActiveListens.TryRemove(connection, out _);
 
     static void ThrowIfListening(NpgsqlConnection connection)
     {
@@ -191,11 +191,6 @@ internal static class PostgresProtocol
             }
         }
 
-        if (lastInProgress is not null)
-        {
-            throw lastInProgress;
-        }
-
-        throw new TimeoutException("UNLISTEN did not complete while WaitAsync was in progress.");
+        throw lastInProgress!;
     }
 }

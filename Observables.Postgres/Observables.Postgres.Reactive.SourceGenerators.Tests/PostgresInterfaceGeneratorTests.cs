@@ -184,4 +184,33 @@ public sealed class PostgresInterfaceGeneratorTests
         var output = GeneratorTestHarness.RunWithoutReactiveAdapter(userSource);
         Assert.Contains(output.Diagnostics, static diagnostic => diagnostic.Id == "OBS10005");
     }
+
+    [Fact]
+    public void Real_listen_attribute_is_preferred_over_simple_name_twin()
+    {
+        const string userSource =
+            """
+            namespace Other
+            {
+                public sealed class ListenAttribute : System.Attribute
+                {
+                    public ListenAttribute(string? channel = null) { }
+                }
+            }
+
+            [Postgres]
+            public interface IHub
+            {
+                [Listen("real_channel")]
+                [Other.Listen("fake_channel")]
+                IObservable<string> Orders { get; }
+            }
+            """;
+
+        var output = GeneratorTestHarness.Run(userSource);
+        var snapshot = GeneratorTestHarness.ToSnapshot(output);
+        Assert.DoesNotContain("OBS10", snapshot, StringComparison.Ordinal);
+        Assert.Contains("real_channel", snapshot, StringComparison.Ordinal);
+        Assert.DoesNotContain("fake_channel", snapshot, StringComparison.Ordinal);
+    }
 }

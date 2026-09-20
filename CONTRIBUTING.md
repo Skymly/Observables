@@ -60,6 +60,8 @@ Maintainer and agent-oriented rules (version guards, module boundaries, Nuke tar
 
 ## Releases and versioning
 
+**Compatibility (0.2.2):** nuget.org `0.2.2` Reactive packages may ship domain DLLs that reference R3 without declaring it (verified on Mqtt.Reactive). Do **not** overwrite 0.2.2. The current tree is backend-neutral; the next package version is **0.3.0** (this change does not tag or Publish).
+
 Stable packages are published to [nuget.org](https://www.nuget.org/profiles/Skymly) and [GitHub Packages](https://github.com/orgs/Skymly/packages). Install the latest stable version from NuGet; see package readmes for backend-specific dependencies (R3 or System.Reactive).
 
 ### Release history (stable)

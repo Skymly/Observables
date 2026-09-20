@@ -2,7 +2,7 @@
 
 架构决策记录（Architecture Decision Record）。ADR 是不可变卡片，记录最终决策；讨论在 RFC 中完成。
 
-- **格式与生命周期**：见 [DOCUMENTATION.md](../DOCUMENTATION.md#3-adr--architecture-decision-record)
+- **格式与生命周期**：见 [DOCUMENTATION.md](../DOCUMENTATION.md#adr--架构决策记录)
 - **模板**：[_template.md](_template.md)
 - **编号规则**：从 ADR-001 开始，零填充三位，**不复用编号**
 

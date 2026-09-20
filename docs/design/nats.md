@@ -118,7 +118,7 @@ Observables.Nats/
 └── Observables.Nats.Reactive.Tests/
 ```
 
-登记：`Observables.slnx`、`Observables.BuildManifest.json`（16 包）、`ProxyDomainCatalog`、`ci.yml` nats 矩阵、`eng/nuget-smoke`。
+登记：`Observables.slnx`、`Observables.BuildManifest.json`（当前 **20** 包）、`ProxyDomainCatalog`、`ci.yml` nats 矩阵、`eng/nuget-smoke`。
 
 三个运行时程序集按后端分层（[ADR-003](../adr/ADR-003-backend-neutral-domain-runtime.md)）：
 

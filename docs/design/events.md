@@ -214,7 +214,7 @@ Observables.Events/
 | **附加路由事件独立入口** | 处理「事件定义在外国类型」场景（如 `Button.ClickEvent` 在 WPF） |
 | **`NullEvents` 空回退** | 未发现事件时仍可编译，避免破坏性失败 |
 | **静态事件支持延后** | `StaticObservableEventsGenerationEnabled = false`，留待后续 |
-| **诊断** | OBS2001–2004 为 Warning；OBS2005 为内部错误 fail-safe |
+| **诊断** | OBS2001–2004、OBS2006 为 Warning；OBS2005 为内部错误 fail-safe |
 
 ## 9. 兼容基线
 

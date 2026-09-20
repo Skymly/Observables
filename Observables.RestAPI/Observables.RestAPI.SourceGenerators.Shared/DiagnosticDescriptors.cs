@@ -70,6 +70,18 @@ internal static class DiagnosticDescriptors
             isEnabledByDefault: true,
             description: "Unexpected internal failure in the RestAPI source generator.",
             helpLinkUri: DiagnosticHelpLink.For("OBS3006"));
+
+    public static readonly DiagnosticDescriptor DuplicateBodyParameter =
+        new(
+            "OBS3008",
+            "Duplicate Body parameter",
+            "Method '{0}' declares more than one [Body] parameter",
+            "Observables.RestAPI",
+            DiagnosticSeverity.Error,
+            isEnabledByDefault: true,
+            description: "A REST method may have at most one [Body] parameter.",
+            helpLinkUri: DiagnosticHelpLink.For("OBS3008"));
+
 }
 
 internal static class RestApiGeneratorStepName

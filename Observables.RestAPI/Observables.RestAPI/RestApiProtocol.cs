@@ -96,10 +96,11 @@ namespace Observables.RestAPI
                 request.Content = multipart;
             }
 
+            var pendingContentHeaders = new List<KeyValuePair<string, string?>>();
             if (spec.Flags.StaticHeaders != null)
             {
                 foreach (var header in spec.Flags.StaticHeaders)
-                    TryAddStaticHeader(request, header);
+                    TryAddStaticHeader(request, header, pendingContentHeaders);
             }
 
             var hasBody = isMultipart;
@@ -110,12 +111,14 @@ namespace Observables.RestAPI
                 {
                     case RestApiBridge.SlotKind.Header:
                         var headerName = binding.HeaderName ?? binding.Name;
-                        request.Headers.TryAddWithoutValidation(
+                        AddRequestOrContentHeader(
+                            request,
                             headerName,
-                            RestApiBridge.FormatQueryValue(value, settings));
+                            RestApiBridge.FormatQueryValue(value, settings),
+                            pendingContentHeaders);
                         break;
                     case RestApiBridge.SlotKind.HeaderCollection:
-                        AddHeaderCollection(request, value);
+                        AddHeaderCollection(request, value, pendingContentHeaders);
                         break;
                     case RestApiBridge.SlotKind.Authorize:
                         var scheme = string.IsNullOrEmpty(binding.AuthorizeScheme)
@@ -150,6 +153,8 @@ namespace Observables.RestAPI
                         break;
                 }
             }
+
+            ApplyPendingContentHeaders(request, pendingContentHeaders);
 
             var relative = ToRelativePath(path);
             request.RequestUri = string.IsNullOrEmpty(relative)
@@ -257,7 +262,10 @@ namespace Observables.RestAPI
             _ => string.IsNullOrWhiteSpace(httpMethod) ? HttpMethod.Get : new HttpMethod(httpMethod),
         };
 
-        static void AddHeaderCollection(HttpRequestMessage request, object? value)
+        static void AddHeaderCollection(
+            HttpRequestMessage request,
+            object? value,
+            List<KeyValuePair<string, string?>> pendingContentHeaders)
         {
             if (value is not IEnumerable items)
                 return;
@@ -267,25 +275,102 @@ namespace Observables.RestAPI
                 switch (item)
                 {
                     case KeyValuePair<string, string> pair:
-                        request.Headers.TryAddWithoutValidation(pair.Key, pair.Value);
+                        AddRequestOrContentHeader(request, pair.Key, pair.Value, pendingContentHeaders);
                         break;
                     case DictionaryEntry entry:
                         if (entry.Key is string key)
-                            request.Headers.TryAddWithoutValidation(key, entry.Value as string ?? entry.Value?.ToString());
+                            AddRequestOrContentHeader(
+                                request,
+                                key,
+                                entry.Value as string ?? entry.Value?.ToString(),
+                                pendingContentHeaders);
                         break;
                 }
             }
         }
 
-        static void TryAddStaticHeader(HttpRequestMessage request, string header)
+        static void TryAddStaticHeader(
+            HttpRequestMessage request,
+            string header,
+            List<KeyValuePair<string, string?>> pendingContentHeaders)
         {
             var colonIdx = header.IndexOf(':');
             if (colonIdx <= 0)
-                return;
+            {
+                throw new InvalidOperationException(
+                    $"Static header '{header}' must be in 'Name: value' form.");
+            }
 
             var hKey = header.Substring(0, colonIdx).Trim();
             var hVal = colonIdx + 1 < header.Length ? header.Substring(colonIdx + 1).Trim() : "";
-            request.Headers.TryAddWithoutValidation(hKey, hVal);
+            AddRequestOrContentHeader(request, hKey, hVal, pendingContentHeaders);
+        }
+
+        static void AddRequestOrContentHeader(
+            HttpRequestMessage request,
+            string name,
+            string? value,
+            List<KeyValuePair<string, string?>> pendingContentHeaders)
+        {
+            if (string.IsNullOrWhiteSpace(name))
+            {
+                throw new InvalidOperationException("HTTP header name must be non-empty.");
+            }
+
+            if (request.Headers.TryAddWithoutValidation(name, value))
+            {
+                return;
+            }
+
+            if (request.Content is not null)
+            {
+                SetContentHeader(request.Content, name, value);
+                return;
+            }
+
+            if (IsContentHeaderName(name))
+            {
+                pendingContentHeaders.Add(new KeyValuePair<string, string?>(name, value));
+                return;
+            }
+
+            throw new InvalidOperationException($"Cannot set HTTP header '{name}'.");
+        }
+
+        static void ApplyPendingContentHeaders(
+            HttpRequestMessage request,
+            List<KeyValuePair<string, string?>> pendingContentHeaders)
+        {
+            if (pendingContentHeaders.Count == 0)
+            {
+                return;
+            }
+
+            if (request.Content is null)
+            {
+                throw new InvalidOperationException(
+                    $"Cannot set HTTP header '{pendingContentHeaders[0].Key}' without a request body.");
+            }
+
+            foreach (var header in pendingContentHeaders)
+            {
+                SetContentHeader(request.Content, header.Key, header.Value);
+            }
+        }
+
+        static void SetContentHeader(HttpContent content, string name, string? value)
+        {
+            content.Headers.Remove(name);
+            if (!content.Headers.TryAddWithoutValidation(name, value))
+            {
+                throw new InvalidOperationException($"Cannot set HTTP header '{name}'.");
+            }
+        }
+
+        static bool IsContentHeaderName(string name)
+        {
+            using var probe = new ByteArrayContent(Array.Empty<byte>());
+            return probe.Headers.TryAddWithoutValidation(name, "x");
         }
     }
 }

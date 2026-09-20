@@ -290,6 +290,29 @@ public sealed class WebSocketInterfaceGeneratorTests
     }
 
     [Fact]
+    public void WebSocket_interface_OBS6002_when_runtime_missing()
+    {
+        const string userSource =
+            """
+            [WebSocket]
+            public interface IHub
+            {
+                [WebSocketReceive("ping")]
+                IObservable<string> Ping { get; }
+            }
+            """;
+
+        var output = GeneratorTestHarness.Run(userSource, includeCoreReference: false);
+        var snapshot = GeneratorTestHarness.ToSnapshot(output);
+
+        Assert.Contains(
+            "OBS6002: Observables.WebSocket.Reactive is not referenced. Add a PackageReference to Observables.WebSocket.Reactive.",
+            snapshot,
+            StringComparison.Ordinal);
+        Assert.DoesNotContain("Observables.WebSocket is not referenced", snapshot, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void Missing_reactive_adapter_reports_OBS6005()
     {
         const string userSource =

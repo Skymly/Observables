@@ -19,12 +19,21 @@ internal static class DiagnosticDescriptors
     public static readonly DiagnosticDescriptor WebSocketCoreNotReferenced =
         new(
             "OBS6002",
-            "Observables.WebSocket must be referenced",
-            "Observables.WebSocket is not referenced. Add a PackageReference to Observables.WebSocket.",
+#if OBSERVABLES_R3
+            "Observables.WebSocket.R3 must be referenced",
+            "Observables.WebSocket.R3 is not referenced. Add a PackageReference to Observables.WebSocket.R3.",
+#else
+            "Observables.WebSocket.Reactive must be referenced",
+            "Observables.WebSocket.Reactive is not referenced. Add a PackageReference to Observables.WebSocket.Reactive.",
+#endif
             "Observables.WebSocket",
             DiagnosticSeverity.Error,
             isEnabledByDefault: true,
-            description: "Observables.WebSocket runtime package is not referenced.",
+#if OBSERVABLES_R3
+            description: "Observables.WebSocket.R3 package is not referenced.",
+#else
+            description: "Observables.WebSocket.Reactive package is not referenced.",
+#endif
             helpLinkUri: DiagnosticHelpLink.For("OBS6002"));
 
     public static readonly DiagnosticDescriptor UnsupportedReturnType =

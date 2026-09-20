@@ -119,12 +119,26 @@ public sealed class GeneratorTestRunnerTests
     }
 
     [Fact]
-    public void Default_parse_options_define_net8_symbols()
+    public void Default_parse_options_omit_tfm_symbols()
     {
         (CSharpCompilation compilation, _) = GeneratorTestRunner.CreateHarnessCompilation(
             userSource: "class C { }",
             buildHarnessDocument: static source => source,
             references: GeneratorTestRunner.GetMetadataReferences());
+
+        var options = (CSharpParseOptions)compilation.SyntaxTrees.Single().Options;
+        Assert.DoesNotContain("NET8_0_OR_GREATER", options.PreprocessorSymbolNames);
+        Assert.DoesNotContain("NET5_0_OR_GREATER", options.PreprocessorSymbolNames);
+    }
+
+    [Fact]
+    public void Net8_parse_options_define_tfm_symbols()
+    {
+        (CSharpCompilation compilation, _) = GeneratorTestRunner.CreateHarnessCompilation(
+            userSource: "class C { }",
+            buildHarnessDocument: static source => source,
+            references: GeneratorTestRunner.GetMetadataReferences(),
+            preprocessorSymbols: GeneratorTestRunner.Net8PreprocessorSymbols);
 
         var options = (CSharpParseOptions)compilation.SyntaxTrees.Single().Options;
         Assert.Contains("NET8_0_OR_GREATER", options.PreprocessorSymbolNames);
@@ -152,7 +166,8 @@ public sealed class GeneratorTestRunnerTests
             userSource: "public class User { }",
             buildHarnessDocument: static source => source,
             references: GeneratorTestRunner.GetMetadataReferences(),
-            generators: [new EmitsTfmGatedSyntaxGenerator()]);
+            generators: [new EmitsTfmGatedSyntaxGenerator()],
+            preprocessorSymbols: GeneratorTestRunner.Net8PreprocessorSymbols);
 
         GeneratorTestRunner.AssertCompiled(output);
     }

@@ -242,7 +242,7 @@ public static class GeneratorTestRunner
         LanguageVersion languageVersion,
         IEnumerable<string>? preprocessorSymbols)
     {
-        IEnumerable<string> symbols = preprocessorSymbols ?? Net8PreprocessorSymbols;
+        IEnumerable<string> symbols = preprocessorSymbols ?? [];
         return CSharpParseOptions.Default
             .WithLanguageVersion(languageVersion)
             .WithPreprocessorSymbols(symbols);

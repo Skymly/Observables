@@ -56,8 +56,9 @@ public sealed class GeneratorHarnessRunOptions
     public string? SyntaxTreePath { get; init; }
 
     /// <summary>
-    /// Preprocessor symbols for the harness compilation. <see langword="null"/> uses
-    /// <see cref="GeneratorTestRunner.Net8PreprocessorSymbols"/>; an empty sequence omits TFM symbols (polyfill).
+    /// Preprocessor symbols for the harness compilation. <see langword="null"/> or empty omits TFM
+    /// symbols (polyfill). Pass <see cref="GeneratorTestRunner.Net8PreprocessorSymbols"/> when the
+    /// test intends NET8/NET5 branches.
     /// </summary>
     public IReadOnlyList<string>? PreprocessorSymbols { get; init; }
 }

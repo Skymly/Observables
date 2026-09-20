@@ -29,4 +29,14 @@ public sealed class PostgresUnlistenTests(PostgresTestServerFixture fixture)
 
         await Assert.ThrowsAnyAsync<Exception>(() => PostgresProtocol.UnlistenAsync(victim, "unlisten_fail"));
     }
+
+    [Fact]
+    public async Task Unlisten_returns_when_the_connection_is_already_closed()
+    {
+        var cancellation = TestContext.Current.CancellationToken;
+        await using var connection = new NpgsqlConnection(fixture.Server.ConnectionString);
+        await connection.OpenAsync(cancellation);
+        await connection.CloseAsync();
+        await PostgresProtocol.UnlistenAsync(connection, "unlisten_closed");
+    }
 }

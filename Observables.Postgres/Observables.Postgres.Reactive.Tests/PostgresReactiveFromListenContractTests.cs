@@ -88,6 +88,41 @@ public sealed class PostgresReactiveFromListenContractTests(PostgresTestServerFi
         await WaitUntilIdleAndNotListeningAsync(listener, channel, timeout.Token);
     }
 
+
+    [Fact]
+    public async Task FromListen_second_listen_on_same_connection_is_rejected()
+    {
+        const string channel = "rx_listen_exclusive";
+        var cancellation = TestContext.Current.CancellationToken;
+
+        await using var listener = new NpgsqlConnection(fixture.Server.ConnectionString);
+        await listener.OpenAsync(cancellation);
+
+        var ready = new TaskCompletionSource<string>(TaskCreationOptions.RunContinuationsAsynchronously);
+        using var first = SystemReactivePostgresAdapter.FromListen(listener, channel)
+            .Subscribe(payload => ready.TrySetResult(payload));
+
+        using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellation);
+        timeout.CancelAfter(DefaultTimeout);
+
+        await using var notifier = new NpgsqlConnection(fixture.Server.ConnectionString);
+        await notifier.OpenAsync(cancellation);
+        await NotifyUntilAsync(
+            notifier,
+            channel,
+            "ready",
+            () => ready.Task.IsCompleted,
+            timeout.Token);
+        Assert.Equal("ready", await ready.Task.WaitAsync(timeout.Token));
+
+        var error = new TaskCompletionSource<Exception>(TaskCreationOptions.RunContinuationsAsynchronously);
+        using var second = SystemReactivePostgresAdapter.FromListen(listener, channel)
+            .Subscribe(_ => { }, ex => error.TrySetResult(ex), () => { });
+        var rejected = await error.Task.WaitAsync(timeout.Token);
+        Assert.IsType<InvalidOperationException>(rejected);
+        Assert.Contains("second LISTEN", rejected.Message, StringComparison.Ordinal);
+    }
+
     static async Task NotifyUntilAsync(
         NpgsqlConnection notifier,
         string channel,

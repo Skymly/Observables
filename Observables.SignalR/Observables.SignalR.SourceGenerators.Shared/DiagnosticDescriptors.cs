@@ -71,6 +71,17 @@ internal static class DiagnosticDescriptors
             description: "Client-to-server streaming parameters are not supported in this release.",
             helpLinkUri: DiagnosticHelpLink.For("OBS4006"));
 
+    public static readonly DiagnosticDescriptor MultipleHubBoundaries =
+        new(
+            "OBS4009",
+            "Multiple SignalR boundary attributes on one member",
+            "Member '{0}' declares more than one of HubInvoke, HubSend, HubStream, or HubOn",
+            "Observables.SignalR",
+            DiagnosticSeverity.Error,
+            isEnabledByDefault: true,
+            description: "A hub member must declare exactly one boundary attribute.",
+            helpLinkUri: DiagnosticHelpLink.For("OBS4009"));
+
     public static readonly DiagnosticDescriptor InternalGeneratorError =
         new(
             "OBS4008",

@@ -131,15 +131,29 @@ internal static class Parser
             return;
         }
 
-        var boundary = GetBoundaryKind(method, invokeAttribute, sendAttribute, streamAttribute);
+        var boundary = GetBoundaryKind(method, invokeAttribute, sendAttribute, streamAttribute, diagnostics);
         if (boundary is null)
         {
-            diagnostics.Add(
-                Diagnostic.Create(
-                    DiagnosticDescriptors.InvalidHubMember,
-                    method.Locations.FirstOrDefault(),
-                    ifaceSymbol.Name,
-                    method.Name));
+            var reportedConflict = false;
+            for (var i = 0; i < diagnostics.Count; i++)
+            {
+                if (diagnostics[i].Id == DiagnosticDescriptors.MultipleHubBoundaries.Id)
+                {
+                    reportedConflict = true;
+                    break;
+                }
+            }
+
+            if (!reportedConflict)
+            {
+                diagnostics.Add(
+                    Diagnostic.Create(
+                        DiagnosticDescriptors.InvalidHubMember,
+                        method.Locations.FirstOrDefault(),
+                        ifaceSymbol.Name,
+                        method.Name));
+            }
+
             return;
         }
 
@@ -287,24 +301,40 @@ internal static class Parser
         IMethodSymbol method,
         INamedTypeSymbol? invokeAttribute,
         INamedTypeSymbol? sendAttribute,
-        INamedTypeSymbol? streamAttribute)
+        INamedTypeSymbol? streamAttribute,
+        List<Diagnostic> diagnostics)
     {
+        HubBoundaryKind? kind = null;
+        var matches = 0;
         if (invokeAttribute is not null && IoProxyInterfaceWalk.HasAttribute(method, invokeAttribute))
         {
-            return HubBoundaryKind.Invoke;
+            kind = HubBoundaryKind.Invoke;
+            matches++;
         }
 
         if (sendAttribute is not null && IoProxyInterfaceWalk.HasAttribute(method, sendAttribute))
         {
-            return HubBoundaryKind.Send;
+            kind = HubBoundaryKind.Send;
+            matches++;
         }
 
         if (streamAttribute is not null && IoProxyInterfaceWalk.HasAttribute(method, streamAttribute))
         {
-            return HubBoundaryKind.Stream;
+            kind = HubBoundaryKind.Stream;
+            matches++;
         }
 
-        return null;
+        if (matches > 1)
+        {
+            diagnostics.Add(
+                Diagnostic.Create(
+                    DiagnosticDescriptors.MultipleHubBoundaries,
+                    method.Locations.FirstOrDefault(),
+                    method.Name));
+            return null;
+        }
+
+        return kind;
     }
 
     static bool TryGetLiteralMethodName(

@@ -79,7 +79,6 @@ internal static class SignalRProtocol
         internal IDisposable Add<T>(string methodName, Action<T> onNext)
         {
             var key = new SlotKey(methodName, typeof(T));
-            IDisposable? duplicateRegistration = null;
             lock (_gate)
             {
                 if (_slots.TryGetValue(key, out var existing) && existing is TypedSlot<T> existingSlot)
@@ -87,27 +86,13 @@ internal static class SignalRProtocol
                     existingSlot.Observers.Add(onNext);
                     return new Subscription<T>(this, key, onNext);
                 }
-            }
 
-            var created = new TypedSlot<T>(_gate);
-            var registration = _connection.On<T>(methodName, created.FanOut);
-            lock (_gate)
-            {
-                if (_slots.TryGetValue(key, out var raced) && raced is TypedSlot<T> racedSlot)
-                {
-                    racedSlot.Observers.Add(onNext);
-                    duplicateRegistration = registration;
-                }
-                else
-                {
-                    created.Registration = registration;
-                    created.Observers.Add(onNext);
-                    _slots[key] = created;
-                }
+                var created = new TypedSlot<T>(_gate);
+                created.Registration = _connection.On<T>(methodName, created.FanOut);
+                created.Observers.Add(onNext);
+                _slots[key] = created;
+                return new Subscription<T>(this, key, onNext);
             }
-
-            duplicateRegistration?.Dispose();
-            return new Subscription<T>(this, key, onNext);
         }
 
         internal void Remove<T>(SlotKey key, Action<T> onNext)

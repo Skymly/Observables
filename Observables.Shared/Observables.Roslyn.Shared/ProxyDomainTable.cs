@@ -22,6 +22,7 @@ internal static class ProxyDomainTable
         Postgres,
         Redis,
         RestApi,
+        Events,
     }
 
     internal sealed class BoundaryAttributeSuggestion
@@ -297,10 +298,35 @@ internal static class ProxyDomainTable
         propertyAttributes: []);
 
     /// <summary>
-    /// Domains with interface markers (including RestAPI). Used by empty-interface analysis and OBS0001.
+    /// Events is generator-only (no interface-proxy marker). It still participates in OBS0001
+    /// consumer-package conflict detection as Observables.Events.R3 vs Observables.Events.Reactive.
+    /// </summary>
+    internal static readonly ProxyDomainDefinition Events = new(
+        DomainKind.Events,
+        displayName: "Events",
+        interfaceMarkerMetadataName: "",
+        reactiveAdapterMetadataName: "",
+        emptyInterfaceDiagnosticId: "",
+        missingBoundaryDiagnosticId: "",
+        memberShapeMismatchDiagnosticId: "",
+        missingRuntimePackageDiagnosticId: "",
+        missingReactivePackageDiagnosticId: "",
+        methodAttributes: [],
+        propertyAttributes: []);
+
+    /// <summary>
+    /// Domains with interface markers (including RestAPI). Used by empty-interface analysis.
     /// </summary>
     internal static readonly IReadOnlyList<ProxyDomainDefinition> InterfaceProxyDomains =
         [SignalR, Mqtt, WebSocket, Grpc, Sse, Nats, Postgres, Redis, RestApi];
+
+    /// <summary>
+    /// Consumer packages that participate in OBS0001 R3 vs Reactive conflict detection.
+    /// Separate from <see cref="InterfaceProxyDomains"/> so Events can be listed without
+    /// becoming an empty-interface / member-boundary domain.
+    /// </summary>
+    internal static readonly IReadOnlyList<ProxyDomainDefinition> ConsumerPackageConflictDomains =
+        [SignalR, Mqtt, WebSocket, Grpc, Sse, Nats, Postgres, Redis, RestApi, Events];
 
     /// <summary>
     /// Domains that participate in the generic member missing-attribute / shape CodeFixes.
@@ -399,6 +425,7 @@ internal static class ProxyDomainTable
             DomainKind.Postgres => Postgres,
             DomainKind.Redis => Redis,
             DomainKind.RestApi => RestApi,
+            DomainKind.Events => Events,
             _ => throw new ArgumentOutOfRangeException(nameof(kind)),
         };
 }

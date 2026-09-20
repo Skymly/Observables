@@ -48,9 +48,11 @@ internal static class IoProxyInterfaceWalk
                     continue;
                 }
 
-                // Open generics cannot become a closed proxy class (CS0246). Skip here;
-                // OpenGenericProxyInterfaceAnalyzer reports OBS0002.
-                if (interfaceSymbol.TypeParameters.Length > 0)
+                // Open generics (including Outer<T>.IInner) cannot become a closed proxy (CS0246).
+                // file-local interfaces cannot be referenced from generated code (CS0400).
+                // OpenGenericProxyInterfaceAnalyzer reports OBS0002 for the open-generic case.
+                if (IsOpenGeneric(interfaceSymbol)
+                    || interfaceSyntax.Modifiers.Any(static m => m.IsKind(SyntaxKind.FileKeyword)))
                 {
                     continue;
                 }
@@ -130,6 +132,19 @@ internal static class IoProxyInterfaceWalk
         }
 
         return "E:" + member.Name;
+    }
+
+    internal static bool IsOpenGeneric(INamedTypeSymbol type)
+    {
+        for (var current = type; current is not null; current = current.ContainingType)
+        {
+            if (current.TypeParameters.Length > 0)
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     internal static bool HasAttribute(ISymbol symbol, INamedTypeSymbol attributeType)

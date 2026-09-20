@@ -52,6 +52,29 @@ public sealed class HubInterfaceGeneratorTests
     }
 
     [Fact]
+    public void Hub_interface_OBS4002_when_runtime_missing()
+    {
+        const string userSource =
+            """
+            [Hub]
+            public interface IChatHub
+            {
+                [HubInvoke]
+                IObservable<int> GetUserCount();
+            }
+            """;
+
+        var output = GeneratorTestHarness.Run(userSource, includeCoreReference: false);
+        var snapshot = GeneratorTestHarness.ToSnapshot(output);
+
+        Assert.Contains(
+            "OBS4002: Observables.SignalR.Reactive is not referenced. Add a PackageReference to Observables.SignalR.Reactive.",
+            snapshot,
+            StringComparison.Ordinal);
+        Assert.DoesNotContain("Observables.SignalR is not referenced", snapshot, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void Hub_name_reaches_the_generated_registration()
     {
         const string userSource =

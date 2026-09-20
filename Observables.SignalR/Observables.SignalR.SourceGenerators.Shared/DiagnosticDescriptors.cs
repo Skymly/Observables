@@ -19,12 +19,21 @@ internal static class DiagnosticDescriptors
     public static readonly DiagnosticDescriptor SignalRCoreNotReferenced =
         new(
             "OBS4002",
-            "Observables.SignalR must be referenced",
-            "Observables.SignalR is not referenced. Add a PackageReference to Observables.SignalR.",
+#if OBSERVABLES_R3
+            "Observables.SignalR.R3 must be referenced",
+            "Observables.SignalR.R3 is not referenced. Add a PackageReference to Observables.SignalR.R3.",
+#else
+            "Observables.SignalR.Reactive must be referenced",
+            "Observables.SignalR.Reactive is not referenced. Add a PackageReference to Observables.SignalR.Reactive.",
+#endif
             "Observables.SignalR",
             DiagnosticSeverity.Error,
             isEnabledByDefault: true,
-            description: "Observables.SignalR runtime package is not referenced.",
+#if OBSERVABLES_R3
+            description: "Observables.SignalR.R3 package is not referenced.",
+#else
+            description: "Observables.SignalR.Reactive package is not referenced.",
+#endif
             helpLinkUri: DiagnosticHelpLink.For("OBS4002"));
 
     public static readonly DiagnosticDescriptor UnsupportedReturnType =

@@ -46,7 +46,7 @@
 
 | 段 | 域 |
 |----|----|
-| `OBS0001` | 共享（R3/Reactive 包冲突） |
+| `OBS0001`–`OBS0002` | Shared 全库（包冲突、开放泛型代理） |
 | `OBS2xxx` | Events |
 | `OBS3xxx` | RestAPI |
 | `OBS4xxx` | SignalR |
@@ -55,6 +55,8 @@
 | `OBS7xxx` | Grpc |
 | `OBS8xxx` | Sse |
 | `OBS9xxx` | Nats |
+| `OBS10xxx` | Postgres |
+| `OBS11xxx` | Redis |
 
 新增诊断落入对应段，不复用、不跨段。
 
@@ -74,5 +76,7 @@ docs/
 ├── README.md           # 文档索引
 ├── ROADMAP.md
 ├── adr/                # ADR（README.md, _template.md, ADR-NNN-*.md）
+├── agents/             # Agent 工作流（issue-tracker、triage-labels、domain）
+├── research/           # 调研笔记
 └── design/             # Design Doc（README.md, _template.md, <feature>.md, 横切文档）
 ```

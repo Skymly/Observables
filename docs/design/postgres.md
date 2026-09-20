@@ -1,6 +1,6 @@
 # 设计：Postgres 域
 
-> 状态：已随 **`0.1.7`** 发至 nuget.org（**18 包**）。关联 Issue [#154](https://github.com/Skymly/Observables/issues/154)（已关闭）。面向用户文档见 Observables.Docs。
+> 状态：首次随 **`0.1.7`** 发至 nuget.org（当时 **18** 包；该数字是历史快照，不是当前清单）。当前清单为 **20** 包。关联 Issue [#154](https://github.com/Skymly/Observables/issues/154)（已关闭）。面向用户文档见 Observables.Docs。
 
 ## 1. 动机与定位
 
@@ -118,7 +118,7 @@ Observables.Postgres/
 └── Observables.Postgres.Reactive.Tests/
 ```
 
-登记：`Observables.slnx` `/Postgres/`、`eng/Observables.BuildManifest.json`（本地 **18** 包）、`ProxyDomainCatalog`、`ci.yml` postgres 矩阵、`eng/nuget-smoke`。
+登记：`Observables.slnx` `/Postgres/`、`eng/Observables.BuildManifest.json`（当前 **20** 包；`0.1.7` 发版当时为 18）、`ProxyDomainCatalog`、`ci.yml` postgres 矩阵、`eng/nuget-smoke`。
 
 三个运行时程序集按后端分层（[ADR-003](../adr/ADR-003-backend-neutral-domain-runtime.md)）：
 

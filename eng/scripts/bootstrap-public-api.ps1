@@ -1,23 +1,10 @@
-# Generates PublicAPI.Shipped.txt baselines for domain runtime projects (M7).
+# Generates PublicAPI.Shipped.txt baselines for domain runtime + bridge projects.
 # Usage: ./eng/scripts/bootstrap-public-api.ps1 [-ProjectRelativePaths <csproj>]
+#
+# Default project list and TFMs are derived from on-disk PublicAPI/ trees, not a frozen M7 snapshot.
 
 param(
-    [string[]]$ProjectRelativePaths = @(
-        'Observables.Nats/Observables.Nats/Observables.Nats.csproj',
-        'Observables.Nats/Observables.Nats.Reactive/Observables.Nats.Reactive.csproj',
-        'Observables.Sse/Observables.Sse/Observables.Sse.csproj',
-        'Observables.Sse/Observables.Sse.Reactive/Observables.Sse.Reactive.csproj',
-        'Observables.Grpc/Observables.Grpc/Observables.Grpc.csproj',
-        'Observables.Grpc/Observables.Grpc.Reactive/Observables.Grpc.Reactive.csproj',
-        'Observables.WebSocket/Observables.WebSocket/Observables.WebSocket.csproj',
-        'Observables.WebSocket/Observables.WebSocket.Reactive/Observables.WebSocket.Reactive.csproj',
-        'Observables.Mqtt/Observables.Mqtt/Observables.Mqtt.csproj',
-        'Observables.Mqtt/Observables.Mqtt.Reactive/Observables.Mqtt.Reactive.csproj',
-        'Observables.SignalR/Observables.SignalR/Observables.SignalR.csproj',
-        'Observables.SignalR/Observables.SignalR.Reactive/Observables.SignalR.Reactive.csproj',
-        'Observables.RestAPI/Observables.RestAPI/Observables.RestAPI.csproj',
-        'Observables.RestAPI/Observables.RestAPI.Reactive/Observables.RestAPI.Reactive.csproj'
-    )
+    [string[]]$ProjectRelativePaths = @()
 )
 
 Set-StrictMode -Version Latest
@@ -25,14 +12,38 @@ $ErrorActionPreference = 'Stop'
 
 $repoRoot = Resolve-Path (Join-Path $PSScriptRoot '..\..')
 $header = '#nullable enable'
-$tfms = @('netstandard2.0', 'net8.0', 'net9.0')
+
+function Get-PublicApiProjects {
+    Get-ChildItem -Path $repoRoot -Recurse -Directory -Filter PublicAPI |
+        ForEach-Object {
+            $csproj = Get-ChildItem -Path $_.Parent.FullName -Filter '*.csproj' -File | Select-Object -First 1
+            if ($csproj) {
+                [System.IO.Path]::GetRelativePath($repoRoot, $csproj.FullName).Replace('\', '/')
+            }
+        } |
+        Sort-Object -Unique
+}
+
+function Get-PublicApiTfms {
+    param([string]$ProjectDir)
+    Get-ChildItem -Path (Join-Path $ProjectDir 'PublicAPI') -Directory |
+        ForEach-Object Name |
+        Sort-Object
+}
+
+if ($ProjectRelativePaths.Count -eq 0) {
+    $ProjectRelativePaths = @(Get-PublicApiProjects)
+}
 
 Push-Location $repoRoot
 
 function Initialize-TfmPublicApiFiles {
-    param([string]$ProjectDir)
+    param(
+        [string]$ProjectDir,
+        [string[]]$Tfms
+    )
 
-    foreach ($tfm in $script:tfms) {
+    foreach ($tfm in $Tfms) {
         $tfmDir = Join-Path $ProjectDir "PublicAPI/$tfm"
         New-Item -ItemType Directory -Force -Path $tfmDir | Out-Null
         Set-Content -Path (Join-Path $tfmDir 'PublicAPI.Shipped.txt') -Value $header -Encoding utf8NoBOM
@@ -48,9 +59,12 @@ function Initialize-TfmPublicApiFiles {
 }
 
 function Finalize-TfmPublicApiBaseline {
-    param([string]$ProjectDir)
+    param(
+        [string]$ProjectDir,
+        [string[]]$Tfms
+    )
 
-    foreach ($tfm in $script:tfms) {
+    foreach ($tfm in $Tfms) {
         $tfmDir = Join-Path $ProjectDir "PublicAPI/$tfm"
         $unshippedPath = Join-Path $tfmDir 'PublicAPI.Unshipped.txt'
         $shippedPath = Join-Path $tfmDir 'PublicAPI.Shipped.txt'
@@ -69,8 +83,13 @@ try {
         }
 
         $projectDir = Split-Path $projectPath -Parent
-        Write-Host "==> $relativePath"
-        Initialize-TfmPublicApiFiles -ProjectDir $projectDir
+        $tfms = @(Get-PublicApiTfms -ProjectDir $projectDir)
+        if ($tfms.Count -eq 0) {
+            throw "No PublicAPI/<tfm> directories for $relativePath"
+        }
+
+        Write-Host "==> $relativePath ($($tfms -join ', '))"
+        Initialize-TfmPublicApiFiles -ProjectDir $projectDir -Tfms $tfms
 
         # dotnet format walks all TFMs; per-TFM AdditionalFiles route fixes into PublicAPI/<tfm>/.
         dotnet format analyzers $projectPath --diagnostics RS0016 --verbosity quiet
@@ -78,7 +97,7 @@ try {
             throw "dotnet format analyzers failed for $relativePath"
         }
 
-        Finalize-TfmPublicApiBaseline -ProjectDir $projectDir
+        Finalize-TfmPublicApiBaseline -ProjectDir $projectDir -Tfms $tfms
     }
 }
 finally {

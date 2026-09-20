@@ -141,6 +141,23 @@ internal static partial class Parser
                 methodSymbol.Name));
         }
 
+        var bodyCount = 0;
+        for (var i = 0; i < classifications.Count; i++)
+        {
+            if (classifications[i].Kind == ParameterKind.Body)
+            {
+                bodyCount++;
+            }
+        }
+
+        if (bodyCount > 1)
+        {
+            diagnostics.Add(Diagnostic.Create(
+                DiagnosticDescriptors.DuplicateBodyParameter,
+                methodSymbol.Locations.FirstOrDefault(),
+                methodSymbol.Name));
+        }
+
         int? cancellationTokenIndex = null;
         var bodySerializationMethod = 0;
         bool? bodyBuffered = null;

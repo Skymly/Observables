@@ -51,88 +51,89 @@ namespace Observables.RestAPI
 
             var type = source.GetType();
 
+            PropertyInfo[] properties;
             lock (PropertyCache)
             {
-                if (!PropertyCache.TryGetValue(type, out var properties))
+                if (!PropertyCache.TryGetValue(type, out properties!))
                 {
                     properties = GetProperties(type);
                     PropertyCache[type] = properties;
                 }
+            }
 
-                foreach (var property in properties)
+            foreach (var property in properties)
+            {
+                var value = property.GetValue(source, null);
+                if (value == null)
+                    continue;
+
+                var fieldName = GetFieldNameForProperty(property);
+
+                // see if there's a query attribute
+                var attrib = property.GetCustomAttribute<QueryAttribute>(true);
+
+                // add strings/non enumerable properties
+                if (value is not IEnumerable enumerable || value is string)
                 {
-                    var value = property.GetValue(source, null);
-                    if (value == null)
-                        continue;
+                    Add(
+                        fieldName,
+                        settings.FormUrlEncodedParameterFormatter.Format(value, attrib?.Format)
+                    );
+                    continue;
+                }
 
-                    var fieldName = GetFieldNameForProperty(property);
+                var collectionFormat =
+                    attrib != null && attrib.IsCollectionFormatSpecified
+                        ? attrib.CollectionFormat
+                        : settings.CollectionFormat;
 
-                    // see if there's a query attribute
-                    var attrib = property.GetCustomAttribute<QueryAttribute>(true);
-
-                    // add strings/non enumerable properties
-                    if (value is not IEnumerable enumerable || value is string)
-                    {
-                        Add(
-                            fieldName,
-                            settings.FormUrlEncodedParameterFormatter.Format(value, attrib?.Format)
-                        );
-                        continue;
-                    }
-
-                    var collectionFormat =
-                        attrib != null && attrib.IsCollectionFormatSpecified
-                            ? attrib.CollectionFormat
-                            : settings.CollectionFormat;
-
-                    switch (collectionFormat)
-                    {
-                        case CollectionFormat.Multi:
-                            foreach (var item in enumerable)
-                            {
-                                Add(
-                                    fieldName,
-                                    settings.FormUrlEncodedParameterFormatter.Format(
-                                        item,
-                                        attrib?.Format
-                                    )
-                                );
-                            }
-
-                            break;
-                        case CollectionFormat.Csv:
-                        case CollectionFormat.Ssv:
-                        case CollectionFormat.Tsv:
-                        case CollectionFormat.Pipes:
-                            var delimiter = collectionFormat switch
-                            {
-                                CollectionFormat.Csv => ",",
-                                CollectionFormat.Ssv => " ",
-                                CollectionFormat.Tsv => "\t",
-                                _ => "|"
-                            };
-
-                            var formattedValues = enumerable
-                                .Cast<object>()
-                                .Select(
-                                    v =>
-                                        settings.FormUrlEncodedParameterFormatter.Format(
-                                            v,
-                                            attrib?.Format
-                                        )
-                                );
-                            Add(fieldName, string.Join(delimiter, formattedValues));
-                            break;
-                        default:
+                switch (collectionFormat)
+                {
+                    case CollectionFormat.Multi:
+                        foreach (var item in enumerable)
+                        {
                             Add(
                                 fieldName,
                                 settings.FormUrlEncodedParameterFormatter.Format(
-                                    value,
+                                    item,
                                     attrib?.Format
                                 )
                             );
-                            break;
-                    }
+                        }
+
+                        break;
+                    case CollectionFormat.Csv:
+                    case CollectionFormat.Ssv:
+                    case CollectionFormat.Tsv:
+                    case CollectionFormat.Pipes:
+                        var delimiter = collectionFormat switch
+                        {
+                            CollectionFormat.Csv => ",",
+                            CollectionFormat.Ssv => " ",
+                            CollectionFormat.Tsv => "\t",
+                            _ => "|"
+                        };
+
+                        var formattedValues = enumerable
+                            .Cast<object>()
+                            .Select(
+                                v =>
+                                    settings.FormUrlEncodedParameterFormatter.Format(
+                                        v,
+                                        attrib?.Format
+                                    )
+                            );
+                        Add(fieldName, string.Join(delimiter, formattedValues));
+                        break;
+                    default:
+                        Add(
+                            fieldName,
+                            settings.FormUrlEncodedParameterFormatter.Format(
+                                value,
+                                attrib?.Format
+                            )
+                        );
+                        break;
                 }
             }
         }

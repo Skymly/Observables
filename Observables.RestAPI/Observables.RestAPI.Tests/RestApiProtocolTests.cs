@@ -224,4 +224,112 @@ public sealed class RestApiProtocolTests
             UriFormat.Unescaped);
         Assert.Equal("q=a#b", query);
     }
+
+    [Fact]
+    public void Bind_routes_content_type_header_onto_the_body()
+    {
+        var spec = new RestApiBridge.MethodSpec(
+            "POST",
+            "/items",
+            [
+                new RestApiBridge.Binding(RestApiBridge.SlotKind.Header, 0, "Content-Type"),
+                new RestApiBridge.Binding(RestApiBridge.SlotKind.Body, 1, "body"),
+            ]);
+
+        var bound = RestApiProtocol.Bind(new RestApiSettings(), spec, ["application/custom", "payload"]);
+
+        Assert.Equal("application/custom", bound.Message.Content!.Headers.ContentType?.MediaType);
+    }
+
+    [Fact]
+    public void Bind_routes_static_content_type_onto_the_body()
+    {
+        var spec = new RestApiBridge.MethodSpec(
+            "POST",
+            "/items",
+            [new RestApiBridge.Binding(RestApiBridge.SlotKind.Body, 0, "body")],
+            new RestApiBridge.MethodFlags(staticHeaders: ["Content-Type: application/custom"]));
+
+        var bound = RestApiProtocol.Bind(new RestApiSettings(), spec, ["payload"]);
+
+        Assert.Equal("application/custom", bound.Message.Content!.Headers.ContentType?.MediaType);
+    }
+
+    [Fact]
+    public void Bind_throws_for_a_malformed_static_header()
+    {
+        var spec = new RestApiBridge.MethodSpec(
+            "GET",
+            "/users",
+            [],
+            new RestApiBridge.MethodFlags(staticHeaders: ["NotAHeader"]));
+
+        var ex = Assert.Throws<InvalidOperationException>(() => RestApiProtocol.Bind(new RestApiSettings(), spec, []));
+        Assert.Contains("Name: value", ex.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task Form_encoding_does_not_hold_the_property_cache_lock_while_formatting()
+    {
+        var formatter = new BlockingFormFormatter();
+        var settings = new RestApiSettings
+        {
+            FormUrlEncodedParameterFormatter = formatter,
+        };
+        var spec = new RestApiBridge.MethodSpec(
+            "POST",
+            "/form",
+            [new RestApiBridge.Binding(RestApiBridge.SlotKind.Body, 0, "body")],
+            new RestApiBridge.MethodFlags(bodySerializationMethod: (int)BodySerializationMethod.UrlEncoded));
+
+        var ct = TestContext.Current.CancellationToken;
+        var blocker = Task.Run(() => RestApiProtocol.Bind(settings, spec, [new BlockForm()]), ct);
+        var enteredDeadline = DateTime.UtcNow + TimeSpan.FromSeconds(5);
+        while (!formatter.Entered.IsSet)
+        {
+            Assert.True(DateTime.UtcNow < enteredDeadline, "blocker did not enter Format.");
+            await Task.Delay(10, ct);
+        }
+
+        var other = Task.Run(() => RestApiProtocol.Bind(settings, spec, [new OtherForm()]), ct);
+        try
+        {
+            await other.WaitAsync(TimeSpan.FromSeconds(2), ct);
+        }
+        catch (TimeoutException)
+        {
+            Assert.Fail("Form encoding held the property cache lock across Format.");
+        }
+
+        formatter.Release.Set();
+        await blocker.WaitAsync(TimeSpan.FromSeconds(2), ct);
+    }
+
+    sealed class BlockForm
+    {
+        public string Name { get; set; } = "block";
+    }
+
+    sealed class OtherForm
+    {
+        public string Name { get; set; } = "ok";
+    }
+
+    sealed class BlockingFormFormatter : IFormUrlEncodedParameterFormatter
+    {
+        public ManualResetEventSlim Entered { get; } = new();
+        public ManualResetEventSlim Release { get; } = new();
+
+        public string? Format(object? value, string? formatString)
+        {
+            if (value is string s && s == "block")
+            {
+                Entered.Set();
+                if (!Release.Wait(TimeSpan.FromSeconds(10)))
+                    throw new TimeoutException("Release was not signaled.");
+            }
+
+            return value?.ToString();
+        }
+    }
 }

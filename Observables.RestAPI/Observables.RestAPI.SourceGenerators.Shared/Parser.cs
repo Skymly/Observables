@@ -121,7 +121,7 @@ internal static partial class Parser
         var classSuffix = $"{interfaceSymbol.ContainingType?.Name}{interfaceSymbol.Name}";
         var ns = interfaceSymbol.ContainingNamespace?.ToDisplayString();
         if (interfaceSymbol.ContainingNamespace is { IsGlobalNamespace: true }) ns = string.Empty;
-        ns = ns!.Replace(".", "");
+        ns = ns!.Replace(".", "_");
         var interfaceDisplayName = interfaceSymbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
 
         var nonHttpMethods = interfaceSymbol.GetMembers().OfType<IMethodSymbol>()

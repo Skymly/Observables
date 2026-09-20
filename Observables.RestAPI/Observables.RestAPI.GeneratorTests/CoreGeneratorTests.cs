@@ -539,5 +539,55 @@ public class CoreGeneratorTests
         Assert.Contains("SendVoidAsync", generated, StringComparison.Ordinal);
         Assert.DoesNotContain("SendAsync<global::R3.Unit", generated, StringComparison.Ordinal);
     }
+
+    [Fact]
+    public void Concatenated_namespaces_do_not_collide()
+    {
+        const string source =
+            """
+            namespace Foo.Bar
+            {
+                public interface IApi
+                {
+                    [Get("/foo-bar")]
+                    Task<string> Get();
+                }
+            }
+
+            namespace FooBar
+            {
+                public interface IApi
+                {
+                    [Get("/foobar")]
+                    Task<string> Get();
+                }
+            }
+            """;
+
+        var output = GeneratorTestHarness.Run(source);
+        var snapshot = GeneratorTestHarness.ToSnapshot(output);
+        Assert.Contains("Foo_BarIApi", snapshot, StringComparison.Ordinal);
+        Assert.Contains("FooBarIApi", snapshot, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Duplicate_Body_reports_OBS3008()
+    {
+        GeneratorRunOutput output = GeneratorTestHarness.Run(
+            """
+            public interface IUserApi
+            {
+                [Post("/users")]
+                Task Create([Body] User a, [Body] User b);
+            }
+
+            public sealed class User
+            {
+                public int Id { get; set; }
+            }
+            """);
+
+        Assert.Contains("OBS3008", GeneratorTestHarness.ToSnapshot(output), StringComparison.Ordinal);
+    }
 }
 

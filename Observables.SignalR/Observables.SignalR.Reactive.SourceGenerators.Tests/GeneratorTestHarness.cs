@@ -18,10 +18,15 @@ internal static class GeneratorTestHarness
                 "System.Reactive",
                 "Observables.SignalR",
                 "Microsoft.AspNetCore.SignalR.Client"),
-            _ => MetadataReferenceBuilder.Build(
+            options => MetadataReferenceBuilder.Build(
+                options.IncludeCoreReference ? null : "Observables.SignalR.dll",
                 typeof(global::System.Reactive.Unit),
-                typeof(global::Observables.SignalR.HubService),
-                typeof(global::Observables.SignalR.Reactive.SystemReactiveSignalRAdapter),
+                options.IncludeCoreReference
+                    ? typeof(global::Observables.SignalR.HubService)
+                    : null,
+                options.IncludeCoreReference
+                    ? typeof(global::Observables.SignalR.Reactive.SystemReactiveSignalRAdapter)
+                    : null,
                 typeof(global::Microsoft.AspNetCore.SignalR.Client.HubConnection)),
             static () => [new HubInterfaceStubGenerator()],
             SnapshotOptionsFactory.ForDomain("OBS4")));
@@ -42,11 +47,15 @@ internal static class GeneratorTestHarness
             static () => [new HubInterfaceStubGenerator()],
             SnapshotOptionsFactory.ForDomain("OBS4")));
 
-    internal static GeneratorRunOutput Run(string userSource, bool failSafeProbe = false) =>
+    internal static GeneratorRunOutput Run(
+        string userSource,
+        bool includeCoreReference = true,
+        bool failSafeProbe = false) =>
         Harness.Run(
             userSource,
             new GeneratorHarnessRunOptions
             {
+                IncludeCoreReference = includeCoreReference,
                 OptionsProvider = failSafeProbe
                     ? new TestAnalyzerConfigOptionsProvider(
                         new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)

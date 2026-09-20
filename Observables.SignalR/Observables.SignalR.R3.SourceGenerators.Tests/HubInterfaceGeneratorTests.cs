@@ -123,7 +123,11 @@ public sealed class HubInterfaceGeneratorTests
         var output = GeneratorTestHarness.Run(userSource, includeCoreReference: false);
         var snapshot = GeneratorTestHarness.ToSnapshot(output);
 
-        Assert.Contains("OBS4002", snapshot, StringComparison.Ordinal);
+        Assert.Contains(
+            "OBS4002: Observables.SignalR.R3 is not referenced. Add a PackageReference to Observables.SignalR.R3.",
+            snapshot,
+            StringComparison.Ordinal);
+        Assert.DoesNotContain("Observables.SignalR is not referenced", snapshot, StringComparison.Ordinal);
     }
 
     [Fact]

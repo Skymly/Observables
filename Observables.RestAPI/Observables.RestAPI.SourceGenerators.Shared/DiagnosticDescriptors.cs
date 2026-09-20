@@ -19,12 +19,21 @@ internal static class DiagnosticDescriptors
     public static readonly DiagnosticDescriptor RestApiCoreNotReferenced =
         new(
             "OBS3002",
-            "Observables.RestAPI must be referenced",
-            "Observables.RestAPI is not referenced. Add a PackageReference to Observables.RestAPI.",
+#if OBSERVABLES_R3
+            "Observables.RestAPI.R3 must be referenced",
+            "Observables.RestAPI.R3 is not referenced. Add a PackageReference to Observables.RestAPI.R3.",
+#else
+            "Observables.RestAPI.Reactive must be referenced",
+            "Observables.RestAPI.Reactive is not referenced. Add a PackageReference to Observables.RestAPI.Reactive.",
+#endif
             "Observables.RestAPI",
             DiagnosticSeverity.Error,
             isEnabledByDefault: true,
-            description: "Observables.RestAPI runtime package is not referenced.",
+#if OBSERVABLES_R3
+            description: "Observables.RestAPI.R3 package is not referenced.",
+#else
+            description: "Observables.RestAPI.Reactive package is not referenced.",
+#endif
             helpLinkUri: DiagnosticHelpLink.For("OBS3002"));
 
     public static readonly DiagnosticDescriptor UnsupportedReturnType =

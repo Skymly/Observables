@@ -228,24 +228,37 @@ public class CoreGeneratorTests
     }
 
     [Fact]
-    public void RestAPI_OBS3002_when_runtime_missing()
+    public void RestAPI_OBS3002_names_consumer_packages_not_bare_runtime_id()
     {
-        GeneratorRunOutput output = GeneratorTestHarness.Run(
+        const string source =
             """
             public interface IUserApi
             {
                 [Get("/users/{id}")]
-                Observable<User> GetUser(int id);
+                Task<User> GetUser(int id);
             }
 
             public sealed class User
             {
                 public int Id { get; set; }
             }
-            """,
-            includeCoreReference: false);
+            """;
 
-        Assert.Contains("OBS3002", GeneratorTestHarness.ToSnapshot(output), StringComparison.Ordinal);
+        string r3Snapshot = GeneratorTestHarness.ToSnapshot(
+            GeneratorTestHarness.Run(source, includeCoreReference: false));
+        Assert.Contains(
+            "OBS3002: Observables.RestAPI.R3 is not referenced. Add a PackageReference to Observables.RestAPI.R3.",
+            r3Snapshot,
+            StringComparison.Ordinal);
+        Assert.DoesNotContain("Observables.RestAPI is not referenced", r3Snapshot, StringComparison.Ordinal);
+
+        string reactiveSnapshot = GeneratorTestHarness.ToSnapshot(
+            GeneratorTestHarness.RunReactive(source, includeCoreReference: false));
+        Assert.Contains(
+            "OBS3002: Observables.RestAPI.Reactive is not referenced. Add a PackageReference to Observables.RestAPI.Reactive.",
+            reactiveSnapshot,
+            StringComparison.Ordinal);
+        Assert.DoesNotContain("Observables.RestAPI is not referenced", reactiveSnapshot, StringComparison.Ordinal);
     }
 
     // ── Path + [Body]/[Query] regression tests (issue #111) ──

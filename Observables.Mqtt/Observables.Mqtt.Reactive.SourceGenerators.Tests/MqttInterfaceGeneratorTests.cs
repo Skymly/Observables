@@ -219,6 +219,29 @@ public sealed class MqttInterfaceGeneratorTests
     }
 
     [Fact]
+    public void Mqtt_interface_OBS5002_when_runtime_missing()
+    {
+        const string userSource =
+            """
+            [Mqtt]
+            public interface ISensorTopics
+            {
+                [MqttSubscribe("sensors/temperature")]
+                IObservable<string> Temperature { get; }
+            }
+            """;
+
+        var output = GeneratorTestHarness.Run(userSource, includeCoreReference: false);
+        var snapshot = GeneratorTestHarness.ToSnapshot(output);
+
+        Assert.Contains(
+            "OBS5002: Observables.Mqtt.Reactive is not referenced. Add a PackageReference to Observables.Mqtt.Reactive.",
+            snapshot,
+            StringComparison.Ordinal);
+        Assert.DoesNotContain("Observables.Mqtt is not referenced", snapshot, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void Missing_reactive_adapter_reports_OBS5005()
     {
         const string userSource =

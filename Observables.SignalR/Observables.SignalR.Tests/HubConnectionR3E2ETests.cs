@@ -76,6 +76,17 @@ public sealed class HubConnectionR3E2ETests(SignalRTestServerFixture fixture)
         Assert.Equal("hello", message);
     }
 
+
+    [Fact]
+    public async Task HubStream_take_one_does_not_fail()
+    {
+        await using var connection = await ConnectStreamingAsync();
+        var hub = HubService.For<IE2EHub>(connection);
+        using var cts = new CancellationTokenSource(DefaultTimeout);
+        var value = await hub.Counter(5).FirstAsync(cts.Token);
+        Assert.Equal(0, value);
+    }
+
     async Task<HubConnection> ConnectAsync() => await StartAsync(fixture.Server.CreateConnection());
 
     async Task<HubConnection> ConnectStreamingAsync() =>

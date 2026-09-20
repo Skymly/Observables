@@ -341,4 +341,22 @@ public sealed class HubInterfaceGeneratorTests
         var output = GeneratorTestHarness.Run(userSource);
         Assert.Contains(output.Diagnostics, static diagnostic => diagnostic.Id == "OBS4001");
     }
+
+    [Fact]
+    public void Multiple_boundary_attributes_report_OBS4009()
+    {
+        const string userSource =
+            """
+            [Hub]
+            public interface IChat
+            {
+                [HubInvoke]
+                [HubSend]
+                Observable<int> Ping();
+            }
+            """;
+
+        var output = GeneratorTestHarness.Run(userSource);
+        Assert.Contains(output.Diagnostics, static diagnostic => diagnostic.Id == "OBS4009");
+    }
 }

@@ -31,25 +31,73 @@ public sealed class RedisTestServer : IAsyncDisposable
         cancellationToken.ThrowIfCancellationRequested();
         var workDir = Path.Combine(Path.GetTempPath(), "observables-redis-e2e", Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(workDir);
-        var port = ReserveFreeTcpPort();
+        Exception? last = null;
+        for (var attempt = 0; attempt < 5; attempt++)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            GarnetServer? server = null;
+            var port = ReserveFreeTcpPort();
+            try
+            {
+                server = new GarnetServer(
+                    [
+                        "--bind", "127.0.0.1",
+                        "--port", port.ToString(),
+                        "--memory", "16m",
+                        "--page", "8k",
+                        "--segment", "1m",
+                        "--index", "8m",
+                        "--checkpointdir", workDir,
+                        "--logger-level", "Error",
+                        "--disable-console-logger", "true",
+                    ],
+                    cleanupDir: true);
 
-        var server = new GarnetServer(
-            [
-                "--bind", "127.0.0.1",
-                "--port", port.ToString(),
-                "--memory", "16m",
-                "--page", "8k",
-                "--segment", "1m",
-                "--index", "8m",
-                "--checkpointdir", workDir,
-                "--logger-level", "Error",
-                "--disable-console-logger", "true",
-            ],
-            cleanupDir: true);
+                server.Start();
+                await WaitUntilTcpPortAcceptsAsync(port, cancellationToken).ConfigureAwait(false);
+                return new RedisTestServer(workDir, port, server);
+            }
+            catch (Exception ex)
+            {
+                if (server is not null)
+                {
+                    try
+                    {
+                        server.Dispose();
+                    }
+                    catch
+                    {
+                        // best-effort rollback when start or readiness fails
+                    }
+                }
 
-        server.Start();
-        await WaitUntilTcpPortAcceptsAsync(port, cancellationToken).ConfigureAwait(false);
-        return new RedisTestServer(workDir, port, server);
+                if (ex is OperationCanceledException)
+                {
+                    TryDeleteDirectory(workDir);
+                    throw;
+                }
+
+                last = ex;
+            }
+        }
+
+        TryDeleteDirectory(workDir);
+        throw new InvalidOperationException("Failed to start Garnet Redis test server.", last);
+    }
+
+    static void TryDeleteDirectory(string workDir)
+    {
+        try
+        {
+            if (Directory.Exists(workDir))
+            {
+                Directory.Delete(workDir, recursive: true);
+            }
+        }
+        catch
+        {
+            // best-effort
+        }
     }
 
     public static async Task WaitUntilTcpPortAcceptsAsync(

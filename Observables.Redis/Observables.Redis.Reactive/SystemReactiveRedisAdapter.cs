@@ -34,6 +34,14 @@ public static class SystemReactiveRedisAdapter
             return System.Reactive.Unit.Default;
         });
 
+    /// <summary>Publishes the serialized <paramref name="payload"/> on <paramref name="channel"/>.</summary>
+    /// <remarks>
+    /// <paramref name="payload"/> is serialized when this method is called, not when the observable
+    /// is subscribed. The captured byte array is reused for every subscription.
+    /// <paramref name="cancellationToken"/> cancels the local wait for the StackExchange.Redis
+    /// publish task. <c>ISubscriber.PublishAsync</c> has no cancellation-token overload in 2.8.x,
+    /// so an in-flight <c>PUBLISH</c> is not aborted.
+    /// </remarks>
 #if NET8_0_OR_GREATER
     [RequiresUnreferencedCode(RedisTrimAnnotations.JsonPayload)]
     [RequiresDynamicCode(RedisTrimAnnotations.JsonPayload)]

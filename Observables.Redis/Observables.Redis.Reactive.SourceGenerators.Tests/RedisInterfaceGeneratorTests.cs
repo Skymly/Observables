@@ -244,4 +244,45 @@ public sealed class RedisInterfaceGeneratorTests
         var output = GeneratorTestHarness.RunWithoutReactiveAdapter(userSource);
         Assert.Contains(output.Diagnostics, static diagnostic => diagnostic.Id == "OBS11005");
     }
+
+    [Fact]
+    public void Redis_character_class_stays_literal_subscribe_without_explicit_pattern()
+    {
+        const string userSource =
+            """
+            [Redis]
+            public interface INewsHub
+            {
+                [RedisSubscribe("news.[ab]")]
+                IObservable<string> CharacterClass { get; }
+            }
+            """;
+
+        var output = GeneratorTestHarness.Run(userSource);
+        var snapshot = GeneratorTestHarness.ToSnapshot(output);
+
+        Assert.DoesNotContain("OBS11", snapshot, StringComparison.Ordinal);
+        Assert.Contains(@"FromSubscribe<global::System.String>(_multiplexer, ""news.[ab]"")", snapshot, StringComparison.Ordinal);
+        Assert.DoesNotContain("FromPatternSubscribe", snapshot, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Redis_explicit_pattern_maps_character_class_to_psubscribe()
+    {
+        const string userSource =
+            """
+            [Redis]
+            public interface INewsHub
+            {
+                [RedisSubscribe("news.[ab]", Pattern = true)]
+                IObservable<string> CharacterClass { get; }
+            }
+            """;
+
+        var output = GeneratorTestHarness.Run(userSource);
+        var snapshot = GeneratorTestHarness.ToSnapshot(output);
+
+        Assert.DoesNotContain("OBS11", snapshot, StringComparison.Ordinal);
+        Assert.Contains(@"FromPatternSubscribe<global::System.String>(_multiplexer, ""news.[ab]"")", snapshot, StringComparison.Ordinal);
+    }
 }

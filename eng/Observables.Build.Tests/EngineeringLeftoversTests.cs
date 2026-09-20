@@ -51,4 +51,12 @@ public sealed class EngineeringLeftoversTests
         Assert.Contains("8aca8db96f1b94770f1b0d72b6dddcb1ebb8123cb3712530b08cc387b349a3d8", yaml, StringComparison.Ordinal);
         Assert.Contains("actions/checkout@11d5960a326750d5838078e36cf38b85af677262", yaml, StringComparison.Ordinal);
     }
+
+    [Fact]
+    public void PackageVersion_is_not_the_leaked_0_2_2_release()
+    {
+        string props = File.ReadAllText(Path.Combine(RepoRoot.Find(), "eng", "Observables.Package.props"));
+        Assert.Contains("<PackageVersion>0.3.0</PackageVersion>", props, StringComparison.Ordinal);
+        Assert.DoesNotContain("<PackageVersion>0.2.2</PackageVersion>", props, StringComparison.Ordinal);
+    }
 }

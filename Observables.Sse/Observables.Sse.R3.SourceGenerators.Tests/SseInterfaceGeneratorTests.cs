@@ -154,7 +154,11 @@ public sealed class SseInterfaceGeneratorTests
         var output = GeneratorTestHarness.Run(userSource, includeCoreReference: false);
         var snapshot = GeneratorTestHarness.ToSnapshot(output);
 
-        Assert.Contains("OBS8002", snapshot, StringComparison.Ordinal);
+        Assert.Contains(
+            "OBS8002: Observables.Sse.R3 is not referenced. Add a PackageReference to Observables.Sse.R3.",
+            snapshot,
+            StringComparison.Ordinal);
+        Assert.DoesNotContain("Observables.Sse is not referenced", snapshot, StringComparison.Ordinal);
     }
 
     // ── Incremental cache hit tests (D3-A pilot) ──

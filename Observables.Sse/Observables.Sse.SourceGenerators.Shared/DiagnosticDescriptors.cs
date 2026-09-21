@@ -19,12 +19,21 @@ internal static class DiagnosticDescriptors
     public static readonly DiagnosticDescriptor SseCoreNotReferenced =
         new(
             "OBS8002",
-            "Observables.Sse must be referenced",
-            "Observables.Sse is not referenced. Add a PackageReference to Observables.Sse.",
+#if OBSERVABLES_R3
+            "Observables.Sse.R3 must be referenced",
+            "Observables.Sse.R3 is not referenced. Add a PackageReference to Observables.Sse.R3.",
+#else
+            "Observables.Sse.Reactive must be referenced",
+            "Observables.Sse.Reactive is not referenced. Add a PackageReference to Observables.Sse.Reactive.",
+#endif
             "Observables.Sse",
             DiagnosticSeverity.Error,
             isEnabledByDefault: true,
-            description: "Observables.Sse runtime package is not referenced.",
+#if OBSERVABLES_R3
+            description: "Observables.Sse.R3 package is not referenced.",
+#else
+            description: "Observables.Sse.Reactive package is not referenced.",
+#endif
             helpLinkUri: DiagnosticHelpLink.For("OBS8002"));
 
     public static readonly DiagnosticDescriptor UnsupportedReturnType =

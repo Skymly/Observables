@@ -6,6 +6,29 @@ namespace Observables.Sse.Reactive.SourceGenerators.Tests;
 public sealed class SseInterfaceGeneratorTests
 {
     [Fact]
+    public void Sse_interface_OBS8002_when_runtime_missing()
+    {
+        const string userSource =
+            """
+            [Sse]
+            public interface IPriceFeed
+            {
+                [SseEvent("price")]
+                IObservable<string> Prices { get; }
+            }
+            """;
+
+        var output = GeneratorTestHarness.Run(userSource, includeCoreReference: false);
+        var snapshot = GeneratorTestHarness.ToSnapshot(output);
+
+        Assert.Contains(
+            "OBS8002: Observables.Sse.Reactive is not referenced. Add a PackageReference to Observables.Sse.Reactive.",
+            snapshot,
+            StringComparison.Ordinal);
+        Assert.DoesNotContain("Observables.Sse is not referenced", snapshot, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public Task Sse_interface_generates_proxy_and_registration()
     {
         const string userSource =

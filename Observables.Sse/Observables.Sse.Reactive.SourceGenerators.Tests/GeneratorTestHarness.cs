@@ -17,10 +17,15 @@ internal static class GeneratorTestHarness
                 "System.Threading",
                 "System.Reactive",
                 "Observables.Sse"),
-            _ => MetadataReferenceBuilder.Build(
+            options => MetadataReferenceBuilder.Build(
+                options.IncludeCoreReference ? null : "Observables.Sse.dll",
                 typeof(global::System.Reactive.Unit),
-                typeof(global::Observables.Sse.SseService),
-                typeof(global::Observables.Sse.Reactive.SystemReactiveSseAdapter)),
+                options.IncludeCoreReference
+                    ? typeof(global::Observables.Sse.SseService)
+                    : null,
+                options.IncludeCoreReference
+                    ? typeof(global::Observables.Sse.Reactive.SystemReactiveSseAdapter)
+                    : null),
             static () => [new SseInterfaceStubGenerator()],
             SnapshotOptionsFactory.ForDomain("OBS8")));
 
@@ -38,8 +43,13 @@ internal static class GeneratorTestHarness
             static () => [new SseInterfaceStubGenerator()],
             SnapshotOptionsFactory.ForDomain("OBS8")));
 
-    internal static GeneratorRunOutput Run(string userSource) =>
-        Harness.Run(userSource);
+    internal static GeneratorRunOutput Run(string userSource, bool includeCoreReference = true) =>
+        Harness.Run(
+            userSource,
+            new GeneratorHarnessRunOptions
+            {
+                IncludeCoreReference = includeCoreReference,
+            });
 
     internal static GeneratorRunOutput RunWithoutReactiveAdapter(string userSource) =>
         HarnessWithoutReactiveAdapter.Run(userSource);

@@ -85,7 +85,11 @@ public sealed class GrpcInterfaceGeneratorTests
         var output = GeneratorTestHarness.Run(userSource, includeCoreReference: false);
         var snapshot = GeneratorTestHarness.ToSnapshot(output);
 
-        Assert.Contains("OBS7002", snapshot, StringComparison.Ordinal);
+        Assert.Contains(
+            "OBS7002: Observables.Grpc.R3 is not referenced. Add a PackageReference to Observables.Grpc.R3.",
+            snapshot,
+            StringComparison.Ordinal);
+        Assert.DoesNotContain("Observables.Grpc is not referenced", snapshot, StringComparison.Ordinal);
     }
 
     [Fact]

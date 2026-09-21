@@ -24,8 +24,8 @@
 | `.EventHandlers()` | `Observable<(object? sender, TEventArgs e)>` | 保留 `sender` 与 `EventArgs` |
 | `.RoutedEvents()` | `Observable<T>` | WPF/Avalonia 路由事件（须开启开关） |
 | `.RoutedEventHandlers()` | `Observable<(object? sender, TEventArgs e)>` | 路由事件保留 sender |
-| `.AttachedRoutedEvent<T>()` | `Observable<TEventArgs>` | 附加静态路由事件字段 |
-| `.AttachedRoutedEventHandler<T>()` | `Observable<(object?, TEventArgs)>` | 附加路由事件 + sender |
+| `.AttachedRoutedEvent<T>()` | `Observable<TEventArgs>` | Avalonia 附加静态路由事件字段（仅编译中存在 Avalonia 路由类型时发射） |
+| `.AttachedRoutedEventHandler<T>()` | `Observable<(object?, TEventArgs)>` | Avalonia 附加路由事件 + sender |
 
 生成器产出：`IEventsInterface_<Type>`、`EventsImpl_<Type>`、bootstrap 扩展方法；桥接类型 `EventObservable`、`NullEvents` 为 `internal`。
 
@@ -42,7 +42,7 @@
 
 - **经典事件**：类型上任何 `event` 成员（含继承）。
 - **路由事件**：实例事件对应静态字段 `{Name}Event`，类型为 WPF / Avalonia `RoutedEvent`（或泛型变体）。
-- **附加路由事件**：调用方显式传入静态 `RoutedEvent` 字段引用。
+- **附加路由事件**：Avalonia only。调用方显式传入静态 `RoutedEvent` 字段引用；WPF 工程即使开启 `UseWPF` 也不发射 `AttachedRouted*`（WPF 实例路由走 `.RoutedEvents()` / `.RoutedEventHandlers()`）。
 
 ## 3. 诊断 ID
 
@@ -140,6 +140,8 @@ WPF 无 `RoutingStrategies` 参数；`UseWPF=true` 时生成 `AddHandler(routedE
 
 ### 5.4 附加路由事件
 
+Discovery 仅在编译中解析到 Avalonia `RoutedEvent` / `RoutedEvent<T>` 时收集 `AttachedRoutedEvent` / `AttachedRoutedEventHandler`。WPF 的 `UseWPF` 只驱动实例 `.RoutedEvents()`，不驱动附加入口。
+
 ```csharp
 public static Observable<TEventArgs> AttachedRoutedEvent<TEventArgs>(
     this T source, object routedEvent, object? routes = null, bool handledEventsToo = false)
@@ -211,7 +213,7 @@ Observables.Events/
 | **`.Events()` vs `.EventHandlers()` 双入口** | 前者按委托签名推断载荷元组，后者归一为 `(sender, e)` 形态 |
 | **路由事件默认关闭** | 避免 WPF/Avalonia 依赖污染；消费者显式开启 |
 | **WPF / Avalonia 自动检测** | 通过静态字段 `{EventName}Event` 的类型元数据判定，无需显式配置 |
-| **附加路由事件独立入口** | 处理「事件定义在外国类型」场景（如 `Button.ClickEvent` 在 WPF） |
+| **附加路由事件独立入口** | Avalonia：在父元素上订阅外国类型的静态 `RoutedEvent` 字段。WPF 不发射该入口 |
 | **`NullEvents` 空回退** | 未发现事件时仍可编译，避免破坏性失败 |
 | **静态事件支持延后** | `StaticObservableEventsGenerationEnabled = false`，留待后续 |
 | **诊断** | OBS2001–2004、OBS2006 为 Warning；OBS2005 为内部错误 fail-safe |

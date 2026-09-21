@@ -51,3 +51,9 @@ static Observables.Redis.RedisPayloadSerializers.Unregister<T>() -> bool
 static Observables.Redis.RedisService.For(System.Type! redisInterfaceType, StackExchange.Redis.IConnectionMultiplexer! multiplexer) -> object!
 static Observables.Redis.RedisService.For<T>(StackExchange.Redis.IConnectionMultiplexer! multiplexer) -> T
 static Observables.Redis.RedisService.RegisterGeneratedFactory(System.Type! redisInterfaceType, System.Func<StackExchange.Redis.IConnectionMultiplexer!, object!>! factory) -> void
+static Observables.Redis.RedisService.For(System.Type! redisInterfaceType) -> object!
+static Observables.Redis.RedisService.For<T>() -> T
+static Observables.Redis.RedisService.RegisterConnection(string! name, StackExchange.Redis.IConnectionMultiplexer! multiplexer) -> void
+static Observables.Redis.RedisService.RegisterProxyName(System.Type! redisInterfaceType, string! connectionName) -> void
+Observables.Redis.RedisSubscribeAttribute.Pattern.get -> bool
+Observables.Redis.RedisSubscribeAttribute.Pattern.set -> void

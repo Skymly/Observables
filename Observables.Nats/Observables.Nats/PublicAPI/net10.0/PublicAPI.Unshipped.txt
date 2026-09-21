@@ -1,5 +1,1 @@
 #nullable enable
-static Observables.Nats.NatsService.For(System.Type! natsInterfaceType) -> object!
-static Observables.Nats.NatsService.For<T>() -> T
-static Observables.Nats.NatsService.RegisterConnection(string! name, NATS.Client.Core.INatsConnection! connection) -> void
-static Observables.Nats.NatsService.RegisterProxyName(System.Type! natsInterfaceType, string! connectionName) -> void

@@ -335,3 +335,6 @@ Observables.RestAPI.RestApiBridge.SlotKind.Query = 2 -> Observables.RestAPI.Rest
 static Observables.RestAPI.RestApiBridge.SendAsync<T, TBody>(System.Net.Http.HttpClient! client, Observables.RestAPI.RestApiSettings! settings, in Observables.RestAPI.RestApiBridge.MethodSpec spec, System.Threading.CancellationToken cancellationToken, params object?[]! args) -> System.Threading.Tasks.Task<T?>!
 static Observables.RestAPI.RestApiBridge.SendVoidAsync(System.Net.Http.HttpClient! client, Observables.RestAPI.RestApiSettings! settings, in Observables.RestAPI.RestApiBridge.MethodSpec spec, System.Threading.CancellationToken cancellationToken, params object?[]! args) -> System.Threading.Tasks.Task!
 static Observables.RestAPI.RestService.OwnsHttpClient(System.Net.Http.HttpClient! client) -> bool
+Observables.RestAPI.RestApiBridge.QueryOptions.NameIsExplicit.get -> bool
+Observables.RestAPI.RestApiBridge.QueryOptions.WithExplicitName() -> Observables.RestAPI.RestApiBridge.QueryOptions
+static Observables.RestAPI.RestService.RegisterGeneratedFactory(System.Type! interfaceType, System.Func<System.Type!, System.Net.Http.HttpClient!, Observables.RestAPI.RestApiSettings?, object!>! factory) -> void

@@ -26,3 +26,11 @@ OBS7008 | Observables.Grpc | Error | Internal source generator error
 Rule ID | Category | Severity | Notes
 --------|----------|----------|-------
 OBS7009 | Observables.Grpc | Error | Request/response type is not string or IMessage<T>
+
+## Release 1.3
+
+### New Rules
+
+Rule ID | Category | Severity | Notes
+--------|----------|----------|-------
+OBS7010 | Observables.Grpc | Error | Multiple gRPC boundary attributes

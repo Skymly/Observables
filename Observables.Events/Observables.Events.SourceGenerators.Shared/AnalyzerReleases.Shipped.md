@@ -16,3 +16,11 @@ OBS2004 | Observables.Events | Warning | Unsupported RoutedEventHandlers delegat
 Rule ID | Category | Severity | Notes
 --------|----------|----------|-------
 OBS2005 | Observables.Events | Error | Internal source generator error
+
+## Release 1.2
+
+### New Rules
+
+Rule ID | Category | Severity | Notes
+--------|----------|----------|-------
+OBS2006 | Observables.Events | Warning | Incompatible event signatures cannot be merged

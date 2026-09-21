@@ -55,3 +55,7 @@ static Observables.Nats.NatsSubject.Format(string! template, params (string! Nam
 static Observables.Nats.PrimitiveNatsPayloadSerializer.Instance.get -> Observables.Nats.PrimitiveNatsPayloadSerializer!
 Observables.Nats.NatsAttribute.NatsAttribute(string? connectionName = null) -> void
 Observables.Nats.NatsAttribute.ConnectionName.get -> string?
+static Observables.Nats.NatsService.For(System.Type! natsInterfaceType) -> object!
+static Observables.Nats.NatsService.For<T>() -> T
+static Observables.Nats.NatsService.RegisterConnection(string! name, NATS.Client.Core.INatsConnection! connection) -> void
+static Observables.Nats.NatsService.RegisterProxyName(System.Type! natsInterfaceType, string! connectionName) -> void

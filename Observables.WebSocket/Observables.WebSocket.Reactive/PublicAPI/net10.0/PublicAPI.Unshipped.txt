@@ -1,4 +1,1 @@
 #nullable enable
-static Observables.WebSocket.Reactive.SystemReactiveWebSocketAdapter.FromReceive<T>(System.Net.WebSockets.ClientWebSocket! socket, int maxMessageBytes) -> System.IObservable<T>!
-static Observables.WebSocket.Reactive.SystemReactiveWebSocketAdapter.FromReceiveNamed<T>(System.Net.WebSockets.ClientWebSocket! socket, string! messageName) -> System.IObservable<T>!
-static Observables.WebSocket.Reactive.SystemReactiveWebSocketAdapter.FromReceiveNamed<T>(System.Net.WebSockets.ClientWebSocket! socket, string! messageName, int maxMessageBytes) -> System.IObservable<T>!

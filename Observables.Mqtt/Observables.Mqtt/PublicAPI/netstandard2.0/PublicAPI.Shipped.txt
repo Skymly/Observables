@@ -47,3 +47,7 @@ static Observables.Mqtt.MqttTopic.Format(string! template, params (string! Name,
 static Observables.Mqtt.PrimitiveMqttPayloadSerializer.Instance.get -> Observables.Mqtt.PrimitiveMqttPayloadSerializer!
 Observables.Mqtt.MqttAttribute.MqttAttribute(string? clientName = null) -> void
 Observables.Mqtt.MqttAttribute.ClientName.get -> string?
+static Observables.Mqtt.MqttService.For(System.Type! mqttInterfaceType) -> object!
+static Observables.Mqtt.MqttService.For<T>() -> T
+static Observables.Mqtt.MqttService.RegisterClient(string! name, MQTTnet.Client.IMqttClient! client) -> void
+static Observables.Mqtt.MqttService.RegisterProxyName(System.Type! mqttInterfaceType, string! clientName) -> void

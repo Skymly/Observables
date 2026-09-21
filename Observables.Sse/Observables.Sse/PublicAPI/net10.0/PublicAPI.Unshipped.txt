@@ -1,10 +1,1 @@
 #nullable enable
-static Observables.Sse.SseService.For(System.Type! sseInterfaceType) -> object!
-static Observables.Sse.SseService.For<T>() -> T
-static Observables.Sse.SseService.RegisterEndpoint(string! name, Observables.Sse.SseConnection! connection) -> void
-static Observables.Sse.SseService.RegisterProxyName(System.Type! sseInterfaceType, string! endpointName) -> void
-const Observables.Sse.SseConnection.DefaultMaxEventBytes = 1048576 -> int
-const Observables.Sse.SseConnection.DefaultMaxLineBytes = 1048576 -> int
-Observables.Sse.SseConnection.MaxEventBytes.get -> int
-Observables.Sse.SseConnection.MaxLineBytes.get -> int
-Observables.Sse.SseConnection.SseConnection(System.Net.Http.HttpClient! httpClient, System.Uri! endpoint, int maxLineBytes, int maxEventBytes) -> void

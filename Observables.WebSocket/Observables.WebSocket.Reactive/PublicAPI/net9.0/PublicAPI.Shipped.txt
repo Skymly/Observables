@@ -5,3 +5,6 @@ static Observables.WebSocket.Reactive.SystemReactiveWebSocketAdapter.FromConnect
 static Observables.WebSocket.Reactive.SystemReactiveWebSocketAdapter.FromReceive<T>(System.Net.WebSockets.ClientWebSocket! socket) -> System.IObservable<T>!
 static Observables.WebSocket.Reactive.SystemReactiveWebSocketAdapter.FromSend(System.Net.WebSockets.ClientWebSocket! socket, byte[]! payload, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.IObservable<System.Reactive.Unit>!
 static Observables.WebSocket.Reactive.SystemReactiveWebSocketAdapter.FromSendText(System.Net.WebSockets.ClientWebSocket! socket, string! text, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.IObservable<System.Reactive.Unit>!
+static Observables.WebSocket.Reactive.SystemReactiveWebSocketAdapter.FromReceive<T>(System.Net.WebSockets.ClientWebSocket! socket, int maxMessageBytes) -> System.IObservable<T>!
+static Observables.WebSocket.Reactive.SystemReactiveWebSocketAdapter.FromReceiveNamed<T>(System.Net.WebSockets.ClientWebSocket! socket, string! messageName) -> System.IObservable<T>!
+static Observables.WebSocket.Reactive.SystemReactiveWebSocketAdapter.FromReceiveNamed<T>(System.Net.WebSockets.ClientWebSocket! socket, string! messageName, int maxMessageBytes) -> System.IObservable<T>!

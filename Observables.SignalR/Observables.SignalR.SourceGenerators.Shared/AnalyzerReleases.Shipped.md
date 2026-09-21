@@ -18,3 +18,11 @@ OBS4006 | Observables.SignalR | Error | Unsupported streaming parameter
 Rule ID | Category | Severity | Notes
 --------|----------|----------|-------
 OBS4008 | Observables.SignalR | Error | Internal source generator error
+
+## Release 1.2
+
+### New Rules
+
+Rule ID | Category | Severity | Notes
+--------|----------|----------|-------
+OBS4009 | Observables.SignalR | Error | Multiple hub boundary attributes

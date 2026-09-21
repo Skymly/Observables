@@ -17,3 +17,11 @@ OBS3005 | Observables.RestAPI | Error | System.Reactive package required
 Rule ID | Category | Severity | Notes
 --------|----------|----------|-------
 OBS3006 | Observables.RestAPI | Error | Internal source generator error
+
+## Release 1.2
+
+### New Rules
+
+Rule ID | Category | Severity | Notes
+--------|----------|----------|-------
+OBS3008 | Observables.RestAPI | Error | Duplicate Body parameter

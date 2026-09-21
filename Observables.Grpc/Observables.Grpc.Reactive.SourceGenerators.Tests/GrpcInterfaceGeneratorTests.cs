@@ -6,6 +6,29 @@ namespace Observables.Grpc.Reactive.SourceGenerators.Tests;
 public sealed class GrpcInterfaceGeneratorTests
 {
     [Fact]
+    public void Grpc_interface_OBS7002_when_runtime_missing()
+    {
+        const string userSource =
+            """
+            [Grpc("echo.Echo")]
+            public interface IEchoService
+            {
+                [GrpcUnary("UnaryEcho")]
+                IObservable<string> UnaryEcho(string request, CancellationToken cancellationToken = default);
+            }
+            """;
+
+        var output = GeneratorTestHarness.Run(userSource, includeCoreReference: false);
+        var snapshot = GeneratorTestHarness.ToSnapshot(output);
+
+        Assert.Contains(
+            "OBS7002: Observables.Grpc.Reactive is not referenced. Add a PackageReference to Observables.Grpc.Reactive.",
+            snapshot,
+            StringComparison.Ordinal);
+        Assert.DoesNotContain("Observables.Grpc is not referenced", snapshot, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public Task Grpc_interface_generates_reactive_proxy()
     {
         const string userSource =

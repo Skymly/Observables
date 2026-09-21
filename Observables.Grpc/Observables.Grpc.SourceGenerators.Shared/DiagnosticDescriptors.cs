@@ -19,12 +19,21 @@ internal static class DiagnosticDescriptors
     public static readonly DiagnosticDescriptor GrpcCoreNotReferenced =
         new(
             "OBS7002",
-            "Observables.Grpc must be referenced",
-            "Observables.Grpc is not referenced. Add a PackageReference to Observables.Grpc.",
+#if OBSERVABLES_R3
+            "Observables.Grpc.R3 must be referenced",
+            "Observables.Grpc.R3 is not referenced. Add a PackageReference to Observables.Grpc.R3.",
+#else
+            "Observables.Grpc.Reactive must be referenced",
+            "Observables.Grpc.Reactive is not referenced. Add a PackageReference to Observables.Grpc.Reactive.",
+#endif
             "Observables.Grpc",
             DiagnosticSeverity.Error,
             isEnabledByDefault: true,
-            description: "Observables.Grpc runtime package is not referenced.",
+#if OBSERVABLES_R3
+            description: "Observables.Grpc.R3 package is not referenced.",
+#else
+            description: "Observables.Grpc.Reactive package is not referenced.",
+#endif
             helpLinkUri: DiagnosticHelpLink.For("OBS7002"));
 
     public static readonly DiagnosticDescriptor UnsupportedReturnType =

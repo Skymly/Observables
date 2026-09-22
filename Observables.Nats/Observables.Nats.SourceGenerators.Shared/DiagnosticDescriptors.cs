@@ -19,12 +19,21 @@ internal static class DiagnosticDescriptors
     public static readonly DiagnosticDescriptor NatsCoreNotReferenced =
         new(
             "OBS9002",
-            "Observables.Nats must be referenced",
-            "Observables.Nats is not referenced. Add a PackageReference to Observables.Nats.",
+#if OBSERVABLES_R3
+            "Observables.Nats.R3 must be referenced",
+            "Observables.Nats.R3 is not referenced. Add a PackageReference to Observables.Nats.R3.",
+#else
+            "Observables.Nats.Reactive must be referenced",
+            "Observables.Nats.Reactive is not referenced. Add a PackageReference to Observables.Nats.Reactive.",
+#endif
             "Observables.Nats",
             DiagnosticSeverity.Error,
             isEnabledByDefault: true,
-            description: "Observables.Nats runtime package is not referenced.",
+#if OBSERVABLES_R3
+            description: "Observables.Nats.R3 package is not referenced.",
+#else
+            description: "Observables.Nats.Reactive package is not referenced.",
+#endif
             helpLinkUri: DiagnosticHelpLink.For("OBS9002"));
 
     public static readonly DiagnosticDescriptor UnsupportedReturnType =

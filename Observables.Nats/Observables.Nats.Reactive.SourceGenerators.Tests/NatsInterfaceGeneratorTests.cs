@@ -160,6 +160,29 @@ public sealed class NatsInterfaceGeneratorTests
     }
 
     [Fact]
+    public void Nats_interface_OBS9002_when_runtime_missing()
+    {
+        const string userSource =
+            """
+            [Nats]
+            public interface IOrderHub
+            {
+                [NatsSubscribe("orders.created")]
+                IObservable<string> Created { get; }
+            }
+            """;
+
+        var output = GeneratorTestHarness.Run(userSource, includeCoreReference: false);
+        var snapshot = GeneratorTestHarness.ToSnapshot(output);
+
+        Assert.Contains(
+            "OBS9002: Observables.Nats.Reactive is not referenced. Add a PackageReference to Observables.Nats.Reactive.",
+            snapshot,
+            StringComparison.Ordinal);
+        Assert.DoesNotContain("Observables.Nats is not referenced", snapshot, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void Missing_reactive_adapter_reports_OBS9005()
     {
         const string userSource =

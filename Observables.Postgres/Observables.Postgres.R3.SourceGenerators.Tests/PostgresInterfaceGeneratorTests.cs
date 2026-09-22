@@ -153,7 +153,11 @@ public sealed class PostgresInterfaceGeneratorTests
         var output = GeneratorTestHarness.Run(userSource, includeCoreReference: false);
         var snapshot = GeneratorTestHarness.ToSnapshot(output);
 
-        Assert.Contains("OBS10002", snapshot, StringComparison.Ordinal);
+        Assert.Contains(
+            "OBS10002: Observables.Postgres.R3 is not referenced. Add a PackageReference to Observables.Postgres.R3.",
+            snapshot,
+            StringComparison.Ordinal);
+        Assert.DoesNotContain("Observables.Postgres is not referenced", snapshot, StringComparison.Ordinal);
     }
 
     [Fact]

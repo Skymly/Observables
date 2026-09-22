@@ -19,12 +19,21 @@ internal static class DiagnosticDescriptors
     public static readonly DiagnosticDescriptor PostgresCoreNotReferenced =
         new(
             "OBS10002",
-            "Observables.Postgres must be referenced",
-            "Observables.Postgres is not referenced. Add a PackageReference to Observables.Postgres.",
+#if OBSERVABLES_R3
+            "Observables.Postgres.R3 must be referenced",
+            "Observables.Postgres.R3 is not referenced. Add a PackageReference to Observables.Postgres.R3.",
+#else
+            "Observables.Postgres.Reactive must be referenced",
+            "Observables.Postgres.Reactive is not referenced. Add a PackageReference to Observables.Postgres.Reactive.",
+#endif
             "Observables.Postgres",
             DiagnosticSeverity.Error,
             isEnabledByDefault: true,
-            description: "Observables.Postgres runtime package is not referenced.",
+#if OBSERVABLES_R3
+            description: "Observables.Postgres.R3 package is not referenced.",
+#else
+            description: "Observables.Postgres.Reactive package is not referenced.",
+#endif
             helpLinkUri: DiagnosticHelpLink.For("OBS10002"));
 
     public static readonly DiagnosticDescriptor UnsupportedReturnType =

@@ -6,6 +6,29 @@ namespace Observables.Postgres.Reactive.SourceGenerators.Tests;
 public sealed class PostgresInterfaceGeneratorTests
 {
     [Fact]
+    public void Postgres_interface_OBS10002_when_runtime_missing()
+    {
+        const string userSource =
+            """
+            [Postgres]
+            public interface IOrderChannel
+            {
+                [Listen("order_created")]
+                IObservable<string> OrderCreated { get; }
+            }
+            """;
+
+        var output = GeneratorTestHarness.Run(userSource, includeCoreReference: false);
+        var snapshot = GeneratorTestHarness.ToSnapshot(output);
+
+        Assert.Contains(
+            "OBS10002: Observables.Postgres.Reactive is not referenced. Add a PackageReference to Observables.Postgres.Reactive.",
+            snapshot,
+            StringComparison.Ordinal);
+        Assert.DoesNotContain("Observables.Postgres is not referenced", snapshot, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public Task Postgres_interface_generates_reactive_proxy()
     {
         const string userSource =

@@ -6,6 +6,29 @@ namespace Observables.Redis.Reactive.SourceGenerators.Tests;
 public sealed class RedisInterfaceGeneratorTests
 {
     [Fact]
+    public void Redis_interface_OBS11002_when_runtime_missing()
+    {
+        const string userSource =
+            """
+            [Redis]
+            public interface INewsHub
+            {
+                [RedisSubscribe("news.alerts")]
+                IObservable<string> Alerts { get; }
+            }
+            """;
+
+        var output = GeneratorTestHarness.Run(userSource, includeCoreReference: false);
+        var snapshot = GeneratorTestHarness.ToSnapshot(output);
+
+        Assert.Contains(
+            "OBS11002: Observables.Redis.Reactive is not referenced. Add a PackageReference to Observables.Redis.Reactive.",
+            snapshot,
+            StringComparison.Ordinal);
+        Assert.DoesNotContain("Observables.Redis is not referenced", snapshot, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public Task Redis_interface_generates_reactive_proxy_and_registration()
     {
         const string userSource =

@@ -172,7 +172,11 @@ public sealed class RedisInterfaceGeneratorTests
         var output = GeneratorTestHarness.Run(userSource, includeCoreReference: false);
         var snapshot = GeneratorTestHarness.ToSnapshot(output);
 
-        Assert.Contains("OBS11002", snapshot, StringComparison.Ordinal);
+        Assert.Contains(
+            "OBS11002: Observables.Redis.R3 is not referenced. Add a PackageReference to Observables.Redis.R3.",
+            snapshot,
+            StringComparison.Ordinal);
+        Assert.DoesNotContain("Observables.Redis is not referenced", snapshot, StringComparison.Ordinal);
     }
 
     [Fact]

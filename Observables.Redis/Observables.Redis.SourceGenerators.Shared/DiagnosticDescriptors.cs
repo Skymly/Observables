@@ -19,12 +19,21 @@ internal static class DiagnosticDescriptors
     public static readonly DiagnosticDescriptor RedisCoreNotReferenced =
         new(
             "OBS11002",
-            "Observables.Redis must be referenced",
-            "Observables.Redis is not referenced. Add a PackageReference to Observables.Redis.",
+#if OBSERVABLES_R3
+            "Observables.Redis.R3 must be referenced",
+            "Observables.Redis.R3 is not referenced. Add a PackageReference to Observables.Redis.R3.",
+#else
+            "Observables.Redis.Reactive must be referenced",
+            "Observables.Redis.Reactive is not referenced. Add a PackageReference to Observables.Redis.Reactive.",
+#endif
             "Observables.Redis",
             DiagnosticSeverity.Error,
             isEnabledByDefault: true,
-            description: "Observables.Redis runtime package is not referenced.",
+#if OBSERVABLES_R3
+            description: "Observables.Redis.R3 package is not referenced.",
+#else
+            description: "Observables.Redis.Reactive package is not referenced.",
+#endif
             helpLinkUri: DiagnosticHelpLink.For("OBS11002"));
 
     public static readonly DiagnosticDescriptor UnsupportedReturnType =

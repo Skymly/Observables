@@ -87,6 +87,11 @@ internal static class IoProxyModelAssembly
             {
                 switch (member)
                 {
+                    case IMethodSymbol method when method.MethodKind == MethodKind.Ordinary && HasRefLikeParameter(method):
+                    case IPropertySymbol { SetMethod: not null }:
+                        // Setters and ref/out/in parameters cannot be implemented by the proxy shell.
+                        tryAddOther?.Invoke(marked, member, members, diagnostics);
+                        break;
                     case IMethodSymbol method when method.MethodKind == MethodKind.Ordinary:
                         tryAddMethod(marked, method, members, diagnostics);
                         break;
@@ -127,5 +132,18 @@ internal static class IoProxyModelAssembly
         }
 
         return (diagnostics, createContext(interfaces.ToImmutableEquatableArray()));
+    }
+
+    static bool HasRefLikeParameter(IMethodSymbol method)
+    {
+        foreach (var parameter in method.Parameters)
+        {
+            if (parameter.RefKind != RefKind.None)
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

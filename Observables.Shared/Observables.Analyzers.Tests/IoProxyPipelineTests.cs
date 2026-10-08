@@ -126,6 +126,82 @@ public sealed class IoProxyPipelineTests
     }
 
     [Fact]
+    public void Parse_does_not_emit_setters_or_ref_like_parameters_as_implementable()
+    {
+        const string source =
+            """
+            using Observables.Mqtt;
+
+            [Mqtt]
+            public interface IShapes
+            {
+                void Publish(int id);
+
+                string Value { get; }
+
+                string Writable { get; set; }
+
+                void ByRef(ref int value);
+
+                void ByOut(out int value);
+
+                void ByIn(in int value);
+            }
+            """;
+
+        var (compilation, interfaces) = CompileInterfaces(source);
+        var marker = compilation.GetTypeByMetadataName(ProxyDomainTable.Mqtt.InterfaceMarkerMetadataName);
+        Assert.NotNull(marker);
+        var marked = IoProxyInterfaceWalk.Collect(compilation, interfaces, marker!, CancellationToken.None);
+
+        var methods = new List<string>();
+        var properties = new List<string>();
+        var other = new List<ISymbol>();
+        var descriptor = new DiagnosticDescriptor(
+            "TEST004",
+            "unsupported",
+            "{0}",
+            "Test",
+            DiagnosticSeverity.Error,
+            true);
+        var (diagnostics, model) = IoProxyModelAssembly.Parse<string, string, string>(
+            marked,
+            CancellationToken.None,
+            coreReferenced: true,
+            coreNotReferenced: descriptor,
+            emptyModel: static () => "",
+            tryAddMethod: (_, method, members, _) =>
+            {
+                methods.Add(method.Name);
+                members.Add(method.Name);
+            },
+            tryAddProperty: (_, property, members, _) =>
+            {
+                properties.Add(property.Name);
+                members.Add("prop:" + property.Name);
+            },
+            createInterface: static (_, _, members) => string.Join(",", members),
+            createContext: static interfaces => string.Join("|", interfaces),
+            tryAddOther: (_, member, _, diagnostics) =>
+            {
+                other.Add(member);
+                diagnostics.Add(Diagnostic.Create(descriptor, member.Locations.FirstOrDefault(), member.Name));
+            });
+
+        Assert.Equal(["Publish"], methods);
+        Assert.Equal(["Value"], properties);
+        Assert.Contains("Publish", model);
+        Assert.Contains("prop:Value", model);
+        Assert.DoesNotContain(methods, static name => name is "ByRef" or "ByOut" or "ByIn");
+        Assert.DoesNotContain(properties, static name => name == "Writable");
+        Assert.Contains(other, static member => member is IPropertySymbol && member.Name == "Writable");
+        Assert.Contains(other, static member => member is IMethodSymbol && member.Name == "ByRef");
+        Assert.Contains(other, static member => member is IMethodSymbol && member.Name == "ByOut");
+        Assert.Contains(other, static member => member is IMethodSymbol && member.Name == "ByIn");
+        Assert.Equal(4, diagnostics.Count(static diagnostic => diagnostic.Id == "TEST004"));
+    }
+
+    [Fact]
     public void OBS7004_stays_on_the_Grpc_adapter()
     {
         // Shared does not template DiagnosticDescriptors. OBS7004 is the Grpc

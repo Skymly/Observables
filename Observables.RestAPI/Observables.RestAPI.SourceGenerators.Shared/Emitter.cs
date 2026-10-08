@@ -357,11 +357,14 @@ internal static class Emitter
         if (methodModel.ReturnTypeMetadata == ReturnTypeInfo.AsyncVoid)
             source.WriteLine($"await global::Observables.RestAPI.RestApiBridge.SendVoidAsync(Client, _settings, in {specField}, {ctVar}{args}){configureAwait};");
         else if (methodModel.ReturnTypeMetadata == ReturnTypeInfo.SyncVoid)
-            source.WriteLine($"global::Observables.RestAPI.RestApiBridge.SendVoidAsync(Client, _settings, in {specField}, {ctVar}{args}).GetAwaiter().GetResult();");
+            // Start the bridge on the thread pool so a yielding ExceptionFactory or serializer
+            // cannot capture this caller's SynchronizationContext. Clearing the context inline
+            // emits more code and still runs the synchronous prefix on the blocked thread.
+            source.WriteLine($"global::System.Threading.Tasks.Task.Run(() => global::Observables.RestAPI.RestApiBridge.SendVoidAsync(Client, _settings, in {specField}, {ctVar}{args})).GetAwaiter().GetResult();");
         else if (methodModel.ReturnTypeMetadata == ReturnTypeInfo.AsyncResult)
             source.WriteLine($"{@return}global::Observables.RestAPI.RestApiBridge.SendAsync<{methodModel.ReturnResultType}, {methodModel.DeserializedResultType}>(Client, _settings, in {specField}, {ctVar}{args}){configureAwait};");
         else if (methodModel.ReturnTypeMetadata == ReturnTypeInfo.Return)
-            source.WriteLine($"{@return}global::Observables.RestAPI.RestApiBridge.SendAsync<{methodModel.ReturnResultType}, {methodModel.DeserializedResultType}>(Client, _settings, in {specField}, {ctVar}{args}).GetAwaiter().GetResult();");
+            source.WriteLine($"{@return}global::System.Threading.Tasks.Task.Run(() => global::Observables.RestAPI.RestApiBridge.SendAsync<{methodModel.ReturnResultType}, {methodModel.DeserializedResultType}>(Client, _settings, in {specField}, {ctVar}{args})).GetAwaiter().GetResult();");
     }
 
     static void WriteObservableBody(SourceWriter source, MethodModel methodModel, int specIndex)

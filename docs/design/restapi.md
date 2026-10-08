@@ -289,11 +289,13 @@ public static class RestApiBridge
 | ID | 严重性 | 触发 |
 |----|--------|------|
 | OBS3001 | Warning | 接口方法缺少 HTTP 方法特性或路径非常量 |
-| OBS3002 | Error | 未引用 `Observables.RestAPI` 运行时 |
+| OBS3002 | Error | 未引用消费者包 `Observables.RestAPI.R3` / `Observables.RestAPI.Reactive`（按生成器后端） |
 | OBS3003 | Error | 不支持的返回类型 |
 | OBS3004 | Error | 路径模板与参数不匹配（占位符无对应参数或反之） |
 | OBS3005 | Error | `IObservable<T>` 返回但未引用 `Observables.RestAPI.Reactive`（R3 生成器侧） |
+| OBS3006 | Error | 源生成器内部错误 |
 | OBS3007 | Warning | 空 `[RestApi]` 接口（未声明任何成员，`Observables.Analyzers`） |
+| OBS3008 | Error | 同一方法声明了多个 `[Body]` 参数 |
 
 Release 跟踪：`Observables.RestAPI.SourceGenerators.Shared/AnalyzerReleases.Shipped.md`（OBS3001–3005 v1.0 已发）；`Observables.Analyzers/AnalyzerReleases.Shipped.md`（OBS3007 已发）。
 

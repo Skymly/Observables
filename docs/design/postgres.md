@@ -91,7 +91,7 @@ LISTEN 在会话上注册通道并占用连接上的 `Wait`/`WaitAsync` 循环�
 | ID | 严重性 | 触发 |
 |----|--------|------|
 | OBS10001 | Warning | 缺少边界特性或 channel 非字面量 |
-| OBS10002 | Error | 未引用 `Observables.Postgres` |
+| OBS10002 | Error | 未引用消费者包 `Observables.Postgres.R3` / `Observables.Postgres.Reactive`（按生成器后端） |
 | OBS10003 | Error | 不支持的返回类型 |
 | OBS10004 | Error | 成员形态与特性不匹配（如 `[Listen]` 在方法上） |
 | OBS10005 | Error | `IObservable<T>` 需 `Observables.Postgres.Reactive` |

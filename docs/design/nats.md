@@ -94,12 +94,13 @@ Reactive 桥：`SystemReactiveNatsAdapter` 同名方法，返回 `IObservable<T>
 | ID | 严重性 | 触发 |
 |----|--------|------|
 | OBS9001 | Warning | 缺少边界特性或 subject 非字面量 |
-| OBS9002 | Error | 未引用 `Observables.Nats` |
+| OBS9002 | Error | 未引用消费者包 `Observables.Nats.R3` / `Observables.Nats.Reactive`（按生成器后端） |
 | OBS9003 | Error | 不支持的返回类型 |
 | OBS9004 | Error | 成员形态与特性不匹配 |
 | OBS9005 | Error | `IObservable<T>` 需 `Observables.Nats.Reactive` |
 | OBS9006 | Error | subject 模板 / subscribe 占位符违规 |
 | OBS9007 | Warning | 空 `[Nats]` 接口（Analyzer） |
+| OBS9008 | Error | 生成器内部错误 |
 
 ## 7. 项目组成
 

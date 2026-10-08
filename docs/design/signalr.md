@@ -165,11 +165,14 @@ R3 包不引用 System.Reactive，反之亦然（约定）。
 | ID | 标题 | 严重度 | 触发时机 |
 |----|------|--------|----------|
 | **OBS4001** | Hub interface members must declare a SignalR boundary attribute | Warning | `[Hub]` 接口成员缺 `[HubInvoke/Send/Stream/On]`，或 name 实参非字面量 |
-| **OBS4002** | Observables.SignalR must be referenced | Error | 发现 `[Hub]` 候选但未引用运行时/Client 程序集 |
+| **OBS4002** | Observables.SignalR.R3 / Observables.SignalR.Reactive must be referenced | Error | 发现 `[Hub]` 候选但未引用对应消费者包（R3 生成器报 `.R3`，Reactive 生成器报 `.Reactive`） |
 | **OBS4003** | Unsupported member return type | Error | 返回类型不是 `Observable<T>` / `IObservable<T>`（Send 须 `…<Unit>`） |
 | **OBS4004** | Member shape mismatch for SignalR boundary | Error | `[HubOn]` 用在方法、或 `[HubInvoke/Stream]` 用在属性等形态错配 |
 | **OBS4005** | SystemReactive package required for IObservable | Error | Reactive 生成器遇 `IObservable<T>` 但未引用 `Observables.SignalR.Reactive`（镜像 OBS3005） |
 | **OBS4006** | Unsupported streaming parameter | Error | 出现上行流参数（`IAsyncEnumerable<T>` / `ChannelReader<T>`）等首版不支持的形态 |
+| **OBS4007** | Empty hub proxy interface | Warning | 空 `[Hub]` 接口（`Observables.Analyzers`） |
+| **OBS4008** | Internal source generator error | Error | 生成器内部错误 |
+| **OBS4009** | Multiple SignalR boundary attributes on one member | Error | 同一成员声明了多个 Hub 边界特性 |
 
 > 启用 analyzer release tracking 时，需在 `AnalyzerReleases.Unshipped.md` 登记上述 ID。
 

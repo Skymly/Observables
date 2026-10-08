@@ -94,11 +94,13 @@ Observable<string> Messages { get; }
 | ID | Severity | 说明 |
 |---|---|---|
 | OBS6001 | Warning | 成员无 WebSocket 边界特性 |
-| OBS6002 | Error | 未引用 `Observables.WebSocket` |
+| OBS6002 | Error | 未引用消费者包 `Observables.WebSocket.R3` / `Observables.WebSocket.Reactive`（按生成器后端） |
 | OBS6003 | Error | 不支持的返回类型 |
 | OBS6004 | Error | 成员形状与边界不匹配 |
-| OBS6005 | Error | 使用 `IObservable` 但未引用 System.Reactive |
+| OBS6005 | Error | 使用 `IObservable<T>` 但未引用 `Observables.WebSocket.Reactive` |
 | OBS6006 | Error | 不支持的形状或参数组合 |
+| OBS6007 | Warning | 空 `[WebSocket]` 接口（`Observables.Analyzers`） |
+| OBS6008 | Error | 生成器内部错误 |
 
 ## 6. 运行时架构
 

@@ -86,11 +86,13 @@ ISensorHub hub = MqttService.For<ISensorHub>(client);
 | ID | 级别 | 场景 |
 |----|------|------|
 | OBS5001 | Warning | 缺少边界特性或非常量 topic |
-| OBS5002 | Error | 未引用 Observables.Mqtt 运行时 |
+| OBS5002 | Error | 未引用消费者包 Observables.Mqtt.R3 / Observables.Mqtt.Reactive（按生成器后端） |
 | OBS5003 | Error | 不支持的返回类型 |
 | OBS5004 | Error | 成员形态与特性不匹配 |
 | OBS5005 | Error | `IObservable<T>` 未引用 Reactive 包 |
 | OBS5006 | Error | 不支持的 topic 模板、多余参数或订阅占位符 |
+| OBS5007 | Warning | 空 `[Mqtt]` 接口（`Observables.Analyzers`） |
+| OBS5008 | Error | 生成器内部错误 |
 
 用户向说明：[Observables.Docs diagnostics](https://github.com/Skymly/Observables.Docs/blob/main/docs/diagnostics.md)。
 

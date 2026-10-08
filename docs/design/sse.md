@@ -103,10 +103,11 @@ SSE 解析（`text/event-stream`，见 [WHATWG HTML §9.2](https://html.spec.wha
 | ID | 严重性 | 触发 | 归属 |
 |----|--------|------|------|
 | OBS8001 | Warning | `[Sse]` 接口成员无 `[SseEvent]` | 生成器 |
-| OBS8002 | Error | 未引用 `Observables.Sse` | 生成器 |
+| OBS8002 | Error | 未引用消费者包 `Observables.Sse.R3` / `Observables.Sse.Reactive`（按生成器后端） | 生成器 |
 | OBS8003 | Error | 不支持的返回类型 | 生成器 |
 | OBS8004 | Error | `[SseEvent]` 标在方法上（须为属性） | 生成器 |
 | OBS8005 | Error | `IObservable<T>` 需引用 `Observables.Sse.Reactive` | 生成器 |
+| OBS8006 | Error | 生成器内部错误 | 生成器 |
 | OBS8007 | Warning | `[Sse]` 接口为空 | Analyzer（`Observables.Analyzers`） |
 
 `OBS8007` 复用 `EmptyProxyInterfaceAnalyzer`：在 `ProxyDomainCatalog` 登记 Sse 域 + `EmptySseInterface` 描述符即可。

@@ -103,7 +103,7 @@ Dispose 订阅 → 取消 Redis 订阅，避免泄漏。
 | ID | 严重性 | 触发 |
 |----|--------|------|
 | OBS11001 | Warning | 缺少边界特性或 Channel 非字面量 |
-| OBS11002 | Error | 未引用 `Observables.Redis` |
+| OBS11002 | Error | 未引用消费者包 `Observables.Redis.R3` / `Observables.Redis.Reactive`（按生成器后端） |
 | OBS11003 | Error | 不支持的返回类型 |
 | OBS11004 | Error | 成员形态与特性不匹配（如 `[RedisSubscribe]` 在方法上） |
 | OBS11005 | Error | `IObservable<T>` 需 `Observables.Redis.Reactive` |

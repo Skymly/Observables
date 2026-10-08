@@ -1,5 +1,6 @@
 #if ROSLYN_4
 using System.Collections.Immutable;
+using System.Threading;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -38,7 +39,9 @@ internal static class IoProxyGeneratorPipeline
 
         var parseStep = collected.Select(
             (input, ct) =>
-                GeneratorFailSafe.ExecuteParse(
+            {
+                IoProxyPipelineMeasurement.CountParse();
+                return GeneratorFailSafe.ExecuteParse(
                     () =>
                     {
                         var compilation = (CSharpCompilation)input.Right;
@@ -49,7 +52,9 @@ internal static class IoProxyGeneratorPipeline
                         return parse(compilation, marked, ct);
                     },
                     internalErrorDescriptor,
-                    emptyModelFactory));
+                    emptyModelFactory);
+            })
+            .WithTrackingName(IoProxyPipelineMeasurement.ParseTrackingName);
 
         var diagnostics = parseStep
             .Select(static (x, _) => x.diagnostics)
@@ -64,10 +69,13 @@ internal static class IoProxyGeneratorPipeline
         context.RegisterImplementationSourceOutput(
             interfaceModels,
             (spc, model) =>
+            {
+                IoProxyPipelineMeasurement.CountEmitInterface();
                 GeneratorFailSafe.TryEmit(
                     () => emitInterface(model, (name, code) => spc.AddSource(name, code)),
                     spc.ReportDiagnostic,
-                    internalErrorDescriptor));
+                    internalErrorDescriptor);
+            });
 
         context.RegisterImplementationSourceOutput(
             contextModel,
@@ -77,5 +85,31 @@ internal static class IoProxyGeneratorPipeline
                     spc.ReportDiagnostic,
                     internalErrorDescriptor));
     }
+}
+
+/// <summary>
+/// Separates parse executions from emit invocations. An emit cache hit is observed
+/// from the tracked build step, not inferred from an unchanged output.
+/// </summary>
+internal static class IoProxyPipelineMeasurement
+{
+    internal const string ParseTrackingName = "IoProxy.Parse";
+
+    static int parseInvocations;
+    static int emitInterfaceInvocations;
+
+    internal static int ParseInvocations => Volatile.Read(ref parseInvocations);
+
+    internal static int EmitInterfaceInvocations => Volatile.Read(ref emitInterfaceInvocations);
+
+    internal static void Reset()
+    {
+        Volatile.Write(ref parseInvocations, 0);
+        Volatile.Write(ref emitInterfaceInvocations, 0);
+    }
+
+    internal static void CountParse() => Interlocked.Increment(ref parseInvocations);
+
+    internal static void CountEmitInterface() => Interlocked.Increment(ref emitInterfaceInvocations);
 }
 #endif

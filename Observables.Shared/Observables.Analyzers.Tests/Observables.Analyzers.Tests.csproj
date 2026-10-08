@@ -18,6 +18,8 @@
   <ItemGroup>
     <Compile Include="..\Observables.SourceGenerators.Shared\IoProxyInterfaceWalk.cs" Link="Shared/IoProxyInterfaceWalk.cs" />
     <Compile Include="..\Observables.SourceGenerators.Shared\IoProxyModelAssembly.cs" Link="Shared/IoProxyModelAssembly.cs" />
+    <Compile Include="..\Observables.SourceGenerators.Shared\IoProxyGeneratorPipeline.cs" Link="Shared/IoProxyGeneratorPipeline.cs" />
+    <Compile Include="..\Observables.SourceGenerators.Shared\IncrementalValuesProviderExtensions.cs" Link="Shared/IncrementalValuesProviderExtensions.cs" />
     <Compile Include="..\Observables.SourceGenerators.Shared\GeneratorFailSafe.cs" Link="Shared/GeneratorFailSafe.cs" />
     <Compile Include="..\Observables.SourceGenerators.Shared\IdentifierHelper.cs" Link="Shared/IdentifierHelper.cs" />
     <Compile Include="..\Observables.SourceGenerators.Shared\ImmutableEquatableArray.cs" Link="Shared/ImmutableEquatableArray.cs" />

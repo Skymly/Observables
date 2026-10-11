@@ -1,7 +1,9 @@
 using System.Text;
+using Observables.Postgres.Tests.Infrastructure;
 
 namespace Observables.Postgres.Tests;
 
+[Collection(nameof(PostgresPayloadSerializerCollection))]
 public sealed class PostgresPayloadSerializerTests
 {
     [Fact]

@@ -114,5 +114,5 @@ dotnet run --project build/_build.csproj -- --target PackVerify --pack-domains e
 
 - [architecture.md](architecture.md) — 双后端、生成器管道、CI
 - [DOCUMENTATION.md](../DOCUMENTATION.md) — 文档类型与归档
-- [ROADMAP.md](../ROADMAP.md) — 当前 backlog（P3 E-items）
+- [ROADMAP.md](../ROADMAP.md) — 阶段 R0–R5 与搁置项
 - [plans/DocumentationDrivenDevelopmentBootstrap.md](../plans/DocumentationDrivenDevelopmentBootstrap.md) — 文档体系落地计划

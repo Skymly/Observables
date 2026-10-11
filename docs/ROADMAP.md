@@ -1,264 +1,185 @@
 # Observables 路线图
 
-本文件描述 Observables 从预览版走向 **`0.1.0` 稳定版** 的里程碑规划（M1–M7 已全部完成；当前 nuget.org 稳定版 **`0.3.1`** = OBS9002/OBS10002/OBS11002 指向消费者包 ID + RestAPI 同步代理单线程 SynchronizationContext 死锁修复 + setter 与 ref/out/in 成员改报 OBS*004，仍为 20 包）。它是规划层文档：每个里程碑的工程标准（中央包管理、警告策略、诊断治理等）以 [`AGENTS.md`](../AGENTS.md) 为权威，本文件只排序与拆解。
+本文件只写**现在和接下来**：阶段划分、排序与出口条件。工程标准（中央包管理、警告策略、诊断治理、命名）以 [`AGENTS.md`](../AGENTS.md) 为权威；版本历史见 [`CONTRIBUTING.md`](../CONTRIBUTING.md) 版本表与 GitHub Releases。
 
-> 版本号、tag、发版均须维护者明确批准；本文件中的版本号（如 `preview5`）为规划占位，不构成自动发版授权。
+> 版本号、tag、发版均须维护者明确批准；本文件中的版本号为规划占位，不构成自动发版授权。
 
-## 现状基线（`0.3.1` 已发 nuget.org）
+## 现状基线（2026-10）
 
 | 维度 | 现状 |
 |------|------|
 | 已实现域 | **Events**、**RestAPI**、**SignalR**、**Mqtt**、**WebSocket**、**Grpc**、**Sse**、**Nats**、**Postgres**、**Redis**（运行时 + 双路生成器 + 测试） |
-| 共享层 | `Observables.Core`、`Observables.SourceGenerators.Shared`、`Observables.CodeFixes`、`Observables.Analyzers`；`ProxyDomainTable` / `IoProxyGeneratorPipeline` / `ProxyRegistrationEmitter` |
-| nuget.org 已发 | **`0.3.1`** — **20 包**（`v0.3.1` tag + GitHub Release） |
-| 构建 | 主仓 Nuke `Ci` / `CiPack` / `Publish`；`PackVerify` + `eng/nuget-smoke`（manifest **20** 包） |
-| 示例仓 CI | `Observables.Samples` Nuke `Ci`（对齐库版本；Redis Samples 见跨仓 companion） |
+| nuget.org | **`0.3.1`**（**20 包** + 20 snupkg） |
+| 诊断 | **82** 个已发布唯一 ID（以各 `AnalyzerReleases.Shipped.md` 为准） |
+| 质量 | Windows + Ubuntu CI；`337d576` 上 1550 测试全绿；`PackVerify` + 23 个 `eng/nuget-smoke` 消费者 |
+| 对外文档 | Observables.Docs / Samples 已追到 **`0.3.1`**（[Docs#28](https://github.com/Skymly/Observables.Docs/pull/28)、[Samples#21](https://github.com/Skymly/Observables.Samples/pull/21) / [#22](https://github.com/Skymly/Observables.Samples/pull/22)）。nuget.org `0.2.2` Reactive 包的未声明 R3 引用仍在；维护者决定暂不 deprecate（R0-5） |
+| 需求信号 | Issue 全部来自维护者；真实消费方仅 [GitPulse](https://github.com/Skymly/GitPulse)。无外部反馈 |
+| 依赖 | MQTTnet `4.3.7`（上游 5.x）；System.Reactive `6.0.1`（上游 7.0）；R3 `1.3.0` |
 
-### 已知工程债（详见 AGENTS.md「工程治理」）
+### 方向判断
 
-| # | 项 | 状态 |
-|---|-----|------|
-| 1 | 中央包管理（`Directory.Packages.props`） | ✅ M2 已落地 |
-| 2 | TFM / 公共属性收口（`eng/Observables.ProjectDefaults.props`） | ✅ M2 已落地 |
-| 3 | `TreatWarningsAsErrors`；CS860x、IL trim、xUnit 告警 | ✅ M2/M7 已落地（域运行时 net8/9 通过 Requires* 传播与生成代理保留收敛 IL 告警） |
-| 4 | Nuke 清单 / 版本双真相源 | ✅ M2 已落地（`Observables.BuildManifest.json` + `PackageVersionReader`） |
-| 5 | 诊断 release 跟踪（`AnalyzerReleases.*.md`、移除 RS2008） | ✅ M2 已落地；描述符结构已收敛（Events OBS2xxx 移入域 shproj，OBS*007 保留集中式分析器） |
-| 6 | Grpc 骨架命名（`Observables.Grpc.R3`）违反约定 | ✅ M3 已重命名为 `*.R3.SourceGenerators` |
-| 7 | 文档滞后：README / Docs / Samples | ✅ M4 已补齐（含 Grpc 用户文档与 Samples） |
-| 8 | Samples `RestAPI.Reactive` 显式 `R3` 触发 OBS0001 | ✅ `R3` 改为 runtime-only（`ExcludeAssets=compile`） |
-| 9 | Public API 基线（`PublicAPI.Shipped.txt`） | ✅ M7 已落地（7 域 × 2 项目 × 3 TFM = 84 文件） |
-| 10 | 源生成器质量加固（关键字冲突 / 异常 fail-safe / 诊断描述符 / auto-generated 标记 / 测试覆盖） | 见 P3 段（E1–E13） |
+1. **对外一致性优先于新功能**：R0 已把 Docs / Samples 追到 `0.3.1`；三仓仍靠手工同步，流程修复留在 R1。
+2. **审计驱动加固已到收益递减点**：近期多个探针 issue 结论为「未复现」（#606 / #609 / #610）。不再主动开审计 / 探针批次，转向深化既有域（R3）。
+3. **扩域暂停**：无外部需求时，每个新域都是 2 包 + 测试矩阵 + 两仓文档的长期成本（R5）。
+4. **正式发 `1.0.0`**：结束「post-1.0 维护期 / 实际 0.x」的版本叙事歧义（R4）。
 
-## 诊断 ID 段分配（权威）
-
-| 段 | 域 | 状态 |
-|----|----|------|
-| `OBS0001`–`OBS0002` | Shared（包冲突、开放泛型代理等全库诊断） | 使用中 |
-| `OBS2001`–`OBS2999` | Events | 使用中（2001–2005；2005 为内部 fail-safe） |
-| `OBS3001`–`OBS3999` | RestAPI | 使用中（3001–3007；3006 为内部 fail-safe） |
-| `OBS4001`–`OBS4999` | SignalR | 使用中（4001–4008；4008 为内部 fail-safe） |
-| `OBS5001`–`OBS5999` | Mqtt | 使用中（5001–5008；5008 为内部 fail-safe） |
-| `OBS6001`–`OBS6999` | WebSocket | 使用中（6001–6008；6008 为内部 fail-safe） |
-| `OBS7001`–`OBS7999` | Grpc | 使用中（7001–7009；7008 为内部 fail-safe） |
-| `OBS8001`–`OBS8999` | SSE | 使用中（8001–8007；8006 为内部 fail-safe） |
-| `OBS9001`–`OBS9999` | NATS | 使用中（9001–9008；9008 为内部 fail-safe） |
-| `OBS10001`–`OBS10999` | Postgres | 使用中（10001–10008；10008 为内部 fail-safe；10007 为空接口，Shared Analyzer） |
-| `OBS11001`–`OBS11999` | Redis | 使用中（11001–11008；11008 为内部 fail-safe；11007 为空接口，Shared Analyzer） |
-
-当前共 **78** 个唯一诊断（含 Postgres OBS10xxx + Redis OBS11xxx）：前九域 **70** 个 + Redis **8** 个。新增诊断须落入对应段并在 `AnalyzerReleases.Unshipped.md` 登记（见 AGENTS.md）。
-
-## 里程碑
+## 阶段
 
 ```mermaid
 graph LR
-    M1[M1 preview5<br/>WebSocket 发版] --> M2[M2 工程加固]
-    M2 --> M3[M3 Grpc 域]
-    M3 --> M4[M4 文档/示例补齐]
-    M4 --> M5[M5 SSE 域 · preview7]
-    M5 --> M6[M6 NATS 域 · preview8]
-    M6 --> M7[M7 API 冻结 · 0.1.0]
+    R0[R0 · 0.3.1<br/>止血与对外同步] --> R1[R1 · 发版同步自动化]
+    R0 --> R2[R2 · 0.4.0<br/>Mqtt 传输抽象 · AOT · 依赖]
+    R2 --> R3[R3 · 0.5.0<br/>深化既有域]
+    R1 --> R4[R4 · 1.0.0]
+    R3 --> R4
+    R4 -.-> R5[R5 · 扩域<br/>有门槛·暂停]
 ```
 
-里程碑按依赖排序；M1 与 M2 可并行启动。**策略：先扩域、后冻结 1.0** —— 在 `0.1.x` 预览期内先把 SSE（M5）与 NATS（M6）补齐为完整域，待目标域全部就位后再一次性冻结公共 API 并发 1.0（M7）。M7 的 API 冻结依赖 M1–M6 全部完成。
+R1 与 R2 可并行。R4 依赖 R1、R2 出口满足，且 R3 至少完成 R3-1（与下方 R4 前提一致；R3-2–R3-4 可在 1.0.0 前落地或出局，不阻塞 R4）。
 
-### M1 — `preview5`：WebSocket 发版 ✅
+### R0 — `0.3.1`：止血与对外同步 ✅
 
-已于 `v0.1.0-preview5` tag 发布至 nuget.org 与 GitHub Packages。
+**目标**：已获批的补丁发版，并让 Docs / Samples 追上 nuget.org。
 
-- ~~发布 `Observables.WebSocket.R3` 与 `Observables.WebSocket.Reactive`（共 **10 包**）。~~ ✅
-- ~~同步主仓 [`README.md`](../README.md) 域状态表与预览包清单。~~ ✅
-- ~~新增 Docs `websocket.md`（中英），来源参考 [`docs/design/websocket.md`](design/websocket.md)。~~ ✅
-- ~~新增 Samples `Observables.Samples.WebSocket`。~~ ✅
-- ~~出口校验：`Ci` + `CiPack` 绿、WebSocket smoke 消费者通过。~~ ✅
+| # | 行动项 | 说明 |
+|---|--------|------|
+| R0-1 | ✅ 发 `0.3.1` | 内容见 [#622](https://github.com/Skymly/Observables/issues/622) 发版草案：OBS9002/10002/11002 消费者包 ID、RestAPI 同步代理死锁、setter / ref 成员改报 `OBS*004`。20 包，无新公共 API |
+| R0-2 | ✅ Docs 版本页 → `0.3.1` | 中英 `index` / `getting-started` / `reference` / `samples`（[Docs#28](https://github.com/Skymly/Observables.Docs/pull/28)） |
+| R0-3 | ✅ Samples 版本钉 → `0.3.1` | `ObservablesPackageVersion` + README（[Samples#21](https://github.com/Skymly/Observables.Samples/pull/21)）；本地源码模式修复（[Samples#22](https://github.com/Skymly/Observables.Samples/pull/22)） |
+| R0-4 | ✅ GitHub Release `v0.3.1` | 稳定版，tag + NuGet 后创建 |
+| R0-5 | nuget.org 将 `0.2.2` 标 deprecated | **维护者决定暂不做**（2026-10-11）；需要时再议，仍不覆盖、不重发 |
 
-### M2 — 工程加固 ✅
+**出口**：nuget.org `0.3.1` 20 包可见；Docs / Samples 无 `0.2.2` 当前版本引用。
 
-把上文「已知工程债 1–5」收敛到 AGENTS.md 定义的标准态。每条作为独立 PR：
+### R1 — 发版同步自动化（0.3.x 期间，不需发包）
 
-- ~~引入 `Directory.Packages.props`~~ ✅
-- ~~`eng/Observables.ProjectDefaults.props` 收口 TFM / 公共属性~~ ✅
-- ~~`eng/Observables.BuildManifest.json` + `PackageVersionReader`~~ ✅
-- ~~`AnalyzerReleases.Shipped.md` / `Unshipped.md`，移除 RS2008 pragma~~ ✅
-- ~~`TreatWarningsAsErrors` + CS86xx / xUnit1051 清零~~ ✅；域运行时 net8/9 IL trim 告警通过 Requires* 传播与 `DynamicDependency` 生成代理保留收敛（M7）。
+**目标**：发版后 Docs / Samples 不再依赖人工同步。
 
-### M3 — Grpc 域 ✅
+| # | 行动项 | 说明 |
+|---|--------|------|
+| R1-1 | Docs 单点版本 | VitePress 全局变量承载当前版本；页面与 nuget 链接引用变量，不再硬编码 |
+| R1-2 | Samples 自动跟版 | Dependabot / Renovate 跟踪 `Observables.*`，或 `release.yml` 发布成功后向 Docs / Samples 开同步 PR（二选一，实施时定） |
+| R1-3 | 跨仓漂移检查 | Docs / Samples CI 断言引用版本 = nuget.org 最新稳定版 |
+| R1-4 | 发版门槛对齐 | `Publish` 已内置 `Test` → `PackVerify`；门槛清单改为「Publish 内 PackVerify 通过」，不再要求 HEAD 上另跑 `CiPack` |
+| R1-5 | 测试隔离：全局序列化注册表 | 修改 `*PayloadSerializers` 的测试未禁止并行，会污染同程序集其它测试（Mqtt 已在 CI 偶发失败）。Mqtt [#630](https://github.com/Skymly/Observables/issues/630)；Redis / Nats / Postgres（潜在）[#631](https://github.com/Skymly/Observables/issues/631) / [#632](https://github.com/Skymly/Observables/issues/632) / [#633](https://github.com/Skymly/Observables/issues/633)。仅改测试 |
 
-按 AGENTS.md「新增 Feature 检查清单」从骨架建成完整域（PR #77，已合并 `main`）：
+**出口**：下一次发版（`0.4.0`）三仓同步不含手工改版本号步骤；#630–#633 关闭。
 
-- ~~新增设计文档 `docs/design/grpc.md`（unary / server-streaming / 双向流到反应式流的映射）。~~ ✅
-- ~~重命名骨架：`Observables.Grpc.R3` → `Observables.Grpc.R3.SourceGenerators`，补 `Observables.Grpc.Reactive.SourceGenerators`、`Observables.Grpc.SourceGenerators.Shared`。~~ ✅
-- ~~启用 `OBS7xxx` 诊断段（7001–7007）。~~ ✅
-- ~~建 `Observables.Grpc.Package`，产出 `Observables.Grpc.R3` / `Observables.Grpc.Reactive` 两包。~~ ✅
-- ~~补生成器测试 + E2E + smoke 消费者，纳入 `PackVerify`（manifest **12 包**）。~~ ✅
+### R2 — `0.4.0`：Mqtt 传输抽象、AOT、依赖升级
 
-Grpc 两包已于 **`0.1.0`**（`v0.1.0-preview6` tag）发布至 nuget.org 与 GitHub Packages。
+**目标**：容纳破坏性变更的 minor 版本。
 
-### M4 — 文档与示例补齐 ✅
+#### R2-A Mqtt 传输抽象 + MQTTnet 适配包（维护者已定）
 
-- ~~统一诊断登记文档（OBS0001 / 2xxx–7xxx）到 Docs `diagnostics.md`~~ ✅
-- ~~Docs（中英）`grpc.md`；Samples `Observables.Samples.Grpc`~~ ✅
-- ~~校验 README、Docs、Samples 三处域状态与 `0.1.0` 一致~~ ✅
-- ~~发版后复核 nuget.org 包页链接与站点 `npm run docs:build`~~ ✅（M4 收尾 PR）
+背景：`MQTTnet.Client.IMqttClient` 出现在 Mqtt 域公共 API 与生成代码中；MQTTnet 5 移除了 `MQTTnet.Client` 命名空间，同一程序集无法同时支持 4 与 5。
 
-### M5 — SSE 域（`preview7`） ✅
+决定：域运行时只依赖 Observables 自有传输抽象；MQTTnet 4 / 5 各由一个**可选扩展包**适配。功能稳定后**冻结 MQTTnet 4 适配包**，此后只跟进 MQTTnet 最新版。
 
-**目标**：补全「HTTP 单向流」边界（RestAPI 为 req/resp、WebSocket 为双工，SSE 居中）。形态为纯消费流，是 `IObservable` 的典型场景；接口面与 SignalR 的 `[HubOn]` 同构，工程骨架以 **WebSocket 域**为模板。
+| # | 行动项 | 说明 |
+|---|--------|------|
+| R2-A1 | ADR-004（先于代码） | 定：传输抽象形状（subscribe / unsubscribe / publish / 能力位，供 MQTT 5 请求-响应）；适配包 ID（暂拟 `Observables.Mqtt.MQTTnet4` / `Observables.Mqtt.MQTTnet5`）；R3 / Reactive 主包是否默认依赖某个适配包；`MqttService.For<T>` 新入口与旧 `IMqttClient` 重载的去留；4.x 冻结的触发条件与版本。须明确放宽 AGENTS「每域仅两个消费者包」——适配包为后端中立的可选扩展，不是第三个消费者主包 |
+| R2-A2 | 运行时 + 生成器改造 | `Observables.Mqtt` 去除 MQTTnet 引用；`MqttProtocol` / 协议桥改走抽象；生成代码不再出现 `MQTTnet.*` 类型 |
+| R2-A3 | 两个适配包 | 各自 E2E（进程内 broker 分别用 MQTTnet 4 / 5）；登记 BuildManifest；PackVerify 支持「单包、后端中立」包形态（禁止引用 R3 / System.Reactive） |
+| R2-A4 | 迁移文档 | Docs Mqtt 页 + 0.3.x → 0.4.0 迁移说明；Samples Mqtt 改用适配包 |
 
-按 AGENTS.md「新增 Feature 检查清单」从零建成完整域：
+#### R2-B 其它
 
-- 新增设计文档 `docs/design/sse.md`（`text/event-stream` 解析、重连 / `Last-Event-ID`、事件名路由到反应式流的映射）。
-- 建 `Observables.Sse`（运行时，复用 `HttpClient`；解析参考 RestAPI）、`Observables.Sse.SourceGenerators.Shared`、`Observables.Sse.R3.SourceGenerators`、`Observables.Sse.Reactive.SourceGenerators`。
-- 公共面草案：`[Sse]` 接口 + `[SseEvent("name")]` 属性 → `Observable<T>` / `IObservable<T>`；入口 `SseService.For<T>(...)`。
-- 启用 `OBS8xxx` 诊断段（生成器 8001–8006 + 空代理接口 analyzer `OBS8007`，与各域 `*007` 一致）；在 `ProxyDomainCatalog` 登记 Sse 域。
-- 建 `Observables.Sse.Package`，产出 `Observables.Sse.R3` / `Observables.Sse.Reactive` 两包；登记 `eng/Observables.BuildManifest.json`（→ **14 包**）。
-- 补生成器测试 + E2E（内嵌 HTTP server 推送事件流）+ smoke 消费者，纳入 `PackVerify`。
-- 同步三处文档：README 域状态、Docs（中英）`sse.md` + `diagnostics.md`、Samples `Observables.Samples.Sse`（+ `.Reactive`，RegistrationDemo）。
+| # | 行动项 | 说明 |
+|---|--------|------|
+| R2-B1 | JSON source-gen（AOT） | RestAPI / Mqtt / Redis 设计文档均列为 follow-up；做成全库统一的 `JsonTypeInfo` 序列化入口，而非各域各做 |
+| R2-B2 | System.Reactive 7 兼容 | 加钉 Rx 7 的 smoke 消费者；据结果决定下限是否上调 |
+| R2-B3 | R3 `1.3.x` 补丁升级 | 常规依赖跟进 |
+| R2-B4 | 清理 | `OBS7004` 无触发分支：删除（`AnalyzerReleases` 登记 Removed）或补语义；解决 IDE0161 后启用 `dotnet format style` |
 
-### M6 — NATS 域（`preview8`） ✅
+**出口**：`0.4.0` 发版；Mqtt 公共 API 不含 `MQTTnet.*`；两个适配包 E2E 绿；PublicAPI 破坏性变更全部登记。
 
-**目标**：引入 Core NATS subject 代理（Subscribe / Publish / Request-Reply）。结构与 Mqtt 同构；JetStream 仅设计 follow-up。
+### R3 — `0.5.0`：深化既有域
 
-- 新增设计文档 `docs/design/nats.md` ✅
-- 建 `Observables.Nats` 运行时 + Shared/R3/Reactive 生成器 ✅
-- 公共面：`[Nats]` + `[NatsSubscribe]` / `[NatsPublish]` / `[NatsRequest]`；`NatsService.For<T>(INatsConnection)` ✅
-- 启用 `OBS9xxx`（9001–9007）；`ProxyDomainCatalog` 登记 Nats ✅
-- 建 `Observables.Nats.Package`；manifest → **16 包** ✅
-- 生成器测试 + E2E（进程内 nats-server）+ smoke 消费者 ✅
-- 同步 Docs / Samples / README / AGENTS ✅
+按用户价值排序：
 
-> M5/M6 为预览期内的新增域，每个域遵循「发版门槛清单」与「新增 Feature 检查清单」；版本号与 tag 仍须维护者明确批准。
+| # | 行动项 | 说明 |
+|---|--------|------|
+| R3-1 | **SSE 韧性** | 自动重连 + `Last-Event-ID` 续传、`retry:` 退避、单连接多路复用、自定义请求头（见 [`sse.md`](design/sse.md) §7）。LLM 流式输出普遍走 SSE，最可能带来外部用户 |
+| R3-2 | SignalR 上行流 | 客户端 → 服务端 `IAsyncEnumerable<T>` / `ChannelReader<T>` 参数（当前报 OBS4006） |
+| R3-3 | MQTT 5 请求-响应 | 依赖 R2-A；仅 MQTTnet 5 适配包提供（能力位） |
+| R3-4 | NATS JetStream 有序消费者 | 先按 [ADR-002](adr/ADR-002-domain-admission-and-ranking.md) §1 过形态白名单（有序消费者无 ack，预期可过）；不过则出局 |
 
-### M7 — API 冻结与 `0.1.0` ✅
+**出口**：R3-1 落地并发版；R3-2 – R3-4 各自落地或明确出局。
 
-> 依赖 M1–M6 全部完成（八域齐备后再冻结）。
+### R4 — `1.0.0`
 
-- 引入 `Microsoft.CodeAnalysis.PublicApiAnalyzers`，为运行时与公共 Attribute 锁定公共 API（`PublicAPI.Shipped.txt` / `Unshipped.txt`）。✅ 见 [`docs/design/public-api.md`](design/public-api.md)。
-- nullable / AOT / trim 告警清零（M7 已通过 Requires* 传播与生成代理保留收敛域运行时 IL 告警；`JsonSerializerContext` source-gen 为后续增强）。✅
-- 复核包元数据（README、tags、license、SourceLink）。✅
-- 维护者推 `v0.1.0` tag → NuGet → GitHub Release（稳定版含 Release，预览版不含）。
+| # | 行动项 | 说明 |
+|---|--------|------|
+| R4-1 | SemVer 承诺 | 写清 1.x 内公共 API、诊断 ID 语义、包 ID 的兼容边界；破坏性变更须 2.0 |
+| R4-2 | Public API 冻结 | 全部 `Unshipped` 迁入 `Shipped`；复核 PublicAPI 基线覆盖面 |
+| R4-3 | 叙事统一 | README / AGENTS / Docs 去除「post-1.0 维护期」等 0.x 期措辞 |
+| R4-4 | MQTTnet 4 适配包冻结点 | 按 ADR-004 确定是否在 1.0.0 冻结 |
 
-## 发版门槛清单（每次 preview / 稳定版）
+**前提**：R1、R2 出口满足；R3 至少完成 R3-1。
 
-发布前须全部满足：
+### R5 — 扩域（有门槛，暂停）
 
-1. `dotnet run --project build/_build.csproj -- --target Ci` 通过。
-2. `--target CiPack`（含 `PackVerify`）通过，`ExpectedPackageIds` 与实际产物一致。
-3. `eng/nuget-smoke` 全部消费者编译/运行通过。
+- 依 ADR-002 §6 日历复审：`0.2.x` / `0.3.x` 窗口复审结论为**维持次序、扩域暂停**（记于 ADR-002 §5）。
+- 重启条件（任一）：出现外部需求；维护者自有项目出现真实用例。
+- 重启时下一个仍为 ADR-002 #4 RabbitMQ、#5 AMQP 1.0；#3 Diagnostics 保持 Park。
+
+## 发版门槛清单（每次发版）
+
+1. `dotnet run --project build/_build.csproj -- --target Ci` 通过（CI 双 OS）。
+2. `release.yml` 的 `Publish` 内 `PackVerify` 通过，`ExpectedPackageIds` 与实际产物一致。
+3. `eng/nuget-smoke` 全部消费者编译 / 运行通过。
 4. `eng/Observables.Package.props` 的 `Version` 与待推 tag 一致（唯一版本来源）。
-5. 主仓 README、Observables.Docs、Observables.Samples 三处域状态与版本同步。
+5. 主仓 README / CONTRIBUTING、Observables.Docs、Observables.Samples 三处版本同步（Docs / Samples 在 nuget.org 可见后合并）。
 6. 预览版仅 tag + NuGet；稳定版额外由维护者建 GitHub Release。
 
-## 版本节奏（规划占位，非授权）
+## 诊断 ID 段分配（权威）
 
-| 版本 | 关联里程碑 |
-|------|------------|
-| `0.1.0-preview5` | M1（10 包，nuget.org） |
-| `0.1.0-preview6` | M3 Grpc 发版（**12 包**，nuget.org） |
-| `0.1.0-preview7` | M5 SSE 域（**14 包**） |
-| `0.1.0-preview8` | M6 NATS 域（**16 包**） |
-| `0.1.0` | M7（八域 API 冻结，**16 包**稳定版） |
-| `0.1.1-preview1` | 八域 + Reactive **zh-Hans IntelliSense** 预览 |
-| `0.1.1` | 本地化文档稳定版（**16 包**） |
-| `0.1.2` | 维护版：Events 增量缓存 + 诊断描述符收敛 + ADR-0001（**16 包**） |
-| `0.1.3` | CI 加固：NuGet consumer smoke job + RestAPI 常量统一 + E2E 端口修复 + 符号包配置（未发布，snupkg 空 PDB 被拒） |
-| `0.1.4` | 符号包修复：PDB 打入 snupkg（DebugType portable + pack PDBs）（**16 包** + **16 snupkg**） |
-| `0.1.5` | 维护版：RestAPI OBS3004 修复（path + [Body]/[Query] 不再误报）+ 全域增量缓存测试（45 测试，8 域 × R3 + Reactive）（**16 包** + **16 snupkg**） |
-| `0.1.6-preview1` | 预览版：NuGet 包图标（六边形紫→品红渐变 + Rx 造型，`PackageIcon` 接入）（**16 包** + **16 snupkg**） |
-| `0.1.6` | 稳定版：包图标 + C# 关键字标识符转义（6 域）+ 源生成器 fail-safe（E2，OBS* 内部错误诊断）（**16 包** + **16 snupkg**，`v0.1.6` tag + GitHub Release） |
-| `0.1.7` | 稳定版：第九域 **Postgres** LISTEN/NOTIFY（**18 包** + **18 snupkg**；OBS10xxx；ADR-002 §6 mid-trigger） |
-| `0.1.8` | 仅 tag：Redis 发版准备已合入；Publish 因 `cursor[bot]` 不在 allowlist 被跳过；由 **`0.1.9`** 取代 |
-| `0.1.9` | 稳定版：第十域 **Redis** Pub/Sub（**20 包** + **20 snupkg**；OBS11xxx；ADR-002 #2） |
-| `0.2.0` | 稳定维护版：Shared 代理域目录统一 + `ProxyRegistrationEmitter` + `IoProxyGeneratorPipeline`（**20 包** + **20 snupkg**） |
-| `0.2.1` | 补丁：RestAPI `IApiResponse` 生命周期、IO Reactive 订阅/取消/释放竞态、MQTT `#` 匹配、Feature 协议桥加深（**20 包** + **20 snupkg**） |
-| `0.2.2` | 补丁：RestAPI HTTP `Send(spec)` 桥与 HttpClient 所有权、IO 取消令牌名与字面量转义、OBS0002 开放泛型代理、OBS7009 gRPC 编解码类型、Events 泛型基类/AttachedRouted（**20 包** + **20 snupkg**） |
-| `0.3.0` | 维护版：域运行时后端中立（ADR-003）、PackVerify 禁止未声明 R3 引用（不覆盖 0.2.2）、具名连接、OBS2006/OBS3008/OBS4009/OBS7010（**20 包** + **20 snupkg**） |
-| `0.3.1` | 补丁：OBS9002/OBS10002/OBS11002 指向消费者包 ID；RestAPI 同步代理在单线程 SynchronizationContext 下不再死锁；setter 与 ref/out/in 成员改报各域既有 OBS*004（不再静默 CS0535）（**20 包** + **20 snupkg**） |
+| 段 | 域 | 已发布 |
+|----|----|--------|
+| `OBS0001`–`OBS0002` | Shared（包冲突、开放泛型代理） | 0001–0002 |
+| `OBS2001`–`OBS2999` | Events | 2001–2006（2005 为内部 fail-safe） |
+| `OBS3001`–`OBS3999` | RestAPI | 3001–3008（3006 为内部 fail-safe） |
+| `OBS4001`–`OBS4999` | SignalR | 4001–4009（4008 为内部 fail-safe） |
+| `OBS5001`–`OBS5999` | Mqtt | 5001–5008（5008 为内部 fail-safe） |
+| `OBS6001`–`OBS6999` | WebSocket | 6001–6008（6008 为内部 fail-safe） |
+| `OBS7001`–`OBS7999` | Grpc | 7001–7010（7008 为内部 fail-safe；7004 无触发分支，见 R2-B4） |
+| `OBS8001`–`OBS8999` | SSE | 8001–8007（8006 为内部 fail-safe） |
+| `OBS9001`–`OBS9999` | NATS | 9001–9008（9008 为内部 fail-safe） |
+| `OBS10001`–`OBS10999` | Postgres | 10001–10008（10008 为内部 fail-safe；10007 空接口，Shared Analyzer） |
+| `OBS11001`–`OBS11999` | Redis | 11001–11008（11008 为内部 fail-safe；11007 空接口，Shared Analyzer） |
 
-## Post-1.0 Follow-up（按需，不绑定版本）
+合计 **82** 个。新增诊断须落入对应段并在 `AnalyzerReleases.Unshipped.md` 登记（见 AGENTS.md）。
 
-以下为 0.1.0 稳定版后的工程改进项，按优先级分组。不阻断发版，维护者有精力时按需处理。
+## 已决定不做 / 搁置
 
-### P1 — 第九域 Postgres（ADR-002）
+| # | 项 | 结论 |
+|---|----|------|
+| C1 | RestAPI Parser 改用共享 `ObservableReturnTypeParser` | 推迟：RestAPI 返回类型有领域特异性，`RestApiReturnTypeClassifier` 是正确 seam（见 [`restapi.md`](design/restapi.md) §2.2） |
+| C2 | RestAPI 粗过滤改 `ForAttributeWithMetadataName` | 不实施：方法级属性模型由领域语义决定，`CreateSyntaxProvider` 够用 |
+| C3 | 根级 `CHANGELOG.md` | 不实施：GitHub Releases + `CONTRIBUTING.md` 版本表已覆盖，避免第四同步点 |
+| D1 | `Observables.Core` 预先抽象共享类型 | 搁置：无迫切复用需求 |
+| D2 | 代码签名 | 搁置：EV 证书成本高 |
+| D4 | 非 RestAPI 域统一自定义异常 | 搁置：各域策略可能有意为之 |
+| D6 | SignalR / Nats / Mqtt 桥接释放 / 竞态细节 | 搁置：多次探针未复现，等用户反馈。2026-10 Mqtt 兄弟订阅测试的 CI 偶发失败已排查为测试隔离问题（R1-5 / #630），非桥接竞态 |
+| D7 | NuGet 徽章、Events 硬编码 AssemblyName | 搁置：功能正确，重构风险 > 收益 |
+| D8 | 更深端到端 Samples | 搁置：LiveDemo + GitPulse 已覆盖 |
+| P1-DG | Diagnostics（`DiagnosticListener`）域 | Park：见 [`design/diagnostics.md`](design/diagnostics.md)；un-park 须维护者批准 |
+| — | 审计 / 探针类批次 | 不再主动开新批次；仅处理有复现的缺陷 |
 
-| # | 行动项 | 状态 | 说明 |
-|---|--------|------|------|
-| P1-PG | Postgres LISTEN/NOTIFY Feature（主仓） | ✅ 代码落地 | 运行时 + 双路生成器 + Package + E2E（B-tier peer）+ PackVerify / nuget-smoke；设计文档 [`docs/design/postgres.md`](design/postgres.md)；README / CONTRIBUTING / ROADMAP 已同步 |
-| P1-PG-nuget | nuget.org 发第九域（+2 包 → 18） | ✅ `0.1.7` | `v0.1.7` tag + nuget.org / GitHub Packages + GitHub Release；ADR-002 §6 mid-trigger 已记 |
-| P1-PG-docs | Observables.Docs / Samples | ✅ | Docs PR #13；Samples PR #10（关 #9） |
+## 历史（已完成）
 
-### P1b — 第十域 Redis（ADR-002）
+旧路线图编号仍被其它文档引用，此处保留一行索引；细节见 git 历史与 `CONTRIBUTING.md` 版本表。
 
-| # | 行动项 | 状态 | 说明 |
-|---|--------|------|------|
-| P1-RD | Redis Pub/Sub Feature（主仓） | ✅ 代码落地 | 运行时 + 双路生成器 + Package + Garnet E2E + Shared catalog（#170–#175）；设计文档 [`docs/design/redis.md`](design/redis.md) |
-| P1-RD-pack | PackVerify / nuget-smoke / CI | ✅ [#176](https://github.com/Skymly/Observables/issues/176) / [#186](https://github.com/Skymly/Observables/pull/186) | BuildManifest + PackVerify + smoke + paths-filter |
-| P1-RD-nuget | nuget.org 发第十域（+2 包 → 20） | ✅ `0.1.9` | `v0.1.8` tag 仅存在、Publish 跳过；实际 nuget.org / GitHub Packages / GitHub Release 为 `v0.1.9` |
-| P1-RD-docs | Observables.Docs / Samples | ✅ | Docs [#14](https://github.com/Skymly/Observables.Docs/issues/14) / PR [#15](https://github.com/Skymly/Observables.Docs/pull/15)；Samples [#11](https://github.com/Skymly/Observables.Samples/issues/11) / PR [#12](https://github.com/Skymly/Observables.Samples/pull/12) |
-
-### P1c — Diagnostics（ADR-002 #3，Park）
-
-| # | 行动项 | 状态 | 说明 |
-|---|--------|------|------|
-| P1-DG | .NET `DiagnosticListener` Feature | ⏸ Park | 维护者 grill 后暂缓：BCL 已是 `IObservable`；名次保留。冻结 v1 形状见 [`docs/design/diagnostics.md`](design/diagnostics.md)；ADR-002 §5/#3 + §6 排期备注 |
-| P1-DG-impl | 运行时 / 生成器 / nuget | — | **未排期**；un-park 须维护者明确批准 |
-
-### P2 — 中期处理
-
-| # | 行动项 | 工作量 | 说明 |
-|---|--------|--------|------|
-| C1 | RestAPI Parser 改用共享 `ObservableReturnTypeParser` | M | **推迟**：RestAPI 返回类型解析有领域特异性（Task/ValueTask/IApiResponse/普通返回），共享 parser 仅处理 Observable/IObservable；~25 行反映领域复杂度非真重复。OBS3003/OBS3005 已有负测，但域内 `RestApiReturnTypeClassifier` 仍是正确 seam（见 `restapi.md` §2.2） |
-| ~~C2~~ | ~~RestAPI 粗过滤改 `ForAttributeWithMetadataName`~~ | ~~S~~ | **已评估，决定不实施**：RestAPI 方法级属性模型（`[Get]`/`[Post]` 等）是领域语义决定的，与其他域接口级属性有本质差异；方案 A（6-7 次调用 + merge）复杂度 > 收益，方案 B（强制 `[RestApi]`）破坏性；当前 `CreateSyntaxProvider` 已够用 |
-| ~~C3~~ | ~~新建 CHANGELOG.md（Keep a Changelog 格式）~~ | ~~S~~ | **已评估，决定不实施**：已有 GitHub Releases（用户可见）+ CONTRIBUTING.md 版本历史（de facto changelog）+ ROADMAP 版本表；新增 CHANGELOG.md = 第四同步点，每次发版维护负担增加；个人项目 post-1.0 维护期无用户需求 |
-| ~~C4~~ | ~~WebSocket/Grpc 设计文档语言对齐为中文~~ | ~~S~~ | **已完成**：websocket.md 与 grpc.md 翻译为中文，对齐 restapi.md/events.md/sse.md/mqtt.md 风格 |
-| ~~C6~~ | ~~`release.yml` 验证 tag 与 `eng/Observables.Package.props` 版本一致性~~ | ~~S~~ | **已完成**（0.1.4，`release.yml` 加版本一致性校验步骤） |
-
-### P3 — 源生成器质量加固
-
-基于四维度调研（生成器实现 / 测试覆盖 / 文档体验 / 工程化）的改进项，按优先级分层。不阻断发版，目标为达到优秀源生成器项目的标准态。
-
-#### P3-A — 影响编译正确性（优先）
-
-| # | 行动项 | 工作量 | 说明 |
-|---|--------|--------|------|
-| ~~E1~~ | ~~C# 关键字冲突处理（7/8 域）~~ | ~~M~~ | **已完成**：共享层新增 `IdentifierHelper.Escape(string)`（基于 `SyntaxFacts.IsKeywordKind`）；SignalR/Mqtt/WebSocket/Grpc/Sse/Nats 6 域 Parser 的 `MemberName`/`ParameterNames`/`ParameterDeclarations` 及 Nats `PayloadParameterName` 统一转义；Mqtt/Nats Emitter 的 Topic/SubjectParameterNames 标识符引用转义；6 域各 1 个关键字快照测试通过 |
-| ~~E2~~ | ~~生成器内部异常 fail-safe~~ | ~~M~~ | **已完成**：共享 `GeneratorFailSafe`（`ExecuteParse` / `TryEmit`）；8 域 `OBS*00x/008` 内部错误诊断；SignalR 回归测试（单元 + `IInternalErrorProbe` 集成探针） |
-
-#### P3-B — 影响开发体验与 IDE 集成
-
-| # | 行动项 | 工作量 | 说明 |
-|---|--------|--------|------|
-| ~~E3~~ | ~~诊断描述符补全 `description` + `helpLinkUri`~~ | ~~S~~ | **已完成**：共享 `DiagnosticHelpLink`；全域 **60** 个唯一 `DiagnosticDescriptor` 补全 `description` 与 `helpLinkUri`（指向 `https://skymly.github.io/Observables.Docs/diagnostics.html#obsxxxx`）；`diagnostics.md` 中英文表加锚点 |
-| ~~E4~~ | ~~7/8 域补 `// <auto-generated/>` 标记~~ | ~~S~~ | **已完成**：`GeneratedSourceHeader` 新增 `WritePrefix` / `ToSourceText` 字符串 API；SignalR/Mqtt/WebSocket/Grpc/Sse/Nats/RestAPI 7 域 `Emitter` 统一使用共享头 |
-| ~~D1~~ | ~~文档约定（ADR + Design Doc）~~ | ~~M~~ | **已完成**：`DOCUMENTATION.md`（精简版）+ ADR 骨架；`architecture.md` + `contributor.md`；重型 RFC/Spec/Plan/Review 已移除（#117 引入 → 精简） |
-| ~~E5~~ | ~~诊断文档补 Fix + 错误→正确代码示例~~ | ~~M~~ | **已完成**：按 **60** 个唯一诊断同步补齐中英文原因、Fix 与错误→正确示例，并标注可用 Code Fix |
-
-#### P3-C — 工程质量增强
-
-| # | 行动项 | 工作量 | 说明 |
-|---|--------|--------|------|
-| ~~E6~~ | ~~补未测试诊断用例~~ | ~~L~~ | **已完成**：审计 **60** 个描述符；**51/51** 个实际可触发的用户可行动诊断均有负面测试，RestAPI OBS3004 等误报风险分支保留正向回归；8 个内部 fail-safe 仅通过 shared/focused 测试验证。OBS7004 当前无任何报告分支，未伪造生产触发器，留待删除或补语义后再覆盖 |
-| ~~E7~~ | ~~测试基础设施去重（15 份 GeneratorTestHarness）~~ | ~~M~~ | **已完成**：在 `Observables.TestSupport` 增加配置驱动的 `GeneratorHarness`、`HarnessDocumentBuilder`、`MetadataReferenceBuilder` 与 Snapshot preset；15 个域测试 Harness 保留域特化配置，同时共享执行、文档和引用组装逻辑 |
-| ~~E8~~ | ~~边界场景测试（ref struct / 嵌套类型 / ref 返回）~~ | ~~M~~ | **已完成**：RestAPI（PR #123）与 WebSocket R3/Reactive（PR #125）覆盖嵌套接口、`ref struct` 参数及 `ref` 返回值边界；测试锁定当前生成器行为并验证生成代码编译结果 |
-| ~~E9~~ | ~~CI 多 OS 矩阵~~ | ~~S~~ | **已完成**：PR #127 增加 Windows/Ubuntu `Ci` 矩阵、Ubuntu actionlint 校验，并修复 CI 矩阵门控与 workflow 变更过滤 |
-| ~~E10~~ | ~~评估 net10.0 TFM 覆盖~~ | ~~S~~ | **已完成**：域运行时与 HttpClientFactory 扩展增加 `net10.0`，AOT/trim 标记覆盖 net8/net9/net10；补齐 14 个运行时项目的 net10 Public API 基线、包内本地化 XML 路径，并将 E2E/TrimTests 纳入 net10。全解决方案构建 0 警告，net8/net10 trim publish 均通过 |
-
-#### P3-D — 长期改进（按需）
-
-| # | 行动项 | 工作量 | 说明 |
-|---|--------|--------|------|
-| E11 | 架构总览文档 + 贡献者指南 | M | **已完成**：[`architecture.md`](design/architecture.md)、[`contributor.md`](design/contributor.md)；文档体系见 [`DOCUMENTATION.md`](DOCUMENTATION.md) |
-| ~~E12~~ | ~~真实应用 Showcase（GitPulse）~~ | ~~M~~ | **已完成（Showcase）**：[`GitPulse`](https://github.com/Skymly/GitPulse) 作为日常可用的 .NET MAUI GitHub 客户端，消费 `Observables.RestAPI.R3` + `Observables.Events.R3`。**Samples**：多数 IO 域已有进程内 LiveDemo（CI 跑）；NATS 默认 RegistrationDemo、`--live` 才真 I/O。更深端到端示例不作为 E12 验收门槛（见搁置 D8） |
-| ~~E13~~ | ~~BannedApiAnalyzers + CI `dotnet format whitespace --verify`~~ | ~~S~~ | **已完成**：生成器 / Analyzers / CodeFixes 启用 `Microsoft.CodeAnalysis.BannedApiAnalyzers`（`eng/BannedSymbols.Roslyn.txt`）；CI Ubuntu job `Format whitespace verify`（与 D5 合并）。全量 `dotnet format style` 因 RestAPI 等 block namespace（IDE0161）暂缓 |
-
-### 搁置（等用户反馈或维护者有额外精力）
-
-| # | 行动项 | 搁置理由 |
-|---|--------|----------|
-| D1 | `Observables.Core` 实现共享类型 | 当前无迫切复用需求，避免预先抽象 |
-| D2 | 代码签名 | EV 证书成本高，个人项目收益低 |
-| ~~D3~~ | ~~增量生成器缓存命中测试~~ | **已完成（全量覆盖）**：8 域 × R3 + Reactive = 15 个测试项目，45 个缓存测试全部通过；`ForAttributeWithMetadataName` 域（SignalR/Mqtt/WebSocket/Grpc/Sse/Nats）无关编辑→Cached，`CreateSyntaxProvider` 域（RestAPI/Events）无关编辑可能 Modified（预期行为） |
-| D4 | 异常处理统一（非 RestAPI 域补自定义异常） | 各域策略可能有意为之，强行统一风险高 |
-| ~~D5~~ | ~~CI 添加 `dotnet format whitespace --verify`~~ | **已完成（并入 E13）**：Ubuntu CI job 校验 LF / trailing whitespace；全量 style format 仍暂缓 |
-| D6 | SignalR/Nats/Mqtt 桥接释放/竞态细节修复 | 低风险，等用户反馈 |
-| D7 | NuGet 徽章更新、Events 硬编码 AssemblyName | 功能正确，重构风险 > 收益 |
-| D8 | 6 域 Samples 更深端到端示例（超出当前进程内 LiveDemo） | Events/RestAPI Samples + GitPulse 已覆盖真实消费；SignalR/Mqtt/Grpc/WebSocket/Sse 已有 loopback/embedded LiveDemo，NATS 有 `--live`；再加深按需 |
+| 编号 | 内容 | 版本 |
+|------|------|------|
+| M1 | WebSocket 发版 | `0.1.0-preview5` |
+| M2 | 工程加固：CPM、ProjectDefaults、BuildManifest、AnalyzerReleases、`TreatWarningsAsErrors` | — |
+| M3 | Grpc 域 | `0.1.0-preview6` |
+| M4 | Docs / Samples 补齐 | — |
+| M5 / M6 | SSE / NATS 域 | `preview7` / `preview8` |
+| M7 | Public API 基线 + 首个稳定版 | `0.1.0` |
+| E1–E13 | 源生成器质量加固：关键字转义、fail-safe、诊断描述 / helpLink、auto-generated 头、诊断负测、测试 Harness 去重、边界场景、CI 多 OS（E9）、net10、架构 / 贡献者文档、GitPulse Showcase、BannedApiAnalyzers + format whitespace | `0.1.2`–`0.2.x` |
+| D3 / D5 | 增量缓存命中测试；CI `dotnet format whitespace --verify` | — |
+| P1 / P1b | 第九域 Postgres、第十域 Redis（ADR-002 #1 / #2） | `0.1.7` / `0.1.9` |
+| — | Shared 代理域目录 + IO 生成器管道；生命周期修复 + 协议桥；RestAPI HTTP 桥；后端中立运行时（ADR-003）+ 具名连接 | `0.2.0`–`0.3.0` |
+| R0-1 | OBSxx002 消费者包 ID、RestAPI 同步代理死锁、setter / ref 成员报 `OBS*004` | `0.3.1` |

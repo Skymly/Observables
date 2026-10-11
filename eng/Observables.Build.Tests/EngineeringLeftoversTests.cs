@@ -56,7 +56,8 @@ public sealed class EngineeringLeftoversTests
     public void PackageVersion_is_not_the_leaked_0_2_2_release()
     {
         string props = File.ReadAllText(Path.Combine(RepoRoot.Find(), "eng", "Observables.Package.props"));
-        Assert.Contains("<PackageVersion>0.3.0</PackageVersion>", props, StringComparison.Ordinal);
-        Assert.DoesNotContain("<PackageVersion>0.2.2</PackageVersion>", props, StringComparison.Ordinal);
+        var match = System.Text.RegularExpressions.Regex.Match(props, "<PackageVersion>([^<]+)</PackageVersion>");
+        Assert.True(match.Success);
+        Assert.True(Version.Parse(match.Groups[1].Value.Split('-')[0]) > new Version(0, 2, 2));
     }
 }

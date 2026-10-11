@@ -1,7 +1,9 @@
 using System.Text;
+using Observables.Mqtt.Tests.Infrastructure;
 
 namespace Observables.Mqtt.Tests;
 
+[Collection(nameof(MqttPayloadSerializerCollection))]
 public sealed class MqttPayloadSerializerTests
 {
     [Fact]

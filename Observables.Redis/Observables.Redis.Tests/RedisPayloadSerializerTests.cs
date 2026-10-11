@@ -1,8 +1,10 @@
 using Observables.Redis;
+using Observables.Redis.Tests.Infrastructure;
 using System.Text;
 
 namespace Observables.Redis.Tests;
 
+[Collection(nameof(RedisPayloadSerializerCollection))]
 public sealed class RedisPayloadSerializerTests
 {
     [Fact]

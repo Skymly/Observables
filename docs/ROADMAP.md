@@ -12,13 +12,13 @@
 | nuget.org | **`0.3.1`**（**20 包** + 20 snupkg） |
 | 诊断 | **82** 个已发布唯一 ID（以各 `AnalyzerReleases.Shipped.md` 为准） |
 | 质量 | Windows + Ubuntu CI；`337d576` 上 1550 测试全绿；`PackVerify` + 23 个 `eng/nuget-smoke` 消费者 |
-| 对外文档 | Observables.Docs 版本页与 Observables.Samples 仍钉 **`0.2.2`**（落后已发版本，且 0.2.2 Reactive 包有未声明 R3 引用）→ R0 修复 |
+| 对外文档 | Observables.Docs / Samples 已追到 **`0.3.1`**（[Docs#28](https://github.com/Skymly/Observables.Docs/pull/28)、[Samples#21](https://github.com/Skymly/Observables.Samples/pull/21) / [#22](https://github.com/Skymly/Observables.Samples/pull/22)）。nuget.org `0.2.2` Reactive 包的未声明 R3 引用仍在；维护者决定暂不 deprecate（R0-5） |
 | 需求信号 | Issue 全部来自维护者；真实消费方仅 [GitPulse](https://github.com/Skymly/GitPulse)。无外部反馈 |
 | 依赖 | MQTTnet `4.3.7`（上游 5.x）；System.Reactive `6.0.1`（上游 7.0）；R3 `1.3.0` |
 
 ### 方向判断
 
-1. **对外一致性优先于新功能**：三仓手工同步导致 Docs / Samples 反复落后，先修流程（R0 / R1）。
+1. **对外一致性优先于新功能**：R0 已把 Docs / Samples 追到 `0.3.1`；三仓仍靠手工同步，流程修复留在 R1。
 2. **审计驱动加固已到收益递减点**：近期多个探针 issue 结论为「未复现」（#606 / #609 / #610）。不再主动开审计 / 探针批次，转向深化既有域（R3）。
 3. **扩域暂停**：无外部需求时，每个新域都是 2 包 + 测试矩阵 + 两仓文档的长期成本（R5）。
 4. **正式发 `1.0.0`**：结束「post-1.0 维护期 / 实际 0.x」的版本叙事歧义（R4）。
@@ -35,7 +35,7 @@ graph LR
     R4 -.-> R5[R5 · 扩域<br/>有门槛·暂停]
 ```
 
-R1 与 R2 可并行。R4 依赖 R1–R3 出口条件全部满足。
+R1 与 R2 可并行。R4 依赖 R1、R2 出口满足，且 R3 至少完成 R3-1（与下方 R4 前提一致；R3-2–R3-4 可在 1.0.0 前落地或出局，不阻塞 R4）。
 
 ### R0 — `0.3.1`：止血与对外同步 ✅
 

@@ -37,17 +37,17 @@ graph LR
 
 R1 与 R2 可并行。R4 依赖 R1–R3 出口条件全部满足。
 
-### R0 — `0.3.1`：止血与对外同步
+### R0 — `0.3.1`：止血与对外同步 ✅
 
 **目标**：已获批的补丁发版，并让 Docs / Samples 追上 nuget.org。
 
 | # | 行动项 | 说明 |
 |---|--------|------|
-| R0-1 | 发 `0.3.1` | 内容见 [#622](https://github.com/Skymly/Observables/issues/622) 发版草案：OBS9002/10002/11002 消费者包 ID、RestAPI 同步代理死锁、setter / ref 成员改报 `OBS*004`。20 包，无新公共 API |
-| R0-2 | Docs 版本页 → `0.3.1` | 中英 `index` / `getting-started` / `reference` / `samples`；须在 nuget.org 可见后合并 |
-| R0-3 | Samples 版本钉 → `0.3.1` | `Directory.Build.props` `ObservablesPackageVersion` + README；须在 nuget.org 可见后合并 |
-| R0-4 | GitHub Release `v0.3.1` | 稳定版，tag + NuGet 后由维护者创建 |
-| R0-5 | （可选）nuget.org 将 `0.2.2` 标 deprecated | 指向 `0.3.x`；不覆盖、不重发（须维护者确认） |
+| R0-1 | ✅ 发 `0.3.1` | 内容见 [#622](https://github.com/Skymly/Observables/issues/622) 发版草案：OBS9002/10002/11002 消费者包 ID、RestAPI 同步代理死锁、setter / ref 成员改报 `OBS*004`。20 包，无新公共 API |
+| R0-2 | ✅ Docs 版本页 → `0.3.1` | 中英 `index` / `getting-started` / `reference` / `samples`（[Docs#28](https://github.com/Skymly/Observables.Docs/pull/28)） |
+| R0-3 | ✅ Samples 版本钉 → `0.3.1` | `ObservablesPackageVersion` + README（[Samples#21](https://github.com/Skymly/Observables.Samples/pull/21)）；本地源码模式修复（[Samples#22](https://github.com/Skymly/Observables.Samples/pull/22)） |
+| R0-4 | ✅ GitHub Release `v0.3.1` | 稳定版，tag + NuGet 后创建 |
+| R0-5 | nuget.org 将 `0.2.2` 标 deprecated | **维护者决定暂不做**（2026-10-11）；需要时再议，仍不覆盖、不重发 |
 
 **出口**：nuget.org `0.3.1` 20 包可见；Docs / Samples 无 `0.2.2` 当前版本引用。
 
@@ -61,8 +61,9 @@ R1 与 R2 可并行。R4 依赖 R1–R3 出口条件全部满足。
 | R1-2 | Samples 自动跟版 | Dependabot / Renovate 跟踪 `Observables.*`，或 `release.yml` 发布成功后向 Docs / Samples 开同步 PR（二选一，实施时定） |
 | R1-3 | 跨仓漂移检查 | Docs / Samples CI 断言引用版本 = nuget.org 最新稳定版 |
 | R1-4 | 发版门槛对齐 | `Publish` 已内置 `Test` → `PackVerify`；门槛清单改为「Publish 内 PackVerify 通过」，不再要求 HEAD 上另跑 `CiPack` |
+| R1-5 | 测试隔离：全局序列化注册表 | 修改 `*PayloadSerializers` 的测试未禁止并行，会污染同程序集其它测试（Mqtt 已在 CI 偶发失败）。Mqtt [#630](https://github.com/Skymly/Observables/issues/630)；Redis / Nats / Postgres（潜在）[#631](https://github.com/Skymly/Observables/issues/631) / [#632](https://github.com/Skymly/Observables/issues/632) / [#633](https://github.com/Skymly/Observables/issues/633)。仅改测试 |
 
-**出口**：下一次发版（`0.4.0`）三仓同步不含手工改版本号步骤。
+**出口**：下一次发版（`0.4.0`）三仓同步不含手工改版本号步骤；#630–#633 关闭。
 
 ### R2 — `0.4.0`：Mqtt 传输抽象、AOT、依赖升级
 
@@ -159,7 +160,7 @@ R1 与 R2 可并行。R4 依赖 R1–R3 出口条件全部满足。
 | D1 | `Observables.Core` 预先抽象共享类型 | 搁置：无迫切复用需求 |
 | D2 | 代码签名 | 搁置：EV 证书成本高 |
 | D4 | 非 RestAPI 域统一自定义异常 | 搁置：各域策略可能有意为之 |
-| D6 | SignalR / Nats / Mqtt 桥接释放 / 竞态细节 | 搁置：多次探针未复现，等用户反馈 |
+| D6 | SignalR / Nats / Mqtt 桥接释放 / 竞态细节 | 搁置：多次探针未复现，等用户反馈。2026-10 Mqtt 兄弟订阅测试的 CI 偶发失败已排查为测试隔离问题（R1-5 / #630），非桥接竞态 |
 | D7 | NuGet 徽章、Events 硬编码 AssemblyName | 搁置：功能正确，重构风险 > 收益 |
 | D8 | 更深端到端 Samples | 搁置：LiveDemo + GitPulse 已覆盖 |
 | P1-DG | Diagnostics（`DiagnosticListener`）域 | Park：见 [`design/diagnostics.md`](design/diagnostics.md)；un-park 须维护者批准 |

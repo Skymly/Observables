@@ -1,7 +1,9 @@
 using System.Text;
+using Observables.Nats.Tests.Infrastructure;
 
 namespace Observables.Nats.Tests;
 
+[Collection(nameof(NatsPayloadSerializerCollection))]
 public sealed class NatsPayloadSerializerTests
 {
     [Fact]

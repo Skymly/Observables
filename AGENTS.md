@@ -7,8 +7,8 @@
 - **类型**：个人项目（Skymly 工作区）
 - **远端**：https://github.com/Skymly/Observables（公开）；文件夹名 `Observables` = 仓库名；同步状态以 `git status` 为准
 - **阶段**：**Events**、**RestAPI**、**SignalR**、**Mqtt**、**WebSocket**、**Grpc**、**Sse**、**Nats**、**Postgres**、**Redis** 已实现（运行时 + 双路生成器 + 测试）；共享层另含 `Observables.CodeFixes` 与 `Observables.Analyzers`；**nuget.org 已发** `0.3.1`（**20 包**）。nuget.org `0.2.2` Reactive 域 DLL 可能未声明地引用 R3，勿覆盖重发。Nuke `PackVerify` + `eng/nuget-smoke` 覆盖 manifest 包清单
-- **下一里程碑**：post-1.0 维护期（M1–M7 全部完成；`0.1.9` = Redis，`0.2.0` = Shared IO 生成器加深，`0.2.1` = 生命周期修复 + 协议桥，`0.2.2` = RestAPI HTTP 桥 + IO 字面量/取消令牌 + 诊断，`0.3.0` = 后端中立运行时 + 具名连接，`0.3.1` = 诊断指向消费者包 ID + 同步代理死锁修复 + OBS*004）；待定项见 [`docs/ROADMAP.md`](docs/ROADMAP.md) 末尾
-- **路线图**：里程碑与发版顺序见 [`docs/ROADMAP.md`](docs/ROADMAP.md)（M1 ✅ … M7 ✅，0.1.7 = Postgres，0.1.9 = Redis，0.2.0 = Shared deepening，0.2.1 / 0.2.2 = patch，0.3.0 = backend-neutral，0.3.1 = patch）
+- **下一里程碑**：R0（`0.3.1` 已发；Docs / Samples 追平版本）→ R1 发版同步自动化 / R2 `0.4.0`（Mqtt 传输抽象 + MQTTnet 4/5 适配包，先 ADR-004）→ R3 `0.5.0` 深化既有域 → R4 `1.0.0`；扩域暂停（R5）。版本历史：`0.1.9` = Redis，`0.2.0` = Shared IO 生成器加深，`0.2.1` / `0.2.2` = patch，`0.3.0` = 后端中立运行时 + 具名连接，`0.3.1` = patch
+- **路线图**：阶段与出口条件见 [`docs/ROADMAP.md`](docs/ROADMAP.md)（R0–R5；旧 M1–M7 / E1–E13 编号保留在其「历史」索引）
 - **结构约定**：下文「仓库结构」与命名约定为权威；**工程治理**（包管理、警告、诊断、版本来源）见下文同名章节
 
 ## 目标
@@ -172,19 +172,20 @@ Observables/
 
 ## 实现顺序建议
 
-里程碑级排序以 [`docs/ROADMAP.md`](docs/ROADMAP.md) 为准；本节为速记：
+阶段排序以 [`docs/ROADMAP.md`](docs/ROADMAP.md) 为准；本节为速记：
 
-1. ~~**M1**：WebSocket 发版 + 文档/示例同步~~ ✅（`0.1.0-preview5`）
-2. ~~**M2**：工程加固（中央包管理、TFM 收口、警告策略、诊断登记、`build/Program.cs` 去硬编码）~~ ✅
-3. ~~**M3**：Grpc 域按检查清单补齐（含骨架重命名、`OBS7xxx`）~~ ✅
-4. ~~**M4**：Observables.Docs / Samples 与主仓同步~~ ✅
-5. **M7**：Public API 基线（`PublicAPI.Shipped.txt`）+ 维护者推 `0.1.0` tag（见 [`docs/design/public-api.md`](docs/design/public-api.md) 与「版本、Tag 与 NuGet」）
+1. **R0**：`0.3.1` 发版；Docs / Samples 版本追平（nuget.org 可见后合并）
+2. **R1**：Docs 单点版本、Samples 自动跟版、跨仓漂移检查（不发包）
+3. **R2**（`0.4.0`）：先写 ADR-004，再做 Mqtt 传输抽象 + MQTTnet 4 / 5 适配包；JSON source-gen；Rx 7 兼容
+4. **R3**（`0.5.0`）：SSE 重连 / `Last-Event-ID` 优先，其次 SignalR 上行流、MQTT 5 请求-响应、JetStream 评估
+5. **R4**：`1.0.0` + SemVer 承诺
+6. **R5**：扩域暂停；不主动开审计 / 探针批次
 
 ---
 
 ## 工程治理（权威）
 
-本章为项目级开发规范。每条以「现状 → 问题 → 标准」给出：**标准**为目标态，部分尚未落地的项已列入 [`docs/ROADMAP.md`](docs/ROADMAP.md) M2。落地改动按「跨模块 PR 边界」拆分，**改动 props / 包版本 / `build/` 归入 Solution Items 模块**。
+本章为项目级开发规范。每条以「现状 → 问题 → 标准」给出：**标准**为目标态，尚未落地的项列入 [`docs/ROADMAP.md`](docs/ROADMAP.md) 对应阶段。落地改动按「跨模块 PR 边界」拆分，**改动 props / 包版本 / `build/` 归入 Solution Items 模块**。
 
 ### 1. MSBuild 与包管理
 
@@ -294,7 +295,7 @@ Observables/
 | 新增诊断 ID | 更新 Design Doc + `AnalyzerReleases.Unshipped.md` + Observables.Docs `diagnostics.md` |
 | 修改公共 API | 更新 Design Doc；破坏性变更须先与用户讨论并记 ADR |
 | 创建 ADR | 编号取 `docs/adr/README.md` 下一可用编号；使用 `docs/adr/_template.md` |
-| 发版记录 | 更新 `CONTRIBUTING.md` 版本表 + `ROADMAP.md`（**不**维护 `CHANGELOG.md`） |
+| 发版记录 | 更新 `CONTRIBUTING.md` 版本表 + `ROADMAP.md` 现状基线 / 阶段状态（**不**维护 `CHANGELOG.md`） |
 | 维护者设计文档 | 仅放在 `docs/`（`.Local/` 除外） |
 
 ---

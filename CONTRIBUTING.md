@@ -45,7 +45,7 @@ See [docs/DOCUMENTATION.md](docs/DOCUMENTATION.md) for conventions.
 | [docs/adr/](docs/adr/README.md) | Architecture decisions (immutable) |
 | [docs/design/](docs/design/README.md) | Implementation details per domain |
 
-Release notes: update the version table in this file and [docs/ROADMAP.md](docs/ROADMAP.md) — there is no root `CHANGELOG.md` (see ROADMAP C3).
+Release notes: update the version table in this file and the baseline / phase status in [docs/ROADMAP.md](docs/ROADMAP.md) — there is no root `CHANGELOG.md` (see ROADMAP C3).
 
 ### PR conventions
 

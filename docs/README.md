@@ -10,7 +10,7 @@
 | [../CONTRIBUTING.md](../CONTRIBUTING.md) | 贡献流程、发版历史、20 包清单 |
 | [design/architecture.md](design/architecture.md) | 架构总览（双后端、生成器管道、CI） |
 | [design/contributor.md](design/contributor.md) | 人类贡献者指南（新增域、测试、文档流程） |
-| [ROADMAP.md](ROADMAP.md) | 里程碑 M1–M7、Post-1.0 backlog |
+| [ROADMAP.md](ROADMAP.md) | 阶段 R0–R5（0.3.1 → 1.0.0）、搁置项、历史编号索引 |
 | [../AGENTS.md](../AGENTS.md) | AI 编码助手上下文（命名、诊断段、三仓同步） |
 
 ## 架构决策

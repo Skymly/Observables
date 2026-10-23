@@ -252,11 +252,23 @@ namespace Observables.RestAPI
         static void SetOption(HttpRequestMessage request, string key, object? value)
         {
             // netstandard2.0 stores these on Properties; net6+ uses Options.
+            // A null value clears the key on both. Options.TryGetValue hides a stored null,
+            // but Properties.ContainsKey still sees Properties[key] = null, so remove it.
 #if NET6_0_OR_GREATER
             request.Options.Set(new HttpRequestOptionsKey<object>(key), value!);
 #else
-            request.Properties[key] = value!;
+            ApplyPropertyOption(request.Properties, key, value);
 #endif
+        }
+
+        // The netstandard2.0 SetOption branch is the production caller. Test hosts are
+        // net8.0+ and do not compile that branch, so the clear policy lives here.
+        internal static void ApplyPropertyOption(IDictionary<string, object> properties, string key, object? value)
+        {
+            if (value is null)
+                properties.Remove(key);
+            else
+                properties[key] = value;
         }
 
         static HttpMethod GetHttpMethod(string httpMethod) => httpMethod switch

@@ -77,8 +77,9 @@ namespace Observables.RestAPI.Implementation
         /// <inheritdoc />
         public async global::System.Threading.Tasks.Task<global::User> GetUser(int @id)
         {
+            var ______scope = global::Observables.RestAPI.RestApiCallScope.Capture();
             var ______ct = global::System.Threading.CancellationToken.None;
-            return await global::Observables.RestAPI.RestApiBridge.SendAsync<global::User, global::User>(Client, _settings, in ______spec0, ______ct, @id).ConfigureAwait(false);
+            return await global::Observables.RestAPI.RestApiBridge.SendAsync<global::User, global::User>(Client, _settings, in ______spec0, ______scope, ______ct, @id).ConfigureAwait(false);
         }
     }
     }

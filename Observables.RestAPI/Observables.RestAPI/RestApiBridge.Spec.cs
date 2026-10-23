@@ -163,11 +163,25 @@ namespace Observables.RestAPI
             in MethodSpec spec,
             CancellationToken cancellationToken,
             params object?[] args)
+            => SendAsync<T, TBody>(client, settings, in spec, callOptions: null, cancellationToken, args);
+
+#if NET8_0_OR_GREATER
+        [RequiresUnreferencedCode(RestTrimAnnotations.Reflection)]
+        [RequiresDynamicCode(RestTrimAnnotations.Dynamic)]
+#endif
+        [EditorBrowsable(EditorBrowsableState.Never)]
+        public static Task<T?> SendAsync<T, TBody>(
+            HttpClient client,
+            RestApiSettings settings,
+            in MethodSpec spec,
+            IReadOnlyDictionary<string, object?>? callOptions,
+            CancellationToken cancellationToken,
+            params object?[] args)
         {
             if (client.BaseAddress == null)
                 throw new InvalidOperationException("BaseAddress must be set on the HttpClient instance");
 
-            var bound = RestApiProtocol.Bind(settings, spec, args ?? Array.Empty<object?>());
+            var bound = RestApiProtocol.Bind(settings, spec, args ?? Array.Empty<object?>(), callOptions);
             return RestApiProtocol.CompleteAsync<T, TBody>(
                 client,
                 bound.Message,
@@ -187,11 +201,25 @@ namespace Observables.RestAPI
             in MethodSpec spec,
             CancellationToken cancellationToken,
             params object?[] args)
+            => SendVoidAsync(client, settings, in spec, callOptions: null, cancellationToken, args);
+
+#if NET8_0_OR_GREATER
+        [RequiresUnreferencedCode(RestTrimAnnotations.Reflection)]
+        [RequiresDynamicCode(RestTrimAnnotations.Dynamic)]
+#endif
+        [EditorBrowsable(EditorBrowsableState.Never)]
+        public static Task SendVoidAsync(
+            HttpClient client,
+            RestApiSettings settings,
+            in MethodSpec spec,
+            IReadOnlyDictionary<string, object?>? callOptions,
+            CancellationToken cancellationToken,
+            params object?[] args)
         {
             if (client.BaseAddress == null)
                 throw new InvalidOperationException("BaseAddress must be set on the HttpClient instance");
 
-            var bound = RestApiProtocol.Bind(settings, spec, args ?? Array.Empty<object?>());
+            var bound = RestApiProtocol.Bind(settings, spec, args ?? Array.Empty<object?>(), callOptions);
             return RestApiProtocol.CompleteVoidAsync(client, bound.Message, settings, cancellationToken);
         }
     }

@@ -105,8 +105,12 @@ public class CoreGeneratorTests
             "CreateLinkedTokenSource(______ct, @cancellationToken)",
             snapshot,
             StringComparison.Ordinal);
+        Assert.Contains(
+            "SendAsync<global::User, global::User>(Client, _settings, in ______spec0, ______scope, ______linked.Token, @id)",
+            snapshot,
+            StringComparison.Ordinal);
         Assert.DoesNotContain(
-            "SendAsync<global::User, global::User>(Client, _settings, in ______spec0, ______ct, @id)",
+            "SendAsync<global::User, global::User>(Client, _settings, in ______spec0, ______scope, ______ct, @id)",
             snapshot,
             StringComparison.Ordinal);
         return Task.CompletedTask;
@@ -153,7 +157,7 @@ public class CoreGeneratorTests
             """);
 
         var snapshot = GeneratorTestHarness.ToSnapshot(output);
-        Assert.Contains("SendAsync<global::User, global::User>(Client, _settings, in ______spec0, ______ct, @user)", snapshot, StringComparison.Ordinal);
+        Assert.Contains("SendAsync<global::User, global::User>(Client, _settings, in ______spec0, ______scope, ______ct, @user)", snapshot, StringComparison.Ordinal);
         Assert.DoesNotContain("_settings.Buffered", snapshot, StringComparison.Ordinal);
         return Task.CompletedTask;
     }
@@ -601,6 +605,101 @@ public class CoreGeneratorTests
             """);
 
         Assert.Contains("OBS3008", GeneratorTestHarness.ToSnapshot(output), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Call_scope_is_captured_at_proxy_entry_for_every_return_shape()
+    {
+        GeneratorRunOutput output = GeneratorTestHarness.Run(
+            """
+            public interface IUserApi
+            {
+                [Get("/users/{id}")]
+                Task<User> GetTask(int id);
+
+                [Get("/users/{id}")]
+                ValueTask<User> GetValue(int id);
+
+                [Get("/users/{id}")]
+                User GetSync(int id);
+
+                [Delete("/users/{id}")]
+                void DeleteSync(int id);
+
+                [Delete("/users/{id}")]
+                Task DeleteTask(int id);
+
+                [Get("/users/{id}")]
+                Observable<User> GetObservable(int id);
+
+                [Delete("/users/{id}")]
+                Observable<Unit> DeleteObservable(int id);
+            }
+
+            public sealed class User
+            {
+                public int Id { get; set; }
+            }
+            """);
+
+        string generated = string.Concat(output.GeneratedSources.Select(static s => s.Source)).Replace("\r\n", "\n");
+        Assert.Equal(7, CountOf(generated, "RestApiCallScope.Capture()"));
+        AssertScopeIsOutside(generated, "Observable.FromAsync");
+        AssertScopeIsOutside(generated, "Task.Run(");
+        Assert.Contains(
+            "SendAsync<global::User, global::User>(Client, _settings, in ______spec0, ______scope, ______ct, @id)",
+            generated,
+            StringComparison.Ordinal);
+        Assert.Contains("______scope, ______ct, @id)", generated, StringComparison.Ordinal);
+        AssertClosedOver(generated);
+    }
+
+    static int CountOf(string text, string value)
+    {
+        var count = 0;
+        var index = 0;
+        while ((index = text.IndexOf(value, index, StringComparison.Ordinal)) >= 0)
+        {
+            count++;
+            index += value.Length;
+        }
+
+        return count;
+    }
+
+    static void AssertScopeIsOutside(string generated, string marker)
+    {
+        var at = 0;
+        var found = false;
+        while ((at = generated.IndexOf(marker, at, StringComparison.Ordinal)) >= 0)
+        {
+            found = true;
+            var capture = generated.LastIndexOf("RestApiCallScope.Capture()", at, StringComparison.Ordinal);
+            Assert.True(capture >= 0 && capture < at, marker);
+            var between = generated.Substring(capture, at - capture);
+            Assert.DoesNotContain("public ", between, StringComparison.Ordinal);
+            at += marker.Length;
+        }
+
+        Assert.True(found, marker);
+    }
+
+    static void AssertClosedOver(string generated)
+    {
+        var lambda = 0;
+        var found = false;
+        while ((lambda = generated.IndexOf("async ______ct =>", lambda, StringComparison.Ordinal)) >= 0)
+        {
+            found = true;
+            var end = generated.IndexOf("});", lambda, StringComparison.Ordinal);
+            Assert.True(end > lambda);
+            var body = generated.Substring(lambda, end - lambda);
+            Assert.DoesNotContain("RestApiCallScope.Capture()", body, StringComparison.Ordinal);
+            Assert.Contains("______scope,", body, StringComparison.Ordinal);
+            lambda = end;
+        }
+
+        Assert.True(found);
     }
 }
 

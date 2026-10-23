@@ -30,7 +30,8 @@ namespace Observables.RestAPI
         internal static RestApiBoundRequest Bind(
             RestApiSettings settings,
             RestApiBridge.MethodSpec spec,
-            object?[] args)
+            object?[] args,
+            IReadOnlyDictionary<string, object?>? callOptions = null)
         {
             args ??= Array.Empty<object?>();
             var path = ExpandPath(spec.PathTemplate, spec.Bindings, args, settings);
@@ -67,17 +68,19 @@ namespace Observables.RestAPI
 
             var request = new HttpRequestMessage { Method = GetHttpMethod(spec.HttpMethod) };
 
-            // Settings are defaults: a [Property] parameter below overwrites the same key.
+            // Lowest precedence first: client defaults, then the entry snapshot, then [Property].
+            // callOptions is the snapshot taken when the proxy method was entered. Do not read
+            // RestApiCallScope here: Bind can run after that scope has been disposed.
             if (settings.HttpRequestMessageOptions != null)
             {
                 foreach (var option in settings.HttpRequestMessageOptions)
-                {
-#if NET6_0_OR_GREATER
-                    request.Options.Set(new HttpRequestOptionsKey<object>(option.Key), option.Value);
-#else
-                    request.Properties[option.Key] = option.Value;
-#endif
-                }
+                    SetOption(request, option.Key, option.Value);
+            }
+
+            if (callOptions != null)
+            {
+                foreach (var option in callOptions)
+                    SetOption(request, option.Key, option.Value);
             }
 
 #if NET6_0_OR_GREATER
@@ -128,11 +131,7 @@ namespace Observables.RestAPI
                         break;
                     case RestApiBridge.SlotKind.Property:
                         var propKey = binding.PropertyKey ?? binding.Name;
-#if NET6_0_OR_GREATER
-                        request.Options.Set(new HttpRequestOptionsKey<object>(propKey), value!);
-#else
-                        request.Properties[propKey] = value!;
-#endif
+                        SetOption(request, propKey, value);
                         break;
                     case RestApiBridge.SlotKind.Body:
                         hasBody = true;
@@ -248,6 +247,16 @@ namespace Observables.RestAPI
             }
 
             return sb.ToString();
+        }
+
+        static void SetOption(HttpRequestMessage request, string key, object? value)
+        {
+            // netstandard2.0 stores these on Properties; net6+ uses Options.
+#if NET6_0_OR_GREATER
+            request.Options.Set(new HttpRequestOptionsKey<object>(key), value!);
+#else
+            request.Properties[key] = value!;
+#endif
         }
 
         static HttpMethod GetHttpMethod(string httpMethod) => httpMethod switch

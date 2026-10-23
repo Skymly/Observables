@@ -344,6 +344,8 @@ internal static class Emitter
 
     static void WriteDirectBody(SourceWriter source, MethodModel methodModel, string @return, string configureAwait, int specIndex)
     {
+        // Snapshot at entry. Task.Run runs later and must not read the ambient scope again.
+        WriteCallScopeCapture(source);
         var ctVar = "______ct";
         var ctParamIndex = methodModel.CancellationTokenIndex;
         if (ctParamIndex.HasValue)
@@ -353,22 +355,25 @@ internal static class Emitter
 
         var args = FormatSendArgs(methodModel);
         var specField = SpecFieldName(specIndex);
+        var scopeArgs = $"{CallScopeLocal}, {ctVar}{args}";
 
         if (methodModel.ReturnTypeMetadata == ReturnTypeInfo.AsyncVoid)
-            source.WriteLine($"await global::Observables.RestAPI.RestApiBridge.SendVoidAsync(Client, _settings, in {specField}, {ctVar}{args}){configureAwait};");
+            source.WriteLine($"await global::Observables.RestAPI.RestApiBridge.SendVoidAsync(Client, _settings, in {specField}, {scopeArgs}){configureAwait};");
         else if (methodModel.ReturnTypeMetadata == ReturnTypeInfo.SyncVoid)
             // Start the bridge on the thread pool so a yielding ExceptionFactory or serializer
             // cannot capture this caller's SynchronizationContext. Clearing the context inline
             // emits more code and still runs the synchronous prefix on the blocked thread.
-            source.WriteLine($"global::System.Threading.Tasks.Task.Run(() => global::Observables.RestAPI.RestApiBridge.SendVoidAsync(Client, _settings, in {specField}, {ctVar}{args})).GetAwaiter().GetResult();");
+            source.WriteLine($"global::System.Threading.Tasks.Task.Run(() => global::Observables.RestAPI.RestApiBridge.SendVoidAsync(Client, _settings, in {specField}, {scopeArgs})).GetAwaiter().GetResult();");
         else if (methodModel.ReturnTypeMetadata == ReturnTypeInfo.AsyncResult)
-            source.WriteLine($"{@return}global::Observables.RestAPI.RestApiBridge.SendAsync<{methodModel.ReturnResultType}, {methodModel.DeserializedResultType}>(Client, _settings, in {specField}, {ctVar}{args}){configureAwait};");
+            source.WriteLine($"{@return}global::Observables.RestAPI.RestApiBridge.SendAsync<{methodModel.ReturnResultType}, {methodModel.DeserializedResultType}>(Client, _settings, in {specField}, {scopeArgs}){configureAwait};");
         else if (methodModel.ReturnTypeMetadata == ReturnTypeInfo.Return)
-            source.WriteLine($"{@return}global::System.Threading.Tasks.Task.Run(() => global::Observables.RestAPI.RestApiBridge.SendAsync<{methodModel.ReturnResultType}, {methodModel.DeserializedResultType}>(Client, _settings, in {specField}, {ctVar}{args})).GetAwaiter().GetResult();");
+            source.WriteLine($"{@return}global::System.Threading.Tasks.Task.Run(() => global::Observables.RestAPI.RestApiBridge.SendAsync<{methodModel.ReturnResultType}, {methodModel.DeserializedResultType}>(Client, _settings, in {specField}, {scopeArgs})).GetAwaiter().GetResult();");
     }
 
     static void WriteObservableBody(SourceWriter source, MethodModel methodModel, int specIndex)
     {
+        // Snapshot at entry, outside FromAsync. Subscribe can run after the scope is disposed.
+        WriteCallScopeCapture(source);
 #if RESTAPI_R3
         source.WriteLine($"return global::R3.Observable.FromAsync(async ______ct =>");
 #elif RESTAPI_REACTIVE
@@ -388,18 +393,24 @@ internal static class Emitter
             sendCt = "______linked.Token";
         }
 
+        var scopeArgs = $"{CallScopeLocal}, {sendCt}{args}";
         if (IsUnitResult(methodModel.DeserializedResultType))
         {
-            source.WriteLine($"await global::Observables.RestAPI.RestApiBridge.SendVoidAsync(Client, _settings, in {specField}, {sendCt}{args}).ConfigureAwait(false);");
+            source.WriteLine($"await global::Observables.RestAPI.RestApiBridge.SendVoidAsync(Client, _settings, in {specField}, {scopeArgs}).ConfigureAwait(false);");
             source.WriteLine($"return default({methodModel.ReturnResultType});");
         }
         else
         {
-            source.WriteLine($"return await global::Observables.RestAPI.RestApiBridge.SendAsync<{methodModel.ReturnResultType}, {methodModel.DeserializedResultType}>(Client, _settings, in {specField}, {sendCt}{args}).ConfigureAwait(false);");
+            source.WriteLine($"return await global::Observables.RestAPI.RestApiBridge.SendAsync<{methodModel.ReturnResultType}, {methodModel.DeserializedResultType}>(Client, _settings, in {specField}, {scopeArgs}).ConfigureAwait(false);");
         }
         source.Indentation--;
         source.WriteLine("});");
     }
+
+    const string CallScopeLocal = "______scope";
+
+    static void WriteCallScopeCapture(SourceWriter source) =>
+        source.WriteLine($"var {CallScopeLocal} = global::Observables.RestAPI.RestApiCallScope.Capture();");
 
     static bool IsUnitResult(string deserializedResultType) =>
         deserializedResultType is "global::R3.Unit" or "global::System.Reactive.Unit";

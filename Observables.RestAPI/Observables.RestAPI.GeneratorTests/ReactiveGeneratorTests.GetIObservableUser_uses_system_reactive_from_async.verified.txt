@@ -77,9 +77,10 @@ namespace Observables.RestAPI.Implementation
         /// <inheritdoc />
         public global::System.IObservable<global::User> GetUser(int @id)
         {
+            var ______scope = global::Observables.RestAPI.RestApiCallScope.Capture();
             return global::Observables.RestAPI.Reactive.SystemReactiveObservableAdapter.FromAsync(async ______ct =>
             {
-                return await global::Observables.RestAPI.RestApiBridge.SendAsync<global::User, global::User>(Client, _settings, in ______spec0, ______ct, @id).ConfigureAwait(false);
+                return await global::Observables.RestAPI.RestApiBridge.SendAsync<global::User, global::User>(Client, _settings, in ______spec0, ______scope, ______ct, @id).ConfigureAwait(false);
             });
         }
     }

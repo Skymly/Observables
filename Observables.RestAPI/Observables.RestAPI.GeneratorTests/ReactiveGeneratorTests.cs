@@ -268,4 +268,60 @@ public class ReactiveGeneratorTests
 
         Assert.Contains("OBS3008", GeneratorTestHarness.ToSnapshot(output), StringComparison.Ordinal);
     }
+
+    [Fact]
+    public void Call_scope_is_captured_outside_system_reactive_from_async()
+    {
+        GeneratorRunOutput output = GeneratorTestHarness.RunReactive(
+            """
+            public interface IUserApi
+            {
+                [Get("/users/{id}")]
+                Task<User> GetTask(int id);
+
+                [Get("/users/{id}")]
+                ValueTask<User> GetValue(int id);
+
+                [Get("/users/{id}")]
+                IObservable<User> GetObservable(int id);
+
+                [Delete("/users/{id}")]
+                IObservable<global::System.Reactive.Unit> DeleteObservable(int id);
+            }
+
+            public sealed class User
+            {
+                public int Id { get; set; }
+            }
+            """);
+
+        string generated = string.Concat(output.GeneratedSources.Select(static s => s.Source)).Replace("\r\n", "\n");
+        Assert.Equal(4, CountOf(generated, "RestApiCallScope.Capture()"));
+        var fromAsync = generated.IndexOf("SystemReactiveObservableAdapter.FromAsync", StringComparison.Ordinal);
+        var capture = generated.LastIndexOf("RestApiCallScope.Capture()", fromAsync, StringComparison.Ordinal);
+        Assert.True(fromAsync > capture && capture >= 0);
+        Assert.DoesNotContain("public ", generated.Substring(capture, fromAsync - capture), StringComparison.Ordinal);
+        var lambda = generated.IndexOf("async ______ct =>", StringComparison.Ordinal);
+        var end = generated.IndexOf("});", lambda, StringComparison.Ordinal);
+        var body = generated.Substring(lambda, end - lambda);
+        Assert.DoesNotContain("RestApiCallScope.Capture()", body, StringComparison.Ordinal);
+        Assert.Contains("______scope,", body, StringComparison.Ordinal);
+        Assert.Contains(
+            "SendAsync<global::User, global::User>(Client, _settings, in ______spec0, ______scope, ______ct, @id)",
+            generated,
+            StringComparison.Ordinal);
+    }
+
+    static int CountOf(string text, string value)
+    {
+        var count = 0;
+        var index = 0;
+        while ((index = text.IndexOf(value, index, StringComparison.Ordinal)) >= 0)
+        {
+            count++;
+            index += value.Length;
+        }
+
+        return count;
+    }
 }

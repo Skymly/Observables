@@ -28,8 +28,8 @@
 ```mermaid
 graph LR
     R0[R0 · 0.3.1<br/>止血与对外同步] --> R1[R1 · 发版同步自动化]
-    R0 --> R2[R2 · 0.4.0<br/>Mqtt 传输抽象 · AOT · 依赖]
-    R2 --> R3[R3 · 0.5.0<br/>深化既有域]
+    R0 --> R2[R2 · 0.5.0<br/>Mqtt 传输抽象 · AOT · 依赖]
+    R2 --> R3[R3 · 0.6.0<br/>深化既有域]
     R1 --> R4[R4 · 1.0.0]
     R3 --> R4
     R4 -.-> R5[R5 · 扩域<br/>有门槛·暂停]
@@ -63,9 +63,9 @@ R1 与 R2 可并行。R4 依赖 R1、R2 出口满足，且 R3 至少完成 R3-1�
 | R1-4 | 发版门槛对齐 | `Publish` 已内置 `Test` → `PackVerify`；门槛清单改为「Publish 内 PackVerify 通过」，不再要求 HEAD 上另跑 `CiPack` |
 | R1-5 | 测试隔离：全局序列化注册表 | 修改 `*PayloadSerializers` 的测试未禁止并行，会污染同程序集其它测试（Mqtt 已在 CI 偶发失败）。Mqtt [#630](https://github.com/Skymly/Observables/issues/630)；Redis / Nats / Postgres（潜在）[#631](https://github.com/Skymly/Observables/issues/631) / [#632](https://github.com/Skymly/Observables/issues/632) / [#633](https://github.com/Skymly/Observables/issues/633)。仅改测试 |
 
-**出口**：下一次发版（`0.4.0`）三仓同步不含手工改版本号步骤；#630–#633 关闭。
+**出口**：下一次发版（`0.5.0`）三仓同步不含手工改版本号步骤；#630–#633 关闭。
 
-### R2 — `0.4.0`：Mqtt 传输抽象、AOT、依赖升级
+### R2 — `0.5.0`：Mqtt 传输抽象、AOT、依赖升级
 
 **目标**：容纳破坏性变更的 minor 版本。
 
@@ -80,7 +80,7 @@ R1 与 R2 可并行。R4 依赖 R1、R2 出口满足，且 R3 至少完成 R3-1�
 | R2-A1 | ADR-004（先于代码） | 定：传输抽象形状（subscribe / unsubscribe / publish / 能力位，供 MQTT 5 请求-响应）；适配包 ID（暂拟 `Observables.Mqtt.MQTTnet4` / `Observables.Mqtt.MQTTnet5`）；R3 / Reactive 主包是否默认依赖某个适配包；`MqttService.For<T>` 新入口与旧 `IMqttClient` 重载的去留；4.x 冻结的触发条件与版本。须明确放宽 AGENTS「每域仅两个消费者包」——适配包为后端中立的可选扩展，不是第三个消费者主包 |
 | R2-A2 | 运行时 + 生成器改造 | `Observables.Mqtt` 去除 MQTTnet 引用；`MqttProtocol` / 协议桥改走抽象；生成代码不再出现 `MQTTnet.*` 类型 |
 | R2-A3 | 两个适配包 | 各自 E2E（进程内 broker 分别用 MQTTnet 4 / 5）；登记 BuildManifest；PackVerify 支持「单包、后端中立」包形态（禁止引用 R3 / System.Reactive） |
-| R2-A4 | 迁移文档 | Docs Mqtt 页 + 0.3.x → 0.4.0 迁移说明；Samples Mqtt 改用适配包 |
+| R2-A4 | 迁移文档 | Docs Mqtt 页 + 0.4.x → 0.5.0 迁移说明；Samples Mqtt 改用适配包 |
 
 #### R2-B 其它
 
@@ -91,9 +91,9 @@ R1 与 R2 可并行。R4 依赖 R1、R2 出口满足，且 R3 至少完成 R3-1�
 | R2-B3 | R3 `1.3.x` 补丁升级 | 常规依赖跟进 |
 | R2-B4 | 清理 | `OBS7004` 无触发分支：删除（`AnalyzerReleases` 登记 Removed）或补语义；解决 IDE0161 后启用 `dotnet format style` |
 
-**出口**：`0.4.0` 发版；Mqtt 公共 API 不含 `MQTTnet.*`；两个适配包 E2E 绿；PublicAPI 破坏性变更全部登记。
+**出口**：`0.5.0` 发版；Mqtt 公共 API 不含 `MQTTnet.*`；两个适配包 E2E 绿；PublicAPI 破坏性变更全部登记。
 
-### R3 — `0.5.0`：深化既有域
+### R3 — `0.6.0`：深化既有域
 
 按用户价值排序：
 

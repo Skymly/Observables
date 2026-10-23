@@ -2051,5 +2051,45 @@
             显式写出的名字就是最终的线上名字。推断出来的名字仍走 formatter。
             </summary>
         </member>
+        <member name="T:Observables.RestAPI.RestApiCallScope">
+            <summary>
+            生成的 REST 代理的每次调用 HTTP 请求选项。
+            </summary>
+            <remarks>
+            <para>
+            <see cref="M:Observables.RestAPI.RestApiCallScope.Push(System.Collections.Generic.IReadOnlyDictionary{System.String,System.Object})"/> 为在作用域生效期间进入的代理方法安装选项值。
+            生成的代理在进入时快照这些值并将快照传入请求，因此即使此作用域已被释放，
+            后续的订阅或线程池发送仍能看到进入时生效的选项。
+            </para>
+            <para>
+            嵌套作用域覆盖内层键、继承外层键。按 <see cref="M:Observables.RestAPI.RestApiCallScope.Push(System.Collections.Generic.IReadOnlyDictionary{System.String,System.Object})"/> 的相反顺序释放作用域。
+            不同异步流上的并发调用彼此看不到对方的快照。
+            </para>
+            <para>
+            优先级从低到高：<see cref="P:Observables.RestAPI.RestApiSettings.HttpRequestMessageOptions"/>，然后是此快照，
+            然后是同键上的 <see cref="T:Observables.RestAPI.PropertyAttribute"/> 参数。
+            对于使用 <c>HttpRequestMessage.Options.TryGetValue</c> 的处理程序，快照中的 null 值会清除该键，
+            因为 TryGetValue 不会暴露已存储的 null。
+            </para>
+            </remarks>
+        </member>
+        <member name="M:Observables.RestAPI.RestApiCallScope.Push(System.Collections.Generic.IReadOnlyDictionary{System.String,System.Object})">
+            <summary>
+            为在返回的作用域被释放之前进入的代理方法推送调用选项。
+            </summary>
+            <param name="options">
+            为此作用域复制的选项。内层键覆盖当前作用域。字典立即被快照；
+            之后对 <paramref name="options"/> 的修改将被忽略。
+            </param>
+            <returns>一个可释放对象，用于恢复先前的作用域。</returns>
+            <exception cref="T:System.ArgumentNullException"><paramref name="options"/> 为 <c>null</c>。</exception>
+            <exception cref="T:System.ArgumentException">某个选项键为 <c>null</c>。</exception>
+        </member>
+        <member name="M:Observables.RestAPI.RestApiCallScope.Capture">
+            <summary>
+            返回当前异步流上生效的不可变选项；无作用域时返回 <c>null</c>。
+            </summary>
+            <remarks>设为 public，因为生成的代理代码运行在消费者程序集中。</remarks>
+        </member>
     </members>
 </doc>

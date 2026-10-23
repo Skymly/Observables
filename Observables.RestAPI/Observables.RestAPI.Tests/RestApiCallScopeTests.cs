@@ -62,6 +62,84 @@ public sealed class RestApiCallScopeTests
     }
 
     [Fact]
+    public void Push_shares_mutable_option_values_by_reference()
+    {
+        var bag = new List<int> { 1 };
+        using (RestApiCallScope.Push(new Dictionary<string, object?> { ["bag"] = bag }))
+        {
+            bag.Add(2);
+            var captured = RestApiCallScope.Capture();
+            Assert.NotNull(captured);
+            Assert.Same(bag, captured["bag"]);
+            Assert.Equal(new[] { 1, 2 }, Assert.IsType<List<int>>(captured["bag"]));
+        }
+
+        Assert.Null(RestApiCallScope.Capture());
+    }
+
+    [Fact]
+    public void Disposing_an_outer_scope_before_the_inner_scope_does_not_clobber_or_leak()
+    {
+        var outer = RestApiCallScope.Push(new Dictionary<string, object?> { ["a"] = 1 });
+        var inner = RestApiCallScope.Push(new Dictionary<string, object?> { ["b"] = 2 });
+
+        outer.Dispose();
+        var stillInner = RestApiCallScope.Capture();
+        Assert.NotNull(stillInner);
+        Assert.Equal(1, stillInner["a"]);
+        Assert.Equal(2, stillInner["b"]);
+
+        inner.Dispose();
+        Assert.Null(RestApiCallScope.Capture());
+    }
+
+    [Fact]
+    public void Disposing_a_middle_scope_unlinks_it_without_replacing_the_inner_scope()
+    {
+        var outer = RestApiCallScope.Push(new Dictionary<string, object?> { ["a"] = 1 });
+        var middle = RestApiCallScope.Push(new Dictionary<string, object?> { ["b"] = 2 });
+        var inner = RestApiCallScope.Push(new Dictionary<string, object?> { ["c"] = 3 });
+
+        middle.Dispose();
+        var stillInner = RestApiCallScope.Capture();
+        Assert.NotNull(stillInner);
+        Assert.Equal(1, stillInner["a"]);
+        Assert.Equal(2, stillInner["b"]);
+        Assert.Equal(3, stillInner["c"]);
+
+        inner.Dispose();
+        var restored = RestApiCallScope.Capture();
+        Assert.NotNull(restored);
+        Assert.Equal(1, restored["a"]);
+        Assert.False(restored.ContainsKey("b"));
+        Assert.False(restored.ContainsKey("c"));
+
+        outer.Dispose();
+        Assert.Null(RestApiCallScope.Capture());
+    }
+
+    [Fact]
+    public void Disposing_an_outer_scope_under_two_live_scopes_skips_it_on_pop()
+    {
+        var outer = RestApiCallScope.Push(new Dictionary<string, object?> { ["a"] = 1 });
+        var middle = RestApiCallScope.Push(new Dictionary<string, object?> { ["b"] = 2 });
+        var inner = RestApiCallScope.Push(new Dictionary<string, object?> { ["c"] = 3 });
+
+        outer.Dispose();
+        Assert.Equal(3, RestApiCallScope.Capture()!["c"]);
+
+        inner.Dispose();
+        var restored = RestApiCallScope.Capture();
+        Assert.NotNull(restored);
+        Assert.Equal(1, restored["a"]);
+        Assert.Equal(2, restored["b"]);
+        Assert.False(restored.ContainsKey("c"));
+
+        middle.Dispose();
+        Assert.Null(RestApiCallScope.Capture());
+    }
+
+    [Fact]
     public void Push_rejects_null_options_and_null_keys()
     {
         Assert.Throws<ArgumentNullException>(() => RestApiCallScope.Push(null!));
@@ -117,6 +195,25 @@ public sealed class RestApiCallScopeTests
         // value clears the settings default for a handler reading Options.
         Assert.False(bound.Message.Options.TryGetValue(new HttpRequestOptionsKey<object>("tenant"), out _));
         bound.Message.Dispose();
+    }
+
+    [Fact]
+    public void Netstandard_property_option_removes_a_null_instead_of_storing_it()
+    {
+        // Test hosts do not compile the netstandard2.0 SetOption branch. That branch calls
+        // this helper, which is the clear policy handlers observe via Properties.
+        var properties = new Dictionary<string, object> { ["tenant"] = "acme", ["region"] = "us" };
+
+        RestApiProtocol.ApplyPropertyOption(properties, "tenant", null);
+        Assert.False(properties.ContainsKey("tenant"));
+        Assert.False(properties.TryGetValue("tenant", out _));
+        Assert.Equal("us", properties["region"]);
+
+        RestApiProtocol.ApplyPropertyOption(properties, "tenant", "other");
+        Assert.Equal("other", properties["tenant"]);
+
+        RestApiProtocol.ApplyPropertyOption(properties, "missing", null);
+        Assert.False(properties.ContainsKey("missing"));
     }
 
     [Fact]

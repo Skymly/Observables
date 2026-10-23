@@ -9,7 +9,7 @@
 | 维度 | 现状 |
 |------|------|
 | 已实现域 | **Events**、**RestAPI**、**SignalR**、**Mqtt**、**WebSocket**、**Grpc**、**Sse**、**Nats**、**Postgres**、**Redis**（运行时 + 双路生成器 + 测试） |
-| nuget.org | **`0.3.1`**（**20 包** + 20 snupkg） |
+| nuget.org | **`0.4.0`**（**20 包** + 20 snupkg） |
 | 诊断 | **82** 个已发布唯一 ID（以各 `AnalyzerReleases.Shipped.md` 为准） |
 | 质量 | Windows + Ubuntu CI；`337d576` 上 1550 测试全绿；`PackVerify` + 23 个 `eng/nuget-smoke` 消费者 |
 | 对外文档 | Observables.Docs / Samples 已追到 **`0.3.1`**（[Docs#28](https://github.com/Skymly/Observables.Docs/pull/28)、[Samples#21](https://github.com/Skymly/Observables.Samples/pull/21) / [#22](https://github.com/Skymly/Observables.Samples/pull/22)）。nuget.org `0.2.2` Reactive 包的未声明 R3 引用仍在；维护者决定暂不 deprecate（R0-5） |
@@ -183,3 +183,4 @@ R1 与 R2 可并行。R4 依赖 R1、R2 出口满足，且 R3 至少完成 R3-1�
 | P1 / P1b | 第九域 Postgres、第十域 Redis（ADR-002 #1 / #2） | `0.1.7` / `0.1.9` |
 | — | Shared 代理域目录 + IO 生成器管道；生命周期修复 + 协议桥；RestAPI HTTP 桥；后端中立运行时（ADR-003）+ 具名连接 | `0.2.0`–`0.3.0` |
 | R0-1 | OBSxx002 消费者包 ID、RestAPI 同步代理死锁、setter / ref 成员报 `OBS*004` | `0.3.1` |
+| — | RestAPI `RestApiCallScope` 每次调用请求选项入口快照（settings → 入口快照 → `[Property]`）；NuGet advisories 依赖升级（SignalR.Client 8.0.32 等） | `0.4.0` |

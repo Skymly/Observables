@@ -84,12 +84,13 @@ Stable packages are published to [nuget.org](https://www.nuget.org/profiles/Skym
 | **0.2.2** | Patch — RestAPI HTTP `Send(spec)` bridge and HttpClient ownership; IO cancellation-token names and literal escaping; OBS0002 open-generic proxies; OBS7009 gRPC marshaller types; Events generic/AttachedRouted fixes; still **20** packages. |
 | **0.3.0** | Minor — backend-neutral domain runtimes (ADR-003); R3 bridges live in `Observables.<Feature>.R3`; PackVerify rejects undeclared R3 refs; named connections; OBS2006/OBS3008/OBS4009/OBS7010; still **20** packages. |
 | **0.3.1** | Patch — OBS9002/OBS10002/OBS11002 name consumer package ids (`Observables.<Feature>.R3` / `.Reactive`); RestAPI sync proxies no longer deadlock on single-thread SynchronizationContext; setters and ref/out/in parameters report each domain's existing OBS*004 instead of silent CS0535; still **20** packages. |
+| **0.4.0** | Minor — RestAPI `RestApiCallScope` snapshots per-invocation `HttpRequestMessage` options at proxy entry (precedence: `RestApiSettings.HttpRequestMessageOptions` → entry snapshot → `[Property]`); dependency bumps past October 2026 NuGet advisories (SignalR.Client 8.0.32, System.Text.Json 8.0.6, Cryptography.Xml 10.0.13); still **20** packages. |
 
 Preview builds (`0.1.0-preview*`, `0.1.1-preview*`) were published to NuGet with tags only (no GitHub Release). Details and milestone planning: [docs/ROADMAP.md](docs/ROADMAP.md).
 
 ### Package set
 
-**nuget.org (`0.3.1`)**: twenty packages — ten domains, each as `Observables.<Feature>.R3` and `Observables.<Feature>.Reactive`.
+**nuget.org (`0.4.0`)**: twenty packages — ten domains, each as `Observables.<Feature>.R3` and `Observables.<Feature>.Reactive`.
 
 | Package ID | Domain |
 |------------|--------|

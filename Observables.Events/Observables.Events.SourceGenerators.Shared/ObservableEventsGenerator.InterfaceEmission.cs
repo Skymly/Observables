@@ -25,10 +25,11 @@ public sealed partial class ObservableEventsGenerator
 #endif
             ;
 
+        var willEmit = BuildWillEmitInterfaceSet(hierarchy, compilation, entryKind);
         var interfaces = new List<MemberDeclarationSyntax>();
         foreach (var desc in hierarchy.Values.OrderBy(static d => d.InterfaceName, System.StringComparer.Ordinal))
         {
-            var iface = CreateEventInterface(desc, hierarchy, compilation, entryKind);
+            var iface = CreateEventInterface(desc, hierarchy, compilation, entryKind, willEmit);
             if (iface is not null)
                 interfaces.Add(iface);
         }
@@ -42,12 +43,39 @@ public sealed partial class ObservableEventsGenerator
         return GeneratedSourceHeader.ToSource(unit);
     }
 
-    private static InterfaceDeclarationSyntax? CreateEventInterface(
-        EventInterfaceDescriptor descriptor,
+    /// <summary>
+    /// Descriptors that will actually produce an interface: they have at least one emittable
+    /// property, or inherit at least one interface that is itself emitted. Evaluated in the
+    /// dictionary's registration order, which is post-order (parents are expanded before the
+    /// types that reference them).
+    /// </summary>
+    private static System.Collections.Generic.HashSet<EventInterfaceDescriptor> BuildWillEmitInterfaceSet(
         Dictionary<INamedTypeSymbol, EventInterfaceDescriptor> hierarchy,
         Compilation compilation,
         ObservableEventsEntryKind entryKind)
     {
+        var set = new System.Collections.Generic.HashSet<EventInterfaceDescriptor>();
+        foreach (var desc in hierarchy.Values)
+        {
+            var hasProps = desc.ExclusiveEvents.Any(e => GetEventInterfacePropertyType(e, entryKind, compilation) is not null);
+            var hasEmittedBase = desc.ParentTypes.Any(pt =>
+                hierarchy.TryGetValue(HierarchyKey(pt), out var pd) && set.Contains(pd));
+            if (hasProps || hasEmittedBase)
+                set.Add(desc);
+        }
+
+        return set;
+    }
+
+    private static InterfaceDeclarationSyntax? CreateEventInterface(
+        EventInterfaceDescriptor descriptor,
+        Dictionary<INamedTypeSymbol, EventInterfaceDescriptor> hierarchy,
+        Compilation compilation,
+        ObservableEventsEntryKind entryKind,
+        System.Collections.Generic.HashSet<EventInterfaceDescriptor> willEmit)
+    {
+        if (!willEmit.Contains(descriptor))
+            return null;
         var type = descriptor.SourceType;
         var iface = SyntaxFactory.InterfaceDeclaration(descriptor.InterfaceName)
             .AddModifiers(SyntaxFactory.Token(SyntaxKind.InternalKeyword));
@@ -67,8 +95,8 @@ public sealed partial class ObservableEventsGenerator
             .Select(pt =>
             {
                 var ptDef = pt.IsGenericType ? (INamedTypeSymbol)pt.OriginalDefinition : pt;
-                if (!hierarchy.TryGetValue(ptDef, out var pd)) return null;
-                return GetParentInterfaceReference(pd, pt);
+                if (!hierarchy.TryGetValue(ptDef, out var pd) || !willEmit.Contains(pd)) return null;
+                return GetParentInterfaceReference(pd, pt, compilation);
             })
             .Where(static n => n is not null)
             .OrderBy(static n => n, System.StringComparer.Ordinal)
@@ -98,11 +126,19 @@ public sealed partial class ObservableEventsGenerator
         return iface.AddMembers(props.ToArray());
     }
 
-    private static string GetParentInterfaceReference(EventInterfaceDescriptor parentDesc, INamedTypeSymbol constructedParentType)
+    private static string? GetParentInterfaceReference(
+        EventInterfaceDescriptor parentDesc,
+        INamedTypeSymbol constructedParentType,
+        Compilation compilation)
     {
         var name = parentDesc.InterfaceName;
         if (constructedParentType.IsGenericType && constructedParentType.TypeArguments.Length > 0)
+        {
+            if (constructedParentType.TypeArguments.Any(ta => !IsTypeNameable(ta, compilation)))
+                return null;
             name += $"<{string.Join(", ", constructedParentType.TypeArguments.Select(static ta => ObservableEventsConstants.QualifiedType(ta)))}>";
+        }
+
         return name;
     }
 
@@ -115,16 +151,19 @@ public sealed partial class ObservableEventsGenerator
         Action<string, Location?, string> reportDiagnostic,
         ObservableEventsEntryKind entryKind)
     {
+        // Generated extension methods and impl classes must be able to name the receiver type.
+        if (!compilation.IsSymbolAccessibleWithin(type, compilation.Assembly))
+            return string.Empty;
         if (!hierarchy.TryGetValue(type, out var desc))
             return string.Empty;
 
+        var willEmit = BuildWillEmitInterfaceSet(hierarchy, compilation, entryKind);
         var implName = desc.ImplName;
         var implClass = CreateEventImplClass(type, desc, implName, hierarchy, compilation, reportDiagnostic, entryKind);
-        if (CreateEventInterface(desc, hierarchy, compilation, entryKind) is null)
+        if (!willEmit.Contains(desc))
         {
             foreach (var evt in desc.ExclusiveEvents)
             {
-                _ = GetEventInterfacePropertyType(evt, entryKind, compilation);
                 if (entryKind is ObservableEventsEntryKind.Events or ObservableEventsEntryKind.RoutedEvents)
                     ReportInvalidDelegate(evt, reportDiagnostic, entryKind);
                 else
@@ -187,7 +226,9 @@ public sealed partial class ObservableEventsGenerator
                     methodName,
                     SyntaxFactory.ParseTypeName(interfaceRef),
                     SyntaxFactory.ParseTypeName(qualifiedSender),
-                    SyntaxFactory.ParseTypeName(implRef)));
+                    SyntaxFactory.ParseTypeName(implRef),
+                    extensionTypeParams,
+                    extensionConstraints));
         }
         else if (useWpfRoutedExtension)
         {
@@ -196,7 +237,9 @@ public sealed partial class ObservableEventsGenerator
                     methodName,
                     SyntaxFactory.ParseTypeName(interfaceRef),
                     SyntaxFactory.ParseTypeName(qualifiedSender),
-                    SyntaxFactory.ParseTypeName(implRef)));
+                    SyntaxFactory.ParseTypeName(implRef),
+                    extensionTypeParams,
+                    extensionConstraints));
         }
         else
         {
@@ -358,7 +401,7 @@ public sealed partial class ObservableEventsGenerator
                     .WithBody(SyntaxFactory.Block(ObservableEventsSyntaxFactory.SenderAssignmentStatement())));
         }
 
-        foreach (var (evt, accessor) in CollectAllEventsWithAccessor(type, hierarchy))
+        foreach (var (evt, accessor) in CollectAllEventsWithAccessor(type, hierarchy, compilation))
         {
             switch (entryKind)
             {
@@ -450,41 +493,79 @@ public sealed partial class ObservableEventsGenerator
 
     private static IEnumerable<(IEventSymbol Event, ExpressionSyntax Accessor)> CollectAllEventsWithAccessor(
         INamedTypeSymbol callSiteType,
-        Dictionary<INamedTypeSymbol, EventInterfaceDescriptor> hierarchy)
+        Dictionary<INamedTypeSymbol, EventInterfaceDescriptor> hierarchy,
+        Compilation compilation)
     {
-        var runtimeEvents = GetPublicInstanceEventsFromTypeAndBases(callSiteType)
-            .ToDictionary(static e => e.Name, System.StringComparer.Ordinal);
+        // Collect the most-derived member per event name regardless of accessibility: a
+        // non-public declaration shadows the accessible base event it hides, and _sender.Name
+        // would bind the shadowing member.
+        var runtimeEvents = new Dictionary<string, IEventSymbol>(System.StringComparer.Ordinal);
+        for (var current = callSiteType; current is not null && current.SpecialType != SpecialType.System_Object; current = current.BaseType)
+        {
+            foreach (var evt in current.GetMembers().OfType<IEventSymbol>())
+            {
+                if (evt.IsStatic || runtimeEvents.ContainsKey(evt.Name))
+                    continue;
+                runtimeEvents[evt.Name] = evt;
+            }
+        }
+
         var result = new Dictionary<string, (IEventSymbol, ExpressionSyntax)>(System.StringComparer.Ordinal);
         if (hierarchy.TryGetValue(callSiteType, out var desc))
-            CollectEventsRecursive(desc, hierarchy, runtimeEvents, result, callSiteType);
+            CollectEventsRecursive(desc, hierarchy, runtimeEvents, result, callSiteType, callSiteType, compilation);
         return result.Values.OrderBy(static x => x.Item1.Name, System.StringComparer.Ordinal);
     }
 
+    /// <summary>
+    /// Resolves the accessor for each merged event. Prefer direct <c>_sender.Name</c> when the
+    /// runtime member is reachable through the receiver type; otherwise cast the sender to an
+    /// accessible declaring type (interface/explicit events, or a hidden member's base). Events
+    /// with no reachable member or no nameable signature are skipped — the interface side never
+    /// declares them either because <c>ExclusiveEvents</c> only carries accessible members.
+    /// </summary>
     private static void CollectEventsRecursive(
         EventInterfaceDescriptor desc,
         Dictionary<INamedTypeSymbol, EventInterfaceDescriptor> hierarchy,
         Dictionary<string, IEventSymbol> runtimeEvents,
         Dictionary<string, (IEventSymbol, ExpressionSyntax)> result,
-        INamedTypeSymbol constructedType)
+        INamedTypeSymbol constructedType,
+        INamedTypeSymbol callSiteType,
+        Compilation compilation)
     {
         foreach (var evt in desc.ExclusiveEvents)
         {
             if (result.ContainsKey(evt.Name)) continue;
             var mapped = MapEventToConstructedType(evt, constructedType);
-            var canUseDirect = runtimeEvents.TryGetValue(mapped.Name, out var runtime)
-                && SymbolEqualityComparer.Default.Equals(runtime.Type, mapped.Type);
-            var accessor = canUseDirect
-                ? ObservableEventsSyntaxFactory.SenderMemberAccess(mapped.Name)
-                : ObservableEventsSyntaxFactory.CastSenderMemberAccess(
-                    SyntaxFactory.ParseTypeName(ObservableEventsConstants.QualifiedType(mapped.ContainingType)),
-                    mapped.Name);
-            result[mapped.Name] = (mapped, accessor);
+            if (!IsEventSignatureNameable(mapped, compilation)) continue;
+
+            ExpressionSyntax? accessor = null;
+            if (runtimeEvents.TryGetValue(evt.Name, out var runtime)
+                && SymbolEqualityComparer.Default.Equals(runtime.Type, mapped.Type)
+                && compilation.IsSymbolAccessibleWithin(runtime, compilation.Assembly, callSiteType))
+            {
+                accessor = ObservableEventsSyntaxFactory.SenderMemberAccess(evt.Name);
+            }
+            else
+            {
+                var castEvent = compilation.IsSymbolAccessibleWithin(mapped, compilation.Assembly) ? mapped
+                    : compilation.IsSymbolAccessibleWithin(evt, compilation.Assembly) ? evt
+                    : null;
+                if (castEvent is not null)
+                {
+                    accessor = ObservableEventsSyntaxFactory.CastSenderMemberAccess(
+                        SyntaxFactory.ParseTypeName(ObservableEventsConstants.QualifiedType(castEvent.ContainingType)),
+                        evt.Name);
+                }
+            }
+
+            if (accessor is null) continue;
+            result[evt.Name] = (mapped, accessor);
         }
 
         foreach (var parentType in desc.ParentTypes)
         {
             if (hierarchy.TryGetValue(HierarchyKey(parentType), out var pd))
-                CollectEventsRecursive(pd, hierarchy, runtimeEvents, result, parentType);
+                CollectEventsRecursive(pd, hierarchy, runtimeEvents, result, parentType, callSiteType, compilation);
         }
     }
 

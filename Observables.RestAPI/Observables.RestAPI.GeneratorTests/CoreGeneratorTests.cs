@@ -63,6 +63,40 @@ public class CoreGeneratorTests
     }
 
     [Fact]
+    public void Static_header_declared_on_two_base_interfaces_is_emitted_once()
+    {
+        GeneratorRunOutput output = GeneratorTestHarness.Run(
+            """
+            [Headers("X-Shared: 1")]
+            public interface IBaseA
+            {
+            }
+
+            [Headers("X-Shared: 1")]
+            public interface IBaseB
+            {
+            }
+
+            public interface IUserApi : IBaseA, IBaseB
+            {
+                [Get("/users")]
+                Task<string> GetUsers();
+            }
+            """);
+
+        string generated = string.Concat(output.GeneratedSources.Select(static s => s.Source));
+
+        Assert.Contains(
+            "staticHeaders: new string[] { \"X-Shared: 1\" }",
+            generated,
+            StringComparison.Ordinal);
+        Assert.DoesNotContain(
+            "\"X-Shared: 1\", \"X-Shared: 1\"",
+            generated,
+            StringComparison.Ordinal);
+    }
+
+    [Fact]
     public Task GetObservableUser_uses_from_async()
     {
         GeneratorRunOutput output = GeneratorTestHarness.Run(
@@ -555,6 +589,108 @@ public class CoreGeneratorTests
         string generated = string.Concat(output.GeneratedSources.Select(static s => s.Source));
         Assert.Contains("SendVoidAsync", generated, StringComparison.Ordinal);
         Assert.DoesNotContain("SendAsync<global::R3.Unit", generated, StringComparison.Ordinal);
+    }
+
+    // Regression for the R-1 ledger entry: SendAsync<T,TBody> is Task<T?> where T is an
+    // unconstrained type parameter, so T? compiles as [MaybeNull]T — value-type results already
+    // bind. These cases pin generation for all value-type return shapes.
+
+    [Fact]
+    public void Task_of_int_generates_send_async()
+    {
+        GeneratorRunOutput output = GeneratorTestHarness.Run(
+            """
+            public interface IUserApi
+            {
+                [Get("/count")]
+                Task<int> GetCount();
+            }
+            """);
+
+        string generated = string.Concat(output.GeneratedSources.Select(static s => s.Source));
+        Assert.Contains(
+            "SendAsync<int, int>(Client, _settings, in ______spec0, ______scope, ______ct).ConfigureAwait(false);",
+            generated,
+            StringComparison.Ordinal);
+        GeneratorTestRunner.AssertCompiled(output);
+    }
+
+    [Fact]
+    public void ValueTask_of_int_generates_send_async()
+    {
+        GeneratorRunOutput output = GeneratorTestHarness.Run(
+            """
+            public interface IUserApi
+            {
+                [Get("/count")]
+                ValueTask<int> GetCount();
+            }
+            """);
+
+        string generated = string.Concat(output.GeneratedSources.Select(static s => s.Source));
+        Assert.Contains(
+            "SendAsync<int, int>(Client, _settings, in ______spec0, ______scope, ______ct).ConfigureAwait(false);",
+            generated,
+            StringComparison.Ordinal);
+        GeneratorTestRunner.AssertCompiled(output);
+    }
+
+    [Fact]
+    public void Sync_int_generates_send_async()
+    {
+        GeneratorRunOutput output = GeneratorTestHarness.Run(
+            """
+            public interface IUserApi
+            {
+                [Get("/count")]
+                int GetCount();
+            }
+            """);
+
+        string generated = string.Concat(output.GeneratedSources.Select(static s => s.Source));
+        Assert.Contains(
+            "SendAsync<int, int>(Client, _settings, in ______spec0, ______scope, ______ct)).GetAwaiter().GetResult();",
+            generated,
+            StringComparison.Ordinal);
+        GeneratorTestRunner.AssertCompiled(output);
+    }
+
+    [Fact]
+    public void Observable_of_int_generates_send_async()
+    {
+        GeneratorRunOutput output = GeneratorTestHarness.Run(
+            """
+            public interface IUserApi
+            {
+                [Get("/count")]
+                Observable<int> GetCount();
+            }
+            """);
+
+        string generated = string.Concat(output.GeneratedSources.Select(static s => s.Source));
+        Assert.Contains(
+            "SendAsync<int, int>(Client, _settings, in ______spec0, ______scope, ______ct).ConfigureAwait(false);",
+            generated,
+            StringComparison.Ordinal);
+        GeneratorTestRunner.AssertCompiled(output);
+    }
+
+    [Fact]
+    public void Task_of_nullable_int_does_not_emit_null_coalescing()
+    {
+        GeneratorRunOutput output = GeneratorTestHarness.Run(
+            """
+            public interface IUserApi
+            {
+                [Get("/count")]
+                Task<int?> GetCount();
+            }
+            """);
+
+        string generated = string.Concat(output.GeneratedSources.Select(static s => s.Source));
+        Assert.Contains("SendAsync<int?, int?>", generated, StringComparison.Ordinal);
+        Assert.DoesNotContain("?? default", generated, StringComparison.Ordinal);
+        GeneratorTestRunner.AssertCompiled(output);
     }
 
     [Fact]

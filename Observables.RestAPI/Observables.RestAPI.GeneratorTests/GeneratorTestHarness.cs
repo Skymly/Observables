@@ -1,6 +1,7 @@
 global using CacheTrackingDriver = Observables.TestSupport.CacheTrackingDriver;
 global using GeneratedSource = Observables.TestSupport.GeneratedSource;
 global using GeneratorRunOutput = Observables.TestSupport.GeneratorRunOutput;
+global using GeneratorTestRunner = Observables.TestSupport.GeneratorTestRunner;
 
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;

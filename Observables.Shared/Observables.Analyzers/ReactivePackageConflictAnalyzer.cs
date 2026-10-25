@@ -19,22 +19,27 @@ public sealed class ReactivePackageConflictAnalyzer : DiagnosticAnalyzer
 
     static void AnalyzeCompilation(CompilationAnalysisContext context)
     {
+        var optionsProvider = context.Options.AnalyzerConfigOptionsProvider;
         foreach (var domain in ProxyDomainCatalog.ReactiveConflictDomains)
         {
-            if (!ReactivePackageConflictDetection.HasReactiveBridgeReference(context.Compilation, domain))
+            var backends = ReactivePackageConflictDetection.DetectBackends(
+                context.Compilation,
+                optionsProvider,
+                domain.Definition);
+            if (backends.Length < 2)
             {
                 continue;
             }
 
-            if (!ReactivePackageConflictDetection.HasObservablesR3Backend(context.Compilation, domain))
-            {
-                continue;
-            }
+            var packageNames = string.Join(
+                ", ",
+                backends.Select(b => domain.Definition.BackendPackageName(b)));
 
             context.ReportDiagnostic(Diagnostic.Create(
                 DiagnosticDescriptors.ConflictingReactivePackages,
                 Location.None,
-                domain.Definition.DisplayName));
+                domain.Definition.DisplayName,
+                packageNames));
         }
     }
 }

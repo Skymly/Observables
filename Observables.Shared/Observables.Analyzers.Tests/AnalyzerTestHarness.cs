@@ -2,6 +2,7 @@ using System.Collections.Immutable;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Diagnostics;
+using Microsoft.CodeAnalysis.Text;
 
 namespace Observables.Analyzers.Tests;
 
@@ -15,6 +16,13 @@ internal static class AnalyzerTestHarness
     internal static ImmutableArray<Diagnostic> RunAnalyzers(
         string userSource,
         IEnumerable<MetadataReference> additionalReferences,
+        params DiagnosticAnalyzer[] analyzers) =>
+        RunAnalyzers(userSource, additionalReferences, globalOptions: null, analyzers);
+
+    internal static ImmutableArray<Diagnostic> RunAnalyzers(
+        string userSource,
+        IEnumerable<MetadataReference> additionalReferences,
+        IReadOnlyDictionary<string, string>? globalOptions,
         params DiagnosticAnalyzer[] analyzers)
     {
         var parseOptions = CSharpParseOptions.Default.WithLanguageVersion(LanguageVersion.Preview);
@@ -29,7 +37,15 @@ internal static class AnalyzerTestHarness
             references,
             new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary));
 
-        var compilationWithAnalyzers = compilation.WithAnalyzers(analyzers.ToImmutableArray());
+        var options = globalOptions is null
+            ? null
+            : new AnalyzerOptions(
+                ImmutableArray<AdditionalText>.Empty,
+                new DictionaryAnalyzerConfigOptionsProvider(globalOptions));
+
+        var compilationWithAnalyzers = options is null
+            ? compilation.WithAnalyzers(analyzers.ToImmutableArray())
+            : compilation.WithAnalyzers(analyzers.ToImmutableArray(), options);
         return compilationWithAnalyzers.GetAnalyzerDiagnosticsAsync().GetAwaiter().GetResult();
     }
 
@@ -60,4 +76,39 @@ internal static class AnalyzerTestHarness
 
     internal static MetadataReference CreateReferenceFromAssemblyOf(Type type) =>
         MetadataReference.CreateFromFile(type.Assembly.Location);
+
+    sealed class DictionaryAnalyzerConfigOptionsProvider : AnalyzerConfigOptionsProvider
+    {
+        readonly DictionaryAnalyzerConfigOptions _global;
+
+        internal DictionaryAnalyzerConfigOptionsProvider(IReadOnlyDictionary<string, string> values) =>
+            _global = new DictionaryAnalyzerConfigOptions(values);
+
+        public override AnalyzerConfigOptions GlobalOptions => _global;
+
+        public override AnalyzerConfigOptions GetOptions(SyntaxTree tree) => EmptyAnalyzerConfigOptions.Instance;
+
+        public override AnalyzerConfigOptions GetOptions(AdditionalText textFile) => EmptyAnalyzerConfigOptions.Instance;
+    }
+
+    sealed class DictionaryAnalyzerConfigOptions : AnalyzerConfigOptions
+    {
+        readonly IReadOnlyDictionary<string, string> _values;
+
+        internal DictionaryAnalyzerConfigOptions(IReadOnlyDictionary<string, string> values) => _values = values;
+
+        public override bool TryGetValue(string key, out string value) =>
+            _values.TryGetValue(key, out value!);
+    }
+
+    sealed class EmptyAnalyzerConfigOptions : AnalyzerConfigOptions
+    {
+        internal static readonly EmptyAnalyzerConfigOptions Instance = new();
+
+        public override bool TryGetValue(string key, out string value)
+        {
+            value = null!;
+            return false;
+        }
+    }
 }

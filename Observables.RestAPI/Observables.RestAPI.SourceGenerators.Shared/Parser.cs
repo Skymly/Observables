@@ -224,7 +224,6 @@ internal static partial class Parser
         return new MethodModel(methodSymbol.Name, returnType, containingType, declaredBaseName,
             returnClassification.Info, parameters, constraints, isExplicit,
             Spec: RestApiMethodSpecModel.Empty,
-            IsApiResponse: returnClassification.IsApiResponse,
             ReturnResultType: returnClassification.ReturnResultType,
             DeserializedResultType: returnClassification.DeserializedResultType);
     }
@@ -262,17 +261,7 @@ internal static partial class Parser
     {
         var annotation = !param.Type.IsValueType && param.NullableAnnotation == NullableAnnotation.Annotated;
         var paramType = param.Type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
-        var isGeneric = ContainsTypeParameter(param.Type);
-        return new ParameterModel(param.MetadataName, paramType, annotation, isGeneric);
-    }
-
-    static bool ContainsTypeParameter(ITypeSymbol symbol)
-    {
-        if (symbol is ITypeParameterSymbol) return true;
-        if (symbol is not INamedTypeSymbol { TypeParameters.Length: > 0 } namedType) return false;
-        foreach (var typeArg in namedType.TypeArguments)
-            if (ContainsTypeParameter(typeArg)) return true;
-        return false;
+        return new ParameterModel(param.MetadataName, paramType, annotation);
     }
 
     static MethodModel ParseMethod(IMethodSymbol methodSymbol, bool isImplicitInterface,
@@ -308,7 +297,6 @@ internal static partial class Parser
             returnClassification.Info, http.Parameters, constraints, isExplicit,
             Spec: http.Spec,
             CancellationTokenIndex: http.CancellationTokenIndex,
-            IsApiResponse: returnClassification.IsApiResponse,
             ReturnResultType: returnClassification.ReturnResultType,
             DeserializedResultType: returnClassification.DeserializedResultType);
     }

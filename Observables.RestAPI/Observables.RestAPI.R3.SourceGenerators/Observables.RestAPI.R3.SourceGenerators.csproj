@@ -4,7 +4,7 @@
 
   <PropertyGroup>
     <Description>Source generator for declarative REST clients → R3 Observable.</Description>
-    <DefineConstants>$(DefineConstants);ROSLYN_4;RESTAPI_R3</DefineConstants>
+    <DefineConstants>$(DefineConstants);RESTAPI_R3</DefineConstants>
   </PropertyGroup>
 
   <ItemGroup>

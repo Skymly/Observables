@@ -1,3 +1,9 @@
 <Project>
-  <!-- Marker props for Observables.Nats.Reactive (runtime + analyzer). -->
+  <!-- Declares the Reactive backend for OBS0001 conflict detection (build_property.ObservablesNatsBackend_Reactive). -->
+  <PropertyGroup>
+    <ObservablesNatsBackend_Reactive>true</ObservablesNatsBackend_Reactive>
+  </PropertyGroup>
+  <ItemGroup>
+    <CompilerVisibleProperty Include="ObservablesNatsBackend_Reactive" />
+  </ItemGroup>
 </Project>

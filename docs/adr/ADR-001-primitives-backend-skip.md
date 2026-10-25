@@ -2,7 +2,7 @@
 
 | 字段 | 值 |
 |------|-----|
-| **状态** | Accepted |
+| **状态** | Superseded by [ADR-005](ADR-005-primitives-backend-adopt.md) |
 | **日期** | 2026-06-28 |
 | **关联 RFC** | 无 — 直接决策（4 路并行调研） |
 

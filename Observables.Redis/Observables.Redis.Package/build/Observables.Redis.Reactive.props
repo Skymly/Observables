@@ -1,3 +1,9 @@
 <Project>
-  <!-- Marker props for Observables.Redis.Reactive (runtime + analyzer). -->
+  <!-- Declares the Reactive backend for OBS0001 conflict detection (build_property.ObservablesRedisBackend_Reactive). -->
+  <PropertyGroup>
+    <ObservablesRedisBackend_Reactive>true</ObservablesRedisBackend_Reactive>
+  </PropertyGroup>
+  <ItemGroup>
+    <CompilerVisibleProperty Include="ObservablesRedisBackend_Reactive" />
+  </ItemGroup>
 </Project>

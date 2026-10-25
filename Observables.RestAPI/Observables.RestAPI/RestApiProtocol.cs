@@ -127,7 +127,9 @@ namespace Observables.RestAPI
                         var scheme = string.IsNullOrEmpty(binding.AuthorizeScheme)
                             ? "Bearer"
                             : binding.AuthorizeScheme!;
-                        request.Headers.TryAddWithoutValidation("Authorization", scheme + " " + value);
+                        // A null token must not produce a "Bearer " header with a dangling space.
+                        if (value is not null)
+                            request.Headers.TryAddWithoutValidation("Authorization", scheme + " " + value);
                         break;
                     case RestApiBridge.SlotKind.Property:
                         var propKey = binding.PropertyKey ?? binding.Name;

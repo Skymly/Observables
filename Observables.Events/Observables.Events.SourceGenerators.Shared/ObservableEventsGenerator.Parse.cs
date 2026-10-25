@@ -93,7 +93,7 @@ public sealed partial class ObservableEventsGenerator
             // Attached routed events
             foreach (var target in targets.AttachedRoutedEventsTypes)
             {
-                var source = GenerateAttachedRoutedEventSourceForTarget(target, ObservableEventsEntryKind.AttachedRoutedEvent);
+                var source = GenerateAttachedRoutedEventSourceForTarget(target, ObservableEventsEntryKind.AttachedRoutedEvent, compilation);
                 if (!string.IsNullOrWhiteSpace(source))
                 {
                     attachedRouted.Add(new AttachedRoutedEmissionModel(
@@ -104,7 +104,7 @@ public sealed partial class ObservableEventsGenerator
 
             foreach (var target in targets.AttachedRoutedEventHandlersTypes)
             {
-                var source = GenerateAttachedRoutedEventSourceForTarget(target, ObservableEventsEntryKind.AttachedRoutedEventHandler);
+                var source = GenerateAttachedRoutedEventSourceForTarget(target, ObservableEventsEntryKind.AttachedRoutedEventHandler, compilation);
                 if (!string.IsNullOrWhiteSpace(source))
                 {
                     attachedRouted.Add(new AttachedRoutedEmissionModel(
@@ -172,10 +172,13 @@ public sealed partial class ObservableEventsGenerator
             }
         }
 
+        var collidingConstraintNames = CollectCollidingGenericConstraintNames(
+            genericConstraintTargets, hierarchy, entryKind);
+
         foreach (var target in genericConstraintTargets)
         {
             var source = GenerateGenericConstraintEventSource(
-                target, hierarchy, compilation, reportDiagnostic, entryKind);
+                target, hierarchy, compilation, reportDiagnostic, entryKind, collidingConstraintNames);
             if (!string.IsNullOrWhiteSpace(source))
             {
                 genericConstraints.Add(new GenericConstraintEmissionModel(

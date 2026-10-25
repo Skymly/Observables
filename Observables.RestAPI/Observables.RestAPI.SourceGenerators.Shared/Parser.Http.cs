@@ -83,15 +83,19 @@ internal static partial class Parser
             }
         }
 
-        foreach (var attr in methodSymbol.ContainingType.GetAttributes())
+        // Interface-level [Headers] applies to methods inherited from base interfaces too.
+        foreach (var headerHost in new[] { methodSymbol.ContainingType }.Concat(methodSymbol.ContainingType.AllInterfaces))
         {
-            if (attr.AttributeClass?.Name == "HeadersAttribute"
-                && attr.AttributeClass?.ContainingNamespace?.ToDisplayString() == "Observables.RestAPI"
-                && attr.ConstructorArguments is { Length: >= 1 } cargs)
+            foreach (var attr in headerHost.GetAttributes())
             {
-                foreach (var h in cargs[0].Values)
-                    if (h.Value is string hs)
-                        headersList.Add(hs);
+                if (attr.AttributeClass?.Name == "HeadersAttribute"
+                    && attr.AttributeClass?.ContainingNamespace?.ToDisplayString() == "Observables.RestAPI"
+                    && attr.ConstructorArguments is { Length: >= 1 } cargs)
+                {
+                    foreach (var h in cargs[0].Values)
+                        if (h.Value is string hs)
+                            headersList.Add(hs);
+                }
             }
         }
 
@@ -194,7 +198,7 @@ internal static partial class Parser
         }
 
         var parameters = methodSymbol.Parameters
-            .Select((p, i) => ParseParameter(p) with { Kind = classifications[i].Kind, AliasAs = classifications[i].AliasAs, HeaderName = classifications[i].HeaderName, AuthorizeScheme = classifications[i].AuthorizeScheme, PropertyKey = classifications[i].PropertyKey, QueryFormat = classifications[i].QueryFormat, QueryPrefix = classifications[i].QueryPrefix, QueryDelimiter = classifications[i].QueryDelimiter, QueryTreatAsString = classifications[i].QueryTreatAsString, QueryCollectionFormat = classifications[i].QueryCollectionFormat, QueryIsCollectionFormatSpecified = classifications[i].QueryCollectionFormatSpecified })
+            .Select((p, i) => ParseParameter(p) with { Kind = classifications[i].Kind })
             .ToImmutableEquatableArray();
 
         var spec = new RestApiMethodSpecModel(
@@ -206,7 +210,11 @@ internal static partial class Parser
             QueryUriFormat: queryUriFormat,
             BodySerializationMethod: bodySerializationMethod,
             BodyBuffered: bodyBuffered,
-            StaticHeaders: headersList.ToImmutableEquatableArray());
+            // The same header string may be declared on several interfaces in the chain (or
+            // repeated between interface and method level); send it once, first wins.
+            StaticHeaders: headersList
+                .Distinct(System.StringComparer.Ordinal)
+                .ToImmutableEquatableArray());
 
         return new ParsedHttpMethod(parameters, spec, cancellationTokenIndex);
     }

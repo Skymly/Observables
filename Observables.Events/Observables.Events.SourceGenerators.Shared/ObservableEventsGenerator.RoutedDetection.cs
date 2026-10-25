@@ -25,7 +25,12 @@ public sealed partial class ObservableEventsGenerator
 
             foreach (var member in current.GetMembers(fieldName))
             {
-                if (member is not IFieldSymbol field || !field.IsStatic || field.IsImplicitlyDeclared)
+                // The generated property references ContainingType.Field directly — the field
+                // (and its declaring type) must be accessible from the consumer compilation.
+                if (member is not IFieldSymbol field
+                    || !field.IsStatic
+                    || field.IsImplicitlyDeclared
+                    || !compilation.IsSymbolAccessibleWithin(field, compilation.Assembly))
                 {
                     continue;
                 }
@@ -82,6 +87,7 @@ public sealed partial class ObservableEventsGenerator
                 if (member is not IFieldSymbol field
                     || !field.IsStatic
                     || field.IsImplicitlyDeclared
+                    || !compilation.IsSymbolAccessibleWithin(field, compilation.Assembly)
                     || field.Type is not INamedTypeSymbol fieldType)
                 {
                     continue;
@@ -140,7 +146,8 @@ public sealed partial class ObservableEventsGenerator
 
         var routedEventGenericType = compilation.GetTypeByMetadataName("Avalonia.Interactivity.RoutedEvent`1");
         var routedEventNonGenericType = compilation.GetTypeByMetadataName("Avalonia.Interactivity.RoutedEvent");
-        if (routedEventGenericType is null && routedEventNonGenericType is null)
+        var routedEventArgs = compilation.GetTypeByMetadataName("Avalonia.Interactivity.RoutedEventArgs");
+        if ((routedEventGenericType is null && routedEventNonGenericType is null) || routedEventArgs is null)
         {
             return false;
         }
@@ -158,6 +165,7 @@ public sealed partial class ObservableEventsGenerator
                 if (member is not IFieldSymbol field
                     || !field.IsStatic
                     || field.IsImplicitlyDeclared
+                    || !compilation.IsSymbolAccessibleWithin(field, compilation.Assembly)
                     || field.Type is not INamedTypeSymbol fieldType)
                 {
                     continue;
@@ -165,10 +173,13 @@ public sealed partial class ObservableEventsGenerator
 
                 var normalizedFieldType = fieldType.WithNullableAnnotation(NullableAnnotation.None);
 
+                // A RoutedEvent<TArgs> field only routes when TArgs is a RoutedEventArgs — the
+                // generic AddHandler<TEventArgs> overload would otherwise fail its constraint.
                 if (routedEventGenericType is not null
                     && SymbolEqualityComparer.Default.Equals(normalizedFieldType.OriginalDefinition, routedEventGenericType)
                     && fieldType.TypeArguments.Length == 1
-                    && fieldType.TypeArguments[0] is INamedTypeSymbol genericArgsType)
+                    && fieldType.TypeArguments[0] is INamedTypeSymbol genericArgsType
+                    && IsOrDerivedFrom(genericArgsType, routedEventArgs))
                 {
                     routedEventField = field;
                     eventArgsType = genericArgsType;
@@ -177,7 +188,7 @@ public sealed partial class ObservableEventsGenerator
 
                 if (routedEventNonGenericType is not null
                     && SymbolEqualityComparer.Default.Equals(normalizedFieldType, routedEventNonGenericType)
-                    && TryGetAvaloniaRoutedEventArgsType(evt, compilation, out INamedTypeSymbol nonGenericArgsType))
+                    && TryGetAvaloniaRoutedEventArgsType(evt, compilation, routedEventArgs, out INamedTypeSymbol nonGenericArgsType))
                 {
                     routedEventField = field;
                     eventArgsType = nonGenericArgsType;
@@ -192,25 +203,27 @@ public sealed partial class ObservableEventsGenerator
     private static bool TryGetAvaloniaRoutedEventArgsType(
         IEventSymbol evt,
         Compilation compilation,
+        INamedTypeSymbol routedEventArgs,
         out INamedTypeSymbol eventArgsType)
     {
         eventArgsType = null!;
 
-        var routedEventArgs = compilation.GetTypeByMetadataName("Avalonia.Interactivity.RoutedEventArgs");
+        // A handler<TArgs> whose TArgs is not a RoutedEventArgs would fault at dispatch; keep it
+        // on the CLR fallback path instead of guessing the AddHandler overload.
         if (evt.Type is INamedTypeSymbol { TypeArguments.Length: 1 } handlerType
             && handlerType.TypeArguments[0] is INamedTypeSymbol argsFromHandler)
         {
+            if (!IsOrDerivedFrom(argsFromHandler, routedEventArgs))
+            {
+                return false;
+            }
+
             eventArgsType = argsFromHandler;
             return true;
         }
 
-        if (routedEventArgs is not null)
-        {
-            eventArgsType = routedEventArgs;
-            return true;
-        }
-
-        return false;
+        eventArgsType = routedEventArgs;
+        return true;
     }
 
 

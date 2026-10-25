@@ -85,13 +85,81 @@ public sealed partial class ObservableEventsGenerator
         return builder.ToString();
     }
 
+    // ── Accessibility ─────────────────────────────────────────────
+    // Generated source may only name symbols the consumer compilation can see; otherwise the
+    // consumer hits CS0122 (e.g. events discovered on cross-assembly internal interfaces/base
+    // classes, or delegate signatures that mention internal framework types).
+
+    /// <summary>
+    /// Whether <paramref name="type"/> can be spelled in generated source: the type itself, its
+    /// generic type arguments, array element, and tuple element types must all be accessible to
+    /// the consuming assembly. Type parameters are always nameable (declared by the consumer or
+    /// by the generated member itself).
+    /// </summary>
+    private static bool IsTypeNameable(ITypeSymbol type, Compilation compilation)
+    {
+        if (type.TypeKind == TypeKind.TypeParameter)
+            return true;
+
+        if (!compilation.IsSymbolAccessibleWithin(type, compilation.Assembly))
+            return false;
+
+        switch (type)
+        {
+            case IArrayTypeSymbol array:
+                return IsTypeNameable(array.ElementType, compilation);
+            case IPointerTypeSymbol pointer:
+                return IsTypeNameable(pointer.PointedAtType, compilation);
+            case INamedTypeSymbol named:
+                foreach (var typeArgument in named.TypeArguments)
+                {
+                    if (!IsTypeNameable(typeArgument, compilation))
+                        return false;
+                }
+
+                if (named.IsTupleType)
+                {
+                    foreach (var element in named.TupleElements)
+                    {
+                        if (!IsTypeNameable(element.Type, compilation))
+                            return false;
+                    }
+                }
+
+                return true;
+            default:
+                return true;
+        }
+    }
+
+    /// <summary>
+    /// Whether an event's delegate signature can be spelled in generated source — the delegate
+    /// type itself plus every invoke-parameter type. Interface and impl emission share this gate
+    /// so both sides skip exactly the same events.
+    /// </summary>
+    private static bool IsEventSignatureNameable(IEventSymbol evt, Compilation compilation)
+    {
+        if (!IsTypeNameable(evt.Type, compilation))
+            return false;
+
+        if (evt.Type is INamedTypeSymbol { DelegateInvokeMethod: { } invoke })
+        {
+            foreach (var parameter in invoke.Parameters)
+            {
+                if (!IsTypeNameable(parameter.Type, compilation))
+                    return false;
+            }
+        }
+
+        return true;
+    }
+
     private static void ReportInvalidDelegate(
         IEventSymbol evt,
         Action<string, Location?, string> reportDiagnostic,
         ObservableEventsEntryKind entryKind)
     {
         var descriptorId = entryKind is ObservableEventsEntryKind.RoutedEvents or ObservableEventsEntryKind.RoutedEventHandlers
-            or ObservableEventsEntryKind.AttachedRoutedEvent or ObservableEventsEntryKind.AttachedRoutedEventHandler
             ? DiagnosticDescriptors.InvalidRoutedEventDelegate.Id
             : DiagnosticDescriptors.InvalidEventDelegate.Id;
         reportDiagnostic(descriptorId, evt.Locations.FirstOrDefault(), evt.Name);
@@ -103,7 +171,6 @@ public sealed partial class ObservableEventsGenerator
         ObservableEventsEntryKind entryKind)
     {
         var descriptorId = entryKind is ObservableEventsEntryKind.RoutedEvents or ObservableEventsEntryKind.RoutedEventHandlers
-            or ObservableEventsEntryKind.AttachedRoutedEvent or ObservableEventsEntryKind.AttachedRoutedEventHandler
             ? DiagnosticDescriptors.InvalidRoutedEventHandlersDelegate.Id
             : DiagnosticDescriptors.InvalidEventHandlersDelegate.Id;
         reportDiagnostic(descriptorId, evt.Locations.FirstOrDefault(), evt.Name);

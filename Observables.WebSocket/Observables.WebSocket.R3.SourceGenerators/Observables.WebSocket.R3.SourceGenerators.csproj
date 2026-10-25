@@ -4,7 +4,7 @@
 
   <PropertyGroup>
     <Description>Source generator for WebSocket proxies → R3 Observable.</Description>
-    <DefineConstants>$(DefineConstants);ROSLYN_4;WEBSOCKET_R3</DefineConstants>
+    <DefineConstants>$(DefineConstants);WEBSOCKET_R3</DefineConstants>
   </PropertyGroup>
 
   <ItemGroup>

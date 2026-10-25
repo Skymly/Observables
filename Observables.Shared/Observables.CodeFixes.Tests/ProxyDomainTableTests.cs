@@ -133,25 +133,30 @@ public sealed class ProxyDomainTableTests
             Assert.Equal($"Observables.{domain.DisplayName}", domain.RuntimePackageName);
             Assert.Equal($"Observables.{domain.DisplayName}.Reactive", domain.ReactivePackageName);
             Assert.Equal($"Observables.{domain.DisplayName}.R3", domain.R3PackageName);
+            Assert.Equal($"Observables.{domain.DisplayName}.Primitives", domain.PrimitivesPackageName);
             Assert.Equal(domain.ReactiveAssemblyName, domain.ReactivePackageName);
+            Assert.Equal(domain.R3AssemblyName, domain.R3PackageName);
+            Assert.Equal(domain.PrimitivesAssemblyName, domain.PrimitivesPackageName);
         }
     }
 
     [Fact]
-    public void R3PackageByReactivePackageId_maps_every_reactive_package()
+    public void DomainByBackendPackageId_maps_all_three_backends_of_every_conflict_domain()
     {
-        foreach (var domain in ProxyDomainTable.InterfaceProxyDomains)
+        foreach (var domain in ProxyDomainTable.ConsumerPackageConflictDomains)
         {
-            Assert.True(ProxyDomainTable.R3PackageByReactivePackageId.TryGetValue(
-                domain.ReactivePackageName,
-                out var r3PackageId));
-            Assert.Equal(domain.R3PackageName, r3PackageId);
+            foreach (var backendPackageId in domain.BackendPackageIds)
+            {
+                Assert.True(ProxyDomainTable.TryGetDomainByBackendPackageId(backendPackageId, out var mapped));
+                Assert.Same(domain, mapped);
+            }
         }
 
-        Assert.True(ProxyDomainTable.R3PackageByReactivePackageId.TryGetValue(
+        Assert.True(ProxyDomainTable.TryGetDomainByBackendPackageId(
             "Observables.Redis.Reactive",
-            out var redisR3PackageId));
-        Assert.Equal("Observables.Redis.R3", redisR3PackageId);
+            out var redisDomain));
+        Assert.Equal("Redis", redisDomain.DisplayName);
+        Assert.False(ProxyDomainTable.TryGetDomainByBackendPackageId("Observables.Redis", out _));
     }
 
     [Fact]

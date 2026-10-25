@@ -37,7 +37,8 @@ internal static class RestApiReturnTypeClassifier
             return ReturnTypeInfo.SyncVoid;
         }
 
-        if (returnType.MetadataName == "Task")
+        if (returnType.MetadataName == "Task"
+            && returnType.ContainingNamespace?.ToDisplayString() == "System.Threading.Tasks")
         {
             return ReturnTypeInfo.AsyncVoid;
         }
@@ -49,7 +50,8 @@ internal static class RestApiReturnTypeClassifier
 
         var def = namedType.OriginalDefinition;
         var metadata = def.MetadataName;
-        if (metadata is "Task`1" or "ValueTask`1")
+        if (metadata is "Task`1" or "ValueTask`1"
+            && def.ContainingNamespace?.ToDisplayString() == "System.Threading.Tasks")
         {
             return ReturnTypeInfo.AsyncResult;
         }

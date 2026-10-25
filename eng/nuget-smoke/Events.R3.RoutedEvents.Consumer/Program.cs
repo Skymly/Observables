@@ -7,8 +7,9 @@ internal static class Program
     public static void Main()
     {
         Button button = new();
-        object routed = button.RoutedEvents();
-        if (routed is null)
+        var events = button.RoutedEvents();
+        var stream = events.Click;
+        if (stream is null)
         {
             throw new InvalidOperationException("Events R3 routed generated wrapper was not created.");
         }

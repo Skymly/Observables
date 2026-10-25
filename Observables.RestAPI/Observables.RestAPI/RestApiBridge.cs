@@ -642,7 +642,8 @@ namespace Observables.RestAPI
         }
 
         static bool IsUnitType(Type type) =>
-            type.Name == "Unit"
+            type.IsValueType
+            && type.Name == "Unit"
             && (type.Namespace == "R3" || type.Namespace == "System.Reactive");
 
         static bool IsRestApiResponseWrapper(Type returnType) =>

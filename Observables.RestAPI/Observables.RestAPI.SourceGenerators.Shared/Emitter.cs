@@ -12,6 +12,33 @@ internal static class Emitter
         Action<string, SourceText> addSource
     )
     {
+        // Always emitted (even with zero interfaces): OBS0001's dev-time fallback detects which
+        // backend generator ran via the marker namespace — NuGet consumers use the declared
+        // ObservablesRestAPIBackend_* build_property instead.
+#if RESTAPI_R3
+        addSource(
+            "BackendMarker.g.cs",
+            GeneratedSourceHeader.ToSourceText(
+                """
+                namespace Observables.RestAPI.Generated
+                {
+                    internal static class R3BackendMarker { }
+                }
+                """));
+#elif RESTAPI_REACTIVE
+        addSource(
+            "BackendMarker.g.cs",
+            GeneratedSourceHeader.ToSourceText(
+                """
+                namespace Observables.RestAPI.Reactive.Generated
+                {
+                    internal static class ReactiveBackendMarker { }
+                }
+                """));
+#else
+#error Observables.RestAPI generator requires RESTAPI_R3 or RESTAPI_REACTIVE
+#endif
+
         if (model.Interfaces.Count == 0)
             return;
 

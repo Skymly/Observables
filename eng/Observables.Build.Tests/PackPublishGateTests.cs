@@ -28,6 +28,7 @@ public sealed class PackPublishGateTests
 
         Assert.Contains("Observables.SourceGenerators.props", yaml, StringComparison.Ordinal);
         Assert.Contains("Observables.SourceGenerators.R3.props", yaml, StringComparison.Ordinal);
+        Assert.Contains("Observables.SourceGenerators.SharedSource.props", yaml, StringComparison.Ordinal);
         Assert.Contains("ci-full:", yaml, StringComparison.Ordinal);
     }
 

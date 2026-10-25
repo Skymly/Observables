@@ -4,7 +4,7 @@
 
   <PropertyGroup>
     <Description>Source generator for PostgreSQL LISTEN/NOTIFY proxies → System.Reactive IObservable.</Description>
-    <DefineConstants>$(DefineConstants);ROSLYN_4;POSTGRES_REACTIVE</DefineConstants>
+    <DefineConstants>$(DefineConstants);POSTGRES_REACTIVE</DefineConstants>
   </PropertyGroup>
 
   <ItemGroup>

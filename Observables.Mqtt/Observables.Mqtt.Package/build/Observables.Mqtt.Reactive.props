@@ -1,3 +1,9 @@
 <Project>
-  <!-- Marker props for Observables.Mqtt.Reactive (runtime + analyzer). -->
+  <!-- Declares the Reactive backend for OBS0001 conflict detection (build_property.ObservablesMqttBackend_Reactive). -->
+  <PropertyGroup>
+    <ObservablesMqttBackend_Reactive>true</ObservablesMqttBackend_Reactive>
+  </PropertyGroup>
+  <ItemGroup>
+    <CompilerVisibleProperty Include="ObservablesMqttBackend_Reactive" />
+  </ItemGroup>
 </Project>

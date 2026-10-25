@@ -25,6 +25,29 @@ internal static class ProxyDomainTable
         Events,
     }
 
+    /// <summary>
+    /// Observable backends per domain. Packages for the same domain are pairwise exclusive
+    /// (OBS0001). <see cref="BackendKind.Primitives"/> is modeled ahead of the package itself
+    /// (ADR-005).
+    /// </summary>
+    internal enum BackendKind
+    {
+        R3,
+        Reactive,
+        Primitives,
+    }
+
+    internal static readonly IReadOnlyList<BackendKind> BackendKinds =
+        [BackendKind.R3, BackendKind.Reactive, BackendKind.Primitives];
+
+    /// <summary>
+    /// Backends with a published NuGet package that install-style CodeFixes may offer.
+    /// <see cref="BackendKind.Primitives"/> is modeled for OBS0001 conflict detection but has
+    /// no published package yet (ADR-005), so it must not appear in add-package fixes.
+    /// </summary>
+    internal static readonly IReadOnlyList<BackendKind> InstallableBackendKinds =
+        [BackendKind.R3, BackendKind.Reactive];
+
     internal sealed class BoundaryAttributeSuggestion
     {
         internal BoundaryAttributeSuggestion(string displayText, string insertText)
@@ -54,7 +77,10 @@ internal static class ProxyDomainTable
             string missingRuntimePackageDiagnosticId,
             string missingReactivePackageDiagnosticId,
             IReadOnlyList<BoundaryAttributeSuggestion> methodAttributes,
-            IReadOnlyList<BoundaryAttributeSuggestion> propertyAttributes)
+            IReadOnlyList<BoundaryAttributeSuggestion> propertyAttributes,
+            string? r3MarkerMetadataName = null,
+            string? reactiveMarkerMetadataName = null,
+            string? primitivesMarkerMetadataName = null)
         {
             Kind = kind;
             DisplayName = displayName;
@@ -67,6 +93,9 @@ internal static class ProxyDomainTable
             MissingReactivePackageDiagnosticId = missingReactivePackageDiagnosticId;
             MethodAttributes = methodAttributes;
             PropertyAttributes = propertyAttributes;
+            R3MarkerMetadataName = r3MarkerMetadataName;
+            ReactiveMarkerMetadataName = reactiveMarkerMetadataName;
+            PrimitivesMarkerMetadataName = primitivesMarkerMetadataName;
         }
 
         internal DomainKind Kind { get; }
@@ -95,12 +124,68 @@ internal static class ProxyDomainTable
         /// <summary>Runtime package id, following the Observables.&lt;Feature&gt; naming convention.</summary>
         internal string RuntimePackageName => $"Observables.{DisplayName}";
 
+        /// <summary>R3 bridge assembly name; equals <see cref="R3PackageName"/> by repository convention.</summary>
+        internal string R3AssemblyName => $"Observables.{DisplayName}.R3";
+
         /// <summary>Reactive bridge assembly name; equals <see cref="ReactivePackageName"/> by repository convention.</summary>
         internal string ReactiveAssemblyName => $"Observables.{DisplayName}.Reactive";
 
+        /// <summary>Primitives bridge assembly name; equals <see cref="PrimitivesPackageName"/> by repository convention.</summary>
+        internal string PrimitivesAssemblyName => $"Observables.{DisplayName}.Primitives";
+
+        internal string R3PackageName => R3AssemblyName;
+
         internal string ReactivePackageName => ReactiveAssemblyName;
 
-        internal string R3PackageName => $"Observables.{DisplayName}.R3";
+        /// <summary>ReactiveUI.Primitives backend package id (ADR-005; package not yet published).</summary>
+        internal string PrimitivesPackageName => PrimitivesAssemblyName;
+
+        /// <summary>
+        /// Metadata name of a type the backend's generator emits into the consuming compilation
+        /// (or a type in the backend bridge assembly). Used by OBS0001's dev-time symbol fallback
+        /// when the package-declared <c>build_property</c> signal is absent.
+        /// </summary>
+        internal string? R3MarkerMetadataName { get; }
+
+        /// <inheritdoc cref="R3MarkerMetadataName"/>
+        internal string? ReactiveMarkerMetadataName { get; }
+
+        /// <inheritdoc cref="R3MarkerMetadataName"/>
+        internal string? PrimitivesMarkerMetadataName { get; }
+
+        internal string BackendPackageName(BackendKind backend) => backend switch
+        {
+            BackendKind.R3 => R3PackageName,
+            BackendKind.Reactive => ReactivePackageName,
+            BackendKind.Primitives => PrimitivesPackageName,
+            _ => throw new ArgumentOutOfRangeException(nameof(backend)),
+        };
+
+        internal string BackendAssemblyName(BackendKind backend) => backend switch
+        {
+            BackendKind.R3 => R3AssemblyName,
+            BackendKind.Reactive => ReactiveAssemblyName,
+            BackendKind.Primitives => PrimitivesAssemblyName,
+            _ => throw new ArgumentOutOfRangeException(nameof(backend)),
+        };
+
+        /// <summary>
+        /// MSBuild property the backend package's buildTransitive props set to <c>true</c>
+        /// (consumed by OBS0001 as <c>build_property.&lt;key&gt;</c>).
+        /// </summary>
+        internal string BackendKeyName(BackendKind backend) =>
+            $"Observables{DisplayName}Backend_{backend}";
+
+        internal string? BackendMarkerMetadataName(BackendKind backend) => backend switch
+        {
+            BackendKind.R3 => R3MarkerMetadataName,
+            BackendKind.Reactive => ReactiveMarkerMetadataName,
+            BackendKind.Primitives => PrimitivesMarkerMetadataName,
+            _ => throw new ArgumentOutOfRangeException(nameof(backend)),
+        };
+
+        internal IEnumerable<string> BackendPackageIds =>
+            BackendKinds.Select(BackendPackageName);
 
         internal string? DefaultMethodAttribute(string memberName) =>
             FormatAttribute(MethodAttributes.Count > 0 ? MethodAttributes[0] : null, memberName);
@@ -295,7 +380,12 @@ internal static class ProxyDomainTable
         missingRuntimePackageDiagnosticId: "OBS3002",
         missingReactivePackageDiagnosticId: "OBS3005",
         methodAttributes: [],
-        propertyAttributes: []);
+        propertyAttributes: [],
+        // RestAPI emits no bridge assembly for R3 and generates into
+        // Observables.RestAPI.Implementation for both backends; the dedicated marker types are
+        // the only reliable symbol-level backend signal.
+        r3MarkerMetadataName: "Observables.RestAPI.Generated.R3BackendMarker",
+        reactiveMarkerMetadataName: "Observables.RestAPI.Reactive.Generated.ReactiveBackendMarker");
 
     /// <summary>
     /// Events is generator-only (no interface-proxy marker). It still participates in OBS0001
@@ -312,7 +402,11 @@ internal static class ProxyDomainTable
         missingRuntimePackageDiagnosticId: "",
         missingReactivePackageDiagnosticId: "",
         methodAttributes: [],
-        propertyAttributes: []);
+        propertyAttributes: [],
+        // Events ships no bridge assemblies; each backend generator emits a bootstrap type in a
+        // backend-specific namespace instead.
+        r3MarkerMetadataName: "Observables.Events.R3.ObservableEventsBootstrapExtensions",
+        reactiveMarkerMetadataName: "Observables.Events.Reactive.ObservableEventsBootstrapExtensions");
 
     /// <summary>
     /// Domains with interface markers (including RestAPI). Used by empty-interface analysis.
@@ -375,12 +469,15 @@ internal static class ProxyDomainTable
             d => d.ReactivePackageName,
             StringComparer.Ordinal);
 
-    /// <summary>Reactive package id to R3 package id (the conflicting backend switch target).</summary>
-    internal static readonly ImmutableDictionary<string, string> R3PackageByReactivePackageId =
-        InterfaceProxyDomains.ToImmutableDictionary(
-            d => d.ReactivePackageName,
-            d => d.R3PackageName,
-            StringComparer.Ordinal);
+    /// <summary>Backend package id (R3/Reactive/Primitives) to its domain.</summary>
+    internal static readonly ImmutableDictionary<string, ProxyDomainDefinition> DomainByBackendPackageId =
+        ConsumerPackageConflictDomains
+            .SelectMany(d => d.BackendPackageIds.Select(id => (id, d)))
+            .ToImmutableDictionary(pair => pair.id, pair => pair.d, StringComparer.Ordinal);
+
+    /// <summary>Flat list of every domain's three backend package ids.</summary>
+    internal static readonly ImmutableArray<string> AllBackendPackageIds =
+        ConsumerPackageConflictDomains.SelectMany(d => d.BackendPackageIds).ToImmutableArray();
 
     internal static bool TryGetByMissingRuntimeDiagnosticId(string diagnosticId, out ProxyDomainDefinition domain)
     {
@@ -412,6 +509,9 @@ internal static class ProxyDomainTable
         domain = null!;
         return false;
     }
+
+    internal static bool TryGetDomainByBackendPackageId(string packageId, out ProxyDomainDefinition domain) =>
+        DomainByBackendPackageId.TryGetValue(packageId, out domain!);
 
     internal static ProxyDomainDefinition Get(DomainKind kind) =>
         kind switch

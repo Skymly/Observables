@@ -77,13 +77,17 @@ internal sealed class EventInterfaceDescriptor
         string interfaceName,
         string implName,
         ImmutableArray<IEventSymbol> exclusiveEvents,
-        ImmutableArray<INamedTypeSymbol> parentTypes)
+        ImmutableArray<INamedTypeSymbol> parentTypes,
+        ImmutableArray<IEventSymbol> skippedConflictingEvents = default)
     {
         SourceType = sourceType;
         InterfaceName = interfaceName;
         ImplName = implName;
         ExclusiveEvents = exclusiveEvents;
         ParentTypes = parentTypes;
+        SkippedConflictingEvents = skippedConflictingEvents.IsDefault
+            ? ImmutableArray<IEventSymbol>.Empty
+            : skippedConflictingEvents;
     }
 
     public INamedTypeSymbol SourceType { get; }
@@ -91,4 +95,10 @@ internal sealed class EventInterfaceDescriptor
     public string ImplName { get; set; }
     public ImmutableArray<IEventSymbol> ExclusiveEvents { get; }
     public ImmutableArray<INamedTypeSymbol> ParentTypes { get; }
+
+    /// <summary>
+    /// Events dropped while merging this type's parents: the same name is inherited through more
+    /// than one parent with incompatible delegate types (reported as OBS2006).
+    /// </summary>
+    public ImmutableArray<IEventSymbol> SkippedConflictingEvents { get; }
 }

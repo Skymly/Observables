@@ -24,8 +24,10 @@ public sealed class AddRuntimePackageReferenceCodeFixProvider : CodeFixProvider
         if (!ProxyDomainTable.TryGetByMissingRuntimeDiagnosticId(diagnostic.Id, out var domain))
             return Task.CompletedTask;
 
-        RegisterPackageFix(context, diagnostic, domain.R3PackageName);
-        RegisterPackageFix(context, diagnostic, domain.ReactivePackageName);
+        foreach (var backend in ProxyDomainTable.InstallableBackendKinds)
+        {
+            RegisterPackageFix(context, diagnostic, domain.BackendPackageName(backend));
+        }
 
         return Task.CompletedTask;
     }
@@ -64,22 +66,12 @@ public sealed class AddRuntimePackageReferenceCodeFixProvider : CodeFixProvider
 
     internal static string? InferVersionFromSiblingPackages(string csprojContent, string runtimePackageId)
     {
-        foreach (var pair in ProxyDomainTable.R3PackageByReactivePackageId)
+        foreach (var backendPackageId in ProxyDomainTable.AllBackendPackageIds)
         {
-            if (!pair.Value.StartsWith(runtimePackageId + ".", StringComparison.Ordinal))
+            if (!backendPackageId.StartsWith(runtimePackageId + ".", StringComparison.Ordinal))
                 continue;
 
-            var version = CsprojPackageReferenceEditor.TryGetPackageVersion(csprojContent, pair.Value);
-            if (version is not null)
-                return version;
-        }
-
-        foreach (var reactivePackage in ProxyDomainTable.ReactivePackageByDiagnosticId.Values)
-        {
-            if (!reactivePackage.StartsWith(runtimePackageId + ".", StringComparison.Ordinal))
-                continue;
-
-            var version = CsprojPackageReferenceEditor.TryGetPackageVersion(csprojContent, reactivePackage);
+            var version = CsprojPackageReferenceEditor.TryGetPackageVersion(csprojContent, backendPackageId);
             if (version is not null)
                 return version;
         }

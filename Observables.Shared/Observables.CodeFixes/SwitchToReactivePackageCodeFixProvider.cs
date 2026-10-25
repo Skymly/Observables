@@ -34,17 +34,18 @@ public sealed class SwitchToReactivePackageCodeFixProvider : CodeFixProvider
                 equivalenceKey: $"{nameof(SwitchToReactivePackageCodeFixProvider)}:Add:{reactivePackageId}"),
             diagnostic);
 
-        if (ProxyDomainTable.R3PackageByReactivePackageId.TryGetValue(
-                reactivePackageId,
-                out var r3PackageId))
+        if (ProxyDomainTable.TryGetDomainByBackendPackageId(reactivePackageId, out var domain))
         {
+            var siblingPackageIds = domain.BackendPackageIds
+                .Where(id => !string.Equals(id, reactivePackageId, StringComparison.Ordinal))
+                .ToImmutableArray();
             context.RegisterCodeFix(
                 CodeAction.Create(
                     title: $"Switch to '{reactivePackageId}' package",
                     createChangedSolution: cancellationToken =>
                         SwitchToReactivePackageAsync(
                             context.Document.Project,
-                            r3PackageId,
+                            siblingPackageIds,
                             reactivePackageId,
                             cancellationToken),
                     equivalenceKey: $"{nameof(SwitchToReactivePackageCodeFixProvider)}:Switch:{reactivePackageId}"),
@@ -75,7 +76,7 @@ public sealed class SwitchToReactivePackageCodeFixProvider : CodeFixProvider
 
     internal static Task<Solution> SwitchToReactivePackageAsync(
         Project project,
-        string r3PackageId,
+        IReadOnlyList<string> removedPackageIds,
         string reactivePackageId,
         CancellationToken cancellationToken)
     {
@@ -84,26 +85,49 @@ public sealed class SwitchToReactivePackageCodeFixProvider : CodeFixProvider
             project,
             content =>
             {
-                var version = CsprojPackageReferenceEditor.TryGetPackageVersion(content, r3PackageId)
-                    ?? InferReactivePackageVersion(content, reactivePackageId);
-                return CsprojPackageReferenceEditor.ReplacePackageReference(
-                    content,
-                    r3PackageId,
-                    reactivePackageId,
-                    version);
+                // Keep the reactive package, drop every other backend package for the domain:
+                // rename the first present sibling in place (preserves Version), remove the rest.
+                var version = InferReactivePackageVersion(content, reactivePackageId);
+                var updated = content;
+                var switched = false;
+                foreach (var removedPackageId in removedPackageIds)
+                {
+                    if (!switched
+                        && CsprojPackageReferenceEditor.ContainsPackageReference(updated, removedPackageId))
+                    {
+                        updated = CsprojPackageReferenceEditor.ReplacePackageReference(
+                            updated,
+                            removedPackageId,
+                            reactivePackageId,
+                            version);
+                        switched = true;
+                    }
+                    else
+                    {
+                        updated = CsprojPackageReferenceEditor.RemovePackageReference(updated, removedPackageId);
+                    }
+                }
+
+                return switched
+                    ? updated
+                    : CsprojPackageReferenceEditor.AddPackageReferenceIfMissing(updated, reactivePackageId, version);
             },
             cancellationToken);
     }
 
     internal static string? InferReactivePackageVersion(string csprojContent, string reactivePackageId)
     {
-        if (ProxyDomainTable.R3PackageByReactivePackageId.TryGetValue(
-                reactivePackageId,
-                out var r3PackageId))
+        if (ProxyDomainTable.TryGetDomainByBackendPackageId(reactivePackageId, out var domain))
         {
-            var version = CsprojPackageReferenceEditor.TryGetPackageVersion(csprojContent, r3PackageId);
-            if (version is not null)
-                return version;
+            foreach (var backendPackageId in domain.BackendPackageIds)
+            {
+                if (string.Equals(backendPackageId, reactivePackageId, StringComparison.Ordinal))
+                    continue;
+
+                var version = CsprojPackageReferenceEditor.TryGetPackageVersion(csprojContent, backendPackageId);
+                if (version is not null)
+                    return version;
+            }
         }
 
         return CsprojPackageReferenceEditor.TryGetPackageVersion(csprojContent, reactivePackageId);

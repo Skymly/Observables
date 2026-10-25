@@ -21,8 +21,7 @@ public sealed partial class ObservableEventsGenerator : IIncrementalGenerator
                 $"{ObservableEventsConstants.GeneratedNamespace}.ObservableEventsBootstrapExtensions.g.cs",
                 SourceText.From(
                     GeneratedSourceHeader.ToSource(
-                        EventsBootstrapSyntaxFactory.CreateClassicObservableEventsBootstrapExtensionsCompilationUnit(
-                            ObservableEventsConstants.StaticObservableEventsGenerationEnabled)),
+                        EventsBootstrapSyntaxFactory.CreateClassicObservableEventsBootstrapExtensionsCompilationUnit()),
                     Encoding.UTF8));
             ctx.AddSource(
                 $"{ObservableEventsConstants.GeneratedNamespace}.NullEvents.g.cs",
@@ -37,11 +36,9 @@ public sealed partial class ObservableEventsGenerator : IIncrementalGenerator
                     Encoding.UTF8));
 #endif
         });
-        RegisterObservableEventsStaticsShellPostInit(context);
 
         var observableEventsCandidates = context.SyntaxProvider.CreateSyntaxProvider(
-            static (syntax, _) => IsObservableEventsInstanceEntryInvocation(syntax)
-                || (ObservableEventsConstants.StaticObservableEventsGenerationEnabled && IsStaticEventsEntryMemberAccess(syntax)),
+            static (syntax, _) => IsObservableEventsInstanceEntryInvocation(syntax),
             static (syntaxContext, _) => syntaxContext.Node);
 
         var analyzerConfig = context.AnalyzerConfigOptionsProvider.Select(static (provider, _) =>
@@ -126,7 +123,16 @@ public sealed partial class ObservableEventsGenerator : IIncrementalGenerator
                 "OBS2006" => DiagnosticDescriptors.IncompatibleEventMerge,
                 _ => null,
             };
-            if (descriptor is null) continue;
+            if (descriptor is null)
+            {
+                // A captured diagnostic whose id has no mapping must surface, not vanish.
+                spc.ReportDiagnostic(Diagnostic.Create(
+                    DiagnosticDescriptors.InternalGeneratorError,
+                    Microsoft.CodeAnalysis.Location.None,
+                    "unmapped diagnostic id",
+                    diag.DescriptorId));
+                continue;
+            }
 
             var location = diag.LocationFilePath is not null
                 ? Microsoft.CodeAnalysis.Location.Create(

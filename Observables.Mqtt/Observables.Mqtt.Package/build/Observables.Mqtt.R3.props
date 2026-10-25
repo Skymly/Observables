@@ -1,3 +1,9 @@
 <Project>
-  <!-- Marker props for Observables.Mqtt.R3 (runtime + analyzer). -->
+  <!-- Declares the R3 backend for OBS0001 conflict detection (build_property.ObservablesMqttBackend_R3). -->
+  <PropertyGroup>
+    <ObservablesMqttBackend_R3>true</ObservablesMqttBackend_R3>
+  </PropertyGroup>
+  <ItemGroup>
+    <CompilerVisibleProperty Include="ObservablesMqttBackend_R3" />
+  </ItemGroup>
 </Project>

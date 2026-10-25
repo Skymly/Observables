@@ -24,7 +24,7 @@ public sealed class AddRuntimePackageReferenceCodeFixProvider : CodeFixProvider
         if (!ProxyDomainTable.TryGetByMissingRuntimeDiagnosticId(diagnostic.Id, out var domain))
             return Task.CompletedTask;
 
-        foreach (var backend in ProxyDomainTable.BackendKinds)
+        foreach (var backend in ProxyDomainTable.InstallableBackendKinds)
         {
             RegisterPackageFix(context, diagnostic, domain.BackendPackageName(backend));
         }

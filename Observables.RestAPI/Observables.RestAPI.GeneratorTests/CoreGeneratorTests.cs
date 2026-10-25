@@ -63,6 +63,40 @@ public class CoreGeneratorTests
     }
 
     [Fact]
+    public void Static_header_declared_on_two_base_interfaces_is_emitted_once()
+    {
+        GeneratorRunOutput output = GeneratorTestHarness.Run(
+            """
+            [Headers("X-Shared: 1")]
+            public interface IBaseA
+            {
+            }
+
+            [Headers("X-Shared: 1")]
+            public interface IBaseB
+            {
+            }
+
+            public interface IUserApi : IBaseA, IBaseB
+            {
+                [Get("/users")]
+                Task<string> GetUsers();
+            }
+            """);
+
+        string generated = string.Concat(output.GeneratedSources.Select(static s => s.Source));
+
+        Assert.Contains(
+            "staticHeaders: new string[] { \"X-Shared: 1\" }",
+            generated,
+            StringComparison.Ordinal);
+        Assert.DoesNotContain(
+            "\"X-Shared: 1\", \"X-Shared: 1\"",
+            generated,
+            StringComparison.Ordinal);
+    }
+
+    [Fact]
     public Task GetObservableUser_uses_from_async()
     {
         GeneratorRunOutput output = GeneratorTestHarness.Run(

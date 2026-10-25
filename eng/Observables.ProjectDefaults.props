@@ -25,7 +25,9 @@
     <_ObsIsTestProject>false</_ObsIsTestProject>
     <_ObsIsTestProject Condition="$(MSBuildProjectName.EndsWith('.Tests'))">true</_ObsIsTestProject>
     <_ObsIsTestProject Condition="$(MSBuildProjectName.EndsWith('.GeneratorTests'))">true</_ObsIsTestProject>
-    <!-- Domain folder = root Observables.<Domain>/ other than Shared / Events (Events' projects have dedicated rules). -->
+    <!-- Domain folder = root Observables.<Domain>/ other than Shared / Events (Events' projects have dedicated rules).
+         Prefix match by design: any future Observables.* root folder that is not Shared / Events / eng
+         is a domain tree and inherits these defaults. -->
     <_ObsIsDomainFolder>false</_ObsIsDomainFolder>
     <_ObsIsDomainFolder Condition="$(_ObsProjectDir.Contains('/Observables.')) and !$(_ObsProjectDir.Contains('/Observables.Shared/')) and !$(_ObsProjectDir.Contains('/Observables.Events/')) and !$(_ObsProjectDir.Contains('/eng/'))">true</_ObsIsDomainFolder>
     <_ObsIsEventsPackProject>false</_ObsIsEventsPackProject>

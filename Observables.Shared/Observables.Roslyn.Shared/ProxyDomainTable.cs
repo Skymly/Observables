@@ -40,6 +40,14 @@ internal static class ProxyDomainTable
     internal static readonly IReadOnlyList<BackendKind> BackendKinds =
         [BackendKind.R3, BackendKind.Reactive, BackendKind.Primitives];
 
+    /// <summary>
+    /// Backends with a published NuGet package that install-style CodeFixes may offer.
+    /// <see cref="BackendKind.Primitives"/> is modeled for OBS0001 conflict detection but has
+    /// no published package yet (ADR-005), so it must not appear in add-package fixes.
+    /// </summary>
+    internal static readonly IReadOnlyList<BackendKind> InstallableBackendKinds =
+        [BackendKind.R3, BackendKind.Reactive];
+
     internal sealed class BoundaryAttributeSuggestion
     {
         internal BoundaryAttributeSuggestion(string displayText, string insertText)

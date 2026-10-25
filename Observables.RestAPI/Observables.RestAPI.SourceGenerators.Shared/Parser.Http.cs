@@ -210,7 +210,11 @@ internal static partial class Parser
             QueryUriFormat: queryUriFormat,
             BodySerializationMethod: bodySerializationMethod,
             BodyBuffered: bodyBuffered,
-            StaticHeaders: headersList.ToImmutableEquatableArray());
+            // The same header string may be declared on several interfaces in the chain (or
+            // repeated between interface and method level); send it once, first wins.
+            StaticHeaders: headersList
+                .Distinct(System.StringComparer.Ordinal)
+                .ToImmutableEquatableArray());
 
         return new ParsedHttpMethod(parameters, spec, cancellationTokenIndex);
     }

@@ -124,7 +124,9 @@ namespace Observables.RestAPI
                 }
 
                 // Not the head: disposed out of order on this flow. Unlink so a later pop
-                // skips this scope instead of restoring it.
+                // skips this scope instead of restoring it. Previous is mutated without
+                // synchronization: scopes are AsyncLocal-affine — each flow disposes its own
+                // chain, so concurrent unlink on a chain shared across flows is unsupported.
                 for (var cursor = head; cursor != null; cursor = cursor.Previous)
                 {
                     if (ReferenceEquals(cursor.Previous, _node))

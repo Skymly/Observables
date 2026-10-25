@@ -2062,14 +2062,19 @@
             后续的订阅或线程池发送仍能看到进入时生效的选项。
             </para>
             <para>
+            <see cref="M:Observables.RestAPI.RestApiCallScope.Push(System.Collections.Generic.IReadOnlyDictionary{System.String,System.Object})"/> 只立即复制字典结构。
+            选项值按引用共享，因此在 Push 之后修改可变值仍会影响持有该快照的后续绑定。
+            </para>
+            <para>
             嵌套作用域覆盖内层键、继承外层键。按 <see cref="M:Observables.RestAPI.RestApiCallScope.Push(System.Collections.Generic.IReadOnlyDictionary{System.String,System.Object})"/> 的相反顺序释放作用域。
+            同一异步流上内层作用域仍生效时释放外层，不会替换该内层作用域。被释放的作用域会从链上摘除，之后的弹出不会再恢复它。
             不同异步流上的并发调用彼此看不到对方的快照。
             </para>
             <para>
             优先级从低到高：<see cref="P:Observables.RestAPI.RestApiSettings.HttpRequestMessageOptions"/>，然后是此快照，
             然后是同键上的 <see cref="T:Observables.RestAPI.PropertyAttribute"/> 参数。
-            对于使用 <c>HttpRequestMessage.Options.TryGetValue</c> 的处理程序，快照中的 null 值会清除该键，
-            因为 TryGetValue 不会暴露已存储的 null。
+            快照中的 null 值会清除该键。.NET 6 及更高版本上，<c>HttpRequestMessage.Options.TryGetValue</c> 不会暴露已存储的 null。
+            在 netstandard2.0 上，该键会从 <c>HttpRequestMessage.Properties</c> 移除，因此 <c>ContainsKey</c> 和 <c>TryGetValue</c> 都表现为该键已清除。
             </para>
             </remarks>
         </member>

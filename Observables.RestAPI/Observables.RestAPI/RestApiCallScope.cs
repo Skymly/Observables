@@ -15,19 +15,29 @@ namespace Observables.RestAPI
     /// even after this scope has been disposed.
     /// </para>
     /// <para>
+    /// <see cref="Push"/> copies the dictionary structure immediately. Option values are shared by
+    /// reference, so mutating a mutable value after <see cref="Push"/> still affects later binds
+    /// that hold the snapshot.
+    /// </para>
+    /// <para>
     /// Nested scopes override inner keys and inherit outer keys. Dispose scopes in reverse order
-    /// of <see cref="Push"/>. Concurrent calls on different async flows do not see each other's snapshots.
+    /// of <see cref="Push"/>. Disposing an outer scope while an inner scope is still current on the
+    /// same async flow does not replace that inner scope. The disposed scope is removed from the
+    /// chain, so a later pop does not restore it. Concurrent calls on different async flows do not
+    /// see each other's snapshots.
     /// </para>
     /// <para>
     /// Precedence, lowest first: <see cref="RestApiSettings.HttpRequestMessageOptions"/>, then this
     /// snapshot, then a <see cref="PropertyAttribute"/> parameter on the same key.
-    /// A null snapshot value clears that key for handlers using <c>HttpRequestMessage.Options.TryGetValue</c>,
-    /// which does not surface a stored null.
+    /// A null snapshot value clears that key. On .NET 6 and later,
+    /// <c>HttpRequestMessage.Options.TryGetValue</c> does not surface a stored null. On
+    /// netstandard2.0 the key is removed from <c>HttpRequestMessage.Properties</c>, so
+    /// <c>ContainsKey</c> and <c>TryGetValue</c> agree with that clear.
     /// </para>
     /// </remarks>
     public static class RestApiCallScope
     {
-        static readonly AsyncLocal<IReadOnlyDictionary<string, object?>?> Current = new();
+        static readonly AsyncLocal<ScopeNode?> Current = new();
 
         /// <summary>
         /// Pushes call options for proxy methods entered before the returned scope is disposed.
@@ -51,15 +61,16 @@ namespace Observables.RestAPI
             }
 
             var previous = Current.Value;
-            Current.Value = Freeze(previous, options);
-            return new Scope(previous);
+            var node = new ScopeNode(Freeze(previous?.Options, options), previous);
+            Current.Value = node;
+            return new Scope(node);
         }
 
         /// <summary>
         /// Returns the immutable options current on this async flow, or <c>null</c> when no scope is current.
         /// </summary>
         /// <remarks>Public because generated proxy code runs in the consumer assembly.</remarks>
-        public static IReadOnlyDictionary<string, object?>? Capture() => Current.Value;
+        public static IReadOnlyDictionary<string, object?>? Capture() => Current.Value?.Options;
 
         static IReadOnlyDictionary<string, object?> Freeze(
             IReadOnlyDictionary<string, object?>? outer,
@@ -80,19 +91,50 @@ namespace Observables.RestAPI
             return new ReadOnlyDictionary<string, object?>(copy);
         }
 
+        sealed class ScopeNode
+        {
+            public ScopeNode(IReadOnlyDictionary<string, object?> options, ScopeNode? previous)
+            {
+                Options = options;
+                Previous = previous;
+            }
+
+            public IReadOnlyDictionary<string, object?> Options { get; }
+
+            public ScopeNode? Previous { get; set; }
+        }
+
         sealed class Scope : IDisposable
         {
-            readonly IReadOnlyDictionary<string, object?>? _previous;
+            readonly ScopeNode _node;
             int _disposed;
 
-            public Scope(IReadOnlyDictionary<string, object?>? previous) => _previous = previous;
+            public Scope(ScopeNode node) => _node = node;
 
             public void Dispose()
             {
                 if (Interlocked.Exchange(ref _disposed, 1) != 0)
                     return;
 
-                Current.Value = _previous;
+                var head = Current.Value;
+                if (ReferenceEquals(head, _node))
+                {
+                    Current.Value = _node.Previous;
+                    return;
+                }
+
+                // Not the head: disposed out of order on this flow. Unlink so a later pop
+                // skips this scope instead of restoring it. Previous is mutated without
+                // synchronization: scopes are AsyncLocal-affine — each flow disposes its own
+                // chain, so concurrent unlink on a chain shared across flows is unsupported.
+                for (var cursor = head; cursor != null; cursor = cursor.Previous)
+                {
+                    if (ReferenceEquals(cursor.Previous, _node))
+                    {
+                        cursor.Previous = _node.Previous;
+                        return;
+                    }
+                }
             }
         }
     }

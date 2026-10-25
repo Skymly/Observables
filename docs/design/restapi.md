@@ -115,13 +115,34 @@ public class RestApiSettings
 }
 ```
 
-读取时机（`RestApiProtocol.Bind` 构造 `HttpRequestMessage` 时）：`HttpRequestMessageOptions` 先灌进 `request.Options`（ns2.0 上是 `request.Properties`），再走参数绑定，所以 `[Property]` 参数同名时覆盖设置里的值——设置是默认值，参数是本次调用的值。`Version` / `VersionPolicy` 直接赋给请求上的同名属性（NET6+）。`UrlParameterKeyFormatter` 在 `AddQueryParameter` 里格式化 query 键，`[Query(Prefix)]` 的前缀按原样保留，只格式化键本身；并且**只格式化推断出来的键**——写了 `[AliasAs("…")]` 就是最终线上名字，跳过 formatter（与 Refit 一致）。这一位由生成器在编译期定下：`QueryOptions.WithExplicitName()` 只在有 alias 时发射，运行时靠 `QueryOptions.NameIsExplicit` 读它。之所以是方法而不是再加一个构造重载，是因为已 ship 的那个带可选参数的构造函数必须保持「公共重载里参数最多」（RS0027）。
+读取时机（`RestApiProtocol.Bind` 构造 `HttpRequestMessage` 时）：先灌 `HttpRequestMessageOptions`，再灌代理入口捕获的 `RestApiCallScope` 快照（见 §3.5），最后走参数绑定——优先级由低到高为「设置 < 入口快照 < `[Property]` 参数」，同键后者覆盖前者。设置是默认值，快照与 `[Property]` 是本次调用的值；未 `Push` 作用域的调用方拿到的快照是 `null`，Bind 跳过中间层，行为与 #510 引入 `HttpRequestMessageOptions` 时完全一致。`Version` / `VersionPolicy` 直接赋给请求上的同名属性（NET6+）。`UrlParameterKeyFormatter` 在 `AddQueryParameter` 里格式化 query 键，`[Query(Prefix)]` 的前缀按原样保留，只格式化键本身；并且**只格式化推断出来的键**——写了 `[AliasAs("…")]` 就是最终线上名字，跳过 formatter（与 Refit 一致）。这一位由生成器在编译期定下：`QueryOptions.WithExplicitName()` 只在有 alias 时发射，运行时靠 `QueryOptions.NameIsExplicit` 读它。之所以是方法而不是再加一个构造重载，是因为已 ship 的那个带可选参数的构造函数必须保持「公共重载里参数最多」（RS0027）。
 
 公开的 `RestApiBridge.AddQueryParameter` 重载签名不动，行为也不变（照旧格式化每个键）；带 `nameIsExplicit` 的是 internal 重载，只有 `Bind` 走。
 
 仍未对齐 Refit 的部分：Refit 还会把 query object 展开后对每个属性名调这个 formatter，Observables 目前不展开 query object（非集合的对象整体 `FormatQueryValue` 成单个值）。
 
-### 3.5 响应与异常
+### 3.5 每次调用选项（`RestApiCallScope`）
+
+```csharp
+public static class RestApiCallScope
+{
+    // 为作用域存续期间进入的代理方法安装请求选项；返回的 IDisposable 恢复上一作用域
+    public static IDisposable Push(IReadOnlyDictionary<string, object?> options);
+
+    // 返回当前 async flow 上的不可变快照；无作用域时为 null
+    public static IReadOnlyDictionary<string, object?>? Capture();
+}
+```
+
+- **存储**：`AsyncLocal` 节点链，按 async flow 隔离——不同 flow 上的并发调用互不可见对方快照。
+- **`Push`** 立即把「外层继承 + 内层覆盖」合并冻结为 `ReadOnlyDictionary`（`StringComparer.Ordinal`）：字典结构从此固定，之后改 `options` 字典本身无影响；但选项**值**按引用共享，改可变值仍影响持有该快照的 Bind。`options` 为 `null` 抛 `ArgumentNullException`，键为 `null` 抛 `ArgumentException`。
+- **Dispose**：按 `Push` 逆序（LIFO）。乱序 Dispose 不顶替当前内层作用域——节点直接从链上摘除，之后的 pop 也不会复活它；重复 Dispose 幂等。
+- **入口快照**：生成代理在**方法入口**调 `Capture()`——Task 变体在第一行，同步 `void`/非 await 变体在 `Task.Run` 之前，Observable 变体在 `FromAsync` 之外——快照作为 `callOptions` 传给 `RestApiBridge.SendAsync` / `SendVoidAsync`。`RestApiProtocol.Bind` **不得**再读 ambient 作用域：Bind/发送可能晚于作用域 Dispose（延迟订阅、线程池发送），回读会拿到与入口时不一致的值。
+- **优先级**（低→高）：`RestApiSettings.HttpRequestMessageOptions` → 入口快照 → 同键 `[Property]` 参数。快照为 `null`（未 `Push`）时 Bind 跳过中间层，等价于 #510 的二层行为。
+- **TFM 存储与 null 语义**：ns2.0 写 `HttpRequestMessage.Properties`，net6+ 写 `Options`（生成代码内嵌 `#if` 由消费者编译器选择，见 §4.5）。值为 `null` 表示清除该键的设置值——net6+ 存的是 null，`Options.TryGetValue` 不显露已存 null；ns2.0 直接 `Remove` 该键，使 `ContainsKey` / `TryGetValue` 与清除语义一致。注意 `HttpRequestMessageOptions` 的值类型是 `object`（非空），只有快照与 `[Property]` 参数能表达「清除」。
+- **可见性**：带 `callOptions` 的 `SendAsync` / `SendVoidAsync` 重载标 `EditorBrowsableState.Never`——public 仅因生成代码运行在消费者程序集；无 `callOptions` 的同名重载转发 `callOptions: null`。
+
+### 3.6 响应与异常
 
 | 类型 | 用途 |
 |------|------|
@@ -189,9 +210,9 @@ internal static partial class Generated
 ```csharp
 public global::R3.Observable<global::User> GetUserObservable(int id)
 {
+    var ______scope = RestApiCallScope.Capture();       // 入口快照，在 FromAsync 之外
     return global::R3.Observable.FromAsync(async ct =>
     {
-        var ______scope = RestApiCallScope.Capture();
         return await RestApiBridge.SendAsync<global::User, global::User>(
             Client, _settings, in ______spec0, ______scope, ct, @id)
             .ConfigureAwait(false);
@@ -199,7 +220,7 @@ public global::R3.Observable<global::User> GetUserObservable(int id)
 }
 ```
 
-Reactive 包对应为 `Observables.RestAPI.Reactive.SystemReactiveObservableAdapter.FromAsync(async ct => ...)`。发送路径统一走 `RestApiBridge.SendAsync(client, settings, in MethodSpec, callOptions, ct, params args)`：`RestApiProtocol.Bind` 按 `MethodSpec` 的 `Binding[]` 槽把 `args` 组装成 `HttpRequestMessage`，`RestApiCallScope.Capture()` 把每次调用线程局部的请求选项固化为本次调用的 `callOptions`。
+Reactive 包对应为 `Observables.RestAPI.Reactive.SystemReactiveObservableAdapter.FromAsync(async ct => ...)`。发送路径统一走 `RestApiBridge.SendAsync(client, settings, in MethodSpec, callOptions, ct, params args)`：`RestApiProtocol.Bind` 按 `MethodSpec` 的 `Binding[]` 槽把 `args` 组装成 `HttpRequestMessage`；`RestApiCallScope.Capture()` 在代理方法入口把当前 async flow 的请求选项固化为 `callOptions`（见 §3.5），`Bind` 只消费该快照、不回读 ambient 作用域。
 
 ### 4.2 ModuleInitializer 注册
 
@@ -349,6 +370,7 @@ Observables.RestAPI/
 | **`#if NET6_0_OR_GREATER` 嵌入生成代码** | `HttpRequestMessage.Options` vs `Properties` 由消费者编译器选择 |
 | **`BackendTokens.IsR3` + `#if RESTAPI_R3`（Emitter）** | 返回类型分类与 IO 域共用 compile-time backend seam；Emitter 仍用域级 `#if` 切换发射文本 |
 | **每方法静态 `MethodSpec` + `in` 传递** | 请求形状（HTTP 方法、路径模板、`Binding[]` 槽、flags）编译期定死为静态字段，运行时不重建字符串/元数据 |
+| **入口快照 `RestApiCallScope`（不加方法参数）** | 每次调用选项经 `AsyncLocal` 作用域传入、入口 `Capture()` 冻结为 `callOptions`；`Bind`/发送可能晚于作用域 Dispose（`Task.Run` 池线程、延迟订阅），回读 ambient 会拿到不一致的值；快照优先级介于设置与 `[Property]` 之间，未 `Push` 时为零成本跳过 |
 | **`IApiResponse<T>` 可选不抛异常** | 需要检查状态码/头的场景用 `IApiResponse<T>`；需要抛异常用 `Task<T>` |
 | **HttpClientFactory 独立包** | DI 集成可选，不强制依赖 `Microsoft.Extensions.Http` |
 

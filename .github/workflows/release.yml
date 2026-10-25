@@ -26,6 +26,8 @@ jobs:
     # Do not gate with job-level `if:` — a false condition skips silently
     # (0.1.8); fail the job instead so the miss is visible.
     runs-on: windows-latest
+    outputs:
+      version: ${{ steps.resolve.outputs.version }}
 
     steps:
       - name: Authorize publisher
@@ -56,6 +58,7 @@ jobs:
             10.0.300
 
       - name: Resolve version
+        id: resolve
         shell: bash
         run: |
           if [[ "${GITHUB_EVENT_NAME}" == "workflow_dispatch" ]]; then
@@ -85,6 +88,7 @@ jobs:
 
           echo "Publishing version: ${VERSION}"
           echo "VERSION=${VERSION}" >> "$GITHUB_ENV"
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
 
       - name: Pack, verify, and publish via Nuke
         shell: pwsh
@@ -126,3 +130,122 @@ jobs:
             echo "- Triggering actor: \`${{ github.triggering_actor }}\`"
             echo "- Job status: \`${{ job.status }}\`"
           } >> "$GITHUB_STEP_SUMMARY"
+
+  # Stable releases only: open version-bump PRs in the downstream repos.
+  # Requires secrets.SYNC_TOKEN — a fine-grained PAT with Contents and
+  # Pull requests access to Skymly/Observables.Docs and
+  # Skymly/Observables.Samples. Job failure is visible but does not undo
+  # the (already completed) publish.
+  sync-docs:
+    name: Open version-bump PR in Observables.Docs
+    needs: publish
+    if: needs.publish.result == 'success' && !contains(needs.publish.outputs.version, '-')
+    runs-on: ubuntu-latest
+    env:
+      VERSION: ${{ needs.publish.outputs.version }}
+      GH_TOKEN: ${{ secrets.SYNC_TOKEN }}
+      RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+    steps:
+      - name: Check sync token
+        shell: pwsh
+        run: |
+          if (-not $env:GH_TOKEN) {
+              throw 'secrets.SYNC_TOKEN is not set. Create a fine-grained PAT with Contents + Pull requests access to Skymly/Observables.Docs and Skymly/Observables.Samples.'
+          }
+
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262  # v4
+        with:
+          repository: Skymly/Observables.Docs
+          token: ${{ secrets.SYNC_TOKEN }}
+
+      - name: Bump referenced version
+        shell: pwsh
+        run: ./scripts/sync-observables-version.ps1 -Version $env:VERSION
+
+      - name: Push branch and open PR
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          if (-not (git status --porcelain)) {
+              Write-Host "Already at $env:VERSION; no PR needed."
+              exit 0
+          }
+          $branch = "chore/observables-version-$env:VERSION"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -B $branch
+          git add -A
+          git commit -m "Bump Observables version to $env:VERSION"
+          git push -f origin $branch
+
+          $existing = gh pr list --repo Skymly/Observables.Docs --head $branch --state open --json number --jq '.[0].number'
+          if ($existing) {
+              Write-Host "PR #$existing already exists for $branch."
+              exit 0
+          }
+          $body = @'
+          Automated version sync after [Skymly/Observables](https://github.com/Skymly/Observables) published `__VERSION__` to nuget.org.
+
+          - Rewrites the `%%OBS_VERSION%%` source (`.vitepress/observables-version.ts`) via `scripts/sync-observables-version.ps1`.
+          - Merge once CI is green and the package is visible on nuget.org.
+
+          Part of Observables R1-2. Release run: __RUN_URL__
+          '@ -replace '__VERSION__', "v$env:VERSION" -replace '__RUN_URL__', $env:RUN_URL
+          gh pr create --repo Skymly/Observables.Docs --base main --head $branch --title "Bump Observables version to $env:VERSION" --body $body
+
+  sync-samples:
+    name: Open version-bump PR in Observables.Samples
+    needs: publish
+    if: needs.publish.result == 'success' && !contains(needs.publish.outputs.version, '-')
+    runs-on: ubuntu-latest
+    env:
+      VERSION: ${{ needs.publish.outputs.version }}
+      GH_TOKEN: ${{ secrets.SYNC_TOKEN }}
+      RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+    steps:
+      - name: Check sync token
+        shell: pwsh
+        run: |
+          if (-not $env:GH_TOKEN) {
+              throw 'secrets.SYNC_TOKEN is not set. Create a fine-grained PAT with Contents + Pull requests access to Skymly/Observables.Docs and Skymly/Observables.Samples.'
+          }
+
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262  # v4
+        with:
+          repository: Skymly/Observables.Samples
+          token: ${{ secrets.SYNC_TOKEN }}
+
+      - name: Bump referenced version
+        shell: pwsh
+        run: ./scripts/sync-observables-version.ps1 -Version $env:VERSION
+
+      - name: Push branch and open PR
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          if (-not (git status --porcelain)) {
+              Write-Host "Already at $env:VERSION; no PR needed."
+              exit 0
+          }
+          $branch = "chore/observables-version-$env:VERSION"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -B $branch
+          git add -A
+          git commit -m "Bump Observables version to $env:VERSION"
+          git push -f origin $branch
+
+          $existing = gh pr list --repo Skymly/Observables.Samples --head $branch --state open --json number --jq '.[0].number'
+          if ($existing) {
+              Write-Host "PR #$existing already exists for $branch."
+              exit 0
+          }
+          $body = @'
+          Automated version sync after [Skymly/Observables](https://github.com/Skymly/Observables) published `__VERSION__` to nuget.org.
+
+          - Rewrites `Directory.Build.props`, README and `SampleMetadata.cs` literals via `scripts/sync-observables-version.ps1`.
+          - Merge once CI is green and the packages are visible on nuget.org.
+
+          Part of Observables R1-2. Release run: __RUN_URL__
+          '@ -replace '__VERSION__', "v$env:VERSION" -replace '__RUN_URL__', $env:RUN_URL
+          gh pr create --repo Skymly/Observables.Samples --base main --head $branch --title "Bump Observables version to $env:VERSION" --body $body

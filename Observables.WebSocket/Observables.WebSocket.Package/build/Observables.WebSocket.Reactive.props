@@ -1,3 +1,9 @@
 <Project>
-  <!-- Marker props for Observables.WebSocket.Reactive (runtime + analyzer). -->
+  <!-- Declares the Reactive backend for OBS0001 conflict detection (build_property.ObservablesWebSocketBackend_Reactive). -->
+  <PropertyGroup>
+    <ObservablesWebSocketBackend_Reactive>true</ObservablesWebSocketBackend_Reactive>
+  </PropertyGroup>
+  <ItemGroup>
+    <CompilerVisibleProperty Include="ObservablesWebSocketBackend_Reactive" />
+  </ItemGroup>
 </Project>

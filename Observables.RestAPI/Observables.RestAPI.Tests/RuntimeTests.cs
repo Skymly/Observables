@@ -390,6 +390,77 @@ public sealed class RuntimeTests
         Task<int> Ping();
     }
 
+    [Fact]
+    public async Task TaskGet_deserializes_value_type_response()
+    {
+        var mockHttp = new MockHttpMessageHandler();
+        mockHttp.When(HttpMethod.Get, "https://api.example.com/count")
+            .Respond(HttpStatusCode.OK, "application/json", "42");
+
+        var client = mockHttp.ToHttpClient();
+        client.BaseAddress = new Uri("https://api.example.com");
+        var api = RestService.For<IValueResultApi>(client);
+
+        Assert.Equal(42, await api.GetCount(TestContext.Current.CancellationToken));
+    }
+
+    [Fact]
+    public async Task ValueTaskGet_deserializes_value_type_response()
+    {
+        var mockHttp = new MockHttpMessageHandler();
+        mockHttp.When(HttpMethod.Get, "https://api.example.com/count")
+            .Respond(HttpStatusCode.OK, "application/json", "42");
+
+        var client = mockHttp.ToHttpClient();
+        client.BaseAddress = new Uri("https://api.example.com");
+        var api = RestService.For<IValueResultApi>(client);
+
+        Assert.Equal(42, await api.GetCountValueTask(TestContext.Current.CancellationToken));
+    }
+
+    [Fact]
+    public void SyncGet_deserializes_value_type_response()
+    {
+        var mockHttp = new MockHttpMessageHandler();
+        mockHttp.When(HttpMethod.Get, "https://api.example.com/count")
+            .Respond(HttpStatusCode.OK, "application/json", "42");
+
+        var client = mockHttp.ToHttpClient();
+        client.BaseAddress = new Uri("https://api.example.com");
+        var api = RestService.For<IValueResultApi>(client);
+
+        Assert.Equal(42, api.GetCountSync());
+    }
+
+    [Fact]
+    public async Task ObservableGet_emits_value_type_value()
+    {
+        var mockHttp = new MockHttpMessageHandler();
+        mockHttp.When(HttpMethod.Get, "https://api.example.com/count")
+            .Respond(HttpStatusCode.OK, "application/json", "42");
+
+        var client = mockHttp.ToHttpClient();
+        client.BaseAddress = new Uri("https://api.example.com");
+        var api = RestService.For<IValueResultApi>(client);
+
+        Assert.Equal(42, await api.GetCountObservable().FirstAsync(TestContext.Current.CancellationToken));
+    }
+
+    [Fact]
+    public async Task TaskGet_value_type_wraps_deserialization_failure_in_ApiException()
+    {
+        var mockHttp = new MockHttpMessageHandler();
+        mockHttp.When(HttpMethod.Get, "https://api.example.com/count")
+            .Respond(HttpStatusCode.OK, "application/json", "null");
+
+        var client = mockHttp.ToHttpClient();
+        client.BaseAddress = new Uri("https://api.example.com");
+        var api = RestService.For<IValueResultApi>(client);
+
+        var ex = await Assert.ThrowsAsync<ApiException>(() => api.GetCount(TestContext.Current.CancellationToken));
+        Assert.NotNull(ex.InnerException);
+    }
+
     [Theory]
     [InlineData(HttpStatusCode.NoContent)]
     [InlineData(HttpStatusCode.ResetContent)]
@@ -449,6 +520,21 @@ public sealed class RuntimeTests
 
         [Get("/search")]
         Task<string> Search([Query] string q, CancellationToken cancellationToken = default);
+    }
+
+    public interface IValueResultApi
+    {
+        [Get("/count")]
+        Task<int> GetCount(CancellationToken cancellationToken = default);
+
+        [Get("/count")]
+        ValueTask<int> GetCountValueTask(CancellationToken cancellationToken = default);
+
+        [Get("/count")]
+        int GetCountSync();
+
+        [Get("/count")]
+        Observable<int> GetCountObservable();
     }
 
     public interface IAliasedUserApi

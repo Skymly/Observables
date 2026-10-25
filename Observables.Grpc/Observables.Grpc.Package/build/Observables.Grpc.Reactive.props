@@ -1,3 +1,9 @@
 <Project>
-  <!-- Marker props for Observables.Grpc.Reactive (runtime + analyzer). -->
+  <!-- Declares the Reactive backend for OBS0001 conflict detection (build_property.ObservablesGrpcBackend_Reactive). -->
+  <PropertyGroup>
+    <ObservablesGrpcBackend_Reactive>true</ObservablesGrpcBackend_Reactive>
+  </PropertyGroup>
+  <ItemGroup>
+    <CompilerVisibleProperty Include="ObservablesGrpcBackend_Reactive" />
+  </ItemGroup>
 </Project>

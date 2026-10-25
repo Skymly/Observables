@@ -8,12 +8,12 @@ internal static class DiagnosticDescriptors
     public static readonly DiagnosticDescriptor ConflictingReactivePackages =
         new(
             "OBS0001",
-            "Conflicting Observables reactive packages",
-            "Both R3 and System.Reactive Observables packages are referenced for {0}. Remove either the .R3 or .Reactive package for this feature.",
+            "Conflicting Observables backend packages",
+            "Conflicting Observables backend packages for {0}: {1}. Backend packages for the same feature are mutually exclusive; keep one and remove the others.",
             "Observables",
             DiagnosticSeverity.Error,
             isEnabledByDefault: true,
-            description: "Both .R3 and .Reactive Observables packages are referenced for the same feature.",
+            description: "Two or more Observables backend packages (R3 / Reactive / Primitives) are referenced for the same feature.",
             helpLinkUri: DiagnosticHelpLink.For("OBS0001"),
             customTags: [WellKnownDiagnosticTags.CompilationEnd]);
 

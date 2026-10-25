@@ -1,9 +1,12 @@
 <Project>
   <PropertyGroup>
     <ObservableRoutedEvents Condition="'$(ObservableRoutedEvents)' == ''">false</ObservableRoutedEvents>
+    <!-- Declares the Reactive backend for OBS0001 conflict detection (build_property.ObservablesEventsBackend_Reactive). -->
+    <ObservablesEventsBackend_Reactive>true</ObservablesEventsBackend_Reactive>
   </PropertyGroup>
   <ItemGroup>
     <CompilerVisibleProperty Include="ObservableRoutedEvents" />
     <CompilerVisibleProperty Include="UseWPF" />
+    <CompilerVisibleProperty Include="ObservablesEventsBackend_Reactive" />
   </ItemGroup>
 </Project>

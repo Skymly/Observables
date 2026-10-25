@@ -58,9 +58,9 @@ R1 与 R2 可并行。R4 依赖 R1、R2 出口满足，且 R3 至少完成 R3-1�
 | # | 行动项 | 说明 |
 |---|--------|------|
 | R1-1 | Docs 单点版本 | VitePress 全局变量承载当前版本；页面与 nuget 链接引用变量，不再硬编码 |
-| R1-2 | Samples 自动跟版 | Dependabot / Renovate 跟踪 `Observables.*`，或 `release.yml` 发布成功后向 Docs / Samples 开同步 PR（二选一，实施时定） |
-| R1-3 | 跨仓漂移检查 | Docs / Samples CI 断言引用版本 = nuget.org 最新稳定版 |
-| R1-4 | 发版门槛对齐 | `Publish` 已内置 `Test` → `PackVerify`；门槛清单改为「Publish 内 PackVerify 通过」，不再要求 HEAD 上另跑 `CiPack` |
+| R1-2 | ✅ Samples / Docs 自动跟版 | `release.yml` 稳定版 `Publish` 成功后自动向 Observables.Docs / Observables.Samples 开 bump PR（[#644](https://github.com/Skymly/Observables/pull/644)）；两仓 `scripts/sync-observables-version.ps1` 覆盖全部版本字面量（[Docs#30](https://github.com/Skymly/Observables.Docs/pull/30) / [Samples#23](https://github.com/Skymly/Observables.Samples/pull/23)）。**须配置 `SYNC_TOKEN` secret**（fine-grained PAT，两仓 Contents + PR 写权限） |
+| R1-3 | ✅ 跨仓漂移检查 | 两仓 `version-drift.yml`（PR + push + 每周 schedule）：断言引用版本 = nuget.org 最新稳定版，并扫描旧稳定版字面量残留（同 PR） |
+| R1-4 | ✅ 发版门槛对齐 | `Publish` 已内置 `Test` → `PackVerify`；门槛清单改为「Publish 内 PackVerify 通过」，不再要求 HEAD 上另跑 `CiPack` |
 | R1-5 | ✅ 测试隔离：全局序列化注册表 | 修改 `*PayloadSerializers` 的测试未禁止并行，会污染同程序集其它测试（Mqtt 已在 CI 偶发失败）。Mqtt [#630](https://github.com/Skymly/Observables/issues/630)；Redis / Nats / Postgres（潜在）[#631](https://github.com/Skymly/Observables/issues/631) / [#632](https://github.com/Skymly/Observables/issues/632) / [#633](https://github.com/Skymly/Observables/issues/633)。仅改测试 |
 
 **出口**：下一次发版（`0.5.0`）三仓同步不含手工改版本号步骤；#630–#633 关闭。
@@ -125,12 +125,11 @@ R1 与 R2 可并行。R4 依赖 R1、R2 出口满足，且 R3 至少完成 R3-1�
 
 ## 发版门槛清单（每次发版）
 
-1. `dotnet run --project build/_build.csproj -- --target Ci` 通过（CI 双 OS）。
-2. `release.yml` 的 `Publish` 内 `PackVerify` 通过，`ExpectedPackageIds` 与实际产物一致。
-3. `eng/nuget-smoke` 全部消费者编译 / 运行通过。
-4. `eng/Observables.Package.props` 的 `Version` 与待推 tag 一致（唯一版本来源）。
-5. 主仓 README / CONTRIBUTING、Observables.Docs、Observables.Samples 三处版本同步（Docs / Samples 在 nuget.org 可见后合并）。
-6. 预览版仅 tag + NuGet；稳定版额外由维护者建 GitHub Release。
+1. HEAD 的 `ci.yml` 绿（`ci-full` 双 OS；命中 `pack`/`smoke` 条件时 `NuGetConsumerSmoke` 本地包消费者通过）。
+2. `release.yml` 的 `Publish` 内 `Test` → `PackVerify` 通过，`ExpectedPackageIds` 与实际产物一致（不再要求发版前在 HEAD 另跑 `Ci` / `CiPack`）。
+3. `eng/Observables.Package.props` 的 `Version` 与待推 tag 一致（唯一版本来源）。
+4. 主仓 README / CONTRIBUTING、Observables.Docs、Observables.Samples 三处版本同步——稳定版发版后由 `release.yml` 自动开 sync PR（R1-2），Docs / Samples 在 nuget.org 可见后合并。
+5. 预览版仅 tag + NuGet；稳定版额外由维护者建 GitHub Release。
 
 ## 诊断 ID 段分配（权威）
 

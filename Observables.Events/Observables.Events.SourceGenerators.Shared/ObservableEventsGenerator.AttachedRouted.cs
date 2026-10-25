@@ -16,25 +16,46 @@ public sealed partial class ObservableEventsGenerator
 {
     private static string GenerateAttachedRoutedEventSourceForTarget(
         AttachedRoutedEventTarget target,
-        ObservableEventsEntryKind entryKind)
+        ObservableEventsEntryKind entryKind,
+        Compilation compilation)
     {
+        // The generated extension must be able to name the receiver type.
+        if (!compilation.IsSymbolAccessibleWithin(target.ReceiverType, compilation.Assembly))
+            return string.Empty;
+
         var receiverType = SyntaxFactory.ParseTypeName(ObservableEventsConstants.QualifiedType(target.ReceiverType));
+
+        // Discovery normalizes receivers to their OriginalDefinition — redeclare the receiver's
+        // own type parameters on the generated method, before our event-args parameter.
+        TypeParameterListSyntax? receiverTypeParameters = null;
+        if (target.ReceiverType.IsGenericType)
+        {
+            receiverTypeParameters = SyntaxFactory.TypeParameterList(
+                SyntaxFactory.SeparatedList(
+                    target.ReceiverType.TypeParameters.Select(static tp => SyntaxFactory.TypeParameter(tp.Name))));
+        }
+
+        var receiverConstraints = CreateSourceTypeConstraintClauses(target.ReceiverType);
+        var eventArgsName = target.ReceiverType.TypeParameters.Any(static tp => tp.Name == "TEventArgs")
+            ? "TArgs"
+            : "TEventArgs";
+
         var observableMethod = entryKind == ObservableEventsEntryKind.AttachedRoutedEvent
             ? ObservableEventsConstants.AttachedRoutedEventEntryMethodName
             : ObservableEventsConstants.AttachedRoutedEventHandlerEntryMethodName;
         var returnType = entryKind == ObservableEventsEntryKind.AttachedRoutedEvent
             ? SyntaxFactory.ParseTypeName(
 #if EVENTS_R3
-                "global::R3.Observable<TEventArgs>"
+                $"global::R3.Observable<{eventArgsName}>"
 #else
-            "global::System.IObservable<TEventArgs>"
+            $"global::System.IObservable<{eventArgsName}>"
 #endif
                 )
             : SyntaxFactory.ParseTypeName(
 #if EVENTS_R3
-                "global::R3.Observable<(object? sender, TEventArgs e)>"
+                $"global::R3.Observable<(object? sender, {eventArgsName} e)>"
 #else
-            "global::System.IObservable<(object? sender, TEventArgs e)>"
+            $"global::System.IObservable<(object? sender, {eventArgsName} e)>"
 #endif
                 );
 
@@ -47,7 +68,7 @@ public sealed partial class ObservableEventsGenerator
                     .WithTypeArgumentList(
                         SyntaxFactory.TypeArgumentList(
                             SyntaxFactory.SingletonSeparatedList<TypeSyntax>(
-                                SyntaxFactory.IdentifierName("TEventArgs"))))),
+                                SyntaxFactory.IdentifierName(eventArgsName))))),
             SyntaxFactory.ArgumentList(
                 SyntaxFactory.SeparatedList(
                 [
@@ -65,7 +86,7 @@ public sealed partial class ObservableEventsGenerator
                     .WithTypeArgumentList(
                         SyntaxFactory.TypeArgumentList(
                             SyntaxFactory.SingletonSeparatedList<TypeSyntax>(
-                                SyntaxFactory.IdentifierName("TEventArgs"))))),
+                                SyntaxFactory.IdentifierName(eventArgsName))))),
             SyntaxFactory.ArgumentList(
                 SyntaxFactory.SeparatedList(
                 [
@@ -77,13 +98,13 @@ public sealed partial class ObservableEventsGenerator
         var unsubscribeHandler = ObservableEventsSyntaxFactory.HandlerSubscriptionLambda(removeHandler);
         ExpressionSyntax body = entryKind == ObservableEventsEntryKind.AttachedRoutedEvent
             ? ObservableEventsSyntaxFactory.FromEventInvocation(
-                SyntaxFactory.ParseTypeName("global::System.EventHandler<TEventArgs>"),
-                SyntaxFactory.IdentifierName("TEventArgs"),
+                SyntaxFactory.ParseTypeName($"global::System.EventHandler<{eventArgsName}>"),
+                SyntaxFactory.IdentifierName(eventArgsName),
                 ObservableEventsSyntaxFactory.EventHandlerFactorySenderAndArgs(),
                 subscribeHandler,
                 unsubscribeHandler)
             : ObservableEventsSyntaxFactory.FromEventHandlerInvocation(
-                SyntaxFactory.IdentifierName("TEventArgs"),
+                SyntaxFactory.IdentifierName(eventArgsName),
                 subscribeHandler,
                 unsubscribeHandler);
 
@@ -91,7 +112,10 @@ public sealed partial class ObservableEventsGenerator
             observableMethod,
             returnType,
             receiverType,
-            body);
+            body,
+            receiverTypeParameters,
+            receiverConstraints,
+            eventArgsName);
 
         var unit = SyntaxFactory.CompilationUnit()
 #if EVENTS_R3

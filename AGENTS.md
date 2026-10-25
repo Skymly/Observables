@@ -24,7 +24,7 @@
 | 层级 | 用途 | 命名 |
 |------|------|------|
 | **解决方案内项目** | 维护、CI、测试引用 | 长名、带 `.SourceGenerators` / `.Package` 等后缀 |
-| **NuGet 包 ID** | 应用 `PackageReference` | **仅两个**：`Observables.<Feature>.R3`、`Observables.<Feature>.Reactive` |
+| **NuGet 包 ID** | 应用 `PackageReference` | `Observables.<Feature>.R3`、`Observables.<Feature>.Reactive`；第三包 **`Observables.<Feature>.Primitives`** 已批准（[ADR-005](docs/adr/ADR-005-primitives-backend-adopt.md)），尚未发布 |
 
 文档中写 `Observables.Events.R3` 时须标明指 **NuGet 包** 还是 **`Observables.Events.R3.SourceGenerators` 项目**，避免歧义。
 
@@ -35,9 +35,11 @@
 | **`Observables.<Feature>`** | 按需 | **域运行时**，**后端中立**：协议、attribute、序列化、具名注册表。**不得引用 R3 或 System.Reactive**——两个包都装它。纯生成、无运行时的域（如 Events）可不建。 |
 | **`Observables.<Feature>.R3`** | 按需 | **R3 桥接运行时**（`<Feature>Observable` 等）。R3 桥接类型放在此项目。 |
 | **`Observables.<Feature>.Reactive`** | 按需 | **System.Reactive 桥接运行时**（如 `IObservable` 适配器）。桥接类型放在此项目。 |
+| **`Observables.<Feature>.Primitives`** | 按需，未实现 | **ReactiveUI.Primitives 桥接运行时**（第三后端，ADR-005）。桥接类型放在此项目。 |
 | **`Observables.<Feature>.SourceGenerators.Shared`** | 双生成器时 | 本域共享生成器逻辑（`.projitems`），由 R3 与 Reactive 两路生成器 Import。 |
 | **`Observables.<Feature>.R3.SourceGenerators`** | 是 | R3 源生成器（`IsRoslynComponent`）。 |
 | **`Observables.<Feature>.Reactive.SourceGenerators`** | 是 | System.Reactive 源生成器。 |
+| **`Observables.<Feature>.Primitives.SourceGenerators`** | 未实现 | ReactiveUI.Primitives 源生成器（第三路，ADR-005）。 |
 | **`Observables.<Feature>.Package`** | 发布时 | **Traversal 根** + 两个可 pack 子项目（`Observables.<Feature>.R3.csproj` 等），产出 **`Observables.<Feature>.R3`** 与 **`Observables.<Feature>.Reactive`**。十个域均已有 Package（Events 到 Redis）。 |
 
 可选扩展（**不**算第三个消费者主包）：如 `Observables.RestAPI.HttpClientFactory`，依赖域运行时，不捆绑生成器。
@@ -57,8 +59,9 @@
 |------------------|--------|------------|
 | **`Observables.<Feature>.R3`** | R3 + 域运行时 + 本域 `.R3`（若有） | `*.R3.SourceGenerators` |
 | **`Observables.<Feature>.Reactive`** | System.Reactive + 域运行时 + 本域 `.Reactive`（若有） | `*.Reactive.SourceGenerators` |
+| **`Observables.<Feature>.Primitives`**（未发布，ADR-005） | ReactiveUI.Primitives + 域运行时 + 本域 `.Primitives`（若有） | `*.Primitives.SourceGenerators` |
 
-- R3 包 **不** 引用 System.Reactive；Reactive 包 **不** 引用 R3。这条管的是包里 **每一个** 程序集，不只是 nuspec：两个包共享的域运行时因此必须后端中立。PackVerify 读 `lib/**/*.dll` 的程序集引用表来验（`PackCsprojReader.ForbiddenBackendAssemblies`），**全部 20 个包无豁免**。
+- 三个后端包两两互斥：R3 包不引用 System.Reactive / ReactiveUI.Primitives，其余同理。这条管的是包里 **每一个** 程序集，不只是 nuspec：各包共享的域运行时因此必须后端中立。PackVerify 读 `lib/**/*.dll` 的程序集引用表来验（`PackCsprojReader.ForbiddenBackendAssemblies`），**全部 20 个包无豁免**。
 - 域运行时保持后端中立、R3 桥接单独成 `Observables.<Feature>.R3` 程序集，见 [ADR-003](docs/adr/ADR-003-backend-neutral-domain-runtime.md)。十个域已全部就位。
 - 生成器仅编译期；发布后消费者通过 **`.Package` 元包** 获得「运行时 + 对应分析器」。开发阶段用 `ProjectReference` + `OutputItemType="Analyzer"`。
 

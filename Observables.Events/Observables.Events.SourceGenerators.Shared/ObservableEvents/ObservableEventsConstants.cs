@@ -15,7 +15,7 @@ internal static class ObservableEventsConstants
 #endif
 
     /// <summary>
-    /// Entry name: instance <c>source.Events()</c> (extension method under <c>R3.SourceGenerators</c>); static <c>ObservableEventsStatics.OBS_* .Events</c> (property). Per-event streams are properties (ReactiveMarbles-style).
+    /// Entry name: instance <c>source.Events()</c> (extension method under <c>R3.SourceGenerators</c>). Per-event streams are properties (ReactiveMarbles-style).
     /// </summary>
     internal const string EventsEntryMethodName = "Events";
 
@@ -36,11 +36,6 @@ internal static class ObservableEventsConstants
 
     internal const string AttachedRoutedEventEntryMethodName = "AttachedRoutedEvent";
     internal const string AttachedRoutedEventHandlerEntryMethodName = "AttachedRoutedEventHandler";
-
-    /// <summary>
-    /// When <see langword="false"/>, no <c>ObservableEventsStatics</c> / <c>OBS_*</c> / static-event wrappers are emitted and static <c>Events</c> member accesses are not discovered.
-    /// </summary>
-    internal const bool StaticObservableEventsGenerationEnabled = false;
 
     /// <summary>
     /// Same as <see cref="SymbolDisplayFormat.FullyQualifiedFormat"/>, plus NRT <c>?</c> so emitted types match delegate/event signatures (<c>IncludeNullableReferenceTypeModifier</c>, <c>1 &lt;&lt; 6</c>; see dotnet/roslyn <c>SymbolDisplayMiscellaneousOptions</c> — not always present on older netstandard2 reference assemblies, so bitmask is spelled out).

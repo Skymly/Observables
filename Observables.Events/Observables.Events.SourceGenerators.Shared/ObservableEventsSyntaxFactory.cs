@@ -255,9 +255,11 @@ internal static class ObservableEventsSyntaxFactory
         string methodName,
         TypeSyntax returnType,
         TypeSyntax receiverType,
-        TypeSyntax implementationType)
+        TypeSyntax implementationType,
+        TypeParameterListSyntax? typeParameters = null,
+        SyntaxList<TypeParameterConstraintClauseSyntax> constraintClauses = default)
     {
-        return MethodDeclaration(returnType, Identifier(methodName))
+        var method = MethodDeclaration(returnType, Identifier(methodName))
             .AddModifiers(Token(SyntaxKind.PublicKeyword), Token(SyntaxKind.StaticKeyword))
             .AddParameterListParameters(
                 Parameter(Identifier("source"))
@@ -281,15 +283,29 @@ internal static class ObservableEventsSyntaxFactory
                                     Argument(IdentifierName("handledEventsToo")),
                                 ])))))
             .WithSemicolonToken(Token(SyntaxKind.SemicolonToken));
+
+        if (typeParameters is not null)
+        {
+            method = method.WithTypeParameterList(typeParameters);
+        }
+
+        if (constraintClauses.Count > 0)
+        {
+            method = method.WithConstraintClauses(constraintClauses);
+        }
+
+        return method;
     }
 
     public static MethodDeclarationSyntax CreateWpfRoutedExtensionMethod(
         string methodName,
         TypeSyntax returnType,
         TypeSyntax receiverType,
-        TypeSyntax implementationType)
+        TypeSyntax implementationType,
+        TypeParameterListSyntax? typeParameters = null,
+        SyntaxList<TypeParameterConstraintClauseSyntax> constraintClauses = default)
     {
-        return MethodDeclaration(returnType, Identifier(methodName))
+        var method = MethodDeclaration(returnType, Identifier(methodName))
             .AddModifiers(Token(SyntaxKind.PublicKeyword), Token(SyntaxKind.StaticKeyword))
             .AddParameterListParameters(
                 Parameter(Identifier("source"))
@@ -310,15 +326,30 @@ internal static class ObservableEventsSyntaxFactory
                                     Argument(IdentifierName("handledEventsToo")),
                                 ])))))
             .WithSemicolonToken(Token(SyntaxKind.SemicolonToken));
+
+        if (typeParameters is not null)
+        {
+            method = method.WithTypeParameterList(typeParameters);
+        }
+
+        if (constraintClauses.Count > 0)
+        {
+            method = method.WithConstraintClauses(constraintClauses);
+        }
+
+        return method;
     }
 
     public static MethodDeclarationSyntax CreateAttachedRoutedEventMethod(
         string methodName,
         TypeSyntax returnType,
         TypeSyntax receiverType,
-        ExpressionSyntax bodyExpression)
+        ExpressionSyntax bodyExpression,
+        TypeParameterListSyntax? receiverTypeParameters = null,
+        SyntaxList<TypeParameterConstraintClauseSyntax> receiverConstraintClauses = default,
+        string eventArgsTypeParameterName = "TEventArgs")
     {
-        var routedEventType = ParseTypeName("global::Avalonia.Interactivity.RoutedEvent<TEventArgs>");
+        var routedEventType = ParseTypeName($"global::Avalonia.Interactivity.RoutedEvent<{eventArgsTypeParameterName}>");
         var routesType = ParseTypeName("global::Avalonia.Interactivity.RoutingStrategies");
         var routingStrategies = ParseName("global::Avalonia.Interactivity.RoutingStrategies");
         var routesDefault = BinaryExpression(
@@ -326,15 +357,20 @@ internal static class ObservableEventsSyntaxFactory
             MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression, routingStrategies, IdentifierName("Direct")),
             MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression, routingStrategies, IdentifierName("Bubble")));
 
+        // Receiver type parameters (generic receivers) precede the event-args parameter.
+        var typeParameters = receiverTypeParameters is null
+            ? TypeParameterList(SingletonSeparatedList(TypeParameter(eventArgsTypeParameterName)))
+            : receiverTypeParameters.AddParameters(TypeParameter(eventArgsTypeParameterName));
+        var constraintClauses = receiverConstraintClauses.Add(
+            TypeParameterConstraintClause(eventArgsTypeParameterName)
+                .WithConstraints(
+                    SingletonSeparatedList<TypeParameterConstraintSyntax>(
+                        TypeConstraint(ParseTypeName("global::Avalonia.Interactivity.RoutedEventArgs")))));
+
         return MethodDeclaration(returnType, Identifier(methodName))
             .AddModifiers(Token(SyntaxKind.PublicKeyword), Token(SyntaxKind.StaticKeyword))
-            .WithTypeParameterList(TypeParameterList(SingletonSeparatedList(TypeParameter("TEventArgs"))))
-            .WithConstraintClauses(
-                SingletonList(
-                    TypeParameterConstraintClause("TEventArgs")
-                        .WithConstraints(
-                            SingletonSeparatedList<TypeParameterConstraintSyntax>(
-                                TypeConstraint(ParseTypeName("global::Avalonia.Interactivity.RoutedEventArgs"))))))
+            .WithTypeParameterList(typeParameters)
+            .WithConstraintClauses(constraintClauses)
             .AddParameterListParameters(
                 Parameter(Identifier("source"))
                     .WithType(receiverType)
@@ -587,12 +623,23 @@ internal static class ObservableEventsSyntaxFactory
             ParseName(ObservableEventsConstants.QualifiedType(routedEventField.ContainingType)),
             IdentifierName(routedEventField.Name));
 
+        // Avalonia's generic AddHandler<TEventArgs> overload takes RoutedEvent<TEventArgs>; a
+        // non-generic RoutedEvent field must go through the (RoutedEvent, Delegate, ...) overload.
+        var fieldIsGeneric = routedEventField.Type is INamedTypeSymbol { IsGenericType: true };
+        SimpleNameSyntax addHandlerName = fieldIsGeneric
+            ? GenericName(Identifier("AddHandler"))
+                .WithTypeArgumentList(TypeArgumentList(SingletonSeparatedList(eventArgs)))
+            : IdentifierName("AddHandler");
+        SimpleNameSyntax removeHandlerName = fieldIsGeneric
+            ? GenericName(Identifier("RemoveHandler"))
+                .WithTypeArgumentList(TypeArgumentList(SingletonSeparatedList(eventArgs)))
+            : IdentifierName("RemoveHandler");
+
         var addHandler = InvocationExpression(
             MemberAccessExpression(
                 SyntaxKind.SimpleMemberAccessExpression,
                 IdentifierName("_sender"),
-                GenericName(Identifier("AddHandler"))
-                    .WithTypeArgumentList(TypeArgumentList(SingletonSeparatedList(eventArgs)))),
+                addHandlerName),
             ArgumentList(
                 SeparatedList(
                 [
@@ -606,8 +653,7 @@ internal static class ObservableEventsSyntaxFactory
             MemberAccessExpression(
                 SyntaxKind.SimpleMemberAccessExpression,
                 IdentifierName("_sender"),
-                GenericName(Identifier("RemoveHandler"))
-                    .WithTypeArgumentList(TypeArgumentList(SingletonSeparatedList(eventArgs)))),
+                removeHandlerName),
             ArgumentList(
                 SeparatedList(
                 [

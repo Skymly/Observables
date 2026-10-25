@@ -4,7 +4,7 @@
 
   <PropertyGroup>
     <Description>Source generator for SSE proxies → System.Reactive IObservable.</Description>
-    <DefineConstants>$(DefineConstants);ROSLYN_4;SSE_REACTIVE</DefineConstants>
+    <DefineConstants>$(DefineConstants);SSE_REACTIVE</DefineConstants>
   </PropertyGroup>
 
   <ItemGroup>

@@ -17,6 +17,7 @@ public sealed partial class ObservableEventsGenerator
 {
     private static IEnumerable<IEventSymbol> GetGenericConstraintEvents(
         GenericConstraintTarget target,
+        Compilation compilation,
         Action<string, Location?, string> reportDiagnostic)
     {
         var byName = new Dictionary<string, IEventSymbol>(System.StringComparer.Ordinal);
@@ -24,11 +25,21 @@ public sealed partial class ObservableEventsGenerator
         {
             foreach (var evt in GetPublicInstanceEventsFromTypeAndBases(constraintType))
             {
+                // The accessor casts the sender to evt.ContainingType — the member (and thus its
+                // declaring type) must be reachable from the consumer, and the signature must be
+                // nameable in generated source.
+                if (!compilation.IsSymbolAccessibleWithin(evt, compilation.Assembly)
+                    || !IsEventSignatureNameable(evt, compilation))
+                {
+                    continue;
+                }
+
                 if (byName.TryGetValue(evt.Name, out var existing))
                 {
                     if (!SymbolEqualityComparer.Default.Equals(existing.Type, evt.Type))
                     {
                         reportDiagnostic(DiagnosticDescriptors.IncompatibleEventMerge.Id, evt.Locations.FirstOrDefault(), evt.Name);
+                        continue;
                     }
 
                     continue;
@@ -40,30 +51,110 @@ public sealed partial class ObservableEventsGenerator
 
         return byName.Values.OrderBy(static e => e.Name, System.StringComparer.Ordinal);
     }
+    private static string GetConstraintPartName(INamedTypeSymbol t, bool qualified)
+    {
+        var baseName = t.TypeKind == TypeKind.Interface && t.Name.Length >= 2 && t.Name[0] == 'I' && char.IsUpper(t.Name[1])
+            ? t.Name.Substring(1)
+            : t.Name;
+        if (t.IsGenericType)
+            baseName += $"_{t.Arity}";
+        if (!qualified)
+            return baseName;
+        var prefix = TypeIdentityPrefix(t);
+        return prefix.Length == 0 ? baseName : $"{prefix}_{baseName}";
+    }
+
+    private static string GetGenericConstraintCombinedInterfaceName(
+        GenericConstraintTarget target,
+        ObservableEventsEntryKind entryKind,
+        bool qualified)
+    {
+        var suffix = entryKind == ObservableEventsEntryKind.Events ? "Events" : "EventHandlers";
+        return $"I{string.Join("_", target.ConstraintTypes.Select(t => GetConstraintPartName(t, qualified)))}{suffix}";
+    }
+
+    private static string GetGenericConstraintCombinedImplName(
+        GenericConstraintTarget target,
+        ObservableEventsEntryKind entryKind,
+        bool qualified)
+    {
+        var suffix = entryKind == ObservableEventsEntryKind.Events ? "Events" : "EventHandlers";
+        return $"{string.Join("_", target.ConstraintTypes.Select(t => GetConstraintPartName(t, qualified)))}{suffix}Impl";
+    }
+
+    /// <summary>
+    /// Short constraint-type names collide across namespaces and arity (and can shadow a
+    /// hierarchy interface name): compute which unqualified combined names are taken so the
+    /// affected targets can re-emit with namespace-qualified parts.
+    /// </summary>
+    private static (System.Collections.Generic.HashSet<string> InterfaceNames, System.Collections.Generic.HashSet<string> ImplNames)
+        CollectCollidingGenericConstraintNames(
+            ImmutableArray<GenericConstraintTarget> targets,
+            Dictionary<INamedTypeSymbol, EventInterfaceDescriptor> hierarchy,
+            ObservableEventsEntryKind entryKind)
+    {
+        var interfaceCounts = new Dictionary<string, int>(System.StringComparer.Ordinal);
+        var implCounts = new Dictionary<string, int>(System.StringComparer.Ordinal);
+        foreach (var target in targets)
+        {
+            var ifaceName = GetGenericConstraintCombinedInterfaceName(target, entryKind, qualified: false);
+            var implName = GetGenericConstraintCombinedImplName(target, entryKind, qualified: false);
+            interfaceCounts[ifaceName] = interfaceCounts.TryGetValue(ifaceName, out var i) ? i + 1 : 1;
+            implCounts[implName] = implCounts.TryGetValue(implName, out var c) ? c + 1 : 1;
+        }
+
+        var interfaceNames = new System.Collections.Generic.HashSet<string>(System.StringComparer.Ordinal);
+        var implNames = new System.Collections.Generic.HashSet<string>(System.StringComparer.Ordinal);
+        foreach (var kvp in interfaceCounts)
+        {
+            if (kvp.Value > 1)
+                interfaceNames.Add(kvp.Key);
+        }
+
+        foreach (var kvp in implCounts)
+        {
+            if (kvp.Value > 1)
+                implNames.Add(kvp.Key);
+        }
+
+        // A combined type may also not shadow a name the hierarchy itself emits.
+        foreach (var desc in hierarchy.Values)
+        {
+            interfaceNames.Add(desc.InterfaceName);
+            implNames.Add(desc.ImplName);
+        }
+
+        return (interfaceNames, implNames);
+    }
+
     private static string GenerateGenericConstraintEventSource(
         GenericConstraintTarget target,
         Dictionary<INamedTypeSymbol, EventInterfaceDescriptor> hierarchy,
         Compilation compilation,
         Action<string, Location?, string> reportDiagnostic,
-        ObservableEventsEntryKind entryKind)
+        ObservableEventsEntryKind entryKind,
+        (System.Collections.Generic.HashSet<string> InterfaceNames, System.Collections.Generic.HashSet<string> ImplNames) collidingNames)
     {
-        var suffix = entryKind == ObservableEventsEntryKind.Events ? "Events" : "EventHandlers";
-        var constraintParts = target.ConstraintTypes.Select(static t =>
+        var combinedIfaceName = GetGenericConstraintCombinedInterfaceName(target, entryKind, qualified: false);
+        var implName = GetGenericConstraintCombinedImplName(target, entryKind, qualified: false);
+        if (collidingNames.InterfaceNames.Contains(combinedIfaceName)
+            || collidingNames.ImplNames.Contains(implName))
         {
-            var n = t.Name;
-            return t.TypeKind == TypeKind.Interface && n.Length >= 2 && n[0] == 'I' && char.IsUpper(n[1])
-                ? n.Substring(1)
-                : n;
-        });
-        var combinedIfaceName = $"I{string.Join("_", constraintParts)}{suffix}";
-        var implName = $"{string.Join("_", constraintParts)}{suffix}Impl";
+            combinedIfaceName = GetGenericConstraintCombinedInterfaceName(target, entryKind, qualified: true);
+            implName = GetGenericConstraintCombinedImplName(target, entryKind, qualified: true);
+        }
 
+        var willEmit = BuildWillEmitInterfaceSet(hierarchy, compilation, entryKind);
         var parentBases = new List<string>();
         foreach (var ct in target.ConstraintTypes)
         {
             var def = ct.IsGenericType ? (INamedTypeSymbol)ct.OriginalDefinition : ct;
-            if (hierarchy.TryGetValue(def, out var pd))
-                parentBases.Add(GetParentInterfaceReference(pd, ct));
+            if (hierarchy.TryGetValue(def, out var pd)
+                && willEmit.Contains(pd)
+                && GetParentInterfaceReference(pd, ct, compilation) is { } parentRef)
+            {
+                parentBases.Add(parentRef);
+            }
         }
 
         var reuseParent = parentBases.Count == 1
@@ -106,7 +197,9 @@ public sealed partial class ObservableEventsGenerator
             SyntaxFactory.ClassDeclaration("ObservableEventsBootstrapExtensions_" + ToIdentifier(target.Key))
                 .AddModifiers(
                     SyntaxFactory.Token(SyntaxKind.InternalKeyword),
-                    SyntaxFactory.Token(SyntaxKind.StaticKeyword))
+                    SyntaxFactory.Token(SyntaxKind.StaticKeyword),
+                    // Events and EventKinds emit the same class name in separate files; partial merges them.
+                    SyntaxFactory.Token(SyntaxKind.PartialKeyword))
                 .AddMembers(extensionMethod));
 
         members.Add(CreateGenericConstraintImplClass(
@@ -151,7 +244,7 @@ public sealed partial class ObservableEventsGenerator
             .WithBody(SyntaxFactory.Block(ObservableEventsSyntaxFactory.SenderAssignmentStatement()));
 
         var memberList = new List<MemberDeclarationSyntax> { field, ctor };
-        foreach (var evt in GetGenericConstraintEvents(target, reportDiagnostic))
+        foreach (var evt in GetGenericConstraintEvents(target, compilation, reportDiagnostic))
         {
             var accessor = ObservableEventsSyntaxFactory.CastSenderMemberAccess(
                 SyntaxFactory.ParseTypeName(ObservableEventsConstants.QualifiedType(evt.ContainingType)),

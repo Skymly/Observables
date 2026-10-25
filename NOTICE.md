@@ -7,29 +7,47 @@ Observables uses or is derived from the following third-party projects.
 The `Observables.RestAPI` domain contains code adapted from **Refit**.
 
 - Repository: https://github.com/reactiveui/refit
-- License: Apache-2.0
-- Copyright: Copyright (c) .NET Foundation and Contributors
+- License: MIT
+- Copyright: Copyright (c) ReactiveUI 2012 - 2025
+- Adaptation baseline: `v10.1.6` (2026-03-21) — the latest Refit release at the
+  time the domain was adapted (introduced in commit `3929a95`, 2026-06-01).
 
-The adapted code includes, but is not limited to, HTTP request construction,
-`RestMethodInfo`, `RequestBuilderImplementation`, `ApiResponse`, `ApiException`,
-`ValidationApiException`, `FormValueMultimap`, `ValueStringBuilder`, and related
-infrastructure. Refit is a trademark of its respective authors and is not
-affiliated with the Observables project.
+The adapted code includes, but is not limited to, the HTTP method/parameter
+attributes (`GetAttribute`, `PostAttribute`, `PutAttribute`, `DeleteAttribute`,
+`PatchAttribute`, `HeadAttribute`, `OptionsAttribute`, `BodyAttribute`,
+`QueryAttribute`, `HeaderAttribute`, `HeaderCollectionAttribute`,
+`AuthorizeAttribute`, `PropertyAttribute`, `AliasAsAttribute`,
+`MultipartAttribute`, `HeadersAttribute`, `QueryUriFormatAttribute`,
+`AttachmentNameAttribute`), `RestService`, `RestApiSettings`, `RestApiBridge`,
+`ApiResponse`, `ApiException`, `ApiRequestException`, `ApiExceptionBase`,
+`ValidationApiException`, `FormValueMultimap`, `MultipartItem`,
+`SystemTextJsonContentSerializer`, and related request-building infrastructure.
 
-## Apache-2.0 License Notice
+Refit is a trademark of its respective authors and is not affiliated with the
+Observables project.
+
+## MIT License Notice
 
 ```
-Copyright (c) .NET Foundation and Contributors
+MIT License
 
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
+Copyright (c) ReactiveUI 2012 - 2025
 
-    http://www.apache.org/licenses/LICENSE-2.0
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
 
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
 ```

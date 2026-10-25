@@ -330,13 +330,15 @@ namespace Observables.RestAPI
                     parameterType,
                     t => new ConcurrentDictionary<string, EnumMemberAttribute?>()
                 );
+                // [Flags] combinations and undefined values stringify to names no member owns
+                // ("Read, Write" / "3") — GetMember returns an empty array there.
                 enumMember = cached.GetOrAdd(
                     parameterValue.ToString()!,
                     val =>
                         parameterType
                             .GetMember(val)
-                            .First()
-                            .GetCustomAttribute<EnumMemberAttribute>()
+                            .FirstOrDefault()
+                            ?.GetCustomAttribute<EnumMemberAttribute>()
                 );
             }
 
@@ -395,13 +397,15 @@ namespace Observables.RestAPI
                     parameterType,
                     t => new ConcurrentDictionary<string, EnumMemberAttribute?>()
                 );
+                // [Flags] combinations and undefined values stringify to names no member owns
+                // ("Read, Write" / "3") — GetMember returns an empty array there.
                 enumMember = cached.GetOrAdd(
                     parameterValue.ToString()!,
                     val =>
                         parameterType
                             .GetMember(val)
-                            .First()
-                            .GetCustomAttribute<EnumMemberAttribute>()
+                            .FirstOrDefault()
+                            ?.GetCustomAttribute<EnumMemberAttribute>()
                 );
             }
 

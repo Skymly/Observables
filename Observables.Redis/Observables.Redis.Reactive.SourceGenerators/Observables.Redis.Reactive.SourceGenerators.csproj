@@ -4,7 +4,7 @@
 
   <PropertyGroup>
     <Description>Source generator for Redis Pub/Sub proxies → System.Reactive IObservable.</Description>
-    <DefineConstants>$(DefineConstants);ROSLYN_4;REDIS_REACTIVE</DefineConstants>
+    <DefineConstants>$(DefineConstants);REDIS_REACTIVE</DefineConstants>
   </PropertyGroup>
 
   <ItemGroup>

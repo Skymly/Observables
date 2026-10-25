@@ -37,7 +37,8 @@ internal static class GeneratorTestHarness
         LanguageVersion languageVersion = LanguageVersion.Preview,
         IIncrementalGenerator[]? generators = null,
         bool useWpf = false,
-        bool observableRoutedEvents = false)
+        bool observableRoutedEvents = false,
+        IEnumerable<MetadataReference>? extraReferences = null)
     {
         return Harness.Run(
             userSource,
@@ -45,6 +46,7 @@ internal static class GeneratorTestHarness
             {
                 LanguageVersion = languageVersion,
                 Generators = generators,
+                ExtraReferences = extraReferences,
                 OptionsProvider = new TestAnalyzerConfigOptionsProvider(
                     new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
                     {

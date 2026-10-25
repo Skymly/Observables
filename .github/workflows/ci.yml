@@ -191,6 +191,7 @@ jobs:
               - 'Observables.Shared/**'
               - 'Observables.SourceGenerators.props'
               - 'Observables.SourceGenerators.R3.props'
+              - 'Observables.SourceGenerators.SharedSource.props'
               - 'Directory.Build.props'
               - 'Directory.Packages.props'
               - 'eng/**'

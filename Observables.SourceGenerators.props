@@ -12,6 +12,9 @@
     <DebugType>portable</DebugType>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <NoWarn>$(NoWarn);CS1591</NoWarn>
+    <!-- Shared source is gated on ROSLYN_4 (see Observables.SourceGenerators.Shared); define it once here
+         so every domain generator gets the full pipeline without repeating the constant. -->
+    <DefineConstants>$(DefineConstants);ROSLYN_4</DefineConstants>
   </PropertyGroup>
 
   <ItemGroup>

@@ -13,7 +13,6 @@ internal sealed record MethodModel(
     bool IsExplicitInterface,
     RestApiMethodSpecModel Spec,
     int? CancellationTokenIndex = null,
-    bool IsApiResponse = false,
     string ReturnResultType = "",
     string DeserializedResultType = ""
 );

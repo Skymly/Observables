@@ -14,7 +14,7 @@
 | `IObservable<T>` | Reactive 包 | 单次响应冷流（`SystemReactiveObservableAdapter.FromAsync`） |
 | `IApiResponse<T>` | 通用 | 包装响应（含头、状态码、错误，不抛异常） |
 
-RestAPI 域的运行时部分包含由 [Refit](https://github.com/reactiveui/refit)（Apache 2.0）适配而来的代码，许可信息见 [`NOTICE.md`](../../NOTICE.md)。
+RestAPI 域的运行时部分包含由 [Refit](https://github.com/reactiveui/refit)（MIT，适配基线 `v10.1.6`）适配而来的代码，许可信息见 [`NOTICE.md`](../../NOTICE.md)。
 
 ## 2. Path B 架构（编译期代码生成）
 
@@ -36,7 +36,7 @@ RestAPI 域的运行时部分包含由 [Refit](https://github.com/reactiveui/ref
 - **返回类型**：HTTP 方法经域内 `RestApiReturnTypeClassifier`（`Classify` → `RestApiReturnClassification`）分类；Observable / `IObservable` 分支读 `BackendTokens.IsR3`（不并入共享 `ObservableReturnTypeParser`，见 ROADMAP C1）。
 - **Emitter** 直接生成 `HttpRequestMessage` 构建代码与 `RestApiBridge` 调用，生成代码是直观的命令式方法体。
 - **运行时**不再反射接口元数据；`RestApiBridge` 仅提供静态助手（路径/查询格式化、请求发送、序列化）。
-- **代理注册**通过 `ModuleInitializer` + `RestService.RegisterGeneratedFactory` 自动注册（所有消费者 TFM）。ns2.0 由生成器发出 `partial ModuleInitializerAttribute` polyfill；无 `Type.GetType` / `Activator.CreateInstance` 回退。
+- **代理注册**通过 `ModuleInitializer` + `RestService.RegisterGeneratedFactory` 自动注册（所有消费者 TFM）。ns2.0 由生成器发出 `partial ModuleInitializerAttribute` polyfill；闭式接口无 `Type.GetType` / `Activator.CreateInstance` 回退——唯一例外是**开放泛型接口**：按 `typeof(IFoo<>)` 注册的工厂在 `For<IFoo<TClosed>>()` 时经 `MakeGenericType` + `Activator.CreateInstance` 构造一次 closed impl（见 `Emitter` 开放泛型分支）。
 
 ### 2.3 收益
 
@@ -70,7 +70,7 @@ public sealed class GetAttribute(string path) : HttpMethodAttribute(path);
 | `[Query]` / `[Query(delimiter)]` / `[Query(format)]` / `[Query(collectionFormat)]` | parameter | `Query` | 查询参数；支持 `Prefix`、`Delimiter`、`Format`、`TreatAsString`、`CollectionFormat` |
 | `[Header("name")]` | parameter | `Header` | 单个请求头 |
 | `[HeaderCollection]` | parameter（`IDictionary<string,string>`） | `HeaderCollection` | 请求头集合 |
-| `[Authorize("Bearer")]` | parameter | `Authorize` | 授权头（由 `RestApiSettings.AuthorizationHeaderValueGetter` 取值） |
+| `[Authorize("Bearer")]` | parameter | `Authorize` | 授权头 `Authorization: <scheme> <参数值>`——参数值即 token，scheme 缺省 `Bearer`；`RestApiSettings.AuthorizationHeaderValueGetter` 是无参场景的设置级钩子 |
 | `[Property]` / `[Property("key")]` | parameter | `Property` | 写入 `HttpRequestMessage.Properties` / `Options` |
 | `[AliasAs("name")]` | parameter / property | — | 重命名（path/query/body 字段） |
 | `[Multipart("boundary")]` | method | — | 标记 multipart 方法；参数自动绑定为 `Multipart` |
@@ -150,35 +150,35 @@ public interface IUserApi
 }
 ```
 
-生成（Task 变体，简化）：
+生成（Task 变体，摘自 Verify 快照，`global::` 前缀已省略展示）：
 
 ```csharp
-namespace Observables.RestAPI.Implementation
+namespace Observables.RestAPI.Implementation;
+
+internal static partial class Generated
 {
-    internal static partial class Generated
+    partial class IUserApi : global::IUserApi
     {
-        partial class IUserApi : global::IUserApi
+        public HttpClient Client { get; }
+        readonly RestApiSettings _settings;
+
+        public IUserApi(HttpClient client, RestApiSettings? settings)
         {
-            public HttpClient Client { get; }
-            readonly RestApiSettings _settings;
+            Client = client;
+            _settings = settings ?? new RestApiSettings();
+        }
 
-            public IUserApi(HttpClient client, RestApiSettings? settings)
-            {
-                Client = client;
-                _settings = settings ?? new RestApiSettings();
-            }
+        // 每方法一个静态 MethodSpec：HTTP 方法 + 路径模板 + 参数绑定槽
+        static readonly RestApiBridge.MethodSpec ______spec0 =
+            new("GET", "/users/{id}", new RestApiBridge.Binding[] { new(RestApiBridge.SlotKind.Path, 0, "id") });
 
-            public async Task<global::User> GetUser(int id)
-            {
-                var ct = CancellationToken.None;
-                if (Client.BaseAddress == null)
-                    throw new InvalidOperationException("BaseAddress must be set on the HttpClient instance");
-                var path = "/users/" + RestApiBridge.FormatPathParameter(id, _settings);
-                var request = new HttpRequestMessage { Method = HttpMethod.Get };
-                request.RequestUri = new Uri(path, UriKind.Relative);
-                return await RestApiBridge.SendAsync<User, User>(Client, request, _settings, false, false, ct)
-                    .ConfigureAwait(false);
-            }
+        public async Task<global::User> GetUser(int @id)
+        {
+            var ______scope = RestApiCallScope.Capture();          // 每次调用的选项快照
+            var ______ct = CancellationToken.None;
+            return await RestApiBridge.SendAsync<global::User, global::User>(
+                Client, _settings, in ______spec0, ______scope, ______ct, @id)
+                .ConfigureAwait(false);
         }
     }
 }
@@ -191,14 +191,15 @@ public global::R3.Observable<global::User> GetUserObservable(int id)
 {
     return global::R3.Observable.FromAsync(async ct =>
     {
-        // ... 同样的请求构建 ...
-        return await RestApiBridge.SendAsync<User, User>(Client, request, _settings, false, false, ct)
+        var ______scope = RestApiCallScope.Capture();
+        return await RestApiBridge.SendAsync<global::User, global::User>(
+            Client, _settings, in ______spec0, ______scope, ct, @id)
             .ConfigureAwait(false);
     });
 }
 ```
 
-Reactive 包对应为 `Observables.RestAPI.Reactive.SystemReactiveObservableAdapter.FromAsync(async ct => ...)`。
+Reactive 包对应为 `Observables.RestAPI.Reactive.SystemReactiveObservableAdapter.FromAsync(async ct => ...)`。发送路径统一走 `RestApiBridge.SendAsync(client, settings, in MethodSpec, callOptions, ct, params args)`：`RestApiProtocol.Bind` 按 `MethodSpec` 的 `Binding[]` 槽把 `args` 组装成 `HttpRequestMessage`，`RestApiCallScope.Capture()` 把每次调用线程局部的请求选项固化为本次调用的 `callOptions`。
 
 ### 4.2 ModuleInitializer 注册
 
@@ -228,13 +229,7 @@ namespace System.Runtime.CompilerServices
 
 ### 4.3 路径模板
 
-`PathFragmentModel`（readonly record struct）将路径拆为常量段与参数引用段：
-
-```csharp
-internal readonly record struct PathFragmentModel(string? ConstantValue, int ParameterIndex, bool IsConstant);
-```
-
-Emitter 将 `PathFragmentModel[]` 拼为字符串拼接表达式：`"/users/" + RestApiBridge.FormatPathParameter(id, _settings)`。常量段编译期确定，参数段运行时格式化并 URL 转义。
+编译期由 `RestApiPathTemplate` 校验路径模板与参数的对应关系（占位符必须有绑定、未标特性参数可自动补位、多余占位符会被剔除并给出建议路径）；发射期把模板原样写进每方法静态 `RestApiBridge.MethodSpec.PathTemplate`，参数槽由 `Binding[]`（`SlotKind.Path`/`Query`/…）描述。运行时 `RestApiProtocol.Bind` 按 spec 做替换与格式化：path 段走 `FormatPathParameter`（URL 转义），query 走 `AddQueryParameter` + `UrlParameterKeyFormatter`。生成代码本身不再做路径字符串拼接。
 
 ### 4.4 参数绑定分类（`ParameterKind`）
 
@@ -258,10 +253,19 @@ Parser 按特性与路径模板占位符匹配确定每个参数的 `ParameterKi
 ```csharp
 public static class RestApiBridge
 {
+    // 生成代码使用的发送入口（in MethodSpec + 可选 callOptions + params args）
+    public static Task<T?> SendAsync<T, TBody>(HttpClient client, RestApiSettings settings, in MethodSpec spec, CancellationToken ct, params object?[] args);
+    public static Task<T?> SendAsync<T, TBody>(HttpClient client, RestApiSettings settings, in MethodSpec spec, IReadOnlyDictionary<string, object?>? callOptions, CancellationToken ct, params object?[] args);
+    public static Task SendVoidAsync(HttpClient client, RestApiSettings settings, in MethodSpec spec, CancellationToken ct, params object?[] args);
+    public static Task SendVoidAsync(HttpClient client, RestApiSettings settings, in MethodSpec spec, IReadOnlyDictionary<string, object?>? callOptions, CancellationToken ct, params object?[] args);
+
+    // 旧形态重载（接收预构建的 HttpRequestMessage，RestApiProtocol.Bind 内部回传使用）
+    public static Task<T?> SendAsync<T, TBody>(HttpClient client, HttpRequestMessage request, RestApiSettings settings, bool bodyBuffered, CancellationToken ct);
+    public static Task<T?> SendAsync<T, TBody>(HttpClient client, HttpRequestMessage request, RestApiSettings settings, bool isApiResponse, bool bodyBuffered, CancellationToken ct);  // isApiResponse 已忽略
+    public static Task SendVoidAsync(HttpClient client, HttpRequestMessage request, RestApiSettings settings, CancellationToken ct);
+
     public static string FormatPathParameter(object? value, RestApiSettings settings);
     public static string? FormatQueryValue(object? value, RestApiSettings settings);
-    public static Task<T?> SendAsync<T, TBody>(HttpClient client, HttpRequestMessage request, RestApiSettings settings, bool isApiResponse, bool bodyBuffered, CancellationToken ct);
-    public static Task SendVoidAsync(HttpClient client, HttpRequestMessage request, RestApiSettings settings, CancellationToken ct);
     public static void AddQueryParameter(List<KeyValuePair<string, string?>> queryParams, string key, object? value, RestApiSettings settings, string? prefix = null, string delimiter = ".", string? format = null, bool treatAsString = false, int collectionFormat = 0, bool isCollectionFormatSpecified = false);
     public static string? BuildQueryString(List<KeyValuePair<string, string?>>? queryParams, UriFormat uriFormat = UriFormat.UriEscaped);
     public static string BuildRelativePath(string path, List<KeyValuePair<string, string?>>? queryParams, UriFormat uriFormat = UriFormat.UriEscaped);
@@ -292,7 +296,7 @@ public static class RestApiBridge
 | OBS3002 | Error | 未引用消费者包 `Observables.RestAPI.R3` / `Observables.RestAPI.Reactive`（按生成器后端） |
 | OBS3003 | Error | 不支持的返回类型 |
 | OBS3004 | Error | 路径模板与参数不匹配（占位符无对应参数或反之） |
-| OBS3005 | Error | `IObservable<T>` 返回但未引用 `Observables.RestAPI.Reactive`（R3 生成器侧） |
+| OBS3005 | Error | `IObservable<T>` 返回但缺少 Reactive 桥接适配器（**Reactive 生成器侧**；R3 侧同情形报 OBS3003） |
 | OBS3006 | Error | 源生成器内部错误 |
 | OBS3007 | Warning | 空 `[RestApi]` 接口（未声明任何成员，`Observables.Analyzers`） |
 | OBS3008 | Error | 同一方法声明了多个 `[Body]` 参数 |
@@ -344,13 +348,13 @@ Observables.RestAPI/
 | **`BodySerializationMethod` 镜像枚举** | 生成器（netstandard2.0）不引用运行时项目，用 internal 镜像枚举 + `int` 传递 |
 | **`#if NET6_0_OR_GREATER` 嵌入生成代码** | `HttpRequestMessage.Options` vs `Properties` 由消费者编译器选择 |
 | **`BackendTokens.IsR3` + `#if RESTAPI_R3`（Emitter）** | 返回类型分类与 IO 域共用 compile-time backend seam；Emitter 仍用域级 `#if` 切换发射文本 |
-| **`PathFragmentModel` readonly record struct** | 路径模板编译期拆分，常量段直接拼接，参数段运行时格式化 |
+| **每方法静态 `MethodSpec` + `in` 传递** | 请求形状（HTTP 方法、路径模板、`Binding[]` 槽、flags）编译期定死为静态字段，运行时不重建字符串/元数据 |
 | **`IApiResponse<T>` 可选不抛异常** | 需要检查状态码/头的场景用 `IApiResponse<T>`；需要抛异常用 `Task<T>` |
 | **HttpClientFactory 独立包** | DI 集成可选，不强制依赖 `Microsoft.Extensions.Http` |
 
 ## 11. 后续（v1 之外）
 
 - `JsonSerializerContext` source-gen 进一步改善 AOT/trim（当前 `SystemTextJsonContentSerializer` 仍用反射式序列化）。
-- `DynamicallyAccessedMemberTypes` 精细化（Path B 已显著收敛，但 `RestService.For` 回退路径仍用 `All`）。
+- `DynamicallyAccessedMemberTypes` 精细化（Path B 已显著收敛，但 `RestService.For` 各重载仍带 `PublicMethods | PublicProperties`，比 `TryGetGeneratedFactory` 查表实际需要的宽）。
 - 流式响应（`IAsyncEnumerable<T>`）支持。
 - 多部分上传的 `Stream` 优化（当前 `AddMultipartItem` 对 `Stream` 走 `StreamContent`）。

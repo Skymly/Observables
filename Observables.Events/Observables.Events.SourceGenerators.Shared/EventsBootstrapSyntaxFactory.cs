@@ -25,11 +25,11 @@ internal static class EventsBootstrapSyntaxFactory
                             .AddModifiers(Token(SyntaxKind.InternalKeyword))
                             .AddAttributeLists(CreateEditorBrowsableNeverAttributeList())));
 
-    public static CompilationUnitSyntax CreateClassicObservableEventsBootstrapExtensionsCompilationUnit(bool includeStatics) =>
+    public static CompilationUnitSyntax CreateClassicObservableEventsBootstrapExtensionsCompilationUnit() =>
         CompilationUnit()
             .AddMembers(
                 NamespaceDeclaration(BootstrapNamespaceName)
-                    .AddMembers(CreateClassicBootstrapExtensionsClass(includeStatics)));
+                    .AddMembers(CreateClassicBootstrapExtensionsClass()));
 
     public static CompilationUnitSyntax CreateRoutedObservableEventsBootstrapExtensionsCompilationUnit() =>
         CompilationUnit()
@@ -71,26 +71,13 @@ internal static class EventsBootstrapSyntaxFactory
     }
 #endif
 
-    public static CompilationUnitSyntax CreateObservableEventsStaticsShellCompilationUnit() =>
-        CompilationUnit()
-            .AddMembers(
-                FileScopedNamespaceDeclaration(BootstrapNamespaceName)
-                    .AddMembers(
-                        ClassDeclaration("ObservableEventsStatics")
-                            .AddModifiers(Token(SyntaxKind.PublicKeyword), Token(SyntaxKind.PartialKeyword))));
-
-    private static ClassDeclarationSyntax CreateClassicBootstrapExtensionsClass(bool includeStatics)
+    private static ClassDeclarationSyntax CreateClassicBootstrapExtensionsClass()
     {
         var methods = new List<MemberDeclarationSyntax>
         {
             CreateNullReturningExtension("Events"),
             CreateNullReturningExtension("EventHandlers"),
         };
-
-        if (includeStatics)
-        {
-            methods.Add(CreateObservableEventsStaticsExtension());
-        }
 
         return ClassDeclaration("ObservableEventsBootstrapExtensions")
             .AddModifiers(
@@ -162,22 +149,6 @@ internal static class EventsBootstrapSyntaxFactory
             .AddAttributeLists(CreateEditorBrowsableNeverAttributeList())
             .AddModifiers(Token(SyntaxKind.PublicKeyword), Token(SyntaxKind.StaticKeyword))
             .AddParameterListParameters(parameters.ToArray())
-            .WithBody(
-                Block(
-                    ReturnStatement(
-                        DefaultExpression(NullEventsType))));
-    }
-
-    private static MethodDeclarationSyntax CreateObservableEventsStaticsExtension()
-    {
-        return MethodDeclaration(NullEventsType, Identifier("ObservableEventsStatics"))
-            .AddAttributeLists(CreateEditorBrowsableNeverAttributeList())
-            .AddModifiers(Token(SyntaxKind.PublicKeyword), Token(SyntaxKind.StaticKeyword))
-            .WithTypeParameterList(TypeParameterList(SingletonSeparatedList(TypeParameter("T"))))
-            .AddParameterListParameters(
-                Parameter(Identifier("source"))
-                    .WithType(NullableType(IdentifierName("T")))
-                    .AddModifiers(Token(SyntaxKind.ThisKeyword)))
             .WithBody(
                 Block(
                     ReturnStatement(

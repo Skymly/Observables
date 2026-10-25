@@ -4,7 +4,7 @@
 
   <PropertyGroup>
     <Description>Source generator for PostgreSQL LISTEN/NOTIFY proxies → R3 Observable.</Description>
-    <DefineConstants>$(DefineConstants);ROSLYN_4;POSTGRES_R3</DefineConstants>
+    <DefineConstants>$(DefineConstants);POSTGRES_R3</DefineConstants>
   </PropertyGroup>
 
   <ItemGroup>

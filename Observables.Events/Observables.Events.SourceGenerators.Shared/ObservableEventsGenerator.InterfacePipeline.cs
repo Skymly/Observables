@@ -85,19 +85,8 @@ public sealed partial class ObservableEventsGenerator
         {
             var parentDef = HierarchyKey(parent);
             var contribution = ExpandForInterfaces(parentDef, result, entryKind, compilation, useWpf);
-            if (result.ContainsKey(parentDef))
-            {
-                if (!parentTypes.Contains(parent, SymbolEqualityComparer.Default))
-                    parentTypes.Add(parent);
-            }
-            else
-            {
-                foreach (var c in contribution)
-                {
-                    if (!parentTypes.Contains(c, SymbolEqualityComparer.Default))
-                        parentTypes.Add(c);
-                }
-            }
+            if (contribution.Length > 0 && !parentTypes.Contains(parent, SymbolEqualityComparer.Default))
+                parentTypes.Add(parent);
         }
 
         var declaredEvents = type.GetMembers()
@@ -105,21 +94,80 @@ public sealed partial class ObservableEventsGenerator
             .Where(e => e is
             {
                 IsStatic: false,
-                DeclaredAccessibility: Accessibility.Public,
                 IsOverride: false,
             } && e.ExplicitInterfaceImplementations.IsEmpty
+                && compilation.IsSymbolAccessibleWithin(e, compilation.Assembly)
                 && IsEventIncludedForEntryKind(e, entryKind, compilation, useWpf))
             .ToList();
 
-        var parentEventNames = new System.Collections.Generic.HashSet<string>(System.StringComparer.Ordinal);
+        // Merge every parent's (already built) event surface. A name inherited through more than
+        // one parent with an incompatible delegate type cannot be emitted on a single generated
+        // interface — drop those parents from the base list, flatten their remaining events into
+        // this interface's own set, and record the skipped events for OBS2006 reporting.
+        var skippedConflictingEvents = new List<IEventSymbol>();
+        var flattenedParentEvents = new Dictionary<string, IEventSymbol>(System.StringComparer.Ordinal);
+        if (parentTypes.Count > 1)
+        {
+            var perParentEvents = new List<(INamedTypeSymbol Parent, Dictionary<string, IEventSymbol> Events)>(parentTypes.Count);
+            var merged = new Dictionary<string, IEventSymbol>(System.StringComparer.Ordinal);
+            var conflictingNames = new System.Collections.Generic.HashSet<string>(System.StringComparer.Ordinal);
+            foreach (var pt in parentTypes)
+            {
+                var ptEvents = new Dictionary<string, IEventSymbol>(System.StringComparer.Ordinal);
+                if (result.TryGetValue(HierarchyKey(pt), out var pd))
+                    CollectInterfaceEventsRecursive(pd, result, ptEvents);
+                perParentEvents.Add((pt, ptEvents));
+                foreach (var kvp in ptEvents)
+                {
+                    if (merged.TryGetValue(kvp.Key, out var existing))
+                    {
+                        if (!SymbolEqualityComparer.Default.Equals(existing.Type, kvp.Value.Type))
+                            conflictingNames.Add(kvp.Key);
+                    }
+                    else
+                    {
+                        merged[kvp.Key] = kvp.Value;
+                    }
+                }
+            }
+
+            if (conflictingNames.Count > 0)
+            {
+                var keptParents = new List<INamedTypeSymbol>();
+                foreach (var (parent, events) in perParentEvents)
+                {
+                    if (!events.Keys.Any(conflictingNames.Contains))
+                    {
+                        keptParents.Add(parent);
+                        continue;
+                    }
+
+                    foreach (var kvp in events)
+                    {
+                        if (conflictingNames.Contains(kvp.Key))
+                            skippedConflictingEvents.Add(kvp.Value);
+                        else if (!flattenedParentEvents.ContainsKey(kvp.Key))
+                            flattenedParentEvents[kvp.Key] = kvp.Value;
+                    }
+                }
+
+                parentTypes = keptParents;
+            }
+        }
+
+        var inheritedEvents = new Dictionary<string, IEventSymbol>(System.StringComparer.Ordinal);
         foreach (var pt in parentTypes)
         {
             if (result.TryGetValue(HierarchyKey(pt), out var pd))
-                CollectAllInterfaceEventNames(pd, result, parentEventNames);
+                CollectInterfaceEventsRecursive(pd, result, inheritedEvents);
         }
 
+        var parentEventNames = inheritedEvents.Keys;
         var exclusiveEvents = declaredEvents
             .Where(e => !parentEventNames.Contains(e.Name))
+            .Concat(flattenedParentEvents.Values.Where(fe =>
+                !parentEventNames.Contains(fe.Name)
+                && declaredEvents.All(de => de.Name != fe.Name)))
             .OrderBy(static e => e.Name, System.StringComparer.Ordinal)
             .ToImmutableArray();
 
@@ -128,7 +176,13 @@ public sealed partial class ObservableEventsGenerator
 
         var ifaceName = ComputeRawEventInterfaceName(type, entryKind);
         var implName = GetEventImplName(type, entryKind);
-        result[type] = new EventInterfaceDescriptor(type, ifaceName, implName, exclusiveEvents, parentTypes.ToImmutableArray());
+        result[type] = new EventInterfaceDescriptor(
+            type,
+            ifaceName,
+            implName,
+            exclusiveEvents,
+            parentTypes.ToImmutableArray(),
+            skippedConflictingEvents.ToImmutableArray());
         return ImmutableArray.Create(type);
     }
 
@@ -139,6 +193,11 @@ public sealed partial class ObservableEventsGenerator
     {
         foreach (var desc in hierarchy.Values)
         {
+            foreach (var skipped in desc.SkippedConflictingEvents)
+            {
+                reportDiagnostic(DiagnosticDescriptors.IncompatibleEventMerge.Id, skipped.Locations.FirstOrDefault(), skipped.Name);
+            }
+
             var byName = new Dictionary<string, IEventSymbol>(System.StringComparer.Ordinal);
             CollectExclusiveEventsRecursive(desc, hierarchy, byName, reportDiagnostic);
             foreach (var declared in desc.SourceType.GetMembers().OfType<IEventSymbol>()
@@ -193,17 +252,25 @@ public sealed partial class ObservableEventsGenerator
             yield return iface;
     }
 
-    private static void CollectAllInterfaceEventNames(
-        EventInterfaceDescriptor descriptor,
+    /// <summary>
+    /// Collects all event symbols contributed by <paramref name="desc"/> and its parents —
+    /// first declaration wins on duplicate names.
+    /// </summary>
+    private static void CollectInterfaceEventsRecursive(
+        EventInterfaceDescriptor desc,
         Dictionary<INamedTypeSymbol, EventInterfaceDescriptor> hierarchy,
-        System.Collections.Generic.HashSet<string> names)
+        Dictionary<string, IEventSymbol> events)
     {
-        foreach (var evt in descriptor.ExclusiveEvents)
-            names.Add(evt.Name);
-        foreach (var parentType in descriptor.ParentTypes)
+        foreach (var evt in desc.ExclusiveEvents)
+        {
+            if (!events.ContainsKey(evt.Name))
+                events[evt.Name] = evt;
+        }
+
+        foreach (var parentType in desc.ParentTypes)
         {
             if (hierarchy.TryGetValue(HierarchyKey(parentType), out var pd))
-                CollectAllInterfaceEventNames(pd, hierarchy, names);
+                CollectInterfaceEventsRecursive(pd, hierarchy, events);
         }
     }
 
@@ -325,7 +392,8 @@ public sealed partial class ObservableEventsGenerator
         ObservableEventsEntryKind entryKind,
         Compilation compilation)
     {
-        if (evt.Type is not INamedTypeSymbol delegateType
+        if (!IsEventSignatureNameable(evt, compilation)
+            || evt.Type is not INamedTypeSymbol delegateType
             || delegateType.DelegateInvokeMethod is not IMethodSymbol invoke
             || !invoke.ReturnsVoid
             || invoke.Parameters.Any(static p => p.RefKind != RefKind.None))

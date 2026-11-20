@@ -12,8 +12,9 @@ Skymly/Observables is an open-source .NET library and Roslyn generator suite, no
 | **Messaging Clients** | Runtime/adapters in `Observables.Mqtt`, `Observables.Nats`, `Observables.Postgres`, and `Observables.Redis`. Broker/database clients and app-supplied topic/subject/channel values determine destinations; protocol bridges receive and deserialize remote messages. Anyone able to publish to a matched destination, or control the broker/server, can influence the delivered data. Protect connection credentials, payloads, correct subscription routing, and app availability. |
 | **Local Events and Shared Runtime** | Events runtime/build surfaces and `Observables.Shared/Observables.Core` cover local event adapters and reusable registration/types (including `GeneratedProxyFactoryRegistry.cs`). App code and its dependencies can raise events, manage subscriptions or register factories in-process. Protect subscriber lifetime and proxy selection; this is not an isolation boundary against code already executing in the host. |
 | **Package Release** | `.github/workflows/{ci,release}.yml`, `build/`, `eng/`, root build props, dependency versions, and Feature `*.Package` projects cover PR CI, tag/manual releases, package verification and publishing. A contributor can submit changes for PR CI. The release workflow checks maintainer actor/triggering actor and uses NuGet and GitHub credentials; companion sync uses a separate token. Protect package bits and identity, registry credentials, and write access to the Docs/Samples repositories. |
+| **Repository Metadata and Docs** | Fallback for paths without a more specific owner, including `docs/`, `assets/`, root documentation and repository metadata, and `.github/ISSUE_TEMPLATE/`. These paths do not execute in consumer builds or apps; assess their effect on contributor and release decisions, such as unsafe setup guidance. |
 
-Compiler-side paths map to **Compiler Tooling** and packaging/build/CI paths map to **Package Release** before Feature runtime paths are classified. Tests map to the component they exercise.
+Classify compiler tooling and packaging/build/CI paths before Feature runtimes. Feature tests map to the component they exercise; the shared Roslyn harness (`Observables.TestSupport` and its tests) maps to **Compiler Tooling**. Use **Repository Metadata and Docs** if no other component applies.
 
 ## Relevant attackers
 
@@ -23,8 +24,9 @@ Compiler-side paths map to **Compiler Tooling** and packaging/build/CI paths map
 
 ## Observed controls and responsibilities
 
-- REST request construction has escaping helpers; the authorization handler and async-local call scope are separate from application authorization policy. Consumer HTTP handlers and SDK/client settings can affect authentication, redirects and TLS behavior.
-- SSE declares configurable line/event byte limits; WebSocket passes a maximum message size into its receive path. PostgreSQL quotes LISTEN/UNLISTEN identifiers and binds notification parameters. These are specific controls, not claims that all inputs are bounded or all protocol routes are covered.
+- REST request construction has escaping helpers; the authorization handler and async-local call scope are separate from application authorization policy. The legacy `AuthenticatedHttpClientHandler` overload installs a default `HttpClientHandler` if none is supplied, so its redirect, cookie, and TLS defaults are in scope alongside app-provided handlers and SDK/client settings.
+- SSE has configurable line/event byte limits. The subscription that starts a WebSocket receive pump sets its message limit; later subscriptions on that pump cannot tighten it.
+- PostgreSQL validates names for `LISTEN` (including its `UNLISTEN` cleanup) and `pg_notify` against the `[A-Za-z_][A-Za-z0-9_]*` pattern and a 63-character limit. It also quotes LISTEN/UNLISTEN identifiers and binds notification parameters.
 - CI checks PRs with read-only content permissions, and CI/release actions use pinned commit SHAs. Release invokes Nuke tests and `PackVerify` before publishing; `PackVerify` checks package contents and backend boundaries, not all supply-chain threats.
 
 ## Owner decisions and open questions

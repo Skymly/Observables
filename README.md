@@ -16,6 +16,7 @@
 | 示例应用 | [Observables.Samples](https://github.com/Skymly/Observables.Samples) |
 | NuGet | [nuget.org/profiles/Skymly](https://www.nuget.org/profiles/Skymly) |
 | 贡献与发版 | [CONTRIBUTING.md](./CONTRIBUTING.md) |
+| 安全模型 | [SECURITY_MODEL.md](./SECURITY_MODEL.md) |
 
 ## 运行时与包名
 

@@ -283,6 +283,7 @@ Observables/
 | **ADR** | `docs/adr/` | 架构决策记录（不可变；编号不复用；推翻须新 ADR） |
 | **Design Doc** | `docs/design/` | 每域一份：API 面、诊断表、不变量、生成器管道、设计决策 |
 | **Roadmap** | `docs/ROADMAP.md` | 功能与技术 backlog |
+| **Security Model** | [`SECURITY_MODEL.md`](SECURITY_MODEL.md) | 信任边界、攻击者假设、安全扫描与发现分级 |
 | **Issue / PR** | GitHub | 需求追踪、变更审查 |
 | **Release** | GitHub Releases + `CONTRIBUTING.md` 版本表 | 版本历史 |
 | **用户文档** | [Observables.Docs](https://github.com/Skymly/Observables.Docs) | 使用指南、诊断说明（VitePress） |

@@ -7,6 +7,22 @@ namespace Observables.Mqtt.Tests;
 public sealed class MqttObservableCreateTests
 {
     [Fact]
+    public async Task FromSubscribe_rejects_shared_filter_before_subscribing()
+    {
+        var proxy = FakeMqtt.Create();
+        var observer = new RecordingObserver<string>();
+        using var subscription = MqttObservable.FromSubscribe<string>(proxy.AsClient(), "$share/readers/sensors/+")
+            .Subscribe(observer);
+
+        var result = await observer.Completed.WaitAsync(TimeSpan.FromSeconds(2), TestContext.Current.CancellationToken);
+
+        Assert.True(result.IsFailure);
+        Assert.IsType<NotSupportedException>(result.Exception);
+        Assert.Equal(0, Volatile.Read(ref proxy.SubscribeCalls));
+        Assert.Equal(0, proxy.HandlerCount);
+    }
+
+    [Fact]
     public async Task FromSubscribe_rejected_subscribe_completes_with_failure()
     {
         var proxy = FakeMqtt.Create(rejectSubscribe: true);

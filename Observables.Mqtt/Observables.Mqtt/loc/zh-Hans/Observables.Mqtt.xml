@@ -18,9 +18,11 @@
         </member>
         <member name="T:Observables.Mqtt.MqttSubscribeAttribute">
             <summary>代理订阅，映射为入站应用消息。</summary>
+            <remarks>支持精确主题过滤器和标准 MQTT 通配符。以 <c>$share/</c> 开头的共享订阅过滤器会触发 OBS5006。</remarks>
         </member>
         <member name="M:Observables.Mqtt.MqttSubscribeAttribute.#ctor(System.String)">
             <summary>代理订阅，映射为入站应用消息。</summary>
+            <remarks>支持精确主题过滤器和标准 MQTT 通配符。以 <c>$share/</c> 开头的共享订阅过滤器会触发 OBS5006。</remarks>
         </member>
         <member name="T:Observables.Mqtt.DefaultMqttPayloadSerializer">
             <summary>

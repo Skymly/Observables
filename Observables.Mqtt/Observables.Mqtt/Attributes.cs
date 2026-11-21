@@ -23,6 +23,7 @@ public sealed class MqttPublishAttribute(string? topicTemplate = null) : Attribu
 }
 
 /// <summary>Broker subscription mapped to incoming application messages.</summary>
+/// <remarks>Use exact filters and standard MQTT wildcards. Shared filters starting with <c>$share/</c> produce OBS5006.</remarks>
 [AttributeUsage(AttributeTargets.Property)]
 public sealed class MqttSubscribeAttribute(string? topicFilter = null) : Attribute
 {

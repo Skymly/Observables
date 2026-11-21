@@ -1,17 +1,50 @@
 # Observables.Mqtt.Reactive
 
-Declarative MQTT topic proxies with Roslyn source generators — annotate interfaces with `[MqttSubscribe]`/`[MqttPublish]` to generate [System.Reactive](https://github.com/dotnet/reactive) `IObservable<T>` proxies for MQTTnet realtime messaging.
+Declarative MQTT topic proxies powered by Roslyn and MQTTnet. The generated proxies return [System.Reactive](https://github.com/dotnet/reactive) `IObservable<T>` streams.
 
 ## Install
 
-```xml
-<PackageReference Include="Observables.Mqtt.Reactive" />
-<PackageReference Include="System.Reactive" Version="6.0.1" />
+```bash
+dotnet add package Observables.Mqtt.Reactive
 ```
 
-## Usage
+## Quick start
 
-Same hub attributes as the R3 package; use `IObservable<T>` return types and `MqttService.For<T>(connection)`.
+This console example connects to an MQTT broker listening on localhost port 1883. It subscribes to the temperature topic and sends an empty ping command.
+
+```csharp
+using System;
+using System.Threading;
+using MQTTnet;
+using MQTTnet.Client;
+using Observables.Mqtt;
+using System.Reactive;
+
+using var client = new MqttFactory().CreateMqttClient();
+var options = new MqttClientOptionsBuilder()
+    .WithTcpServer("localhost", 1883)
+    .Build();
+await client.ConnectAsync(options, CancellationToken.None);
+
+var topics = MqttService.For<ISensorTopics>(client);
+using var readings = topics.Temperature.Subscribe(value => Console.WriteLine(value));
+using var ping = topics.Ping("room-1").Subscribe(_ => Console.WriteLine("Ping sent"));
+Console.ReadLine();
+
+[Mqtt]
+public interface ISensorTopics
+{
+    [MqttSubscribe("/sensors/temperature")]
+    IObservable<string> Temperature { get; }
+
+    [MqttPublish("sensors/{id}/ping")]
+    IObservable<Unit> Ping(string id);
+}
+```
+
+Generated publish methods send empty payloads. For raw bytes, subscribe to `SystemReactiveMqttAdapter.FromPublish(client, topic, payload, cancellationToken)`. The adapter is in `Observables.Mqtt.Reactive`.
+
+Subscription attributes accept exact topic filters and standard `+` and `#` wildcards. Shared subscription filters starting with `$share/` produce `OBS5006`.
 
 ## Diagnostics
 

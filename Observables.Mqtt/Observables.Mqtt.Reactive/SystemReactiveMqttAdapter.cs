@@ -19,10 +19,21 @@ public static class SystemReactiveMqttAdapter
         IMqttClient client,
         string topic,
         CancellationToken cancellationToken = default) =>
+        FromPublish(client, topic, Array.Empty<byte>(), cancellationToken);
+
+    /// <summary>
+    /// Publishes <paramref name="payload"/> to <paramref name="topic"/> at QoS 1.
+    /// A rejected PUBACK (any reason other than Success or NoMatchingSubscribers) fails the observable.
+    /// </summary>
+    public static IObservable<System.Reactive.Unit> FromPublish(
+        IMqttClient client,
+        string topic,
+        byte[] payload,
+        CancellationToken cancellationToken = default) =>
         Observable.FromAsync(async ct =>
         {
             using var linked = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, ct);
-            await MqttProtocol.PublishAsync(client, topic, Array.Empty<byte>(), linked.Token).ConfigureAwait(false);
+            await MqttProtocol.PublishAsync(client, topic, payload, linked.Token).ConfigureAwait(false);
             return System.Reactive.Unit.Default;
         });
 

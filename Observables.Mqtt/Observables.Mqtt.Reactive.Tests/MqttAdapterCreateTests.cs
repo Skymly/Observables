@@ -10,6 +10,21 @@ namespace Observables.Mqtt.Reactive.Tests;
 public sealed class MqttAdapterCreateTests
 {
     [Fact]
+    public async Task FromSubscribe_rejects_shared_filter_before_subscribing()
+    {
+        var proxy = FakeMqtt.Create();
+
+        await Assert.ThrowsAsync<NotSupportedException>(() => SystemReactiveMqttAdapter
+            .FromSubscribe<string>(proxy.AsClient(), "$share/readers/sensors/+")
+            .Timeout(TimeSpan.FromSeconds(2))
+            .FirstAsync()
+            .ToTask(TestContext.Current.CancellationToken));
+
+        Assert.Equal(0, Volatile.Read(ref proxy.SubscribeCalls));
+        Assert.Equal(0, proxy.HandlerCount);
+    }
+
+    [Fact]
     public async Task Fake_UnsubscribeAsync_returns_unsubscribe_result()
     {
         var proxy = FakeMqtt.Create();

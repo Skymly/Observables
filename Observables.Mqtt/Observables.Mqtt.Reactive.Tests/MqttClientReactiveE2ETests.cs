@@ -57,6 +57,28 @@ public sealed class MqttClientReactiveE2ETests(MqttTestBrokerFixture fixture)
     }
 
     [Fact]
+    public async Task FromPublish_sends_raw_bytes_to_the_broker()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        await using var subscriber = await fixture.Broker.ConnectAsync(cancellationToken);
+        await using var publisher = await fixture.Broker.ConnectAsync(cancellationToken);
+        const string topic = "/e2e/raw-bytes";
+
+        using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        timeout.CancelAfter(DefaultTimeout);
+        var subscribed = fixture.Broker.WaitForSubscriptionAsync(subscriber.ClientId, topic, timeout.Token);
+        var received = SystemReactiveMqttAdapter.FromSubscribe<byte[]>(subscriber.Client, topic)
+            .FirstAsync().ToTask(timeout.Token);
+        await subscribed;
+
+        byte[] payload = [0, 0xFF, 0x7F];
+        await SystemReactiveMqttAdapter.FromPublish(publisher.Client, topic, payload, timeout.Token)
+            .FirstAsync().ToTask(timeout.Token);
+
+        Assert.Equal(payload, await received);
+    }
+
+    [Fact]
     public async Task FromSubscribe_multi_level_wildcard_receives_parent_topic()
     {
         await using var session = await fixture.Broker.ConnectAsync(TestContext.Current.CancellationToken);

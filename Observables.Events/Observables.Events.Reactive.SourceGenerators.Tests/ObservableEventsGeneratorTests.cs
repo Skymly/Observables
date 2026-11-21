@@ -564,6 +564,8 @@ public sealed class ObservableEventsGeneratorTests
         Assert.Contains("AddHandler", snapshot);
         Assert.Contains("RemoveHandler", snapshot);
         Assert.Contains("_handledEventsToo", snapshot);
+        Assert.Contains("Event<global::System.Windows.RoutedEventHandler, global::System.Windows.RoutedEventArgs>", snapshot);
+        Assert.Contains("Event<global::System.Windows.RoutedEventHandler, (object? sender, global::System.Windows.RoutedEventArgs e)>", snapshot);
         Assert.DoesNotContain("_sender.Click +=", snapshot);
         Assert.DoesNotContain("_sender.Click -=", snapshot);
     }

@@ -40,13 +40,15 @@ internal static class ObservableEventsSyntaxFactory
             ));
 
     public static TypeSyntax ObservableSenderArgsTupleType(TypeSyntax eventArgsType) =>
-        ObservableType(
-            TupleType(
-                SeparatedList(
-                [
-                    TupleElement(NullableType(PredefinedType(Token(SyntaxKind.ObjectKeyword))), Identifier("sender")),
-                    TupleElement(eventArgsType, Identifier("e")),
-                ])));
+        ObservableType(SenderArgsTupleType(eventArgsType));
+
+    private static TupleTypeSyntax SenderArgsTupleType(TypeSyntax eventArgsType) =>
+        TupleType(
+            SeparatedList(
+            [
+                TupleElement(NullableType(PredefinedType(Token(SyntaxKind.ObjectKeyword))), Identifier("sender")),
+                TupleElement(eventArgsType, Identifier("e")),
+            ]));
 
     public static TypeSyntax SystemEventHandlerType(TypeSyntax eventArgsType) =>
         QualifiedName(
@@ -137,7 +139,7 @@ internal static class ObservableEventsSyntaxFactory
                     IdentifierName("h"),
                     ArgumentList(SingletonSeparatedList(Argument(IdentifierName(argName)))))));
 
-    public static ExpressionSyntax EventHandlerFactorySenderAndArgs() =>
+    public static ExpressionSyntax EventHandlerFactorySenderAndArgs(ExpressionSyntax? eventArgs = null) =>
         SimpleLambdaExpression(
             Parameter(Identifier("h")),
             ParenthesizedLambdaExpression(
@@ -149,7 +151,7 @@ internal static class ObservableEventsSyntaxFactory
                     ])),
                 InvocationExpression(
                     IdentifierName("h"),
-                    ArgumentList(SingletonSeparatedList(Argument(IdentifierName("e")))))));
+                    ArgumentList(SingletonSeparatedList(Argument(eventArgs ?? IdentifierName("e")))))));
 
     private static ExpressionSyntax EventHandlerFactoryTuple(ImmutableArray<IParameterSymbol> parameters)
     {
@@ -165,7 +167,7 @@ internal static class ObservableEventsSyntaxFactory
                     ArgumentList(SingletonSeparatedList(Argument(TupleExpression(tupleArgs)))))));
     }
 
-    private static ExpressionSyntax EventHandlerFactoryLegacyTuple() =>
+    private static ExpressionSyntax EventHandlerFactoryLegacyTuple(ExpressionSyntax? eventArgs = null) =>
         SimpleLambdaExpression(
             Parameter(Identifier("h")),
             ParenthesizedLambdaExpression(
@@ -184,7 +186,7 @@ internal static class ObservableEventsSyntaxFactory
                                     SeparatedList<ArgumentSyntax>(
                                     [
                                         Argument(IdentifierName("sender")),
-                                        Argument(IdentifierName("e")),
+                                        Argument(eventArgs ?? IdentifierName("e")),
                                     ]))))))));
     public static StatementSyntax SenderAssignmentStatement() =>
         ExpressionStatement(
@@ -732,27 +734,17 @@ internal static class ObservableEventsSyntaxFactory
                     Argument(IdentifierName("h")),
                 ])));
 
-        var subscribeHandler = HandlerSubscriptionLambda(addHandler);
-        var unsubscribeHandler = HandlerSubscriptionLambda(removeHandler);
-        ExpressionSyntax body;
-        TypeSyntax returnType;
-        if (useEventHandlers)
-        {
-            returnType = ObservableSenderArgsTupleType(eventArgs);
-            body = FromEventHandlerInvocation(eventArgs, subscribeHandler, unsubscribeHandler);
-        }
-        else
-        {
-            returnType = ObservableType(eventArgs);
-            body = FromEventInvocation(
-                SystemEventHandlerType(eventArgs),
-                eventArgs,
-                EventHandlerFactorySenderAndArgs(),
-                subscribeHandler,
-                unsubscribeHandler);
-        }
+        // WPF accepts RoutedEventHandler for every routed event and passes the original event args.
+        var typedArgs = CastExpression(eventArgs, IdentifierName("e"));
+        TypeSyntax elementType = useEventHandlers ? SenderArgsTupleType(eventArgs) : eventArgs;
+        var body = FromEventInvocation(
+            ParseTypeName("global::System.Windows.RoutedEventHandler"),
+            elementType,
+            useEventHandlers ? EventHandlerFactoryLegacyTuple(typedArgs) : EventHandlerFactorySenderAndArgs(typedArgs),
+            HandlerSubscriptionLambda(addHandler),
+            HandlerSubscriptionLambda(removeHandler));
 
-        var property = PropertyDeclaration(returnType, Identifier(IdentifierHelper.Escape(evt.Name)))
+        var property = PropertyDeclaration(ObservableType(elementType), Identifier(IdentifierHelper.Escape(evt.Name)))
             .AddModifiers(Token(SyntaxKind.PublicKeyword))
             .WithExpressionBody(ArrowExpressionClause(body))
             .WithSemicolonToken(Token(SyntaxKind.SemicolonToken));

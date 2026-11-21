@@ -40,7 +40,7 @@
 | **`Observables.<Feature>.R3.SourceGenerators`** | 是 | R3 源生成器（`IsRoslynComponent`）。 |
 | **`Observables.<Feature>.Reactive.SourceGenerators`** | 是 | System.Reactive 源生成器。 |
 | **`Observables.<Feature>.Primitives.SourceGenerators`** | 未实现 | ReactiveUI.Primitives 源生成器（第三路，ADR-005）。 |
-| **`Observables.<Feature>.Package`** | 发布时 | **Traversal 根**下为每个已启用的后端配置一个可 pack 子项目。当前十个域均发布 **`Observables.<Feature>.R3`** 与 **`Observables.<Feature>.Reactive`**。 |
+| **`Observables.<Feature>.Package`** | 发布时 | **Traversal 根**下为每个已启用的后端配置一个可 pack 子项目。十个域均已有 Package，当前发布 **`Observables.<Feature>.R3`** 与 **`Observables.<Feature>.Reactive`**。 |
 
 可选扩展依赖域运行时，例如 `Observables.RestAPI.HttpClientFactory` 提供依赖注入集成。
 

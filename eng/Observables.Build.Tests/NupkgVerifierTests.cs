@@ -466,8 +466,10 @@ public sealed class NupkgVerifierTests
         }
     }
 
-    [Fact]
-    public void Verify_fails_when_nuspec_depends_on_the_forbidden_backend()
+    [Theory]
+    [InlineData("")]
+    [InlineData("netstandard2.0")]
+    public void Verify_fails_when_nuspec_depends_on_a_forbidden_backend(string tfm)
     {
         string nupkg = NupkgFixture.Create(
             EventsR3,
@@ -479,7 +481,7 @@ public sealed class NupkgVerifierTests
             ],
             nuspecDependenciesByTfm: new Dictionary<string, IReadOnlyList<string>>
             {
-                ["netstandard2.0"] = ["R3", "System.Reactive"],
+                [tfm] = ["R3", "ReactiveUI.Primitives"],
             });
 
         try
@@ -490,10 +492,10 @@ public sealed class NupkgVerifierTests
                 {
                     PackageId = EventsR3,
                     GeneratorAssemblyFileName = EventsGenerator,
-                    ForbiddenNuspecDependencyIds = ["System.Reactive"],
+                    ForbiddenNuspecDependencyIds = PackCsprojReader.ForbiddenBackendAssemblies(EventsR3),
                 });
 
-            Assert.Contains(errors, static e => e.Contains("must not depend on System.Reactive", StringComparison.Ordinal));
+            Assert.Contains(errors, static e => e.Contains("must not depend on ReactiveUI.Primitives", StringComparison.Ordinal));
         }
         finally
         {

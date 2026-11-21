@@ -60,13 +60,19 @@ static class NupkgFixture
         {
             foreach ((string tfm, IReadOnlyList<string> ids) in dependenciesByTfm)
             {
-                groups.Append("      <group targetFramework=\"").Append(Xml(tfm)).AppendLine("\">");
+                if (tfm.Length > 0)
+                {
+                    groups.Append("      <group targetFramework=\"").Append(Xml(tfm)).AppendLine("\">");
+                }
                 foreach (string id in ids)
                 {
                     groups.Append("        <dependency id=\"").Append(Xml(id)).AppendLine("\" version=\"1.0.0\" />");
                 }
 
-                groups.AppendLine("      </group>");
+                if (tfm.Length > 0)
+                {
+                    groups.AppendLine("      </group>");
+                }
             }
         }
 

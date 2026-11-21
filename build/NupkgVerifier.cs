@@ -111,7 +111,8 @@ static partial class NupkgVerifier
             {
                 if (ids.Contains(forbiddenId))
                 {
-                    errors.Add($"{request.PackageId}: nuspec {tfm} group must not depend on {forbiddenId}");
+                    string scope = tfm.Length == 0 ? "nuspec dependencies" : $"nuspec {tfm} group";
+                    errors.Add($"{request.PackageId}: {scope} must not depend on {forbiddenId}");
                 }
             }
         }
@@ -207,12 +208,22 @@ static partial class NupkgVerifier
     {
         var groups = new Dictionary<string, HashSet<string>>(StringComparer.OrdinalIgnoreCase);
         XDocument doc = XDocument.Parse(nuspecText);
-        foreach (XElement group in doc.Descendants().Where(static e => e.Name.LocalName == "group"))
+        foreach (XElement dependencies in doc.Descendants().Where(static e => e.Name.LocalName == "dependencies"))
         {
-            string tfm = (string?)group.Attribute("targetFramework") ?? string.Empty;
+            AddGroup(dependencies, string.Empty);
+            foreach (XElement group in dependencies.Elements().Where(static e => e.Name.LocalName == "group"))
+            {
+                AddGroup(group, (string?)group.Attribute("targetFramework") ?? string.Empty);
+            }
+        }
+
+        return groups;
+
+        void AddGroup(XElement container, string tfm)
+        {
             HashSet<string> ids = groups.GetValueOrDefault(tfm) ?? new HashSet<string>(StringComparer.OrdinalIgnoreCase);
             groups[tfm] = ids;
-            foreach (XElement dependency in group.Elements().Where(static e => e.Name.LocalName == "dependency"))
+            foreach (XElement dependency in container.Elements().Where(static e => e.Name.LocalName == "dependency"))
             {
                 string? id = (string?)dependency.Attribute("id");
                 if (!string.IsNullOrWhiteSpace(id))
@@ -221,8 +232,6 @@ static partial class NupkgVerifier
                 }
             }
         }
-
-        return groups;
     }
 
     static HashSet<string> ResolveGroup(Dictionary<string, HashSet<string>> groups, string tfm)

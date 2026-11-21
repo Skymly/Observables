@@ -1,8 +1,12 @@
-using Microsoft.AspNetCore.SignalR;
+using Microsoft.AspNetCore.Connections;
 using Microsoft.AspNetCore.SignalR.Client;
+using Microsoft.AspNetCore.SignalR.Protocol;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Observables.SignalR;
 using Observables.SignalR.Reactive.Tests.Contracts;
 using Observables.SignalR.Tests.Infrastructure;
+using System.Net;
 using System.Reactive.Linq;
 using System.Reactive.Threading.Tasks;
 
@@ -60,25 +64,22 @@ public sealed class HubConnectionReactiveE2ETests(SignalRTestServerFixture fixtu
 
 
     [Fact]
-    public async Task FromInvoke_dispose_cancels_without_ObjectDisposedException()
+    public async Task FromInvoke_dispose_cancels_a_pending_invocation()
     {
-        await using var connection = await ConnectAsync();
-        var error = new TaskCompletionSource<Exception>(TaskCreationOptions.RunContinuationsAsynchronously);
-
-        using var subscription = SystemReactiveSignalRAdapter.FromInvoke<int>(connection, "HoldInvoke", TestContext.Current.CancellationToken)
-            .Subscribe(
-                _ => { },
-                ex => error.TrySetResult(ex),
-                () => { });
-
+        await using var connection = (TrackedHubConnection)await StartAsync(
+            fixture.Server.CreateConnection(builder => builder.Services.AddSingleton<HubConnection, TrackedHubConnection>()));
         using var timeout = CancellationTokenSource.CreateLinkedTokenSource(TestContext.Current.CancellationToken);
         timeout.CancelAfter(DefaultTimeout);
-        await Task.Delay(50, timeout.Token);
+        var started = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        using var handler = connection.On("InvokeStarted", () => started.TrySetResult());
+        using var subscription = SystemReactiveSignalRAdapter.FromInvoke<int>(connection, "HoldInvoke", TestContext.Current.CancellationToken)
+            .Subscribe(_ => { });
+
+        await started.Task.WaitAsync(timeout.Token);
+        Assert.False(connection.InvocationEnded.IsCompleted);
         subscription.Dispose();
 
-        var ex = await error.Task.WaitAsync(timeout.Token);
-        Assert.True(ex is OperationCanceledException or HubException, ex.GetType().FullName);
-        Assert.IsNotType<ObjectDisposedException>(ex);
+        Assert.IsAssignableFrom<OperationCanceledException>(await connection.InvocationEnded.WaitAsync(timeout.Token));
     }
 
     [Fact]
@@ -116,5 +117,34 @@ public sealed class HubConnectionReactiveE2ETests(SignalRTestServerFixture fixtu
         using var cts = new CancellationTokenSource(DefaultTimeout);
         await connection.StartAsync(cts.Token);
         return connection;
+    }
+
+    sealed class TrackedHubConnection(
+        IConnectionFactory connectionFactory,
+        IHubProtocol protocol,
+        EndPoint endPoint,
+        IServiceProvider serviceProvider,
+        ILoggerFactory loggerFactory) : HubConnection(connectionFactory, protocol, endPoint, serviceProvider, loggerFactory)
+    {
+        // Rx detaches the observer on disposal. Observe the real invocation result at the connection.
+        readonly TaskCompletionSource<Exception?> invocationEnded = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        public Task<Exception?> InvocationEnded => invocationEnded.Task;
+
+        public override async Task<object?> InvokeCoreAsync(
+            string methodName, Type returnType, object?[] args, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                object? result = await base.InvokeCoreAsync(methodName, returnType, args, cancellationToken);
+                invocationEnded.TrySetResult(null);
+                return result;
+            }
+            catch (Exception error)
+            {
+                invocationEnded.TrySetResult(error);
+                throw;
+            }
+        }
     }
 }

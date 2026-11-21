@@ -43,14 +43,17 @@ public sealed class SignalRTestServer : IAsyncDisposable
         return new SignalRTestServer(host, host.GetTestServer());
     }
 
-    public HubConnection CreateConnection() =>
-        new HubConnectionBuilder()
+    public HubConnection CreateConnection(Action<IHubConnectionBuilder>? configure = null)
+    {
+        var builder = new HubConnectionBuilder()
             .WithUrl(HubUri, options =>
             {
                 options.Transports = HttpTransportType.LongPolling;
                 options.HttpMessageHandlerFactory = _ => testServer.CreateHandler();
-            })
-            .Build();
+            });
+        configure?.Invoke(builder);
+        return builder.Build();
+    }
 
     public HubConnection CreateStreamingConnection()
     {

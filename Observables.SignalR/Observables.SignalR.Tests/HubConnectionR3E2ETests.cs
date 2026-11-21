@@ -36,6 +36,59 @@ public sealed class HubConnectionR3E2ETests(SignalRTestServerFixture fixture)
         Assert.Equal(direct, viaProxy);
     }
 
+    [Theory]
+    [InlineData(8)]
+    [InlineData(9)]
+    public async Task Invoke_forwards_every_argument_in_order(int count)
+    {
+        await using var connection = await ConnectAsync();
+        using var timeout = CancellationTokenSource.CreateLinkedTokenSource(TestContext.Current.CancellationToken);
+        timeout.CancelAfter(DefaultTimeout);
+        int[] expected = Enumerable.Range(1, count).ToArray();
+
+        int[] result = await HubConnectionArgs.InvokeAsync<int[]>(connection, $"Read{count}",
+            expected.Cast<object?>().ToArray(), timeout.Token);
+
+        Assert.Equal(expected, result);
+    }
+
+    [Theory]
+    [InlineData(8)]
+    [InlineData(9)]
+    public async Task Send_forwards_every_argument_in_order(int count)
+    {
+        await using var connection = await ConnectAsync();
+        using var timeout = CancellationTokenSource.CreateLinkedTokenSource(TestContext.Current.CancellationToken);
+        timeout.CancelAfter(DefaultTimeout);
+        int[] expected = Enumerable.Range(1, count).ToArray();
+        var received = new TaskCompletionSource<int[]>(TaskCreationOptions.RunContinuationsAsynchronously);
+        using var handler = connection.On<int[]>("ReceivedArgs", args => received.TrySetResult(args));
+
+        await HubConnectionArgs.SendAsync(connection, $"Notify{count}", expected.Cast<object?>().ToArray(), timeout.Token);
+
+        Assert.Equal(expected, await received.Task.WaitAsync(timeout.Token));
+    }
+
+    [Theory]
+    [InlineData(8)]
+    [InlineData(9)]
+    public async Task Stream_forwards_every_argument_in_order(int count)
+    {
+        await using var connection = await ConnectStreamingAsync();
+        using var timeout = CancellationTokenSource.CreateLinkedTokenSource(TestContext.Current.CancellationToken);
+        timeout.CancelAfter(DefaultTimeout);
+        int[] expected = Enumerable.Range(1, count).ToArray();
+        var values = new List<int[]>();
+
+        await foreach (int[] result in HubConnectionArgs.StreamAsync<int[]>(connection, $"Stream{count}",
+                           expected.Cast<object?>().ToArray(), timeout.Token).WithCancellation(timeout.Token))
+        {
+            values.Add(result);
+        }
+
+        Assert.Equal(expected, Assert.Single(values));
+    }
+
     [Fact]
     public async Task HubSend_EchoSend_completes()
     {

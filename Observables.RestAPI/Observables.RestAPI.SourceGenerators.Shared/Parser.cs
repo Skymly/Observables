@@ -151,10 +151,10 @@ internal static partial class Parser
         }
 
         var httpMethodsArray = httpMethodSymbols
-            .Select(m => ParseMethod(m, true, httpMethodBaseAttributeSymbol, wellKnownTypes, diagnostics))
+            .Select(m => ParseMethod(m, interfaceSymbol, true, httpMethodBaseAttributeSymbol, wellKnownTypes, diagnostics))
             .ToImmutableEquatableArray();
         var derivedHttpMethodsArray = derivedHttpMethods
-            .Select(m => ParseMethod(m, false, httpMethodBaseAttributeSymbol, wellKnownTypes, diagnostics))
+            .Select(m => ParseMethod(m, interfaceSymbol, false, httpMethodBaseAttributeSymbol, wellKnownTypes, diagnostics))
             .ToImmutableEquatableArray();
 
         var nonHttpMethodModelList = new List<MethodModel>();
@@ -264,7 +264,7 @@ internal static partial class Parser
         return new ParameterModel(param.MetadataName, paramType, annotation);
     }
 
-    static MethodModel ParseMethod(IMethodSymbol methodSymbol, bool isImplicitInterface,
+    static MethodModel ParseMethod(IMethodSymbol methodSymbol, INamedTypeSymbol proxyInterface, bool isImplicitInterface,
         INamedTypeSymbol httpMethodBaseAttributeSymbol, WellKnownTypes wellKnownTypes, List<Diagnostic> diagnostics)
     {
         var returnType = methodSymbol.ReturnType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
@@ -288,15 +288,17 @@ internal static partial class Parser
             wellKnownTypes,
             diagnostics);
 
-        var http = ParseHttpMethod(methodSymbol, httpMethodBaseAttributeSymbol, diagnostics);
+        var http = ParseHttpMethod(methodSymbol, proxyInterface, httpMethodBaseAttributeSymbol, diagnostics);
 
         var isExplicit = explicitImpl is not null;
         var constraints = GenerateConstraints(methodSymbol.TypeParameters, isExplicit || !isImplicitInterface);
 
         return new MethodModel(methodSymbol.Name, returnType, containingType, declaredBaseName,
-            returnClassification.Info, http.Parameters, constraints, isExplicit,
-            Spec: http.Spec,
-            CancellationTokenIndex: http.CancellationTokenIndex,
+            http.HasValue ? returnClassification.Info : ReturnTypeInfo.Unsupported,
+            http?.Parameters ?? methodSymbol.Parameters.Select(ParseParameter).ToImmutableEquatableArray(),
+            constraints, isExplicit,
+            Spec: http?.Spec ?? RestApiMethodSpecModel.Empty,
+            CancellationTokenIndex: http?.CancellationTokenIndex,
             ReturnResultType: returnClassification.ReturnResultType,
             DeserializedResultType: returnClassification.DeserializedResultType);
     }

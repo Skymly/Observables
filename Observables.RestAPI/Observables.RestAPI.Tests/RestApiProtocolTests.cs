@@ -51,6 +51,25 @@ public sealed class RestApiProtocolTests
         Assert.Equal("repos/skymly/observables/issues?state=open", bound.RelativeUri);
     }
 
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void Bind_rejects_legacy_specs_that_combine_multipart_and_body(bool bodyFirst)
+    {
+        var body = new RestApiBridge.Binding(RestApiBridge.SlotKind.Body, 0, "body");
+        var part = new RestApiBridge.Binding(RestApiBridge.SlotKind.Multipart, 1, "part");
+        var spec = new RestApiBridge.MethodSpec(
+            "POST",
+            "/upload",
+            bodyFirst ? [body, part] : [part, body],
+            new RestApiBridge.MethodFlags(isMultipart: true));
+
+        var error = Assert.Throws<InvalidOperationException>(() =>
+            RestApiProtocol.Bind(new RestApiSettings(), spec, ["body", "part"]));
+        Assert.Contains("multipart", error.Message, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("[Body]", error.Message, StringComparison.Ordinal);
+    }
+
     [Fact]
     public void Bind_copies_header_collection_with_nullable_values()
     {

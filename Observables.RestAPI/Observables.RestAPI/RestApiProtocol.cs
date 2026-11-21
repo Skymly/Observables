@@ -33,6 +33,13 @@ namespace Observables.RestAPI
             object?[] args,
             IReadOnlyDictionary<string, object?>? callOptions = null)
         {
+            var isMultipart = spec.Flags.IsMultipart;
+            if (isMultipart && Array.Exists(spec.Bindings, static binding => binding.Kind == RestApiBridge.SlotKind.Body))
+            {
+                // Older generators can still supply a spec which would replace the multipart content.
+                throw new InvalidOperationException("A multipart request cannot have a [Body] parameter.");
+            }
+
             args ??= Array.Empty<object?>();
             var path = ExpandPath(spec.PathTemplate, spec.Bindings, args, settings);
 
@@ -88,7 +95,6 @@ namespace Observables.RestAPI
             request.VersionPolicy = settings.VersionPolicy;
 #endif
 
-            var isMultipart = spec.Flags.IsMultipart;
             MultipartFormDataContent? multipart = null;
             if (isMultipart)
             {

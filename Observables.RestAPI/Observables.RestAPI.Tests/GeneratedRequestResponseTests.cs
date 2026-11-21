@@ -158,6 +158,141 @@ public sealed class GeneratedRequestResponseTests
         Assert.Equal(new long?[] { 5, null }, observedLengths);
     }
 
+    [Fact]
+    public async Task ValueTask_and_nongeneric_response_handle_empty_results()
+    {
+        var count = 0;
+        using var client = new HttpClient(new ResponseHandler(_ =>
+        {
+            count++;
+            var response = new HttpResponseMessage(HttpStatusCode.NoContent);
+            response.Headers.Add("X-Receipt", "received");
+            return response;
+        }))
+        {
+            BaseAddress = new Uri("https://api.example.com"),
+        };
+        var api = RestService.For<INoContentApi>(client);
+        var cancellation = TestContext.Current.CancellationToken;
+
+        await api.Send(cancellation);
+        using var response = await api.SendForReceipt(cancellation);
+
+        Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
+        Assert.True(response.IsSuccessful);
+        Assert.Null(response.Error);
+        Assert.Equal("received", Assert.Single(response.Headers.GetValues("X-Receipt")));
+        Assert.Equal(2, count);
+    }
+
+    [Fact]
+    public async Task Nongeneric_response_retains_the_unsuccessful_status_and_error()
+    {
+        using var client = new HttpClient(new ResponseHandler(static request =>
+            new HttpResponseMessage(HttpStatusCode.NotFound)
+            {
+                RequestMessage = request,
+                Content = new StringContent("missing"),
+            }))
+        {
+            BaseAddress = new Uri("https://api.example.com"),
+        };
+        var api = RestService.For<INoContentApi>(client);
+
+        using var response = await api.SendForReceipt(TestContext.Current.CancellationToken);
+
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+        Assert.False(response.IsSuccessful);
+        Assert.IsType<ApiException>(response.Error);
+    }
+
+    [Fact]
+    public async Task Derived_headers_apply_to_inherited_methods_with_method_and_interface_precedence()
+    {
+        var seen = new List<Dictionary<string, string[]>>();
+        using var client = new HttpClient(new ResponseHandler(request =>
+        {
+            seen.Add(request.Headers.ToDictionary(
+                header => header.Key, header => header.Value.ToArray(), StringComparer.OrdinalIgnoreCase));
+            return new HttpResponseMessage(HttpStatusCode.NoContent);
+        }))
+        {
+            BaseAddress = new Uri("https://api.example.com"),
+        };
+        var api = RestService.For<IDerivedHeadersApi>(client);
+        var cancellation = TestContext.Current.CancellationToken;
+        await api.Get(cancellation);
+        await api.GetWithMethodHeaders(cancellation);
+        await RestService.For<IBaseHeadersApi>(client).Get(cancellation);
+
+        Assert.Equal(new[] { "derived" }, seen[0]["X-Precedence"]);
+        Assert.Equal(new[] { "base" }, seen[0]["X-Base"]);
+        Assert.Equal(new[] { "middle" }, seen[0]["X-Branch"]);
+        Assert.Equal(new[] { "root" }, seen[0]["X-Default"]);
+        Assert.DoesNotContain("X-Sibling", seen[0].Keys, StringComparer.OrdinalIgnoreCase);
+        Assert.Equal(new[] { "method-first", "method-second" }, seen[1]["X-Precedence"]);
+        Assert.Equal(new[] { "root" }, seen[1]["X-Default"]);
+        Assert.Equal(new[] { "base" }, seen[2]["X-Precedence"]);
+        Assert.DoesNotContain("X-Default", seen[2].Keys, StringComparer.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task Named_query_format_replaces_the_constructor_format()
+    {
+        var paths = new List<string>();
+        using var client = new HttpClient(new ResponseHandler(request =>
+        {
+            paths.Add(request.RequestUri!.PathAndQuery);
+            return new HttpResponseMessage(HttpStatusCode.NoContent);
+        }))
+        {
+            BaseAddress = new Uri("https://api.example.com"),
+        };
+        var api = RestService.For<IQueryFormatsApi>(client);
+        var cancellation = TestContext.Current.CancellationToken;
+        await api.Get(3.5m, cancellation);
+        await api.GetWithDefaultFormat(3.5m, cancellation);
+
+        Assert.Equal(new[] { "/amount?p-amount=3.50", "/amount?p-amount=3.5" }, paths);
+    }
+
+    public interface INoContentApi
+    {
+        [Post("/no-content")]
+        ValueTask Send(CancellationToken cancellationToken);
+
+        [Post("/no-content")]
+        Task<IApiResponse> SendForReceipt(CancellationToken cancellationToken);
+    }
+
+    [Headers("X-Base: base", "X-Precedence: base")]
+    public interface IBaseHeadersApi
+    {
+        [Get("/base")]
+        Task Get(CancellationToken cancellationToken);
+
+        [Get("/base"), Headers("x-PRECEDENCE: method-first", "X-Precedence: method-second")]
+        Task GetWithMethodHeaders(CancellationToken cancellationToken);
+    }
+
+    [Headers("X-Branch: middle", "x-precedence: middle")]
+    public interface IMiddleHeadersApi : IBaseHeadersApi;
+
+    [Headers("X-Sibling: sibling")]
+    public interface ISiblingHeaders;
+
+    [Headers("X-Default: root", "X-Precedence: derived")]
+    public interface IDerivedHeadersApi : IMiddleHeadersApi, ISiblingHeaders;
+
+    public interface IQueryFormatsApi
+    {
+        [Get("/amount")]
+        Task Get([Query("-", "p", "F0", Format = "F2")] decimal amount, CancellationToken cancellationToken);
+
+        [Get("/amount")]
+        Task GetWithDefaultFormat([Query("-", "p", "F0", Format = null)] decimal amount, CancellationToken cancellationToken);
+    }
+
     public interface IRequestApi
     {
         [Post("/save")]

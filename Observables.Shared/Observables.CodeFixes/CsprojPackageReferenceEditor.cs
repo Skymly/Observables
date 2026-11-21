@@ -1,4 +1,5 @@
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Xml;
 
 namespace Observables.CodeFixes;
@@ -12,6 +13,10 @@ internal static class CsprojPackageReferenceEditor
         IndentChars = "  ",
         NewLineChars = "\n",
     };
+
+    static readonly Regex TargetFrameworkEquality = new(
+        """^['"]\$\(TargetFramework\)['"]\s*==\s*['"]([a-z0-9_.-]+)['"]$""",
+        RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
 
     public static bool ContainsPackageReference(string content, string packageId) =>
         FindReferences(LoadDocument(content), packageId).Any();
@@ -65,7 +70,8 @@ internal static class CsprojPackageReferenceEditor
         var newReferences = FindReferences(document, newPackageId).ToList();
         var hasProjectWideTarget = newReferences.Any(IsProjectWide);
         if (!hasProjectWideTarget && newReferences.Count > 0
-            && oldReferences.Any(old => !newReferences.Any(current => SameScope(old, current))))
+            && oldReferences.Any(old => !newReferences.Any(current => SameScope(old, current))
+                && newReferences.Any(current => MayOverlap(old, current))))
         {
             // Unmatched conditions could overlap. Leave those declarations for an explicit project edit.
             return content;
@@ -112,10 +118,37 @@ internal static class CsprojPackageReferenceEditor
         reference.ParentNode is XmlElement group && group.ParentNode == reference.OwnerDocument?.DocumentElement
         && Condition(reference).Length == 0 && Condition(group).Length == 0;
 
-    static bool SameScope(XmlElement left, XmlElement right) =>
-        left.ParentNode is XmlElement leftGroup && right.ParentNode is XmlElement rightGroup
-        && leftGroup.ParentNode == rightGroup.ParentNode
-        && Condition(leftGroup) == Condition(rightGroup) && Condition(left) == Condition(right);
+    static bool SameScope(XmlElement left, XmlElement right)
+    {
+        if (left.ParentNode is not XmlElement leftGroup || right.ParentNode is not XmlElement rightGroup
+            || leftGroup.ParentNode != rightGroup.ParentNode)
+        {
+            return false;
+        }
+
+        return (Condition(leftGroup) == Condition(rightGroup) && Condition(left) == Condition(right))
+            || (GetTargetFramework(left) is { } target
+                && string.Equals(target, GetTargetFramework(right), StringComparison.OrdinalIgnoreCase));
+    }
+
+    static bool MayOverlap(XmlElement left, XmlElement right) =>
+        GetTargetFramework(left) is not { } leftTarget
+        || GetTargetFramework(right) is not { } rightTarget
+        || string.Equals(leftTarget, rightTarget, StringComparison.OrdinalIgnoreCase);
+
+    static string? GetTargetFramework(XmlElement reference)
+    {
+        if (reference.ParentNode is not XmlElement group || group.ParentNode != reference.OwnerDocument?.DocumentElement)
+            return null;
+
+        var groupCondition = Condition(group);
+        var itemCondition = Condition(reference);
+        if (groupCondition.Length > 0 && itemCondition.Length > 0)
+            return null;
+
+        var match = TargetFrameworkEquality.Match(groupCondition.Length == 0 ? itemCondition : groupCondition);
+        return match.Success ? match.Groups[1].Value : null;
+    }
 
     static IEnumerable<XmlElement> FindReferences(XmlDocument document, string packageId) =>
         document.GetElementsByTagName("PackageReference", "*").OfType<XmlElement>()

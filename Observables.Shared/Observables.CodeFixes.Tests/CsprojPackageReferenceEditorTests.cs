@@ -120,6 +120,36 @@ public sealed class CsprojPackageReferenceEditorTests
     }
 
     [Fact]
+    public void ReplacePackageReference_keeps_an_existing_target_on_its_own_framework()
+    {
+        const string project = """
+            <Project>
+              <ItemGroup Condition="'$(TargetFramework)' == 'net8.0'">
+                <PackageReference Include="Observables.Mqtt.R3" Version="0.4.0" />
+              </ItemGroup>
+              <ItemGroup Condition="'$(TargetFramework)' == 'net10.0'">
+                <PackageReference Include="Observables.Mqtt.R3" Version="0.4.0" />
+              </ItemGroup>
+              <ItemGroup>
+                <PackageReference Include="observables.mqtt.reactive" Version="0.4.1" Condition="'$(TargetFramework)' == 'net10.0'" />
+              </ItemGroup>
+            </Project>
+            """;
+
+        var updated = CsprojPackageReferenceEditor.ReplacePackageReference(
+            project, "Observables.Mqtt.R3", "Observables.Mqtt.Reactive", version: null);
+
+        var groups = System.Xml.Linq.XDocument.Parse(updated).Root!.Elements("ItemGroup").ToArray();
+        var net8 = Assert.Single(groups[0].Elements("PackageReference"));
+        Assert.Equal("Observables.Mqtt.Reactive", (string?)net8.Attribute("Include"));
+        Assert.Equal("0.4.0", (string?)net8.Attribute("Version"));
+        Assert.Empty(groups[1].Elements("PackageReference"));
+        var net10 = Assert.Single(groups[2].Elements("PackageReference"));
+        Assert.Equal("observables.mqtt.reactive", (string?)net10.Attribute("Include"));
+        Assert.Equal("0.4.1", (string?)net10.Attribute("Version"));
+    }
+
+    [Fact]
     public void TryGetPackageVersion_reads_version_attribute()
     {
         var version = CsprojPackageReferenceEditor.TryGetPackageVersion(

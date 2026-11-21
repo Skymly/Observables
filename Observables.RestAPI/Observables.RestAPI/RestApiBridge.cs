@@ -100,8 +100,8 @@ namespace Observables.RestAPI
             HttpResponseMessage? response = null;
             HttpContent? content = null;
             var isApiResponse = IsRestApiResponseWrapper(typeof(T));
-            var disposeResponse = !isApiResponse && ShouldDisposeResponse(typeof(TBody));
-            var disposeRequest = !isApiResponse;
+            var disposeResponse = isApiResponse || ShouldDisposeResponse(typeof(TBody));
+            var disposeRequest = true;
             try
             {
                 if (request.Content != null && bodyBuffered)
@@ -123,13 +123,15 @@ namespace Observables.RestAPI
                     if (!isApiResponse)
                         throw new ApiRequestException(request, request.Method, settings, ex);
 
-                    return ApiResponse.Create<T, TBody>(
+                    var failedResponse = ApiResponse.Create<T, TBody>(
                         request,
                         null,
                         default,
                         settings,
                         new ApiRequestException(request, request.Method, settings, ex)
                     );
+                    disposeRequest = false;
+                    return failedResponse;
                 }
 
                 content = response.Content ?? new StringContent(string.Empty);
@@ -175,15 +177,17 @@ namespace Observables.RestAPI
                         }
                     }
 
-                    // IApiResponse owns the HttpResponseMessage from here.
-                    disposeResponse = false;
-                    return ApiResponse.Create<T, TBody>(
+                    var wrappedResponse = ApiResponse.Create<T, TBody>(
                         request,
                         response,
                         body,
                         settings,
                         await CoerceToApiExceptionBase(error, request, response, settings).ConfigureAwait(false)
                     );
+                    // The completed wrapper now owns both HTTP messages.
+                    disposeResponse = false;
+                    disposeRequest = false;
+                    return wrappedResponse;
                 }
                 else if (error != null)
                 {
@@ -230,14 +234,14 @@ namespace Observables.RestAPI
             }
             finally
             {
+                if (content is not null && !ReferenceEquals(content, response?.Content))
+                {
+                    content.Dispose();
+                }
+
                 if (disposeResponse)
                 {
                     response?.Dispose();
-                    content?.Dispose();
-                }
-                else if (content is not null && !ReferenceEquals(content, response?.Content))
-                {
-                    content.Dispose();
                 }
 
                 if (disposeRequest)
@@ -254,16 +258,28 @@ namespace Observables.RestAPI
         /// <param name="request">The pre-built <see cref="HttpRequestMessage"/>.</param>
         /// <param name="settings">REST API settings.</param>
         /// <param name="cancellationToken">Cancellation token.</param>
-        public static async Task SendVoidAsync(
+        public static Task SendVoidAsync(
             HttpClient client,
             HttpRequestMessage request,
             RestApiSettings settings,
-            CancellationToken cancellationToken
-        )
+            CancellationToken cancellationToken) =>
+            SendVoidAsync(client, request, settings, bodyBuffered: false, cancellationToken);
+
+        internal static async Task SendVoidAsync(
+            HttpClient client,
+            HttpRequestMessage request,
+            RestApiSettings settings,
+            bool bodyBuffered,
+            CancellationToken cancellationToken)
         {
             HttpResponseMessage? response = null;
             try
             {
+                if (request.Content != null && bodyBuffered)
+                {
+                    await request.Content.LoadIntoBufferAsync().ConfigureAwait(false);
+                }
+
                 try
                 {
                     response = await client

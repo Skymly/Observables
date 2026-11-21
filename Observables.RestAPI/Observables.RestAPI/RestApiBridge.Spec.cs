@@ -220,7 +220,12 @@ namespace Observables.RestAPI
                 throw new InvalidOperationException("BaseAddress must be set on the HttpClient instance");
 
             var bound = RestApiProtocol.Bind(settings, spec, args ?? Array.Empty<object?>(), callOptions);
-            return RestApiProtocol.CompleteVoidAsync(client, bound.Message, settings, cancellationToken);
+            return RestApiProtocol.CompleteVoidAsync(
+                client,
+                bound.Message,
+                settings,
+                bound.BodyBuffered,
+                cancellationToken);
         }
     }
 }

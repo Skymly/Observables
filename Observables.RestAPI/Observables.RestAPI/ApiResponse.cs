@@ -78,7 +78,6 @@ namespace Observables.RestAPI
         [MemberNotNullWhen(true, nameof(ContentHeaders))]
         [MemberNotNullWhen(true, nameof(StatusCode))]
         [MemberNotNullWhen(true, nameof(Version))]
-        [MemberNotNullWhen(false, nameof(Error))]
 #endif
         public bool IsSuccessStatusCode => response?.IsSuccessStatusCode ?? false;
 
@@ -90,7 +89,6 @@ namespace Observables.RestAPI
         [MemberNotNullWhen(true, nameof(ContentHeaders))]
         [MemberNotNullWhen(true, nameof(StatusCode))]
         [MemberNotNullWhen(true, nameof(Version))]
-        [MemberNotNullWhen(false, nameof(Error))]
 #endif
         public bool IsSuccessful => IsSuccessStatusCode && Error is null;
 
@@ -127,6 +125,7 @@ namespace Observables.RestAPI
         /// The <see cref="ApiExceptionBase" /> object in case of unsuccessful request or response.
         /// </summary>
         /// <remarks>
+        /// An exception factory can suppress errors for unsuccessful HTTP responses, leaving this property null.
         /// The <see cref="HasRequestError"/> and <see cref="HasResponseError"/> methods can be
         /// used to check the type of error.
         /// </remarks>
@@ -285,6 +284,7 @@ namespace Observables.RestAPI
         /// The exception object in case of unsuccessful request or response.
         /// </summary>
         /// <remarks>
+        /// An exception factory can suppress errors for unsuccessful HTTP responses, leaving this property null.
         /// The <see cref="IApiResponse.HasRequestError"/> and <see cref="IApiResponse.HasResponseError"/> methods can be
         /// used to check the type of error.
         /// </remarks>
@@ -304,14 +304,12 @@ namespace Observables.RestAPI
         /// Indicates whether the request was successful.
         /// </summary>
         [MemberNotNullWhen(true, nameof(ContentHeaders))]
-        [MemberNotNullWhen(false, nameof(Error))]
         new bool IsSuccessStatusCode { get; }
 
         /// <summary>
         /// Indicates whether the request was successful and there wasn't any other error (for example, during content deserialization). JSON null content can still yield a null Content value.
         /// </summary>
         [MemberNotNullWhen(true, nameof(ContentHeaders))]
-        [MemberNotNullWhen(false, nameof(Error))]
         new bool IsSuccessful { get; }
 #endif
 
@@ -344,7 +342,6 @@ namespace Observables.RestAPI
         [MemberNotNullWhen(true, nameof(ContentHeaders))]
         [MemberNotNullWhen(true, nameof(StatusCode))]
         [MemberNotNullWhen(true, nameof(Version))]
-        [MemberNotNullWhen(false, nameof(Error))]
 #endif
         bool IsSuccessStatusCode { get; }
 
@@ -356,7 +353,6 @@ namespace Observables.RestAPI
         [MemberNotNullWhen(true, nameof(ContentHeaders))]
         [MemberNotNullWhen(true, nameof(StatusCode))]
         [MemberNotNullWhen(true, nameof(Version))]
-        [MemberNotNullWhen(false, nameof(Error))]
 #endif
         bool IsSuccessful { get; }
 
@@ -395,6 +391,7 @@ namespace Observables.RestAPI
         /// The exception object in case of unsuccessful request or response.
         /// </summary>
         /// <remarks>
+        /// An exception factory can suppress errors for unsuccessful HTTP responses, leaving this property null.
         /// <see cref="HasRequestError"/> and <see cref="HasResponseError"/> methods can be used to check the type of error.
         /// </remarks>
         [SuppressMessage(

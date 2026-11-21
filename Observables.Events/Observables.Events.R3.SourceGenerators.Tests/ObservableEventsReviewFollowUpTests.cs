@@ -148,6 +148,37 @@ public sealed class ObservableEventsReviewFollowUpTests
     }
 
     [Fact]
+    public void Ref_like_payload_does_not_break_other_events_on_the_source()
+    {
+        const string source = """
+            namespace Demo;
+
+            public delegate void SpanEventHandler(object sender, System.ReadOnlySpan<byte> bytes);
+
+            public sealed class Source
+            {
+                public event SpanEventHandler? Bytes;
+                public event System.EventHandler? Changed;
+            }
+
+            public static class Usage
+            {
+                public static void Observe(Source source)
+                {
+                    _ = source.Events().Changed;
+                    _ = source.EventHandlers().Changed;
+                }
+            }
+            """;
+
+        var output = GeneratorTestHarness.Run(source, generators: [new ObservableEventsGenerator()]);
+
+        Assert.DoesNotContain(output.Diagnostics, static d => d.Severity == DiagnosticSeverity.Error);
+        Assert.Contains(output.Diagnostics, static d => d.Id == "OBS2001");
+        Assert.Contains(output.Diagnostics, static d => d.Id == "OBS2002");
+    }
+
+    [Fact]
     public void Ref_parameter_delegate_reports_OBS2001()
     {
         const string source = """
@@ -494,6 +525,8 @@ public sealed class ObservableEventsReviewFollowUpTests
     const string AttachedAvaloniaStubs = """
         namespace Avalonia.Interactivity
         {
+            public class Interactive { }
+
             [System.Flags]
             public enum RoutingStrategies { Direct = 1, Bubble = 2, Tunnel = 4 }
             public class RoutedEventArgs : System.EventArgs {}
@@ -502,7 +535,7 @@ public sealed class ObservableEventsReviewFollowUpTests
         }
         namespace Avalonia.Controls
         {
-            public class Control
+            public class Control : Avalonia.Interactivity.Interactive
             {
                 public void AddHandler<TEventArgs>(
                     Avalonia.Interactivity.RoutedEvent<TEventArgs> routedEvent,
@@ -560,6 +593,51 @@ public sealed class ObservableEventsReviewFollowUpTests
             }
         }
         """;
+
+    [Fact]
+    public void Bound_instance_methods_do_not_generate_attached_routed_extensions()
+    {
+        const string source = AttachedAvaloniaStubs + """
+            namespace Demo
+            {
+                public sealed class Plain
+                {
+                    public int AttachedRoutedEvent() => 1;
+                    public int AttachedRoutedEventHandler() => 2;
+                }
+
+                public sealed class PanelWithOwnMethods : Avalonia.Controls.Control
+                {
+                    public int AttachedRoutedEvent() => 3;
+                    public int AttachedRoutedEventHandler() => 4;
+                }
+
+                public sealed class NonInteractive
+                {
+                }
+
+                public static class Usage
+                {
+                    public static int Run(Plain plain, PanelWithOwnMethods panel) =>
+                        plain.AttachedRoutedEvent() + plain.AttachedRoutedEventHandler()
+                        + panel.AttachedRoutedEvent() + panel.AttachedRoutedEventHandler();
+
+                    public static void IgnoreUnsupportedReceiver(NonInteractive source)
+                    {
+                        _ = source.AttachedRoutedEvent(Avalonia.Controls.Button.ClickEvent);
+                    }
+                }
+            }
+            """;
+
+        var output = GeneratorTestHarness.Run(
+            source, generators: [new ObservableEventsGenerator()], observableRoutedEvents: true);
+
+        Assert.DoesNotContain(output.Diagnostics, static d => d.Severity == DiagnosticSeverity.Error);
+        Assert.DoesNotContain(output.GeneratedSources, static source =>
+            source.HintName.EndsWith(".AttachedRoutedEvent.g.cs", System.StringComparison.Ordinal)
+            || source.HintName.EndsWith(".AttachedRoutedEventHandler.g.cs", System.StringComparison.Ordinal));
+    }
 
     [Fact]
     public void Generic_receiver_attached_routed_event_declares_receiver_type_parameters()
@@ -658,6 +736,38 @@ public sealed class ObservableEventsReviewFollowUpTests
     }
 
     // ── Generic-constraint bootstrap merge & naming ──────────────────────
+
+    [Fact]
+    public void Closed_generic_constraints_generate_distinct_wrappers()
+    {
+        const string source = """
+            namespace Demo;
+
+            public interface INotify<T>
+            {
+                event System.EventHandler<T>? Changed;
+            }
+
+            public static class Usage
+            {
+                public static void ObserveString<T>(T source) where T : INotify<string>
+                {
+                    _ = source.Events().Changed;
+                    _ = source.EventHandlers().Changed;
+                }
+
+                public static void ObserveInt<T>(T source) where T : INotify<int>
+                {
+                    _ = source.Events().Changed;
+                    _ = source.EventHandlers().Changed;
+                }
+            }
+            """;
+
+        var output = GeneratorTestHarness.Run(source, generators: [new ObservableEventsGenerator()]);
+        Assert.DoesNotContain(output.Diagnostics, static d => d.Severity == DiagnosticSeverity.Error);
+        Assert.Equal(4, output.GeneratedSources.Count(static source => source.HintName.StartsWith("GenericConstraints_", System.StringComparison.Ordinal)));
+    }
 
     [Fact]
     public void Same_generic_constraint_used_by_Events_and_EventHandlers_shares_bootstrap_class()

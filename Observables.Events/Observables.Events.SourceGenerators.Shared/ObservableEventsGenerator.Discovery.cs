@@ -61,6 +61,7 @@ public sealed partial class ObservableEventsGenerator
         // Cache Avalonia detection to avoid repeated metadata lookups
         var avaloniaRoutedEventType = compilation.GetTypeByMetadataName("Avalonia.Interactivity.RoutedEvent`1");
         var avaloniaRoutedEventTypeNonGeneric = compilation.GetTypeByMetadataName("Avalonia.Interactivity.RoutedEvent");
+        var avaloniaInteractiveType = compilation.GetTypeByMetadataName("Avalonia.Interactivity.Interactive");
         var useAvalonia = avaloniaRoutedEventType is not null
             || avaloniaRoutedEventTypeNonGeneric is not null;
 
@@ -69,12 +70,15 @@ public sealed partial class ObservableEventsGenerator
             if (candidate is InvocationExpressionSyntax invocation)
             {
                 var semanticModel = compilation.GetSemanticModel(invocation.SyntaxTree);
+                var methodSymbol = semanticModel.GetSymbolInfo(invocation).Symbol as IMethodSymbol;
                 if (observableRoutedEvents
+                    && (methodSymbol is null || IsBootstrapExtension(methodSymbol, bootstrapType))
                     && TryCollectRoutedTargetsFromInvocationSyntax(
                         invocation,
                         semanticModel,
                         useWpf,
                         useAvalonia,
+                        avaloniaInteractiveType,
                         routedEvents,
                         routedHandlers,
                         attachedRoutedEvents,
@@ -83,7 +87,7 @@ public sealed partial class ObservableEventsGenerator
                     continue;
                 }
 
-                if (semanticModel.GetSymbolInfo(invocation).Symbol is IMethodSymbol methodSymbol)
+                if (methodSymbol is not null)
                 {
                     if (methodSymbol.Name == ObservableEventsConstants.EventsEntryMethodName
                         && TryGetBootstrapObservableEventsExtensionTarget(
@@ -178,6 +182,7 @@ public sealed partial class ObservableEventsGenerator
         SemanticModel semanticModel,
         bool useWpf,
         bool useAvalonia,
+        INamedTypeSymbol? avaloniaInteractiveType,
         System.Collections.Generic.HashSet<INamedTypeSymbol> routedEvents,
         System.Collections.Generic.HashSet<INamedTypeSymbol> routedHandlers,
         System.Collections.Generic.HashSet<INamedTypeSymbol> attachedRoutedEvents,
@@ -210,11 +215,13 @@ public sealed partial class ObservableEventsGenerator
                 routedHandlers.Add(receiverType);
                 return true;
             case var name when name == ObservableEventsConstants.AttachedRoutedEventEntryMethodName
-                               && useAvalonia:
+                               && useAvalonia && avaloniaInteractiveType is not null
+                               && IsOrDerivedFrom(receiverType, avaloniaInteractiveType):
                 attachedRoutedEvents.Add(receiverType);
                 return true;
             case var name when name == ObservableEventsConstants.AttachedRoutedEventHandlerEntryMethodName
-                               && useAvalonia:
+                               && useAvalonia && avaloniaInteractiveType is not null
+                               && IsOrDerivedFrom(receiverType, avaloniaInteractiveType):
                 attachedRoutedHandlers.Add(receiverType);
                 return true;
             default:
@@ -249,14 +256,7 @@ public sealed partial class ObservableEventsGenerator
             return false;
         }
 
-        static INamedTypeSymbol? FindBootstrapDeclaringType(IMethodSymbol m)
-        {
-            var decl = m.ReducedFrom ?? m;
-            return decl.ContainingType?.OriginalDefinition as INamedTypeSymbol;
-        }
-
-        if (FindBootstrapDeclaringType(methodSymbol) is not { } declaring
-            || !SymbolEqualityComparer.Default.Equals(declaring, bootstrapType.OriginalDefinition))
+        if (!IsBootstrapExtension(methodSymbol, bootstrapType))
         {
             return false;
         }
@@ -289,9 +289,7 @@ public sealed partial class ObservableEventsGenerator
             return false;
         }
 
-        var declaration = methodSymbol.ReducedFrom ?? methodSymbol;
-        if (declaration.ContainingType?.OriginalDefinition is not { } declaring
-            || !SymbolEqualityComparer.Default.Equals(declaring, bootstrapType.OriginalDefinition))
+        if (!IsBootstrapExtension(methodSymbol, bootstrapType))
         {
             return false;
         }
@@ -308,6 +306,10 @@ public sealed partial class ObservableEventsGenerator
 
         return TryCreateGenericConstraintTarget(typeParameter, out target);
     }
+
+    private static bool IsBootstrapExtension(IMethodSymbol method, INamedTypeSymbol bootstrapType) =>
+        SymbolEqualityComparer.Default.Equals(
+            (method.ReducedFrom ?? method).ContainingType?.OriginalDefinition, bootstrapType.OriginalDefinition);
 
     private static bool TryCreateGenericConstraintTarget(
         ITypeParameterSymbol typeParameter,

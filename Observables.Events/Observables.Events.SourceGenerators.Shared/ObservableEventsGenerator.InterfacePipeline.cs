@@ -395,8 +395,7 @@ public sealed partial class ObservableEventsGenerator
         if (!IsEventSignatureNameable(evt, compilation)
             || evt.Type is not INamedTypeSymbol delegateType
             || delegateType.DelegateInvokeMethod is not IMethodSymbol invoke
-            || !invoke.ReturnsVoid
-            || invoke.Parameters.Any(static p => p.RefKind != RefKind.None))
+            || !IsSupportedEventSignature(invoke))
             return null;
 
         if (entryKind is ObservableEventsEntryKind.Events or ObservableEventsEntryKind.RoutedEvents)

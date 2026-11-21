@@ -1,3 +1,6 @@
+using System.Net;
+using System.Net.NetworkInformation;
+using System.Text;
 using NATS.Client.Core;
 using Observables.Nats;
 using Observables.Nats.Tests.Contracts;
@@ -12,6 +15,16 @@ public sealed class NatsClientR3E2ETests(NatsTestServerFixture fixture)
     static readonly TimeSpan DefaultTimeout = TimeSpan.FromSeconds(30);
 
     static NatsOpts CreateOpts(string url) => new() { Url = url };
+
+    [Fact]
+    public void Test_peer_listens_only_on_loopback()
+    {
+        var port = new Uri(fixture.Server.Url).Port;
+        var listener = Assert.Single(IPGlobalProperties.GetIPGlobalProperties().GetActiveTcpListeners(),
+            endpoint => endpoint.Port == port);
+
+        Assert.Equal(IPAddress.Loopback, listener.Address);
+    }
 
     [Fact]
     public async Task NatsSubscribe_Ping_receives_message()
@@ -81,18 +94,20 @@ public sealed class NatsClientR3E2ETests(NatsTestServerFixture fixture)
         await using var client = new NatsConnection(CreateOpts(fixture.Server.Url));
         var subject = "e2e.int." + Guid.NewGuid().ToString("N");
 
-        using var cts = new CancellationTokenSource(DefaultTimeout);
+        const string malformedReply = "not-json";
+        using var cts = CancellationTokenSource.CreateLinkedTokenSource(TestContext.Current.CancellationToken);
+        cts.CancelAfter(DefaultTimeout);
         var subscribed = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-        var respondTask = RespondRawAsync(responder, subject, "not-json", subscribed, cts.Token);
+        var respondTask = RespondRawAsync(responder, subject, malformedReply, subscribed, cts.Token);
         await subscribed.Task.WaitAsync(cts.Token);
 
-        var ex = await Assert.ThrowsAnyAsync<Exception>(
+        var error = await Assert.ThrowsAsync<NatsDeserializeException>(
             async () => await NatsE2EHelpers.RequestUntilRespondedAsync(
                 async ct => await NatsObservable.FromRequest<string, int>(client, subject, "q", ct).FirstAsync(ct),
                 cts.Token));
 
         await respondTask;
-        Assert.IsNotType<NatsNoRespondersException>(ex);
+        Assert.Equal(malformedReply, Encoding.UTF8.GetString(error.RawData));
     }
 
     [Fact]

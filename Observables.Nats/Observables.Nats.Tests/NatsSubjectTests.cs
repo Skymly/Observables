@@ -8,6 +8,26 @@ public sealed class NatsSubjectTests
         Assert.Equal("orders.42.cancel", NatsSubject.Format("orders.{id}.cancel", ("id", "42")));
     }
 
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void Format_inserts_braces_literally_in_either_parameter_order(bool reverseParameters)
+    {
+        (string Name, string? Value)[] parameters = [("tenant", "{region}"), ("region", "north")];
+        if (reverseParameters)
+        {
+            Array.Reverse(parameters);
+        }
+
+        Assert.Equal(
+            "orders.{region}.north.{region}.{unknown}",
+            NatsSubject.Format("orders.{tenant}.{region}.{tenant}.{unknown}", parameters));
+    }
+
+    [Fact]
+    public void Format_uses_the_first_value_for_a_repeated_binding() =>
+        Assert.Equal("orders.first.first", NatsSubject.Format("orders.{id}.{id}", ("id", "first"), ("id", "second")));
+
     [Fact]
     public void Format_rejects_a_value_that_spans_tokens()
     {

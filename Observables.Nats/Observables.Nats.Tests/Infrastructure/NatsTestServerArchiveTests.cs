@@ -5,14 +5,19 @@ namespace Observables.Nats.Tests.Infrastructure;
 
 public sealed class NatsTestServerArchiveTests
 {
+    const string ExpectedSha256 = "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad";
+
     [Fact]
-    public void Truncated_zip_is_not_a_usable_archive()
+    public void Cache_lookup_checks_the_entire_file_against_the_pinned_digest()
     {
-        var path = Path.Combine(Path.GetTempPath(), $"obs-nats-poison-{Guid.NewGuid():N}.zip");
-        File.WriteAllBytes(path, [0x50, 0x4B, 0x03, 0x04]);
+        var path = Path.Combine(Path.GetTempPath(), $"obs-nats-cache-{Guid.NewGuid():N}");
         try
         {
-            Assert.False(NatsTestServer.IsUsableArchive(path, zip: true));
+            Assert.False(NatsTestServer.HasSha256(path, ExpectedSha256));
+            File.WriteAllBytes(path, "abc"u8.ToArray());
+            Assert.True(NatsTestServer.HasSha256(path, ExpectedSha256));
+            File.WriteAllBytes(path, "abd"u8.ToArray());
+            Assert.False(NatsTestServer.HasSha256(path, ExpectedSha256));
         }
         finally
         {
@@ -21,7 +26,30 @@ public sealed class NatsTestServerArchiveTests
     }
 
     [Fact]
-    public async Task Download_does_not_keep_a_partial_file_when_copy_is_canceled()
+    public async Task Copy_with_wrong_digest_keeps_the_verified_file_and_cleans_up_the_partial_file()
+    {
+        var directory = Directory.CreateTempSubdirectory("obs-nats-digest-");
+        var path = Path.Combine(directory.FullName, "artifact");
+        var cancellation = TestContext.Current.CancellationToken;
+        try
+        {
+            using var correct = new MemoryStream("abc"u8.ToArray());
+            await NatsTestServer.WriteVerifiedFileAsync(correct, path, ExpectedSha256, cancellation);
+            using var wrong = new MemoryStream("abd"u8.ToArray());
+            await Assert.ThrowsAsync<InvalidDataException>(
+                () => NatsTestServer.WriteVerifiedFileAsync(wrong, path, ExpectedSha256, cancellation));
+
+            Assert.True(NatsTestServer.HasSha256(path, ExpectedSha256));
+            Assert.Single(directory.GetFiles());
+        }
+        finally
+        {
+            directory.Delete(recursive: true);
+        }
+    }
+
+    [Fact]
+    public async Task Verified_copy_does_not_keep_a_partial_file_when_canceled()
     {
         var directory = Path.Combine(Path.GetTempPath(), $"obs-nats-dl-{Guid.NewGuid():N}");
         Directory.CreateDirectory(directory);
@@ -31,9 +59,8 @@ public sealed class NatsTestServerArchiveTests
         try
         {
             await Assert.ThrowsAnyAsync<OperationCanceledException>(
-                () => NatsTestServer.DownloadAtomicallyAsync(source, archivePath, cts.Token));
-            Assert.False(File.Exists(archivePath));
-            Assert.False(File.Exists(archivePath + ".partial"));
+                () => NatsTestServer.WriteVerifiedFileAsync(source, archivePath, ExpectedSha256, cts.Token));
+            Assert.Empty(Directory.GetFiles(directory));
         }
         finally
         {

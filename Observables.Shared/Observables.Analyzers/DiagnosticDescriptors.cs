@@ -21,12 +21,23 @@ internal static class DiagnosticDescriptors
         new(
             "OBS0002",
             "Open generic proxy interfaces are not supported",
-            "Interface '{0}' is a generic type. Observables proxy generators only support non-generic interfaces.",
+            "Interface '{0}' has an unsupported generic type declaration for its proxy generator",
             "Observables",
             DiagnosticSeverity.Error,
             isEnabledByDefault: true,
-            description: "Marked proxy interfaces cannot be open generic types.",
+            description: "The selected proxy generator cannot implement this open generic interface.",
             helpLinkUri: DiagnosticHelpLink.For("OBS0002"));
+
+    public static readonly DiagnosticDescriptor GenericIoProxyMethod =
+        new(
+            "OBS0003",
+            "Generic IO proxy method is not supported",
+            "Interface '{0}' declares or inherits generic method '{1}', which the IO proxy generator cannot implement",
+            "Observables",
+            DiagnosticSeverity.Error,
+            isEnabledByDefault: true,
+            description: "An abstract IO proxy method must have a non-generic signature.",
+            helpLinkUri: DiagnosticHelpLink.For("OBS0003"));
 
     public static readonly DiagnosticDescriptor EmptyHubInterface =
         new(

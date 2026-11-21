@@ -77,7 +77,9 @@ internal static class IoProxyModelAssembly
         foreach (var marked in markedInterfaces)
         {
             cancellationToken.ThrowIfCancellationRequested();
-            if (IoProxyInterfaceWalk.IsOpenGeneric(marked.InterfaceSymbol))
+            // The analyzer reports unsupported generic interface and method contracts.
+            if (IoProxyInterfaceWalk.IsOpenGeneric(marked.InterfaceSymbol)
+                || marked.PublicInstanceMembers.Any(static member => member is IMethodSymbol { Arity: > 0, IsAbstract: true }))
             {
                 continue;
             }
@@ -88,6 +90,9 @@ internal static class IoProxyModelAssembly
             {
                 switch (member)
                 {
+                    case IMethodSymbol { Arity: > 0 }:
+                        // A default generic method keeps its user-provided implementation.
+                        break;
                     case IMethodSymbol method when method.MethodKind == MethodKind.Ordinary && HasRefLikeParameter(method):
                     case IPropertySymbol { SetMethod: not null }:
                         // Setters and ref/out/in parameters cannot be implemented by the proxy shell.

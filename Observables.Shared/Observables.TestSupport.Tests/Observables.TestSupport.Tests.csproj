@@ -16,6 +16,12 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Observables.TestSupport\Observables.TestSupport.csproj" />
+    <ProjectReference Include="..\..\Observables.WebSocket\Observables.WebSocket.R3\Observables.WebSocket.R3.csproj" />
+    <ProjectReference Include="..\..\Observables.WebSocket\Observables.WebSocket.Reactive\Observables.WebSocket.Reactive.csproj" />
+    <ProjectReference Include="..\..\Observables.WebSocket\Observables.WebSocket.R3.SourceGenerators\Observables.WebSocket.R3.SourceGenerators.csproj" />
+    <ProjectReference Include="..\..\Observables.WebSocket\Observables.WebSocket.Reactive.SourceGenerators\Observables.WebSocket.Reactive.SourceGenerators.csproj" />
+    <ProjectReference Include="..\..\Observables.Nats\Observables.Nats.R3\Observables.Nats.R3.csproj" />
+    <ProjectReference Include="..\..\Observables.Nats\Observables.Nats.R3.SourceGenerators\Observables.Nats.R3.SourceGenerators.csproj" />
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp" />
   </ItemGroup>
 

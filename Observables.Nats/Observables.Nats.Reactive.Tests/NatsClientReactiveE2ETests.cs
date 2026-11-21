@@ -1,3 +1,4 @@
+using System.Text;
 using NATS.Client.Core;
 using Observables.Nats;
 using Observables.Nats.Reactive;
@@ -99,12 +100,14 @@ public sealed class NatsClientReactiveE2ETests(NatsTestServerFixture fixture)
         await using var client = new NatsConnection(CreateOpts(fixture.Server.Url));
         var subject = "e2e.int." + Guid.NewGuid().ToString("N");
 
-        using var cts = new CancellationTokenSource(DefaultTimeout);
+        const string malformedReply = "not-json";
+        using var cts = CancellationTokenSource.CreateLinkedTokenSource(TestContext.Current.CancellationToken);
+        cts.CancelAfter(DefaultTimeout);
         var subscribed = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-        var respondTask = RespondRawAsync(responder, subject, "not-json", subscribed, cts.Token);
+        var respondTask = RespondRawAsync(responder, subject, malformedReply, subscribed, cts.Token);
         await subscribed.Task.WaitAsync(cts.Token);
 
-        var ex = await Assert.ThrowsAnyAsync<Exception>(
+        var error = await Assert.ThrowsAsync<NatsDeserializeException>(
             async () => await NatsE2EHelpers.RequestUntilRespondedAsync(
                 async ct => await SystemReactiveNatsAdapter.FromRequest<string, int>(client, subject, "q", ct)
                     .Timeout(DefaultTimeout)
@@ -113,7 +116,7 @@ public sealed class NatsClientReactiveE2ETests(NatsTestServerFixture fixture)
                 cts.Token));
 
         await respondTask;
-        Assert.IsNotType<NatsNoRespondersException>(ex);
+        Assert.Equal(malformedReply, Encoding.UTF8.GetString(error.RawData));
     }
 
     [Fact]

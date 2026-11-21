@@ -1,7 +1,9 @@
 using System.Diagnostics;
+using System.Formats.Tar;
 using System.IO.Compression;
 using System.Net;
 using System.Net.Sockets;
+using System.Security.Cryptography;
 
 namespace Observables.Nats.Tests.Infrastructure;
 
@@ -33,7 +35,7 @@ public sealed class NatsTestServer : IAsyncDisposable
             var configPath = Path.Combine(Path.GetTempPath(), $"observables-nats-{port}.conf");
             await File.WriteAllTextAsync(
                 configPath,
-                $"port: {port}\n",
+                $"listen: 127.0.0.1:{port}\n",
                 cancellationToken).ConfigureAwait(false);
 
             var process = new Process
@@ -180,127 +182,104 @@ public sealed class NatsTestServer : IAsyncDisposable
 
     static async Task<string> EnsureNatsServerPathCoreAsync(CancellationToken cancellationToken)
     {
-        var root = Path.Combine(Path.GetTempPath(), "observables-nats-test", NatsServerVersion);
-        var exeName = OperatingSystem.IsWindows() ? "nats-server.exe" : "nats-server";
-        var exePath = Path.Combine(root, exeName);
-        if (File.Exists(exePath))
-        {
-            EnsureExecutable(exePath);
-            return exePath;
-        }
-
-        Directory.CreateDirectory(root);
-        var zip = OperatingSystem.IsWindows();
-        var archive = zip
-            ? $"nats-server-{NatsServerVersion}-windows-amd64.zip"
+        // Archive hashes are from the upstream v2.10.28 release SHA256SUMS. The executable hashes
+        // are from the exact entries in those verified archives.
+        var (platform, extension, executable, archiveSha256, executableSha256) = OperatingSystem.IsWindows()
+            ? ("windows-amd64", ".zip", "nats-server.exe",
+                "98b8571231b00ebe0445cc7f317f6425c1fbc2edecd455949d37022e04281657",
+                "408557b55fd5f632658ab65ae2df3c40d5286d61c4e3216a3eab549dee03b01b")
             : OperatingSystem.IsLinux()
-                ? $"nats-server-{NatsServerVersion}-linux-amd64.tar.gz"
+                ? ("linux-amd64", ".tar.gz", "nats-server",
+                    "52e3baee2bf9cb4f3d362e293538e9f11ccfdb22ac9fbbd2bcad790e3ba41e3e",
+                    "ae0f9b9d3852d1ed24d8751656eb33c2faf2baf08dabd98c4b95fb2d5bb2634f")
                 : throw new PlatformNotSupportedException("E2E NATS tests require Windows or Linux CI agents.");
-
-        var archivePath = Path.Combine(root, archive);
-        if (!IsUsableArchive(archivePath, zip))
+        var root = Path.Combine(Path.GetTempPath(), "observables-nats-test", NatsServerVersion);
+        var exePath = Path.Combine(root, executable);
+        if (!HasSha256(exePath, executableSha256))
         {
-            TryDelete(archivePath);
-            var downloadUrl =
-                $"https://github.com/nats-io/nats-server/releases/download/{NatsServerVersion}/{archive}";
-            using var client = new HttpClient();
-            await using var stream = await client
-                .GetStreamAsync(downloadUrl, cancellationToken)
-                .ConfigureAwait(false);
-            await DownloadAtomicallyAsync(stream, archivePath, cancellationToken).ConfigureAwait(false);
-        }
-
-        try
-        {
-            if (zip)
+            Directory.CreateDirectory(root);
+            var archiveRoot = $"nats-server-{NatsServerVersion}-{platform}";
+            var archive = archiveRoot + extension;
+            var archivePath = Path.Combine(root, archive);
+            if (!HasSha256(archivePath, archiveSha256))
             {
-                ZipFile.ExtractToDirectory(archivePath, root, overwriteFiles: true);
+                var downloadUrl = $"https://github.com/nats-io/nats-server/releases/download/{NatsServerVersion}/{archive}";
+                using var client = new HttpClient();
+                await using var stream = await client.GetStreamAsync(downloadUrl, cancellationToken).ConfigureAwait(false);
+                await WriteVerifiedFileAsync(stream, archivePath, archiveSha256, cancellationToken).ConfigureAwait(false);
             }
-            else
-            {
-                using var extraction = Process.Start(
-                    new ProcessStartInfo
-                    {
-                        FileName = "tar",
-                        UseShellExecute = false,
-                        ArgumentList =
-                        {
-                            "-xzf",
-                            archivePath,
-                            "-C",
-                            root,
-                        },
-                    }) ?? throw new InvalidOperationException("Failed to start tar for NATS server extraction.");
-                await extraction.WaitForExitAsync(cancellationToken).ConfigureAwait(false);
-                if (extraction.ExitCode != 0)
-                {
-                    throw new InvalidOperationException(
-                        $"tar failed to extract NATS server archive with exit code {extraction.ExitCode}.");
-                }
-            }
-        }
-        catch
-        {
-            TryDelete(archivePath);
-            throw;
-        }
 
-        var extracted = Directory.GetFiles(root, exeName, SearchOption.AllDirectories).FirstOrDefault();
-        if (extracted is not null && !string.Equals(extracted, exePath, StringComparison.OrdinalIgnoreCase))
-        {
-            File.Copy(extracted, exePath, overwrite: true);
-        }
-
-        if (!File.Exists(exePath))
-        {
-            throw new FileNotFoundException("nats-server executable not found after extract.", exePath);
+            await ExtractServerAsync(
+                archivePath, $"{archiveRoot}/{executable}", exePath, executableSha256, cancellationToken).ConfigureAwait(false);
         }
 
         EnsureExecutable(exePath);
         return exePath;
     }
 
-    internal static bool IsUsableArchive(string archivePath, bool zip)
-    {
-        if (!File.Exists(archivePath) || new FileInfo(archivePath).Length == 0)
-        {
-            return false;
-        }
-
-        if (!zip)
-        {
-            return new FileInfo(archivePath).Length > 1024;
-        }
-
-        try
-        {
-            using var archive = ZipFile.OpenRead(archivePath);
-            return archive.Entries.Count > 0;
-        }
-        catch (InvalidDataException)
-        {
-            return false;
-        }
-        catch (InvalidOperationException)
-        {
-            return false;
-        }
-    }
-
-    internal static async Task DownloadAtomicallyAsync(
-        Stream source,
+    static async Task ExtractServerAsync(
         string archivePath,
+        string entryPath,
+        string exePath,
+        string sha256,
         CancellationToken cancellationToken)
     {
-        var partialPath = archivePath + ".partial";
+        if (archivePath.EndsWith(".zip", StringComparison.Ordinal))
+        {
+            using var zip = ZipFile.OpenRead(archivePath);
+            var entry = zip.GetEntry(entryPath)
+                ?? throw new InvalidDataException($"Missing {entryPath} in the NATS server archive.");
+            await using var data = entry.Open();
+            await WriteVerifiedFileAsync(data, exePath, sha256, cancellationToken).ConfigureAwait(false);
+            return;
+        }
+
+        await using var archive = File.OpenRead(archivePath);
+        await using var gzip = new GZipStream(archive, CompressionMode.Decompress);
+        await using var tar = new TarReader(gzip);
+        while (await tar.GetNextEntryAsync(cancellationToken: cancellationToken).ConfigureAwait(false) is { } entry)
+        {
+            if (entry.Name == entryPath && entry.DataStream is { } data)
+            {
+                await WriteVerifiedFileAsync(data, exePath, sha256, cancellationToken).ConfigureAwait(false);
+                return;
+            }
+        }
+
+        throw new InvalidDataException($"Missing {entryPath} in the NATS server archive.");
+    }
+
+    internal static bool HasSha256(string path, string expected)
+    {
+        if (!File.Exists(path))
+        {
+            return false;
+        }
+
+        using var file = File.OpenRead(path);
+        return string.Equals(Convert.ToHexString(SHA256.HashData(file)), expected, StringComparison.OrdinalIgnoreCase);
+    }
+
+    internal static async Task WriteVerifiedFileAsync(
+        Stream source,
+        string path,
+        string sha256,
+        CancellationToken cancellationToken)
+    {
+        var partialPath = $"{path}.{Guid.NewGuid():N}.partial";
         try
         {
-            await using (var file = new FileStream(partialPath, FileMode.Create, FileAccess.Write, FileShare.None))
+            await using (var file = new FileStream(partialPath, FileMode.CreateNew, FileAccess.Write, FileShare.None))
             {
                 await source.CopyToAsync(file, cancellationToken).ConfigureAwait(false);
             }
 
-            File.Move(partialPath, archivePath, overwrite: true);
+            if (!HasSha256(partialPath, sha256))
+            {
+                throw new InvalidDataException($"SHA-256 mismatch for {Path.GetFileName(path)}.");
+            }
+
+            File.Move(partialPath, path, overwrite: true);
         }
         catch
         {

@@ -54,6 +54,72 @@ public sealed class CsprojPackageReferenceEditorTests
     }
 
     [Fact]
+    public void AddPackageReferenceIfMissing_uses_a_project_wide_group()
+    {
+        const string project = """
+            <Project>
+              <ItemGroup Condition="'$(TargetFramework)' == 'net8.0'">
+                <PackageReference Include="R3" Version="1.3.0" />
+              </ItemGroup>
+            </Project>
+            """;
+
+        var updated = CsprojPackageReferenceEditor.AddPackageReferenceIfMissing(
+            project, "Observables.Mqtt.R3", "0.4.1");
+
+        var document = System.Xml.Linq.XDocument.Parse(updated);
+        var addedGroup = Assert.Single(document.Root!.Elements("ItemGroup"),
+            group => group.Elements("PackageReference").Any(reference =>
+                (string?)reference.Attribute("Include") == "Observables.Mqtt.R3"));
+        Assert.Null(addedGroup.Attribute("Condition"));
+    }
+
+    [Fact]
+    public void AddPackageReferenceIfMissing_preserves_existing_package_id_spelling()
+    {
+        var updated = CsprojPackageReferenceEditor.AddPackageReferenceIfMissing(
+            SampleCsproj.Replace("Observables.RestAPI.R3", "observables.restapi.r3", StringComparison.Ordinal),
+            "Observables.RestAPI.R3",
+            "0.4.1");
+
+        Assert.DoesNotContain("Include=\"Observables.RestAPI.R3\"", updated, StringComparison.Ordinal);
+        Assert.Contains("Include=\"observables.restapi.r3\"", updated, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void ReplacePackageReference_switches_all_conditioned_references_with_their_versions()
+    {
+        const string project = """
+            <Project>
+              <ItemGroup Condition="'$(TargetFramework)' == 'net8.0'">
+                <PackageReference Include="observables.restapi.r3" Version="0.4.0" />
+              </ItemGroup>
+              <ItemGroup Condition="'$(TargetFramework)' == 'net10.0'">
+                <PackageReference Include="Observables.RestAPI.R3">
+                  <Version>0.4.1</Version>
+                  <PrivateAssets>all</PrivateAssets>
+                </PackageReference>
+              </ItemGroup>
+            </Project>
+            """;
+
+        var updated = CsprojPackageReferenceEditor.ReplacePackageReference(
+            project, "Observables.RestAPI.R3", "Observables.RestAPI.Reactive", version: null);
+
+        var groups = System.Xml.Linq.XDocument.Parse(updated).Root!.Elements("ItemGroup").ToArray();
+        Assert.Equal(2, groups.Length);
+        var net8 = Assert.Single(groups[0].Elements("PackageReference"));
+        var net10 = Assert.Single(groups[1].Elements("PackageReference"));
+        Assert.Equal("'$(TargetFramework)' == 'net8.0'", (string?)groups[0].Attribute("Condition"));
+        Assert.Equal("'$(TargetFramework)' == 'net10.0'", (string?)groups[1].Attribute("Condition"));
+        Assert.Equal("Observables.RestAPI.Reactive", (string?)net8.Attribute("Include"));
+        Assert.Equal("Observables.RestAPI.Reactive", (string?)net10.Attribute("Include"));
+        Assert.Equal("0.4.0", (string?)net8.Attribute("Version"));
+        Assert.Equal("0.4.1", (string?)net10.Element("Version"));
+        Assert.Equal("all", (string?)net10.Element("PrivateAssets"));
+    }
+
+    [Fact]
     public void TryGetPackageVersion_reads_version_attribute()
     {
         var version = CsprojPackageReferenceEditor.TryGetPackageVersion(

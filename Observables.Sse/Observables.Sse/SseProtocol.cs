@@ -1,5 +1,7 @@
 using System.IO;
+using System.Net;
 using System.Net.Http;
+using System.Runtime.CompilerServices;
 using System.Text;
 #if NETSTANDARD2_0
 #else
@@ -40,6 +42,8 @@ public readonly struct SseEvent
 /// </summary>
 public static class SseProtocol
 {
+    static readonly ConditionalWeakTable<StreamReader, LineReader> LineReaders = new();
+
 #if NETSTANDARD2_0
 #else
     static readonly JsonSerializerOptions JsonOptions = new() { PropertyNameCaseInsensitive = true };
@@ -80,17 +84,19 @@ public static class SseProtocol
         var data = new StringBuilder();
         string? id = null;
         var hasDataField = false;
-        var eventBytes = 0;
+        long eventBytes = 0;
+        var lineReader = LineReaders.GetValue(reader, static _ => new LineReader());
 
         while (true)
         {
-            var line = await ReadLineAsync(reader, maxLineBytes, cancellationToken).ConfigureAwait(false);
+            var read = await lineReader.ReadAsync(reader, maxLineBytes, cancellationToken).ConfigureAwait(false);
 
-            if (line is null)
+            if (read is not { } lineResult)
             {
                 return null;
             }
 
+            var (line, lineBytes) = lineResult;
             if (line.Length == 0)
             {
                 var dispatched = TryDispatch(hasDataField, eventName, data, id);
@@ -130,8 +136,7 @@ public static class SseProtocol
                 }
             }
 
-            var lineBytes = Encoding.UTF8.GetByteCount(line);
-            eventBytes += lineBytes + 1;
+            eventBytes += lineBytes + 1L;
             if (eventBytes > maxEventBytes)
             {
                 throw new InvalidOperationException($"SSE event exceeded the maximum size of {maxEventBytes} bytes.");
@@ -199,44 +204,64 @@ public static class SseProtocol
         return new SseEvent(string.IsNullOrWhiteSpace(eventName) ? "message" : eventName!, payload, id);
     }
 
-    static async System.Threading.Tasks.Task<string?> ReadLineAsync(
-        StreamReader reader,
-        int maxLineBytes,
-        CancellationToken cancellationToken)
+    sealed class LineReader
     {
-        var sb = new StringBuilder();
-        var buffer = new char[1];
-        var lineBytes = 0;
+        readonly char[] buffer = new char[1];
+        bool skipLineFeed;
 
-        while (true)
+        internal async Task<(string Line, int Bytes)?> ReadAsync(
+            StreamReader reader, int maxLineBytes, CancellationToken cancellationToken)
         {
-            cancellationToken.ThrowIfCancellationRequested();
-#if NET8_0_OR_GREATER
-            var n = await reader.ReadAsync(buffer.AsMemory(0, 1), cancellationToken).ConfigureAwait(false);
-#else
-            var n = await reader.ReadAsync(buffer, 0, 1).ConfigureAwait(false);
-#endif
-            if (n == 0)
-            {
-                return sb.Length == 0 ? null : sb.ToString();
-            }
+            var line = new StringBuilder();
+            int lineBytes = 0;
 
-            var ch = buffer[0];
-            if (ch == '\n')
+            while (true)
             {
-                if (sb.Length > 0 && sb[sb.Length - 1] == '\r')
+                cancellationToken.ThrowIfCancellationRequested();
+#if NET8_0_OR_GREATER
+                int read = await reader.ReadAsync(buffer.AsMemory(), cancellationToken).ConfigureAwait(false);
+#else
+                int read = await reader.ReadAsync(buffer, 0, 1).ConfigureAwait(false);
+#endif
+                if (read == 0)
                 {
-                    sb.Length--;
+                    return line.Length == 0 ? null : (line.ToString(), lineBytes);
                 }
 
-                return sb.ToString();
-            }
+                char ch = buffer[0];
+                if (skipLineFeed)
+                {
+                    skipLineFeed = false;
+                    if (ch == '\n')
+                    {
+                        continue;
+                    }
+                }
 
-            sb.Append(ch);
-            lineBytes += Encoding.UTF8.GetByteCount(buffer, 0, 1);
-            if (lineBytes > maxLineBytes)
-            {
-                throw new InvalidOperationException($"SSE line exceeded the maximum size of {maxLineBytes} bytes.");
+                if (ch is '\r' or '\n')
+                {
+                    // Return immediately on CR. An optional LF belongs to this terminator,
+                    // including when the next read is for a different event.
+                    skipLineFeed = ch == '\r';
+                    return (line.ToString(), lineBytes);
+                }
+
+                // A high surrogate already contributes three bytes. Its matching low surrogate
+                // brings the pair to four. An unpaired surrogate counts as a replacement character.
+                int charBytes = ch switch
+                {
+                    <= '\u007F' => 1,
+                    <= '\u07FF' => 2,
+                    _ when char.IsLowSurrogate(ch) && line.Length > 0 && char.IsHighSurrogate(line[line.Length - 1]) => 1,
+                    _ => 3,
+                };
+                if (charBytes > maxLineBytes - lineBytes)
+                {
+                    throw new InvalidOperationException($"SSE line exceeded the maximum size of {maxLineBytes} bytes.");
+                }
+
+                line.Append(ch);
+                lineBytes += charBytes;
             }
         }
     }
@@ -269,6 +294,18 @@ public static class SseProtocol
             .SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancellationToken)
             .ConfigureAwait(false);
         response.EnsureSuccessStatusCode();
+        if (response.StatusCode == HttpStatusCode.NoContent)
+        {
+            onCompleted();
+            return;
+        }
+
+        var content = response.Content;
+        if (content is null
+            || !string.Equals(content.Headers.ContentType?.MediaType, "text/event-stream", StringComparison.OrdinalIgnoreCase))
+        {
+            throw new InvalidOperationException("Expected a text/event-stream response from the SSE endpoint.");
+        }
 
 #if NETSTANDARD2_0
         using var cancelReg = cancellationToken.Register(
@@ -280,16 +317,16 @@ public static class SseProtocol
                 }
                 catch (Exception)
                 {
-                    // best-effort unblock of ReadLineAsync
+                    // best-effort unblock of line reading
                 }
             },
             response);
 #endif
 
 #if NET8_0_OR_GREATER
-        using var stream = await response.Content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false);
+        using var stream = await content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false);
 #else
-        using var stream = await response.Content.ReadAsStreamAsync().ConfigureAwait(false);
+        using var stream = await content.ReadAsStreamAsync().ConfigureAwait(false);
 #endif
         using var reader = new StreamReader(stream, Encoding.UTF8);
 

@@ -35,7 +35,7 @@
             <summary>绑定 HTTP 客户端、端点以及行/事件大小上限。</summary>
         </member>
         <member name="P:Observables.Sse.SseConnection.MaxLineBytes">
-            <summary>单条 SSE 行的最大 UTF-8 大小。非正值会使订阅失败。</summary>
+            <summary>单条 SSE 行的最大 UTF-8 大小，不含行尾分隔符。非正值会使订阅失败。</summary>
         </member>
         <member name="P:Observables.Sse.SseConnection.MaxEventBytes">
             <summary>单个重组 SSE 事件的最大 UTF-8 大小。非正值会使订阅失败。</summary>

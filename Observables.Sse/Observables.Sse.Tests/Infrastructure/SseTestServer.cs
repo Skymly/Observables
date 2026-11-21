@@ -37,6 +37,8 @@ public sealed class SseTestServer : IAsyncDisposable
 
     public Uri Uri => new($"http://127.0.0.1:{Port}/stream");
 
+    public Uri GetStreamUri(string lineEnding) => new($"http://127.0.0.1:{Port}/stream-{lineEnding}");
+
     public Uri KeepAliveUri => new($"http://127.0.0.1:{Port}/keepalive");
 
     public static SseTestServer Start()
@@ -105,7 +107,13 @@ public sealed class SseTestServer : IAsyncDisposable
                 return;
             }
 
-            var bytes = Encoding.UTF8.GetBytes(Stream);
+            var stream = path switch
+            {
+                "/stream-cr" => Stream.Replace("\n", "\r", StringComparison.Ordinal),
+                "/stream-crlf" => Stream.Replace("\n", "\r\n", StringComparison.Ordinal),
+                _ => Stream,
+            };
+            var bytes = Encoding.UTF8.GetBytes(stream);
             await context.Response.OutputStream.WriteAsync(bytes, 0, bytes.Length).ConfigureAwait(false);
             await context.Response.OutputStream.FlushAsync().ConfigureAwait(false);
         }

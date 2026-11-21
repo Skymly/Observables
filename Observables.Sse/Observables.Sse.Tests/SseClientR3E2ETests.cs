@@ -14,15 +14,19 @@ public sealed class SseClientR3E2ETests(SseTestServerFixture fixture)
     IE2EFeed CreateFeed() =>
         SseService.For<IE2EFeed>(new SseConnection(new HttpClient(), fixture.Server.Uri));
 
-    [Fact]
-    public async Task Receives_named_string_event()
+    [Theory]
+    [InlineData("lf")]
+    [InlineData("cr")]
+    [InlineData("crlf")]
+    public async Task Receives_named_string_events_with_standard_line_endings(string lineEnding)
     {
-        var feed = CreateFeed();
+        using var http = new HttpClient();
+        var feed = SseService.For<IE2EFeed>(new SseConnection(http, fixture.Server.GetStreamUri(lineEnding)));
         using var cts = new CancellationTokenSource(DefaultTimeout);
 
-        var first = await feed.Prices.FirstAsync(cts.Token);
+        var values = await feed.Prices.Take(2).ToArrayAsync(cts.Token);
 
-        Assert.Equal("100", first);
+        Assert.Equal(["100", "200"], values);
     }
 
     [Fact]

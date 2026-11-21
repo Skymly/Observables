@@ -16,14 +16,18 @@ public sealed class SseClientReactiveE2ETests(SseTestServerFixture fixture)
     IE2EFeed CreateFeed() =>
         SseService.For<IE2EFeed>(new SseConnection(new HttpClient(), fixture.Server.Uri));
 
-    [Fact]
-    public async Task Receives_named_string_event()
+    [Theory]
+    [InlineData("lf")]
+    [InlineData("cr")]
+    [InlineData("crlf")]
+    public async Task Receives_named_string_events_with_standard_line_endings(string lineEnding)
     {
-        var feed = CreateFeed();
+        using var http = new HttpClient();
+        var feed = SseService.For<IE2EFeed>(new SseConnection(http, fixture.Server.GetStreamUri(lineEnding)));
 
-        var first = await feed.Prices.Timeout(DefaultTimeout).FirstAsync().ToTask();
+        var values = await feed.Prices.Timeout(DefaultTimeout).Take(2).ToArray().ToTask();
 
-        Assert.Equal("100", first);
+        Assert.Equal(["100", "200"], values);
     }
 
     [Fact]
@@ -46,10 +50,12 @@ public sealed class SseClientReactiveE2ETests(SseTestServerFixture fixture)
         Assert.Equal(42, tick.Value);
     }
 
-    [Fact]
-    public async Task FromEvent_dispose_cancels_the_pump_without_completing()
+    [Theory]
+    [InlineData("\n")]
+    [InlineData("\r")]
+    public async Task FromEvent_dispose_cancels_the_pump_without_completing(string lineEnding)
     {
-        var handler = new HoldOpenSseHandler();
+        var handler = new HoldOpenSseHandler(lineEnding);
         using var http = new HttpClient(handler);
         var connection = new SseConnection(http, new Uri("http://sse.test/stream"));
 

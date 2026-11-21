@@ -45,6 +45,33 @@ public sealed class GrpcInterfaceGeneratorTests
         return Verifier.Verify(GeneratorTestHarness.ToSnapshot(output));
     }
 
+    [Fact]
+    public void Grpc_overloads_compile_with_distinct_method_descriptors()
+    {
+        const string userSource =
+            """
+            [Grpc("echo.Echo")]
+            public interface IEchoService
+            {
+                [GrpcUnary("Echo")]
+                IObservable<string> Echo(string request);
+
+                [GrpcServerStream("EchoStream")]
+                IObservable<string> Echo(string request, CancellationToken cancellationToken);
+
+                [GrpcUnary("EchoNamed")]
+                IObservable<string> EchoMethod(string EchoMethodMethod);
+            }
+            """;
+
+        var output = GeneratorTestHarness.Run(userSource);
+
+        Assert.DoesNotContain(output.Diagnostics, diagnostic => diagnostic.Severity == DiagnosticSeverity.Error);
+        var proxy = Assert.Single(output.GeneratedSources, source => source.Source.Contains("class EchoServiceGeneratedProxy", StringComparison.Ordinal));
+        Assert.Contains("MethodType.Unary, \"echo.Echo\", \"Echo\"", proxy.Source, StringComparison.Ordinal);
+        Assert.Contains("MethodType.ServerStreaming, \"echo.Echo\", \"EchoStream\"", proxy.Source, StringComparison.Ordinal);
+    }
+
     // ── Incremental cache hit tests (D3-A pilot) ──
 
     const string CacheTestSource =

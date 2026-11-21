@@ -111,7 +111,7 @@ public static class GrpcObservable
                     .PumpStreamingCallAsync(writer, writeCompleted.Task, call.ResponseStream, observer.OnNext, linked.Token)
                     .ConfigureAwait(false);
             }
-            catch (OperationCanceledException oce) when (oce.CancellationToken == linked.Token || ct.IsCancellationRequested)
+            catch (OperationCanceledException) when (ct.IsCancellationRequested)
             {
                 throw new OperationCanceledException(ct);
             }

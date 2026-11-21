@@ -23,13 +23,20 @@ public sealed class GrpcTestHost : IAsyncDisposable
 
     public HttpMessageHandler CreateHandler() => testServer.CreateHandler();
 
-    public static async Task<GrpcTestHost> StartAsync()
+    public static async Task<GrpcTestHost> StartAsync(EchoServiceImpl? echoService = null)
     {
         var host = Host.CreateDefaultBuilder()
             .ConfigureWebHost(webBuilder =>
             {
                 webBuilder.UseTestServer();
-                webBuilder.ConfigureServices(services => services.AddGrpc());
+                webBuilder.ConfigureServices(services =>
+                {
+                    services.AddGrpc();
+                    if (echoService is not null)
+                    {
+                        services.AddSingleton(echoService);
+                    }
+                });
                 webBuilder.Configure(app =>
                 {
                     app.UseRouting();

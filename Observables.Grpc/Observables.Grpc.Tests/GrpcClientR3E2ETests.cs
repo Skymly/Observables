@@ -1,3 +1,4 @@
+using Grpc.Core;
 using Observables.Grpc;
 using Observables.Grpc.Tests.Contracts;
 using Observables.Grpc.Tests.Infrastructure;
@@ -60,6 +61,59 @@ public sealed class GrpcClientR3E2ETests(GrpcTestHostFixture fixture)
 
         var reply = await client.ClientStreamEcho(requests, cts.Token).FirstAsync(cts.Token);
         Assert.Equal("a,b,c", reply.Text);
+    }
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task DuplexEcho_releases_the_open_call_on_cancellation(bool cancelCaller)
+    {
+        var serverFinished = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        await using var host = await GrpcTestHost.StartAsync(new EchoServiceImpl(() => serverFinished.TrySetResult()));
+        using var channel = GrpcTestChannel.Create(host);
+        var client = GrpcService.For<IE2EHub>(channel.CreateCallInvoker());
+
+        var testToken = TestContext.Current.CancellationToken;
+        using var caller = new CancellationTokenSource();
+        var firstReply = new TaskCompletionSource<string>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var completed = new TaskCompletionSource<Result>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var requestsDisposed = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var requests = Observable.Create<EchoRequest>(observer =>
+        {
+            observer.OnNext(new EchoRequest { Text = "one" });
+            return Disposable.Create(() => requestsDisposed.TrySetResult());
+        });
+
+        using var subscription = client.DuplexEcho(requests, caller.Token).Subscribe(
+            reply => firstReply.TrySetResult(reply.Text),
+            result => completed.TrySetResult(result));
+
+        Assert.Equal("one-ack", await firstReply.Task.WaitAsync(DefaultTimeout, testToken));
+        Assert.False(serverFinished.Task.IsCompleted);
+
+        if (cancelCaller)
+        {
+            await caller.CancelAsync();
+        }
+        else
+        {
+            subscription.Dispose();
+        }
+
+        await serverFinished.Task.WaitAsync(DefaultTimeout, testToken);
+        await requestsDisposed.Task.WaitAsync(DefaultTimeout, testToken);
+
+        if (cancelCaller)
+        {
+            var result = await completed.Task.WaitAsync(DefaultTimeout, testToken);
+            Assert.True(result.IsFailure);
+            Assert.True(result.Exception is OperationCanceledException or RpcException { StatusCode: StatusCode.Cancelled });
+        }
+        else
+        {
+            Assert.False(caller.IsCancellationRequested);
+            Assert.False(completed.Task.IsCompleted);
+        }
     }
 
     [Fact]

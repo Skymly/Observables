@@ -159,13 +159,14 @@ var api = RestService.For<IUserApi>("https://api.example.com");
 api.GetUser(42).Subscribe(u => Console.WriteLine(u.Name));
 ```
 
-### 包结构
+### NuGet 安装
 
-| 包 | 用途 |
-|----|------|
-| `Observables.RestAPI` | 运行时（`RestService`、`HttpClient` 代理基础设施） |
-| `Observables.RestAPI.R3` | R3 源生成器 + 运行时 |
-| `Observables.RestAPI.Reactive` | System.Reactive 桥接运行时 + 源生成器 |
+按反应式后端选择一个 NuGet 包。两个包都包含 `RestService` 和 `HttpClient` 代理所需的运行时。
+
+| NuGet 包 ID | 随包交付的运行时程序集 | 源生成器 |
+|-------------|------------------------|----------|
+| [`Observables.RestAPI.R3`](https://www.nuget.org/packages/Observables.RestAPI.R3) | `Observables.RestAPI.dll` | R3 |
+| [`Observables.RestAPI.Reactive`](https://www.nuget.org/packages/Observables.RestAPI.Reactive) | `Observables.RestAPI.dll`、`Observables.RestAPI.Reactive.dll` | System.Reactive |
 
 该域的运行时部分包含由 [Refit](https://github.com/reactiveui/refit) 适配而来的代码，许可信息见 [NOTICE.md](NOTICE.md)。
 
@@ -249,7 +250,7 @@ var svc = GrpcService.For<IEchoService>(callInvoker);
 using var d = svc.UnaryEcho("hello").Subscribe(reply => Console.WriteLine(reply));
 ```
 
-依赖 [Grpc.Net.Client](https://www.nuget.org/packages/Grpc.Net.Client)。
+两个 gRPC 后端包均依赖 `Grpc.Core.Api`。上例使用应用传入的 `CallInvoker`，传输由应用选择。若使用 `GrpcChannel.ForAddress(...).CreateCallInvoker()` 创建 invoker，请安装 [Grpc.Net.Client](https://www.nuget.org/packages/Grpc.Net.Client)。
 
 ## Sse（Server-Sent Events）
 

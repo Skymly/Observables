@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Text;
 using Microsoft.CodeAnalysis.Text;
 
@@ -74,8 +75,15 @@ internal static class Emitter
                 }
                 """));
     }
-    public static SourceText EmitInterface(SseInterfaceModel model) =>
-        ProxyClassEmitter.Emit(
+    public static SourceText EmitInterface(SseInterfaceModel model)
+    {
+        var members = model.Members.AsArray();
+        var occupiedNames = new HashSet<string>(members.Select(member => member.MemberName.TrimStart('@')), StringComparer.Ordinal)
+        {
+            "_connection",
+        };
+
+        return ProxyClassEmitter.Emit(
             model.Nullability,
             model.GeneratedNamespace,
             model.ClassName,
@@ -84,17 +92,32 @@ internal static class Emitter
                 "global::Observables.Sse.SseConnection",
                 "_connection",
                 "connection"),
-            model.Members.AsArray(),
-            (writer, member) => writer.WriteLine(
-                $$"""
-                    private {{member.ReturnTypeDisplay}}? {{IdentifierHelper.BackingFieldName(member.MemberName)}};
-                    public {{member.ReturnTypeDisplay}} {{member.MemberName}} =>
-                        {{IdentifierHelper.BackingFieldName(member.MemberName)}} ??= {{BridgeType}}.FromEvent<{{member.ResultTypeDisplay}}>(_connection, {{FormatLiteral(member.EventName)}});
+            members,
+            (writer, member) =>
+            {
+                var fieldPrefix = IdentifierHelper.BackingFieldName(member.MemberName);
+                var fieldName = fieldPrefix;
+                for (var suffix = 2; !occupiedNames.Add(fieldName); suffix++)
+                {
+                    fieldName = fieldPrefix + "_" + suffix.ToString(CultureInfo.InvariantCulture);
+                }
 
-                """),
+                var declaration = member.DeclaringInterfaceDisplay is { } declaringInterface
+                    ? $"{member.ReturnTypeDisplay} {declaringInterface}.{member.MemberName}"
+                    : $"public {member.ReturnTypeDisplay} {member.MemberName}";
+
+                writer.WriteLine(
+                    $$"""
+                        private {{member.ReturnTypeDisplay}}? {{fieldName}};
+                        {{declaration}} =>
+                            {{fieldName}} ??= {{BridgeType}}.FromEvent<{{member.ResultTypeDisplay}}>(_connection, {{FormatLiteral(member.EventName)}});
+
+                    """);
+            },
             trim: new ProxyClassEmitter.TrimWarnings(
                 "SSE payload deserialization uses System.Text.Json reflection. Preserve payload type members when trimming.",
                 "SSE payload deserialization uses System.Text.Json reflection."));
+    }
 
     static string FormatLiteral(string value)
     {

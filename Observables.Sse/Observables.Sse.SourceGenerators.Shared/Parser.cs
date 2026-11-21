@@ -22,8 +22,38 @@ internal static class Parser
         var eventAttribute = compilation.GetTypeByMetadataName("Observables.Sse.SseEventAttribute");
         var observableType = compilation.GetTypeByMetadataName(BackendTokens.ObservableMetadataName);
 
+        var propertyNamesRequiringExplicitImplementation = new Dictionary<INamedTypeSymbol, HashSet<string>>(
+            SymbolEqualityComparer.Default);
+        var contracts = ImmutableArray.CreateBuilder<MarkedInterfaceContext>(markedInterfaces.Length);
+        foreach (var marked in markedInterfaces)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            var properties = new[] { marked.InterfaceSymbol }.Concat(marked.InterfaceSymbol.AllInterfaces)
+                .SelectMany(contract => contract.GetMembers().OfType<IPropertySymbol>())
+                .Where(property => property.DeclaredAccessibility == Accessibility.Public && !property.IsStatic)
+                .ToArray();
+
+            var repeatedNames = new HashSet<string>(properties.GroupBy(property => property.Name, StringComparer.Ordinal)
+                .Where(group => group.Skip(1).Any())
+                .Select(group => group.Key), StringComparer.Ordinal);
+            if (repeatedNames.Count == 0)
+            {
+                contracts.Add(marked);
+                continue;
+            }
+
+            // The same name can denote different event streams in two interface declarations.
+            propertyNamesRequiringExplicitImplementation.Add(marked.InterfaceSymbol, repeatedNames);
+            contracts.Add(marked with
+            {
+                PublicInstanceMembers = marked.PublicInstanceMembers.Where(member => member is not IPropertySymbol)
+                    .Concat(properties)
+                    .ToImmutableArray(),
+            });
+        }
+
         return IoProxyModelAssembly.Parse<SseMemberModel, SseInterfaceModel, ContextGenerationModel>(
-            markedInterfaces,
+            contracts.MoveToImmutable(),
             cancellationToken,
             coreReferenced: sseAttribute is not null,
             coreNotReferenced: DiagnosticDescriptors.SseCoreNotReferenced,
@@ -36,6 +66,8 @@ internal static class Parser
                 compilation,
                 eventAttribute,
                 observableType,
+                propertyNamesRequiringExplicitImplementation.TryGetValue(marked.InterfaceSymbol, out var names)
+                    && names.Contains(property.Name),
                 members,
                 diagnostics),
             createInterface: (marked, className, members) => new SseInterfaceModel(
@@ -114,10 +146,15 @@ internal static class Parser
         CSharpCompilation compilation,
         INamedTypeSymbol? eventAttribute,
         INamedTypeSymbol? observableType,
+        bool implementExplicitly,
         List<SseMemberModel> members,
         List<Diagnostic> diagnostics)
     {
-        if (eventAttribute is null || !IoProxyInterfaceWalk.HasAttribute(property, eventAttribute))
+        var declaration = eventAttribute is null
+            ? null
+            : property.GetAttributes().FirstOrDefault(attribute =>
+                SymbolEqualityComparer.Default.Equals(attribute.AttributeClass, eventAttribute));
+        if (declaration is null)
         {
             diagnostics.Add(
                 Diagnostic.Create(
@@ -128,7 +165,11 @@ internal static class Parser
             return;
         }
 
-        var eventName = GetEventName(property) ?? "message";
+        var eventName = declaration.ConstructorArguments.Length > 0
+            && declaration.ConstructorArguments[0].Value is string name
+            && !string.IsNullOrWhiteSpace(name)
+                ? name
+                : "message";
 
         if (!ObservableReturnTypeParser.TryParse(
                 property.Type,
@@ -153,27 +194,7 @@ internal static class Parser
                 eventName,
                 SseBoundaryKind.Event,
                 returnDisplay,
-                resultType));
+                resultType,
+                implementExplicitly ? property.ContainingType.ToDisplayString(DisplayFormat) : null));
     }
-
-    static string? GetEventName(IPropertySymbol property)
-    {
-        foreach (var attr in property.GetAttributes())
-        {
-            if (attr.AttributeClass?.Name == "SseEventAttribute")
-            {
-                if (attr.ConstructorArguments.Length > 0
-                    && attr.ConstructorArguments[0].Value is string s
-                    && !string.IsNullOrWhiteSpace(s))
-                {
-                    return s;
-                }
-
-                return null;
-            }
-        }
-
-        return null;
-    }
-
 }

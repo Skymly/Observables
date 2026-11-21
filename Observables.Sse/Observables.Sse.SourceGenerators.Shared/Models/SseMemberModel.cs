@@ -5,4 +5,5 @@ internal sealed record SseMemberModel(
     string EventName,
     SseBoundaryKind BoundaryKind,
     string ReturnTypeDisplay,
-    string ResultTypeDisplay);
+    string ResultTypeDisplay,
+    string? DeclaringInterfaceDisplay);

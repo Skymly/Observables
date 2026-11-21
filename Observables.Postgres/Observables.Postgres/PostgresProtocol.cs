@@ -1,17 +1,12 @@
 using System.Collections.Concurrent;
 using System.Data;
 using System.Diagnostics.CodeAnalysis;
-using System.Text.RegularExpressions;
 using Npgsql;
 
 namespace Observables.Postgres;
 
 internal static class PostgresProtocol
 {
-    static readonly Regex ChannelNameRegex = new(
-        @"^[A-Za-z_][A-Za-z0-9_]*$",
-        RegexOptions.CultureInvariant | RegexOptions.Compiled);
-
     internal static void ValidateChannelName(string channel)
     {
         if (string.IsNullOrWhiteSpace(channel))
@@ -19,7 +14,7 @@ internal static class PostgresProtocol
             throw new ArgumentException("PostgreSQL channel name must be non-empty.", nameof(channel));
         }
 
-        if (channel.Length > 63 || !ChannelNameRegex.IsMatch(channel))
+        if (!PostgresChannelName.IsValid(channel))
         {
             throw new ArgumentException(
                 "PostgreSQL channel name must be at most 63 characters and match [A-Za-z_][A-Za-z0-9_]*.",

@@ -18,5 +18,6 @@
     <Compile Include="$(MSBuildThisFileDirectory)Models\PostgresInterfaceModel.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Models\PostgresMemberModel.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Parser.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)..\Observables.Postgres\PostgresChannelName.cs" Link="PostgresChannelName.cs" />
   </ItemGroup>
 </Project>

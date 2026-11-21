@@ -1,5 +1,4 @@
 using System.Collections.Immutable;
-using System.Text.RegularExpressions;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -13,10 +12,6 @@ internal static class Parser
     static readonly SymbolDisplayFormat DisplayFormat =
         SymbolDisplayFormat.FullyQualifiedFormat.WithMiscellaneousOptions(
             SymbolDisplayMiscellaneousOptions.IncludeNullableReferenceTypeModifier);
-
-    static readonly Regex ChannelNameRegex = new(
-        @"^[A-Za-z_][A-Za-z0-9_]*$",
-        RegexOptions.CultureInvariant | RegexOptions.Compiled);
 
     public static (List<Diagnostic> diagnostics, ContextGenerationModel model) GeneratePostgresStubs(
         CSharpCompilation compilation,
@@ -91,7 +86,8 @@ internal static class Parser
             return;
         }
 
-        if (notifyAttribute is null || !IoProxyInterfaceWalk.HasAttribute(method, notifyAttribute))
+        var notify = FindAttribute(method, notifyAttribute);
+        if (notify is null)
         {
             diagnostics.Add(
                 Diagnostic.Create(
@@ -102,7 +98,7 @@ internal static class Parser
             return;
         }
 
-        if (!TryGetLiteralChannel(method, notifyAttribute, method.Name, out var channel, out var location))
+        if (!TryGetLiteralChannel(notify, method.Name, out var channel, out var location))
         {
             diagnostics.Add(
                 Diagnostic.Create(
@@ -113,7 +109,7 @@ internal static class Parser
             return;
         }
 
-        if (!IsValidChannelName(channel))
+        if (!PostgresChannelName.IsValid(channel))
         {
             diagnostics.Add(
                 Diagnostic.Create(
@@ -201,7 +197,8 @@ internal static class Parser
             return;
         }
 
-        if (listenAttribute is null || !IoProxyInterfaceWalk.HasAttribute(property, listenAttribute))
+        var listen = FindAttribute(property, listenAttribute);
+        if (listen is null)
         {
             diagnostics.Add(
                 Diagnostic.Create(
@@ -212,7 +209,7 @@ internal static class Parser
             return;
         }
 
-        if (!TryGetLiteralChannel(property, listenAttribute, property.Name, out var channel, out var location))
+        if (!TryGetLiteralChannel(listen, property.Name, out var channel, out var location))
         {
             diagnostics.Add(
                 Diagnostic.Create(
@@ -223,7 +220,7 @@ internal static class Parser
             return;
         }
 
-        if (!IsValidChannelName(channel))
+        if (!PostgresChannelName.IsValid(channel))
         {
             diagnostics.Add(
                 Diagnostic.Create(
@@ -301,59 +298,44 @@ internal static class Parser
         return true;
     }
 
-    static bool IsValidChannelName(string channel) =>
-        channel.Length is > 0 and <= 63 && ChannelNameRegex.IsMatch(channel);
+    static AttributeData? FindAttribute(ISymbol member, INamedTypeSymbol? attributeType) =>
+        attributeType is null
+            ? null
+            : member.GetAttributes().FirstOrDefault(attribute =>
+                SymbolEqualityComparer.Default.Equals(attribute.AttributeClass, attributeType));
+
     static bool TryGetLiteralChannel(
-        ISymbol member,
-        INamedTypeSymbol? attributeType,
+        AttributeData attribute,
         string fallbackName,
         out string channel,
         out Location? badLocation)
     {
-        AttributeData? attribute = null;
-        if (attributeType is not null)
-        {
-            foreach (var candidate in member.GetAttributes())
-            {
-                if (SymbolEqualityComparer.Default.Equals(candidate.AttributeClass, attributeType))
-                {
-                    attribute = candidate;
-                    break;
-                }
-            }
-        }
-
         badLocation = null;
         channel = fallbackName;
 
-        if (attribute is null)
+        // Keep the source diagnostic for non-literals. Referenced contracts supply the bound value only.
+        var syntax = attribute.ApplicationSyntaxReference?.GetSyntax() as AttributeSyntax;
+        var argument = syntax?.ArgumentList?.Arguments.FirstOrDefault(static arg => arg.NameEquals is null);
+        if (argument is not null
+            && (argument.Expression is not LiteralExpressionSyntax literal
+                || (!literal.Token.IsKind(SyntaxKind.StringLiteralToken) && !literal.Token.IsKind(SyntaxKind.NullKeyword))))
+        {
+            badLocation = argument.GetLocation();
+            return false;
+        }
+
+        if (attribute.ConstructorArguments.IsDefaultOrEmpty || attribute.ConstructorArguments[0].IsNull)
         {
             return true;
         }
 
-        var attributeSyntax = attribute.ApplicationSyntaxReference?.GetSyntax() as AttributeSyntax;
-        var argument = attributeSyntax?.ArgumentList?.Arguments.FirstOrDefault();
-        if (argument is null)
-        {
-            return true;
-        }
-
-        if (argument.Expression is LiteralExpressionSyntax literal
-            && literal.Token.IsKind(SyntaxKind.StringLiteralToken)
-            && literal.Token.Value is string text
-            && !string.IsNullOrWhiteSpace(text))
+        if (attribute.ConstructorArguments[0].Value is string text && !string.IsNullOrWhiteSpace(text))
         {
             channel = text;
             return true;
         }
 
-        if (argument.Expression is LiteralExpressionSyntax nullLiteral
-            && nullLiteral.Token.IsKind(SyntaxKind.NullKeyword))
-        {
-            return true;
-        }
-
-        badLocation = argument.GetLocation();
+        badLocation = argument?.GetLocation();
         return false;
     }
 

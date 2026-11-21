@@ -1,4 +1,5 @@
 using Microsoft.CodeAnalysis;
+using Observables.TestSupport;
 using VerifyXunit;
 
 namespace Observables.Postgres.R3.SourceGenerators.Tests;
@@ -177,6 +178,80 @@ public sealed class PostgresInterfaceGeneratorTests
         var snapshot = GeneratorTestHarness.ToSnapshot(output);
 
         Assert.Contains("OBS10006", snapshot, StringComparison.Ordinal);
+    }
+
+    [Theory]
+    [InlineData(@"wire_pg\n")]
+    [InlineData(@"wire_pg\r\n")]
+    public void Postgres_rejects_channels_with_trailing_line_breaks(string channelSource)
+    {
+        var output = GeneratorTestHarness.Run(
+            $$"""
+              [Postgres]
+              public interface IChannel
+              {
+                  [Listen("{{channelSource}}")]
+                  Observable<string> Read { get; }
+
+                  [Notify("{{channelSource}}")]
+                  Observable<global::R3.Unit> Send(string payload);
+              }
+              """);
+
+        Assert.Equal(2, output.Diagnostics.Where(static diagnostic => diagnostic.Id == "OBS10006")
+            .Select(static diagnostic => diagnostic.GetMessage()).Distinct().Count());
+    }
+
+    [Theory]
+    [InlineData("wire_pg", true)]
+    [InlineData(@"wire_pg\n", false)]
+    public void Postgres_reads_and_validates_channels_in_inherited_contract_metadata(
+        string listenChannelSource,
+        bool validListenChannel)
+    {
+        var contracts =
+            $$"""
+            using R3;
+            using Observables.Postgres;
+
+            public interface IExternalContract
+            {
+                [Listen("{{listenChannelSource}}")]
+                Observable<string> Changes { get; }
+
+                [Notify(channel: "wire_notify")]
+                Observable<Unit> Send(string payload);
+
+                [Listen]
+                Observable<string> DefaultChannel { get; }
+            }
+            """;
+        var (compilation, _) = GeneratorTestRunner.CreateHarnessCompilation(
+            contracts,
+            static source => source,
+            MetadataReferenceBuilder.Build(typeof(ListenAttribute), typeof(global::R3.Unit)));
+
+        using var assembly = new MemoryStream();
+        var emit = compilation.WithAssemblyName("PostgresContracts")
+            .Emit(assembly, cancellationToken: TestContext.Current.CancellationToken);
+        Assert.True(emit.Success, string.Join(Environment.NewLine, emit.Diagnostics));
+        var output = GeneratorTestHarness.Run(
+            "[Postgres] public interface IChannel : IExternalContract { }",
+            extraReferences: [MetadataReference.CreateFromImage(assembly.ToArray())]);
+
+        var snapshot = GeneratorTestHarness.ToSnapshot(output);
+        if (!validListenChannel)
+        {
+            Assert.Contains(output.Diagnostics, static diagnostic => diagnostic.Id == "OBS10006"
+                && diagnostic.GetMessage().Contains("IExternalContract.Changes", StringComparison.Ordinal));
+            Assert.DoesNotContain("FromListen(_connection, \"Changes\")", snapshot, StringComparison.Ordinal);
+            return;
+        }
+
+        Assert.DoesNotContain(output.Diagnostics, static diagnostic => diagnostic.Severity == DiagnosticSeverity.Error);
+        Assert.Contains("FromListen(_connection, \"wire_pg\")", snapshot, StringComparison.Ordinal);
+        Assert.Contains("FromNotify(_connection, \"wire_notify\", payload, default)", snapshot, StringComparison.Ordinal);
+        Assert.Contains("FromListen(_connection, \"DefaultChannel\")", snapshot, StringComparison.Ordinal);
     }
 
     const string CacheTestSource =

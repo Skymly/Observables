@@ -19,33 +19,10 @@ internal static class HttpClientFactoryCore
         var builder = services.AddHttpClient(typeof(T).FullName ?? typeof(T).Name, configureClient ?? (_ => { }));
 
         builder.ConfigurePrimaryHttpMessageHandler(sp =>
-            CreateInnerHandlerIfProvided(sp.GetRequiredService<SettingsFor<T>>().Settings)
-                ?? new HttpClientHandler());
+            RestService.CreateHttpMessageHandler(sp.GetRequiredService<SettingsFor<T>>().Settings));
 
         return builder.AddTypedClient((client, serviceProvider) =>
             RestService.For<T>(client, serviceProvider.GetRequiredService<SettingsFor<T>>().Settings));
     }
 
-    static HttpMessageHandler? CreateInnerHandlerIfProvided(RestApiSettings? settings)
-    {
-        HttpMessageHandler? innerHandler = null;
-        if (settings is null)
-        {
-            return null;
-        }
-
-        if (settings.HttpMessageHandlerFactory is not null)
-        {
-            innerHandler = settings.HttpMessageHandlerFactory();
-        }
-
-        if (settings.AuthorizationHeaderValueGetter is not null)
-        {
-            innerHandler = new AuthenticatedHttpClientHandler(
-                settings.AuthorizationHeaderValueGetter,
-                innerHandler);
-        }
-
-        return innerHandler;
-    }
 }

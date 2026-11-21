@@ -315,27 +315,24 @@ namespace Observables.RestAPI
                 );
             }
 
-            HttpMessageHandler? innerHandler = null;
-            if (settings != null)
-            {
-                if (settings.HttpMessageHandlerFactory != null)
-                {
-                    innerHandler = settings.HttpMessageHandlerFactory();
-                }
-
-                if (settings.AuthorizationHeaderValueGetter != null)
-                {
-                    innerHandler = new AuthenticatedHttpClientHandler(
-                        settings.AuthorizationHeaderValueGetter,
-                        innerHandler
-                    );
-                }
-            }
-
-            return new HttpClient(innerHandler ?? new HttpClientHandler())
+            return new HttpClient(CreateHttpMessageHandler(settings))
             {
                 BaseAddress = new Uri(EnsureTrailingSlash(hostUrl.Trim()))
             };
+        }
+
+        /// <summary>
+        /// Creates the HTTP handler chain for the supplied settings, including any authorization getter.
+        /// </summary>
+        /// <param name="settings">The settings used to configure the handler chain.</param>
+        /// <returns>A handler owned by the caller.</returns>
+        public static HttpMessageHandler CreateHttpMessageHandler(RestApiSettings? settings)
+        {
+            var innerHandler = settings?.HttpMessageHandlerFactory?.Invoke();
+            var getToken = settings?.AuthorizationHeaderValueGetter;
+            return getToken is null
+                ? innerHandler ?? new HttpClientHandler()
+                : new AuthenticatedHttpClientHandler(getToken, innerHandler, settings?.AuthorizationHeaderOrigin);
         }
 
         static string EnsureTrailingSlash(string hostUrl) =>

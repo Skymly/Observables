@@ -1,4 +1,5 @@
 using System.Net;
+using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
 using RichardSzalay.MockHttp;
@@ -362,6 +363,96 @@ public sealed class RuntimeTests
         Assert.Equal("tok-123", handler.Request.Headers.Authorization.Parameter);
     }
 
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task Explicit_credential_takes_precedence_over_the_settings_getter(bool useAuthorizeParameter)
+    {
+        var handler = new CaptureJsonHandler();
+        var getterCalls = 0;
+        using var client = RestService.CreateHttpClient("https://api.example.com", new RestApiSettings
+        {
+            HttpMessageHandlerFactory = () => handler,
+            AuthorizationHeaderValueGetter = (_, _) =>
+            {
+                getterCalls++;
+                return Task.FromResult("settings-token");
+            },
+        });
+        var api = RestService.For<IUserApi>(client);
+
+        var cancellationToken = TestContext.Current.CancellationToken;
+        if (useAuthorizeParameter)
+        {
+            await api.GetUserWithAuthorization(1, "explicit-token", cancellationToken);
+        }
+        else
+        {
+            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", "explicit-token");
+            await api.GetUser(1, cancellationToken);
+        }
+
+        var authorization = handler.Request?.Headers.Authorization;
+        Assert.NotNull(authorization);
+        Assert.Equal("Basic", authorization.Scheme);
+        Assert.Equal("explicit-token", authorization.Parameter);
+        Assert.Equal(0, getterCalls);
+    }
+
+    [Theory]
+    [InlineData("https://api.example.com:443/resource", true)]
+    [InlineData("https://api.example.com:444/resource", false)]
+    [InlineData("http://api.example.com/resource", false)]
+    [InlineData("https://other.example.com/resource", false)]
+    public async Task Getter_supplies_a_credential_only_for_its_configured_origin(string endpoint, bool matches)
+    {
+        var handler = new CaptureJsonHandler();
+        var getterCalls = 0;
+        using var client = RestService.CreateHttpClient("https://api.example.com", new RestApiSettings
+        {
+            HttpMessageHandlerFactory = () => handler,
+            AuthorizationHeaderOrigin = new Uri("https://API.EXAMPLE.COM/trusted-root"),
+            AuthorizationHeaderValueGetter = (_, _) =>
+            {
+                getterCalls++;
+                return Task.FromResult("settings-token");
+            },
+        });
+
+        using var request = new HttpRequestMessage(HttpMethod.Get, endpoint);
+        if (matches)
+        {
+            request.Headers.Authorization = new AuthenticationHeaderValue("Basic");
+        }
+
+        using var response = await client.SendAsync(request, TestContext.Current.CancellationToken);
+
+        var authorization = handler.Request?.Headers.Authorization;
+        if (matches)
+        {
+            Assert.NotNull(authorization);
+            Assert.Equal("Basic", authorization.Scheme);
+            Assert.Equal("settings-token", authorization.Parameter);
+        }
+        else
+        {
+            Assert.Null(authorization);
+        }
+
+        Assert.Equal(matches ? 1 : 0, getterCalls);
+    }
+
+    [Theory]
+    [InlineData("relative-path")]
+    [InlineData("ftp://api.example.com")]
+    public void Authorization_origin_requires_an_absolute_http_or_https_uri(string value)
+    {
+        var settings = new RestApiSettings();
+        var uri = new Uri(value, UriKind.RelativeOrAbsolute);
+
+        Assert.Throws<ArgumentException>("value", () => settings.AuthorizationHeaderOrigin = uri);
+    }
+
     [Fact]
     public void Dispose_does_not_dispose_external_HttpClient()
     {
@@ -505,6 +596,10 @@ public sealed class RuntimeTests
     {
         [Get("/users/{id}")]
         Task<User> GetUser(int id, CancellationToken cancellationToken = default);
+
+        [Get("/users/{id}")]
+        Task<User> GetUserWithAuthorization(
+            int id, [Authorize("Basic")] string credential, CancellationToken cancellationToken);
 
         [Get("/users/{id}")]
         Task<IApiResponse<User>> GetUserResponse(int id, CancellationToken cancellationToken = default);

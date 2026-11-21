@@ -24,6 +24,8 @@ namespace Observables.RestAPI
 #endif
     public class RestApiSettings
     {
+        Uri? authorizationHeaderOrigin;
+
         /// <summary>
         /// Creates a new <see cref="RestApiSettings"/> instance with the default parameters
         /// </summary>
@@ -80,7 +82,8 @@ namespace Observables.RestAPI
         }
 
         /// <summary>
-        /// Supply a function to provide the Authorization header. Does not work if you supply an HttpClient instance.
+        /// Supplies an authorization credential when the request has no explicit credential.
+        /// Used by <see cref="RestService.CreateHttpClient"/> and the HttpClientFactory extension.
         /// </summary>
         public Func<
             HttpRequestMessage,
@@ -88,6 +91,28 @@ namespace Observables.RestAPI
             Task<string>
         >? AuthorizationHeaderValueGetter
         { get; set; }
+
+        /// <summary>
+        /// Optionally restricts <see cref="AuthorizationHeaderValueGetter"/> to an absolute HTTP or HTTPS origin.
+        /// The built-in handler compares the destination's scheme, host and effective port.
+        /// A <see langword="null"/> value leaves origin selection to the application.
+        /// </summary>
+        public Uri? AuthorizationHeaderOrigin
+        {
+            get => authorizationHeaderOrigin;
+            set
+            {
+                if (value is not null
+                    && (!value.IsAbsoluteUri
+                        || (value.Scheme != Uri.UriSchemeHttp && value.Scheme != Uri.UriSchemeHttps)
+                        || value.Host.Length == 0))
+                {
+                    throw new ArgumentException("An authorization origin must be an absolute HTTP or HTTPS URI with a host.", nameof(value));
+                }
+
+                authorizationHeaderOrigin = value;
+            }
+        }
 
         /// <summary>
         /// Supply a custom inner HttpMessageHandler. Does not work if you supply an HttpClient instance.

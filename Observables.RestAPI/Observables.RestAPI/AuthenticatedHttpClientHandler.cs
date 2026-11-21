@@ -6,6 +6,7 @@ namespace Observables.RestAPI
     public class AuthenticatedHttpClientHandler : DelegatingHandler
     {
         readonly Func<HttpRequestMessage, CancellationToken, Task<string>> getToken;
+        readonly Uri? authorizationHeaderOrigin;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="AuthenticatedHttpClientHandler"/> class.
@@ -22,9 +23,19 @@ namespace Observables.RestAPI
             Func<HttpRequestMessage, CancellationToken, Task<string>> getToken,
             HttpMessageHandler? innerHandler = null
         )
+            : this(getToken, innerHandler, authorizationHeaderOrigin: null)
+        {
+        }
+
+        internal AuthenticatedHttpClientHandler(
+            Func<HttpRequestMessage, CancellationToken, Task<string>> getToken,
+            HttpMessageHandler? innerHandler,
+            Uri? authorizationHeaderOrigin
+        )
             : base(innerHandler ?? new HttpClientHandler())
         {
             this.getToken = getToken ?? throw new ArgumentNullException(nameof(getToken));
+            this.authorizationHeaderOrigin = authorizationHeaderOrigin;
         }
 
         /// <summary>
@@ -54,8 +65,21 @@ namespace Observables.RestAPI
             CancellationToken cancellationToken
         )
         {
-            var token = await getToken(request, cancellationToken).ConfigureAwait(false);
             var auth = request.Headers.Authorization;
+            if (!string.IsNullOrWhiteSpace(auth?.Parameter)
+                || (auth is null && request.Headers.Contains("Authorization"))
+                || !IsAllowedOrigin(request.RequestUri))
+            {
+                return await base.SendAsync(request, cancellationToken).ConfigureAwait(false);
+            }
+
+            var token = await getToken(request, cancellationToken).ConfigureAwait(false);
+            if (!IsAllowedOrigin(request.RequestUri))
+            {
+                return await base.SendAsync(request, cancellationToken).ConfigureAwait(false);
+            }
+
+            auth = request.Headers.Authorization;
             if (auth != null)
             {
                 request.Headers.Authorization = new AuthenticationHeaderValue(auth.Scheme, token);
@@ -71,5 +95,13 @@ namespace Observables.RestAPI
 
             return await base.SendAsync(request, cancellationToken).ConfigureAwait(false);
         }
+
+        bool IsAllowedOrigin(Uri? requestUri) =>
+            authorizationHeaderOrigin is null
+            || (requestUri is { IsAbsoluteUri: true }
+                && authorizationHeaderOrigin.Scheme == requestUri.Scheme
+                && string.Equals(authorizationHeaderOrigin.IdnHost, requestUri.IdnHost, StringComparison.OrdinalIgnoreCase)
+                && authorizationHeaderOrigin.Port == requestUri.Port);
+
     }
 }

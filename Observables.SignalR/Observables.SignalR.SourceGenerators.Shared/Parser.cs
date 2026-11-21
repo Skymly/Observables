@@ -3,7 +3,6 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Observables.SourceGenerators.Shared.Diagnostics;
-using Observables.SourceGenerators.Shared.Extensions;
 
 namespace Observables.SignalR.Generators;
 
@@ -27,43 +26,34 @@ internal static class Parser
         var observableType = compilation.GetTypeByMetadataName(BackendTokens.ObservableMetadataName);
         var unitType = compilation.GetTypeByMetadataName(BackendTokens.UnitMetadataName);
 
+        var incompleteProxies = new HashSet<string>(StringComparer.Ordinal);
         return IoProxyModelAssembly.Parse<HubMemberModel, HubInterfaceModel, ContextGenerationModel>(
             markedInterfaces,
             cancellationToken,
             coreReferenced: hubAttribute is not null,
             coreNotReferenced: DiagnosticDescriptors.SignalRCoreNotReferenced,
             emptyModel: static () => new ContextGenerationModel(ImmutableEquatableArray.Empty<HubInterfaceModel>()),
-            tryAddMethod: (marked, method, members, diagnostics) => TryAddMethod(
-                method,
-                marked.InterfaceSymbol,
-                compilation,
-                invokeAttribute,
-                sendAttribute,
-                streamAttribute,
-                onAttribute,
-                observableType,
-                unitType,
-                members,
-                diagnostics),
-            tryAddProperty: (marked, property, members, diagnostics) => TryAddProperty(
-                property,
-                compilation,
-                invokeAttribute,
-                sendAttribute,
-                streamAttribute,
-                onAttribute,
-                observableType,
-                members,
-                diagnostics),
+            tryAddMethod: (marked, method, members, diagnostics) => AddMember(
+                marked, method, members,
+                ParseMethod(method, marked.InterfaceSymbol, compilation, invokeAttribute, sendAttribute,
+                    streamAttribute, onAttribute, observableType, unitType, diagnostics)),
+            tryAddProperty: (marked, property, members, diagnostics) => AddMember(
+                marked, property, members,
+                ParseProperty(property, compilation, invokeAttribute, sendAttribute, streamAttribute,
+                    onAttribute, observableType, diagnostics)),
             createInterface: (marked, className, members) => new HubInterfaceModel(
-                $"{marked.InterfaceSymbol.GetSafeHintName()}.SignalR.g.cs",
+                GetHintName(marked),
                 className,
                 marked.InterfaceSymbol.ToDisplayString(DisplayFormat),
                 BackendTokens.QualifyGeneratedNamespace("Observables.SignalR"),
                 members,
                 marked.Nullability,
                 GetHubName(marked.InterfaceSymbol, hubAttribute)),
-            createContext: static interfaces => new ContextGenerationModel(interfaces),
+            createContext: interfaces => new ContextGenerationModel(
+                incompleteProxies.Count == 0
+                    ? interfaces
+                    : interfaces.AsArray().Where(proxy => !incompleteProxies.Contains(proxy.FileName))
+                        .ToImmutableEquatableArray()),
             onMarkedInterface: marked =>
             {
                 if (failSafeProbe && marked.Syntax.Identifier.ValueText == "IInternalErrorProbe")
@@ -71,14 +61,33 @@ internal static class Parser
                     throw new InvalidOperationException("fail-safe probe");
                 }
             },
-            tryAddOther: (marked, member, _, diagnostics) =>
+            tryAddOther: (marked, member, members, diagnostics) =>
+            {
                 diagnostics.Add(
                     Diagnostic.Create(
                         DiagnosticDescriptors.InvalidHubMember,
                         member.Locations.FirstOrDefault(),
                         marked.InterfaceSymbol.Name,
-                        member.Name)));
+                        member.Name));
+                AddMember(marked, member, members, null);
+            });
+
+        void AddMember(MarkedInterfaceContext marked, ISymbol contract, List<HubMemberModel> members, HubMemberModel? model)
+        {
+            if (model is not null)
+            {
+                members.Add(model);
+            }
+            else if (contract.IsAbstract)
+            {
+                // The valid members alone cannot implement the contract.
+                incompleteProxies.Add(GetHintName(marked));
+            }
+        }
     }
+
+    static string GetHintName(MarkedInterfaceContext marked) =>
+        IoProxyModelAssembly.GeneratedHintName(marked.InterfaceSymbol, "SignalR");
 
     /// <summary>
     /// Reads the name off <c>[Hub(hubName)]</c>. A null or blank name means the interface opts out of
@@ -108,7 +117,7 @@ internal static class Parser
         return null;
     }
 
-    static void TryAddMethod(
+    static HubMemberModel? ParseMethod(
         IMethodSymbol method,
         INamedTypeSymbol ifaceSymbol,
         CSharpCompilation compilation,
@@ -118,7 +127,6 @@ internal static class Parser
         INamedTypeSymbol? onAttribute,
         INamedTypeSymbol? observableType,
         INamedTypeSymbol? unitType,
-        List<HubMemberModel> members,
         List<Diagnostic> diagnostics)
     {
         if (onAttribute is not null && IoProxyInterfaceWalk.HasAttribute(method, onAttribute))
@@ -128,36 +136,20 @@ internal static class Parser
                     DiagnosticDescriptors.MemberShapeMismatch,
                     method.Locations.FirstOrDefault(),
                     method.Name));
-            return;
+            return null;
         }
 
-        var boundary = GetBoundaryKind(method, invokeAttribute, sendAttribute, streamAttribute, diagnostics);
-        if (boundary is null)
+        var match = FindMethodBoundary(method, invokeAttribute, sendAttribute, streamAttribute, out var conflict);
+        if (match is not { } boundary)
         {
-            var reportedConflict = false;
-            for (var i = 0; i < diagnostics.Count; i++)
-            {
-                if (diagnostics[i].Id == DiagnosticDescriptors.MultipleHubBoundaries.Id)
-                {
-                    reportedConflict = true;
-                    break;
-                }
-            }
-
-            if (!reportedConflict)
-            {
-                diagnostics.Add(
-                    Diagnostic.Create(
-                        DiagnosticDescriptors.InvalidHubMember,
-                        method.Locations.FirstOrDefault(),
-                        ifaceSymbol.Name,
-                        method.Name));
-            }
-
-            return;
+            var memberLocation = method.Locations.FirstOrDefault();
+            diagnostics.Add(conflict
+                ? Diagnostic.Create(DiagnosticDescriptors.MultipleHubBoundaries, memberLocation, method.Name)
+                : Diagnostic.Create(DiagnosticDescriptors.InvalidHubMember, memberLocation, ifaceSymbol.Name, method.Name));
+            return null;
         }
 
-        if (!TryGetLiteralMethodName(method, boundary.Value, out var hubMethodName, out var location))
+        if (!TryResolveMethodName(boundary.Attribute, method.Name, out var hubMethodName, out var location))
         {
             diagnostics.Add(
                 Diagnostic.Create(
@@ -165,7 +157,7 @@ internal static class Parser
                     location ?? method.Locations.FirstOrDefault(),
                     ifaceSymbol.Name,
                     method.Name));
-            return;
+            return null;
         }
 
         foreach (var parameter in method.Parameters)
@@ -178,7 +170,7 @@ internal static class Parser
                         parameter.Locations.FirstOrDefault(),
                         parameter.Name,
                         method.Name));
-                return;
+                return null;
             }
         }
 
@@ -188,7 +180,7 @@ internal static class Parser
                 "Observables.SignalR.Reactive.SystemReactiveSignalRAdapter",
                 observableType,
                 unitType,
-                requiresUnitPayload: boundary.Value == HubBoundaryKind.Send,
+                requiresUnitPayload: boundary.Kind == HubBoundaryKind.Send,
                 DiagnosticDescriptors.UnsupportedReturnType,
                 DiagnosticDescriptors.SystemReactiveNotReferenced,
                 method.Locations.FirstOrDefault(),
@@ -196,7 +188,7 @@ internal static class Parser
                 out var resultType,
                 out var returnDisplay))
         {
-            return;
+            return null;
         }
 
         if (IdentifierHelper.HasNonTrailingCancellationToken(method))
@@ -207,24 +199,23 @@ internal static class Parser
                     method.Locations.FirstOrDefault(),
                     ifaceSymbol.Name,
                     method.Name));
-            return;
+            return null;
         }
 
         var (declarations, names, ctName) = BuildParameters(method);
-        members.Add(
-            new HubMemberModel(
-                IdentifierHelper.Escape(method.Name),
-                hubMethodName,
-                boundary.Value,
-                false,
-                returnDisplay,
-                resultType,
-                declarations.ToImmutableEquatableArray(),
-                names.ToImmutableEquatableArray(),
-                ctName));
+        return new HubMemberModel(
+            IdentifierHelper.Escape(method.Name),
+            hubMethodName,
+            boundary.Kind,
+            false,
+            returnDisplay,
+            resultType,
+            declarations.ToImmutableEquatableArray(),
+            names.ToImmutableEquatableArray(),
+            ctName);
     }
 
-    static void TryAddProperty(
+    static HubMemberModel? ParseProperty(
         IPropertySymbol property,
         CSharpCompilation compilation,
         INamedTypeSymbol? invokeAttribute,
@@ -232,7 +223,6 @@ internal static class Parser
         INamedTypeSymbol? streamAttribute,
         INamedTypeSymbol? onAttribute,
         INamedTypeSymbol? observableType,
-        List<HubMemberModel> members,
         List<Diagnostic> diagnostics)
     {
         if (HasMethodBoundaryOnProperty(property, invokeAttribute, sendAttribute, streamAttribute))
@@ -242,10 +232,11 @@ internal static class Parser
                     DiagnosticDescriptors.MemberShapeMismatch,
                     property.Locations.FirstOrDefault(),
                     property.Name));
-            return;
+            return null;
         }
 
-        if (onAttribute is null || !IoProxyInterfaceWalk.HasAttribute(property, onAttribute))
+        var attribute = FindAttribute(property, onAttribute);
+        if (attribute is null)
         {
             diagnostics.Add(
                 Diagnostic.Create(
@@ -253,10 +244,10 @@ internal static class Parser
                     property.Locations.FirstOrDefault(),
                     property.ContainingType.Name,
                     property.Name));
-            return;
+            return null;
         }
 
-        if (!TryGetLiteralMethodNameFromProperty(property, out var hubMethodName, out var location))
+        if (!TryResolveMethodName(attribute, property.Name, out var hubMethodName, out var location))
         {
             diagnostics.Add(
                 Diagnostic.Create(
@@ -264,7 +255,7 @@ internal static class Parser
                     location ?? property.Locations.FirstOrDefault(),
                     property.ContainingType.Name,
                     property.Name));
-            return;
+            return null;
         }
 
         if (!ObservableReturnTypeParser.TryParse(
@@ -281,120 +272,69 @@ internal static class Parser
                 out var resultType,
                 out var returnDisplay))
         {
-            return;
+            return null;
         }
 
-        members.Add(
-            new HubMemberModel(
-                IdentifierHelper.Escape(property.Name),
-                hubMethodName,
-                HubBoundaryKind.On,
-                true,
-                returnDisplay,
-                resultType,
-                ImmutableEquatableArray.Empty<string>(),
-                ImmutableEquatableArray.Empty<string>(),
-                null));
+        return new HubMemberModel(
+            IdentifierHelper.Escape(property.Name),
+            hubMethodName,
+            HubBoundaryKind.On,
+            true,
+            returnDisplay,
+            resultType,
+            ImmutableEquatableArray.Empty<string>(),
+            ImmutableEquatableArray.Empty<string>(),
+            null);
     }
 
-    static HubBoundaryKind? GetBoundaryKind(
+    static (HubBoundaryKind Kind, AttributeData Attribute)? FindMethodBoundary(
         IMethodSymbol method,
         INamedTypeSymbol? invokeAttribute,
         INamedTypeSymbol? sendAttribute,
         INamedTypeSymbol? streamAttribute,
-        List<Diagnostic> diagnostics)
+        out bool conflict)
     {
-        HubBoundaryKind? kind = null;
-        var matches = 0;
-        if (invokeAttribute is not null && IoProxyInterfaceWalk.HasAttribute(method, invokeAttribute))
+        conflict = false;
+        (HubBoundaryKind Kind, AttributeData Attribute)? selected = null;
+        foreach (var attribute in method.GetAttributes())
         {
-            kind = HubBoundaryKind.Invoke;
-            matches++;
-        }
-
-        if (sendAttribute is not null && IoProxyInterfaceWalk.HasAttribute(method, sendAttribute))
-        {
-            kind = HubBoundaryKind.Send;
-            matches++;
-        }
-
-        if (streamAttribute is not null && IoProxyInterfaceWalk.HasAttribute(method, streamAttribute))
-        {
-            kind = HubBoundaryKind.Stream;
-            matches++;
-        }
-
-        if (matches > 1)
-        {
-            diagnostics.Add(
-                Diagnostic.Create(
-                    DiagnosticDescriptors.MultipleHubBoundaries,
-                    method.Locations.FirstOrDefault(),
-                    method.Name));
-            return null;
-        }
-
-        return kind;
-    }
-
-    static bool TryGetLiteralMethodName(
-        IMethodSymbol method,
-        HubBoundaryKind boundary,
-        out string hubMethodName,
-        out Location? badLocation)
-    {
-        var attributeClass = boundary switch
-        {
-            HubBoundaryKind.Invoke => "HubInvokeAttribute",
-            HubBoundaryKind.Send => "HubSendAttribute",
-            HubBoundaryKind.Stream => "HubStreamAttribute",
-            _ => throw new ArgumentOutOfRangeException(nameof(boundary)),
-        };
-
-        AttributeData? attribute = null;
-        foreach (var candidate in method.GetAttributes())
-        {
-            if (candidate.AttributeClass?.Name == attributeClass)
+            var type = attribute.AttributeClass;
+            var kind = type switch
             {
-                attribute = candidate;
-                break;
-            }
-        }
+                not null when SymbolEqualityComparer.Default.Equals(type, invokeAttribute) => HubBoundaryKind.Invoke,
+                not null when SymbolEqualityComparer.Default.Equals(type, sendAttribute) => HubBoundaryKind.Send,
+                not null when SymbolEqualityComparer.Default.Equals(type, streamAttribute) => HubBoundaryKind.Stream,
+                _ => (HubBoundaryKind?)null,
+            };
+            if (kind is null)
+                continue;
 
-        return TryResolveMethodName(attribute, method.Name, out hubMethodName, out badLocation);
-    }
-
-    static bool TryGetLiteralMethodNameFromProperty(
-        IPropertySymbol property,
-        out string hubMethodName,
-        out Location? badLocation)
-    {
-        AttributeData? attribute = null;
-        foreach (var candidate in property.GetAttributes())
-        {
-            if (candidate.AttributeClass?.Name == "HubOnAttribute")
+            if (selected.HasValue)
             {
-                attribute = candidate;
-                break;
+                conflict = true;
+                return null;
             }
+
+            selected = (kind.Value, attribute);
         }
 
-        return TryResolveMethodName(attribute, property.Name, out hubMethodName, out badLocation);
+        return selected;
     }
+
+    static AttributeData? FindAttribute(ISymbol member, INamedTypeSymbol? attributeType) =>
+        attributeType is null
+            ? null
+            : member.GetAttributes().FirstOrDefault(attribute =>
+                SymbolEqualityComparer.Default.Equals(attribute.AttributeClass, attributeType));
 
     static bool TryResolveMethodName(
-        AttributeData? attribute,
+        AttributeData attribute,
         string fallbackName,
         out string hubMethodName,
         out Location? badLocation)
     {
         badLocation = null;
         hubMethodName = fallbackName;
-
-        if (attribute is null)
-        {
-            return true;
-        }
 
         if (attribute.ConstructorArguments.Length == 0
             || attribute.ConstructorArguments[0].IsNull)

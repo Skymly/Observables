@@ -84,17 +84,19 @@ public global::R3.Observable<T> Prices =>
 - R3 桥：`Observables.Sse.SseObservable.FromEvent<T>`。
 - Reactive 桥：`Observables.Sse.Reactive.SystemReactiveSseAdapter.FromEvent<T>`（由 `ObservableReturnTypeParser` 按返回类型选择后端）。
 - 注册：`ModuleInitializer` 调 `SseService.RegisterGeneratedFactory(typeof(IPriceFeed), static c => new PriceFeedGeneratedProxy(c))`。
+- 两个接口声明同名属性时，代理通过显式接口实现保留各声明的事件名与序列缓存。调用方通过声明该属性的接口读取对应事件。事件名取自绑定到属性的 `SseEventAttribute`。
 
 ## 4. 协议与运行时
 
 SSE 解析（`text/event-stream`，见 [WHATWG HTML §9.2](https://html.spec.whatwg.org/multipage/server-sent-events.html)）：
 
-- 每次订阅发起一次 `GET`（`Accept: text/event-stream`，`HttpCompletionOption.ResponseHeadersRead`），逐行解析响应流。
+- 每次订阅发起一次 `GET`（`Accept: text/event-stream`，`HttpCompletionOption.ResponseHeadersRead`）。`204 No Content` 直接结束订阅。其余成功响应须为 `text/event-stream`。
+- 解析器接受 LF、CRLF 和 CR。通过 `SseConnection` 可设置行与事件的 UTF-8 字节上限，两项默认均为 1 MiB。
 - 行格式 `field: value`（值前单个空格可选）；`data` 多行以 `\n` 连接；空行派发一个事件。
 - `event` 缺省 → 事件名 `"message"`；`:` 开头为注释（忽略）；`retry` 暂忽略。
 - payload 反序列化：`T == string` 直接取 `data`；其他类型走 `System.Text.Json`（**net8+**；`netstandard2.0` 仅支持 `string`，与 WebSocket 一致）。
 
-> **v1（preview7）简化**：每个属性订阅各自开一条连接并按事件名过滤（与 WebSocket `FromReceive` 每订阅一连接一致）。单连接多路复用（一条流广播给多个事件属性）列为后续优化。重连 / `Last-Event-ID` 同列后续（v1 在 `OnError` / 流结束时 `OnCompleted`）。
+每次订阅独立建立 HTTP 流并按事件名过滤。单连接多路复用、重连和 `Last-Event-ID` 列为后续工作。
 
 解析逻辑置于运行时 `Observables.Sse.SseProtocol`（`public static`），R3 与 Reactive 两桥复用，避免重复实现。
 
@@ -139,7 +141,7 @@ Observables.Sse/
 | `Observables.Sse.R3`（`SseObservable`） | 上面那个 + R3 | 仅 `Observables.Sse.R3` |
 | `Observables.Sse.Reactive`（`SystemReactiveSseAdapter`） | 上面第一个 + System.Reactive | 仅 `Observables.Sse.Reactive` |
 
-命名空间都是 `Observables.Sse`，拆分对消费者源码不可见。`SseProtocol` 等 internal 类型留在中立运行时，两个桥接项目通过 `InternalsVisibleTo` 取用。
+使用 `SseService` 或 R3 的 `SseObservable` 时导入 `using Observables.Sse;`。直接调用 System.Reactive 桥 `SystemReactiveSseAdapter` 时导入 `using Observables.Sse.Reactive;`。两个桥接项目复用中立运行时中的公开静态类 `SseProtocol`。
 
 ## 7. 后续（v1 之外）
 

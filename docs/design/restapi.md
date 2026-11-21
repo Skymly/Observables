@@ -1,6 +1,6 @@
 # RestAPI 域 — 开发设计文档
 
-> 状态：**已实现**（`main`，Path B 编译期代码生成）；NuGet `Observables.RestAPI.R3` / `Observables.RestAPI.Reactive` 已发 nuget.org（`0.2.2`，**20 包**之一）。实现细节以代码为准。
+> 状态：**已实现**（Path B 编译期代码生成）。NuGet 包 `Observables.RestAPI.R3` 与 `Observables.RestAPI.Reactive` 的发布记录见 [CONTRIBUTING.md](../../CONTRIBUTING.md)。
 > 命名、打包、诊断分段等约定以仓库根 [`AGENTS.md`](../../AGENTS.md) 为权威，本文在其框架内细化 RestAPI 域。
 
 ## 1. 目标与定位
@@ -9,10 +9,11 @@
 
 | 返回类型 | 后端 | 语义 |
 |----------|------|------|
-| `Task<T>` / `ValueTask<T>` / `Task` | 通用 | 一次性请求/响应 |
+| `Task<T>` / `ValueTask<T>` | 通用 | 一次性请求/响应 |
+| `Task` / `ValueTask` | 通用 | 发送请求并检查状态，跳过响应体反序列化 |
 | `Observable<T>` | R3 包 | 单次响应冷流（`Observable.FromAsync`） |
 | `IObservable<T>` | Reactive 包 | 单次响应冷流（`SystemReactiveObservableAdapter.FromAsync`） |
-| `IApiResponse<T>` | 通用 | 包装响应（含头、状态码、错误，不抛异常） |
+| `IApiResponse<T>` / `IApiResponse` | 通用 | 包装响应头、状态码和错误。泛型包装还提供反序列化后的内容 |
 
 RestAPI 域的运行时部分包含由 [Refit](https://github.com/reactiveui/refit)（MIT，适配基线 `v10.1.6`）适配而来的代码，许可信息见 [`NOTICE.md`](../../NOTICE.md)。
 
@@ -62,12 +63,14 @@ public sealed class GetAttribute(string path) : HttpMethodAttribute(path);
 // 同样：PostAttribute、PutAttribute、DeleteAttribute、PatchAttribute、HeadAttribute、OptionsAttribute
 ```
 
+每个 HTTP 方法须指定一个 HTTP 方法特性。同时声明多个特性会报 OBS3009。
+
 ### 3.2 参数绑定特性
 
 | 特性 | 目标 | 绑定种类 | 说明 |
 |------|------|----------|------|
 | `[Body]` / `[Body(buffered)]` / `[Body(method)]` | parameter | `Body` | 请求体；`BodySerializationMethod`（Default/Json/UrlEncoded/Serialized） |
-| `[Query]` / `[Query(delimiter)]` / `[Query(format)]` / `[Query(collectionFormat)]` | parameter | `Query` | 查询参数；支持 `Prefix`、`Delimiter`、`Format`、`TreatAsString`、`CollectionFormat` |
+| `[Query]` / `[Query(delimiter)]` / `[Query(Format = "…")]` / `[Query(collectionFormat)]` | parameter | `Query` | 查询参数，支持 `Prefix`、`Delimiter`、`Format`、`TreatAsString`、`CollectionFormat` |
 | `[Header("name")]` | parameter | `Header` | 单个请求头 |
 | `[HeaderCollection]` | parameter（`IDictionary<string,string>`） | `HeaderCollection` | 请求头集合 |
 | `[Authorize("Bearer")]` | parameter | `Authorize` | 授权头 `Authorization: <scheme> <参数值>`——参数值即 token，scheme 缺省 `Bearer`；`RestApiSettings.AuthorizationHeaderValueGetter` 是无参场景的设置级钩子 |
@@ -76,6 +79,10 @@ public sealed class GetAttribute(string path) : HttpMethodAttribute(path);
 | `[Multipart("boundary")]` | method | — | 标记 multipart 方法；参数自动绑定为 `Multipart` |
 | `[Headers("k: v", ...)]` | interface / method | — | 静态请求头 |
 | `[QueryUriFormat(UriFormat)]` | method | — | 查询字符串转义策略 |
+
+- `[Query]` 的命名属性覆盖构造参数。显式 `Format = null` 清除构造参数提供的格式。
+- 静态请求头的名称匹配不区分大小写。方法、代理接口和适用的基接口按此顺序决定优先级。基接口按从派生到基类型的顺序应用，继承方法跳过无关的兄弟接口。同名头保留最高优先级作用域中声明的各个不同值。
+- 同一方法同时声明 `[Multipart]` 和 `[Body]` 参数会报 OBS3010。运行时也会在构造请求前拒绝包含这个组合的旧生成规格。
 
 ### 3.3 入口工厂
 
@@ -89,6 +96,7 @@ public static class RestService
     public static T For<T>(string hostUrl, RestApiSettings? settings = null);
     public static object For(Type interfaceType, HttpClient client, RestApiSettings? settings = null);
     public static object For(Type interfaceType, string hostUrl, RestApiSettings? settings = null);
+    public static HttpMessageHandler CreateHttpMessageHandler(RestApiSettings? settings);
 }
 ```
 
@@ -106,6 +114,7 @@ public class RestApiSettings
     public CollectionFormat CollectionFormat { get; set; }
     public bool Buffered { get; set; }
     public Func<HttpRequestMessage, CancellationToken, Task<string>>? AuthorizationHeaderValueGetter { get; set; }
+    public Uri? AuthorizationHeaderOrigin { get; set; }
     public Func<HttpMessageHandler>? HttpMessageHandlerFactory { get; set; }
     public Func<HttpResponseMessage, Task<Exception?>> ExceptionFactory { get; set; }
     public Func<HttpResponseMessage, Exception, Task<Exception?>>? DeserializationExceptionFactory { get; set; }
@@ -120,6 +129,8 @@ public class RestApiSettings
 公开的 `RestApiBridge.AddQueryParameter` 重载签名不动，行为也不变（照旧格式化每个键）；带 `nameIsExplicit` 的是 internal 重载，只有 `Bind` 走。
 
 仍未对齐 Refit 的部分：Refit 还会把 query object 展开后对每个属性名调这个 formatter，Observables 目前不展开 query object（非集合的对象整体 `FormatQueryValue` 成单个值）。
+
+带凭据的显式 `Authorization` 请求头优先保留。缺少此头或仅指定授权方案时，处理器可调用 `AuthorizationHeaderValueGetter` 填入凭据。将 `AuthorizationHeaderOrigin` 设为绝对 HTTP(S) URI 后，处理器会在调用回调前和回调返回后校验请求的协议、IDN 主机名与有效端口。默认值 `null` 保留原有行为。`For(hostUrl)` 和 HttpClientFactory 扩展使用 `RestService.CreateHttpMessageHandler` 安装该处理器。调用方自行创建 `HttpClient` 时，也可用此方法配置其处理器.
 
 ### 3.5 每次调用选项（`RestApiCallScope`）
 
@@ -146,13 +157,16 @@ public static class RestApiCallScope
 
 | 类型 | 用途 |
 |------|------|
-| `IApiResponse<T>` / `ApiResponse<T>` | 包装响应（含 `Content`、`Headers`、`StatusCode`、`Error`），不抛异常 |
+| `IApiResponse<T>` / `ApiResponse<T>` | 包装响应，提供 `Content`、`Headers`、`StatusCode`、`Error` |
+| `IApiResponse` | 包装响应元数据和错误，跳过响应体反序列化 |
 | `ApiExceptionBase` | 所有 RestAPI 异常基类（含 `RequestMessage`、`HttpMethod`、`Uri`） |
 | `ApiRequestException` | 请求阶段失败（发送前） |
 | `ApiException` | 响应阶段失败（含 `StatusCode`、`Content`、`Headers`） |
 | `ValidationApiException` | `ApiException` 子类，用于校验失败场景 |
 
-`SendVoidAsync` 与 `SendAsync` 一样：非调用方取消的传输错误包成 `ApiRequestException`，并使用 `ResponseHeadersRead`。`ApiResponse<T>.IsReceived` 只表示收到了 HTTP 响应，**不**保证 `Content` 非空。`[AliasAs]` 可用于 path 占位符。开放泛型接口会注册 `typeof(IFoo<>)` 工厂，`For<IFoo<TClosed>>()` 可构造。
+`Task` 和 `ValueTask` 走 `SendVoidAsync`。此路径同样按绑定结果决定是否缓存请求体、使用 `ResponseHeadersRead`，并将传输失败包装为 `ApiRequestException`。调用方取消时传播取消异常。
+
+成功构造的响应包装器持有并负责释放请求与响应消息，调用方应在用完包装器后调用 `Dispose()`。`IsReceived` 只表示收到响应，`Content` 仍可为空。可通过 `HasRequestError` 和 `HasResponseError` 检查 `Error` 的类型。
 
 ## 4. 生成映射
 
@@ -198,7 +212,7 @@ internal static partial class Generated
             var ______scope = RestApiCallScope.Capture();          // 每次调用的选项快照
             var ______ct = CancellationToken.None;
             return await RestApiBridge.SendAsync<global::User, global::User>(
-                Client, _settings, in ______spec0, ______scope, ______ct, @id)
+                Client, _settings, in ______spec0, ______scope, ______ct, new object[] { @id })
                 .ConfigureAwait(false);
         }
     }
@@ -208,13 +222,13 @@ internal static partial class Generated
 生成（Observable 变体，R3）：
 
 ```csharp
-public global::R3.Observable<global::User> GetUserObservable(int id)
+public global::R3.Observable<global::User> GetUserObservable(int @id)
 {
     var ______scope = RestApiCallScope.Capture();       // 入口快照，在 FromAsync 之外
     return global::R3.Observable.FromAsync(async ct =>
     {
         return await RestApiBridge.SendAsync<global::User, global::User>(
-            Client, _settings, in ______spec0, ______scope, ct, @id)
+            Client, _settings, in ______spec0, ______scope, ct, new object[] { @id })
             .ConfigureAwait(false);
     });
 }
@@ -302,8 +316,8 @@ public static class RestApiBridge
 
 | 生成器项目 | `DefineConstants` | 返回类型分类（`RestApiReturnTypeClassifier`） | Emitter 行为 |
 |------------|-------------------|-----------------------------------------------|--------------|
-| `RestAPI.R3.SourceGenerators` | `RESTAPI_R3`（+ `OBSERVABLES_R3` via R3.props） | `BackendTokens.IsR3`：`Observable<T>` → `R3Observable`；`IObservable<T>` → OBS3005 | `#if RESTAPI_R3` → `R3.Observable.FromAsync(...)` |
-| `RestAPI.Reactive.SourceGenerators` | `RESTAPI_REACTIVE` | `BackendTokens.IsR3 == false`：`IObservable<T>` → `SystemReactiveObservable`；`Observable<T>` → OBS3003 | `#else` → `SystemReactiveObservableAdapter.FromAsync(...)` |
+| `RestAPI.R3.SourceGenerators` | `RESTAPI_R3`（+ `OBSERVABLES_R3` via R3.props） | `Observable<T>` → `R3Observable`。`IObservable<T>` → OBS3003 | `#if RESTAPI_R3` → `R3.Observable.FromAsync(...)` |
+| `RestAPI.Reactive.SourceGenerators` | `RESTAPI_REACTIVE` | `IObservable<T>` → `SystemReactiveObservable`（缺少 Reactive 桥时为 OBS3005）。R3 `Observable<T>` → OBS3003 | `#else` → `SystemReactiveObservableAdapter.FromAsync(...)` |
 
 两生成器共享同一份 shproj：返回类型分类走 `BackendTokens.IsR3`；Emitter 仍用 `#if RESTAPI_R3` 切换发射文本。
 
@@ -321,8 +335,10 @@ public static class RestApiBridge
 | OBS3006 | Error | 源生成器内部错误 |
 | OBS3007 | Warning | 空 `[RestApi]` 接口（未声明任何成员，`Observables.Analyzers`） |
 | OBS3008 | Error | 同一方法声明了多个 `[Body]` 参数 |
+| OBS3009 | Error | 同一方法声明了多个 HTTP 方法特性 |
+| OBS3010 | Error | 同一方法声明了 `[Multipart]` 和 `[Body]` 参数 |
 
-Release 跟踪：`Observables.RestAPI.SourceGenerators.Shared/AnalyzerReleases.Shipped.md`（OBS3001–3005 v1.0 已发）；`Observables.Analyzers/AnalyzerReleases.Shipped.md`（OBS3007 已发）。
+域生成器诊断见 [已发布登记](../../Observables.RestAPI/Observables.RestAPI.SourceGenerators.Shared/AnalyzerReleases.Shipped.md)与[待发布登记](../../Observables.RestAPI/Observables.RestAPI.SourceGenerators.Shared/AnalyzerReleases.Unshipped.md)。OBS3007 由 [共享分析器](../../Observables.Shared/Observables.Analyzers/AnalyzerReleases.Shipped.md)维护。
 
 ## 8. HttpClientFactory 扩展
 
@@ -338,7 +354,7 @@ public static class HttpClientFactoryExtensions
 }
 ```
 
-内部通过 `IHttpClientFactory` 创建 `HttpClient`，调用 `RestService.For<T>()` 创建代理，注册为 typed client。支持 `AuthorizationHeaderValueGetter` 与 `HttpMessageHandlerFactory` 自动包装。
+内部通过 `IHttpClientFactory` 创建 `HttpClient`，调用 `RestService.For<T>()` 创建代理，注册为 typed client。通过 `RestService.CreateHttpMessageHandler` 应用自定义处理器工厂、凭据回调和授权来源限制。
 
 ## 9. 项目组成
 
@@ -371,7 +387,7 @@ Observables.RestAPI/
 | **`BackendTokens.IsR3` + `#if RESTAPI_R3`（Emitter）** | 返回类型分类与 IO 域共用 compile-time backend seam；Emitter 仍用域级 `#if` 切换发射文本 |
 | **每方法静态 `MethodSpec` + `in` 传递** | 请求形状（HTTP 方法、路径模板、`Binding[]` 槽、flags）编译期定死为静态字段，运行时不重建字符串/元数据 |
 | **入口快照 `RestApiCallScope`（不加方法参数）** | 每次调用选项经 `AsyncLocal` 作用域传入、入口 `Capture()` 冻结为 `callOptions`；`Bind`/发送可能晚于作用域 Dispose（`Task.Run` 池线程、延迟订阅），回读 ambient 会拿到不一致的值；快照优先级介于设置与 `[Property]` 之间，未 `Push` 时为零成本跳过 |
-| **`IApiResponse<T>` 可选不抛异常** | 需要检查状态码/头的场景用 `IApiResponse<T>`；需要抛异常用 `Task<T>` |
+| **`IApiResponse` / `IApiResponse<T>`** | 调用方可通过包装器读取状态、响应头和错误。有类型的包装器还提供反序列化内容 |
 | **HttpClientFactory 独立包** | DI 集成可选，不强制依赖 `Microsoft.Extensions.Http` |
 
 ## 11. 后续（v1 之外）

@@ -27,7 +27,7 @@
 | `Observables.Grpc.R3`（`GrpcObservable`） | 上面那个 + R3 | 仅 `Observables.Grpc.R3` |
 | `Observables.Grpc.Reactive`（`SystemReactiveGrpcAdapter`） | 上面第一个 + System.Reactive | 仅 `Observables.Grpc.Reactive` |
 
-命名空间都是 `Observables.Grpc`，拆分对消费者源码不可见。本域拆得比其他九个多一步：`GrpcProtocol.ObserveCompleted(Result, …)` 原本收 R3 的 `Result`，是协议层唯一的后端泄漏。它只被 `GrpcObservable` 调用——R3 把「完成」和「失败」并成一个 `Result` 回调，而 System.Reactive 适配器拿到的是分开的 `onError` / `onCompleted`，自己内联了同样两行——所以该方法随 `GrpcObservable` 一起移走，`GrpcProtocol` 由此不再 `using R3`。
+使用 `GrpcService` 和 R3 的 `GrpcObservable` 时导入 `using Observables.Grpc;`。直接调用 System.Reactive 桥 `SystemReactiveGrpcAdapter` 时导入 `using Observables.Grpc.Reactive;`。R3 特有的 `ObserveCompleted(Result, …)` 随 `GrpcObservable` 放在 R3 桥接程序集。System.Reactive 桥分别处理 `onError` 和 `onCompleted`。
 
 ## 3. 边界特性
 

@@ -62,8 +62,8 @@ ISensorHub hub = MqttService.For<ISensorHub>(client);
 
 - **入口对齐 SignalR / RestAPI**：`MqttService.For<T>(IMqttClient)` + `RegisterGeneratedFactory`（模块初始化器，无反射，AOT 友好）。
 - **具名客户端**：`[Mqtt(clientName)]` 上的名字由 Parser 读出、随 `RegisterProxyName(Type, string)` 一起发到模块初始化器（生成物 `MqttProxyNames.g.cs`），`MqttService.For<T>()` 这个不带客户端参数的重载据此查 `RegisterClient(name, client)` 注册的客户端。名字走生成代码而不是运行期读特性，是因为域运行时要对 trim / AOT 分析器零告警。未写名字的接口仍只能走 `For<T>(IMqttClient)`；解析未命名接口、或名字没注册过客户端，都抛 `InvalidOperationException` 并在消息里点名缺的是哪一个。
-- **订阅**为**属性**（无参）；**发布**为**方法**（参数用于 topic 模板占位符）。订阅 topic **不支持** `{param}` 占位符（OBS5006）。
-- **Topic 模板**：`{param}` 段与方法参数名绑定；`+` / `#` 通配符保留在模板字面量中。
+- **订阅**用只读属性声明 MQTT 主题过滤器，支持标准 `+` / `#` 通配符和空层级。带 `{param}` 或以 `$share/` 开头的过滤器会报 OBS5006。
+- **发布**用方法声明 topic 模板。`{param}` 与方法参数名绑定，每个普通参数都必须被引用，同一个占位符可以重复出现。发布 topic 使用普通主题名，`+` 和 `#` 会报 OBS5006。
 - **载荷**：`MqttPayloadSerializers`（默认 `DefaultMqttPayloadSerializer`：`string`/`byte[]` 原始 UTF-8，net8+ 其余类型走 STJ JSON）。可 `Register<T>` 或替换 `Current`（`IMqttPayloadSerializer` / `IMqttPayloadSerializer<T>`）；netstandard2.0 仅原始类型。
 
 ### 3.2 扩展模型（可选，次优先级）
@@ -90,7 +90,7 @@ ISensorHub hub = MqttService.For<ISensorHub>(client);
 | OBS5003 | Error | 不支持的返回类型 |
 | OBS5004 | Error | 成员形态与特性不匹配 |
 | OBS5005 | Error | `IObservable<T>` 未引用 Reactive 包 |
-| OBS5006 | Error | 不支持的 topic 模板、多余参数或订阅占位符 |
+| OBS5006 | Error | 非法 topic 或过滤器、多余参数、订阅占位符或不受支持的 `$share/` 过滤器 |
 | OBS5007 | Warning | 空 `[Mqtt]` 接口（`Observables.Analyzers`） |
 | OBS5008 | Error | 生成器内部错误 |
 
@@ -108,7 +108,7 @@ ISensorHub hub = MqttService.For<ISensorHub>(client);
 | `Observables.Mqtt.R3`（`MqttObservable`） | 上面那个 + R3 | 仅 `Observables.Mqtt.R3` |
 | `Observables.Mqtt.Reactive`（`SystemReactiveMqttAdapter`） | 上面第一个 + System.Reactive | 仅 `Observables.Mqtt.Reactive` |
 
-命名空间都是 `Observables.Mqtt`，拆分对消费者源码不可见。`MqttProtocol` 等 internal 类型留在中立运行时，两个桥接项目通过 `InternalsVisibleTo` 取用。
+使用 `MqttService` 和 R3 的 `MqttObservable` 时导入 `using Observables.Mqtt;`。直接调用 System.Reactive 桥 `SystemReactiveMqttAdapter` 时导入 `using Observables.Mqtt.Reactive;`。`MqttProtocol` 等内部类型由两个桥接项目通过 `InternalsVisibleTo` 共享。
 
 ## 6. 测试（已实现）
 

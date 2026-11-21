@@ -107,30 +107,21 @@ internal static class RestApiReturnTypeClassifier
             return ("void", "void", false);
         }
 
-        ITypeSymbol? innerType = null;
-        if (returnType is INamedTypeSymbol { IsGenericType: true } namedType)
+        var resultType = returnTypeInfo switch
         {
-            innerType = namedType.TypeArguments.FirstOrDefault();
+            ReturnTypeInfo.AsyncResult or ReturnTypeInfo.R3Observable or ReturnTypeInfo.SystemReactiveObservable =>
+                ((INamedTypeSymbol)returnType).TypeArguments[0],
+            _ => returnType,
+        };
+
+        var resultDisplay = resultType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
+        if (resultType is INamedTypeSymbol apiResponse && IsRestApiResponseWrapper(apiResponse, wellKnownTypes))
+        {
+            var bodyDisplay = apiResponse.TypeArguments[0].ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
+            return (resultDisplay, bodyDisplay, true);
         }
 
-        if (innerType is null)
-        {
-            var display = returnType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
-            return (display, display, false);
-        }
-
-        var innerDisplay = innerType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
-        var isApiResponse = innerType is INamedTypeSymbol innerNamed
-            && IsRestApiResponseWrapper(innerNamed, wellKnownTypes);
-
-        if (isApiResponse && innerType is INamedTypeSymbol apiResponseNamed)
-        {
-            var bodyType = apiResponseNamed.TypeArguments.FirstOrDefault();
-            var bodyDisplay = bodyType?.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat) ?? "object";
-            return (innerDisplay, bodyDisplay, true);
-        }
-
-        return (innerDisplay, innerDisplay, false);
+        return (resultDisplay, resultDisplay, false);
     }
 
     static bool IsRestApiResponseWrapper(INamedTypeSymbol type, WellKnownTypes wellKnownTypes)

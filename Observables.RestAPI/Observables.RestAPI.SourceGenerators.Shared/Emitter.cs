@@ -453,7 +453,9 @@ internal static class Emitter
 
         if (names.Count == 0)
             return "";
-        return ", " + string.Join(", ", names);
+
+        // Pack the slots explicitly. A single reference array could otherwise bind as the params array itself.
+        return ", new object[] { " + string.Join(", ", names) + " }";
     }
 
     static string EscapeString(string s) => s

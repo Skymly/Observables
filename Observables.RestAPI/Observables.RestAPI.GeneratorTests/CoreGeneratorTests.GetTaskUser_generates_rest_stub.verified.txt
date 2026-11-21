@@ -88,7 +88,7 @@ namespace Observables.RestAPI.Implementation
         {
             var ______scope = global::Observables.RestAPI.RestApiCallScope.Capture();
             var ______ct = global::System.Threading.CancellationToken.None;
-            return await global::Observables.RestAPI.RestApiBridge.SendAsync<global::User, global::User>(Client, _settings, in ______spec0, ______scope, ______ct, @id).ConfigureAwait(false);
+            return await global::Observables.RestAPI.RestApiBridge.SendAsync<global::User, global::User>(Client, _settings, in ______spec0, ______scope, ______ct, new object[] { @id }).ConfigureAwait(false);
         }
     }
     }

@@ -614,6 +614,7 @@
             以多部分形式发送请求。
             </summary>
             <remarks>
+            multipart 方法以各个 part 构造请求正文，不能再声明 <see cref="T:Observables.RestAPI.BodyAttribute"/> 参数。
             目前，多部分方法仅支持以下参数类型：<see cref="T:System.String" />、<see cref="T:System.Byte" /> 数组、<see cref="T:System.IO.Stream" />、<see cref="T:System.IO.FileInfo" />。
             </remarks>
             <remarks>
@@ -626,6 +627,7 @@
             以多部分形式发送请求。
             </summary>
             <remarks>
+            multipart 方法以各个 part 构造请求正文，不能再声明 <see cref="T:Observables.RestAPI.BodyAttribute"/> 参数。
             目前，多部分方法仅支持以下参数类型：<see cref="T:System.String" />、<see cref="T:System.Byte" /> 数组、<see cref="T:System.IO.Stream" />、<see cref="T:System.IO.FileInfo" />。
             </remarks>
             <remarks>
@@ -774,6 +776,9 @@
             向请求添加多个头信息。
             </summary>
             <remarks>
+            接口头应用于继承方法。同名头按方法、代理接口、适用的基接口依次取值，基接口从派生到基类顺序处理。头名称比较不区分大小写。
+            </remarks>
+            <remarks>
             初始化 <see cref="T:Observables.RestAPI.HeadersAttribute" /> 类的新实例。
             </remarks>
             <param name="headers">头信息。</param>
@@ -782,6 +787,9 @@
             <summary>
             向请求添加多个头信息。
             </summary>
+            <remarks>
+            接口头应用于继承方法。同名头按方法、代理接口、适用的基接口依次取值，基接口从派生到基类顺序处理。头名称比较不区分大小写。
+            </remarks>
             <remarks>
             初始化 <see cref="T:Observables.RestAPI.HeadersAttribute" /> 类的新实例。
             </remarks>
@@ -948,6 +956,7 @@
             <summary>
             用于自定义编码值的格式。
             </summary>
+            <remarks>命名实参 <see cref="P:Observables.RestAPI.QueryAttribute.Format"/> 覆盖传给构造函数的格式。</remarks>
             <example>
             <code>
             interface IServerApi

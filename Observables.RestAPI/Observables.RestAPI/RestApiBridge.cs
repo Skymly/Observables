@@ -99,7 +99,8 @@ namespace Observables.RestAPI
         {
             HttpResponseMessage? response = null;
             HttpContent? content = null;
-            var isApiResponse = IsRestApiResponseWrapper(typeof(T));
+            var wrapsResponseWithoutBody = typeof(T) == typeof(IApiResponse);
+            var isApiResponse = wrapsResponseWithoutBody || IsRestApiResponseWrapper(typeof(T));
             var disposeResponse = isApiResponse || ShouldDisposeResponse(typeof(TBody));
             var disposeRequest = true;
             try
@@ -147,11 +148,11 @@ namespace Observables.RestAPI
                     var body = default(TBody);
                     try
                     {
-                        body =
-                            error == null
-                                ? await DeserializeContentAsync<TBody>(response, content, settings, cancellationToken)
-                                    .ConfigureAwait(false)
-                                : default;
+                        if (error == null && !wrapsResponseWithoutBody)
+                        {
+                            body = await DeserializeContentAsync<TBody>(response, content, settings, cancellationToken)
+                                .ConfigureAwait(false);
+                        }
                     }
                     catch (Exception ex)
                     {

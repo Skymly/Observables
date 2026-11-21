@@ -37,7 +37,7 @@ internal static class RestApiReturnTypeClassifier
             return ReturnTypeInfo.SyncVoid;
         }
 
-        if (returnType.MetadataName == "Task"
+        if (returnType.MetadataName is "Task" or "ValueTask"
             && returnType.ContainingNamespace?.ToDisplayString() == "System.Threading.Tasks")
         {
             return ReturnTypeInfo.AsyncVoid;
@@ -115,6 +115,12 @@ internal static class RestApiReturnTypeClassifier
         };
 
         var resultDisplay = resultType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
+        var responseWithoutBody = wellKnownTypes.TryGet("Observables.RestAPI.IApiResponse");
+        if (responseWithoutBody is not null && SymbolEqualityComparer.Default.Equals(resultType, responseWithoutBody))
+        {
+            return (resultDisplay, "object", true);
+        }
+
         if (resultType is INamedTypeSymbol apiResponse && IsRestApiResponseWrapper(apiResponse, wellKnownTypes))
         {
             var bodyDisplay = apiResponse.TypeArguments[0].ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);

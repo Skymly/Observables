@@ -4,6 +4,48 @@ namespace Observables.RestAPI.GeneratorTests;
 
 public sealed class BoundaryGeneratorTests
 {
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void Conflicting_verbs_report_OBS3009_in_both_orders(bool reactive)
+    {
+        foreach (var attributes in new[] { "[Get(\"/read\"), Post(\"/write\")]", "[Post(\"/write\"), Get(\"/read\")]" })
+        {
+            var source = $$"""
+                public interface IConflictingApi
+                {
+                    {{attributes}}
+                    Task Run();
+                }
+                """;
+            var result = reactive ? GeneratorTestHarness.RunReactive(source) : GeneratorTestHarness.Run(source);
+
+            Assert.Contains(result.Diagnostics, static diagnostic =>
+                diagnostic.Id == "OBS3009" && diagnostic.Severity == DiagnosticSeverity.Error);
+            Assert.DoesNotContain(result.GeneratedSources, static generated =>
+                generated.Source.Contains("new(\"GET\"", StringComparison.Ordinal)
+                || generated.Source.Contains("new(\"POST\"", StringComparison.Ordinal));
+        }
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void Multipart_with_a_body_reports_OBS3010_in_both_backends(bool reactive)
+    {
+        const string source = """
+            public interface IUploadApi
+            {
+                [Post("/upload"), Multipart]
+                Task Upload([Body] string text, string part);
+            }
+            """;
+        var result = reactive ? GeneratorTestHarness.RunReactive(source) : GeneratorTestHarness.Run(source);
+
+        Assert.Contains(result.Diagnostics, static diagnostic =>
+            diagnostic.Id == "OBS3010" && diagnostic.Severity == DiagnosticSeverity.Error);
+    }
+
     [Fact]
     public void Nested_interface_generates_compilable_proxy()
     {

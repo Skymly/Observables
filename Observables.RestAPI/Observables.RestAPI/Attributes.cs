@@ -198,6 +198,7 @@ namespace Observables.RestAPI
     /// Send the request as multipart.
     /// </summary>
     /// <remarks>
+    /// A multipart method uses its part parameters as the body and cannot declare a <see cref="BodyAttribute"/> parameter.
     /// Currently, multipart methods only support the following parameter types: <see cref="string"/>, <see cref="byte"/> array, <see cref="System.IO.Stream"/>, <see cref="System.IO.FileInfo"/>.
     /// </remarks>
     /// <remarks>
@@ -356,6 +357,11 @@ namespace Observables.RestAPI
     /// <summary>
     /// Add multiple headers to the request.
     /// </summary>
+    /// <remarks>
+    /// Interface headers apply to inherited methods. For the same header name, method declarations
+    /// take precedence over the proxy interface, followed by its applicable base interfaces in
+    /// derived-to-base order. Header names are compared without regard to case.
+    /// </remarks>
     /// <remarks>
     /// Initializes a new instance of the <see cref="HeadersAttribute"/> class.
     /// </remarks>
@@ -532,6 +538,7 @@ namespace Observables.RestAPI
         /// <summary>
         /// Used to customize the formatting of the encoded value.
         /// </summary>
+        /// <remarks>A named <see cref="Format"/> argument overrides the format passed to the constructor.</remarks>
         /// <example>
         /// <code>
         /// interface IServerApi

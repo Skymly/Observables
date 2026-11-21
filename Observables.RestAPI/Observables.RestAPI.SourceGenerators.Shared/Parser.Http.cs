@@ -43,8 +43,9 @@ internal static partial class Parser
         public bool? BodyBuffered { get; set; }
     }
 
-    static ParsedHttpMethod ParseHttpMethod(
+    static ParsedHttpMethod? ParseHttpMethod(
         IMethodSymbol methodSymbol,
+        INamedTypeSymbol proxyInterface,
         INamedTypeSymbol httpMethodBaseAttributeSymbol,
         List<Diagnostic> diagnostics)
     {
@@ -53,16 +54,22 @@ internal static partial class Parser
         var isMultipart = false;
         var multipartBoundary = "----MyGreatBoundary";
         var queryUriFormat = (int)UriFormat.UriEscaped;
-        var headersList = new List<string>();
-
         AttributeData? httpAttr = null;
         foreach (var attr in methodSymbol.GetAttributes())
         {
-            if (attr.AttributeClass?.InheritsFromOrEquals(httpMethodBaseAttributeSymbol) == true)
+            if (attr.AttributeClass?.InheritsFromOrEquals(httpMethodBaseAttributeSymbol) != true)
+                continue;
+
+            if (httpAttr is not null)
             {
-                httpAttr = attr;
-                break;
+                diagnostics.Add(Diagnostic.Create(
+                    DiagnosticDescriptors.ConflictingHttpMethods,
+                    methodSymbol.Locations.FirstOrDefault(),
+                    methodSymbol.Name));
+                return null;
             }
+
+            httpAttr = attr;
         }
 
         if (httpAttr != null && httpAttr.ConstructorArguments is { Length: >= 1 } args && args[0].Value is string path)
@@ -79,35 +86,6 @@ internal static partial class Parser
                 isMultipart = true;
                 if (attr.ConstructorArguments is { Length: >= 1 } cargs && cargs[0].Value is string boundary)
                     multipartBoundary = boundary;
-                break;
-            }
-        }
-
-        // Interface-level [Headers] applies to methods inherited from base interfaces too.
-        foreach (var headerHost in new[] { methodSymbol.ContainingType }.Concat(methodSymbol.ContainingType.AllInterfaces))
-        {
-            foreach (var attr in headerHost.GetAttributes())
-            {
-                if (attr.AttributeClass?.Name == "HeadersAttribute"
-                    && attr.AttributeClass?.ContainingNamespace?.ToDisplayString() == "Observables.RestAPI"
-                    && attr.ConstructorArguments is { Length: >= 1 } cargs)
-                {
-                    foreach (var h in cargs[0].Values)
-                        if (h.Value is string hs)
-                            headersList.Add(hs);
-                }
-            }
-        }
-
-        foreach (var attr in methodSymbol.GetAttributes())
-        {
-            if (attr.AttributeClass?.Name == "HeadersAttribute"
-                && attr.AttributeClass?.ContainingNamespace?.ToDisplayString() == "Observables.RestAPI"
-                && attr.ConstructorArguments is { Length: >= 1 } cargs)
-            {
-                foreach (var h in cargs[0].Values)
-                    if (h.Value is string hs)
-                        headersList.Add(hs);
                 break;
             }
         }
@@ -162,6 +140,15 @@ internal static partial class Parser
                 methodSymbol.Name));
         }
 
+        if (isMultipart && bodyCount > 0)
+        {
+            diagnostics.Add(Diagnostic.Create(
+                DiagnosticDescriptors.MultipartBodyConflict,
+                methodSymbol.Locations.FirstOrDefault(),
+                methodSymbol.Name));
+            return null;
+        }
+
         int? cancellationTokenIndex = null;
         var bodySerializationMethod = 0;
         bool? bodyBuffered = null;
@@ -210,13 +197,68 @@ internal static partial class Parser
             QueryUriFormat: queryUriFormat,
             BodySerializationMethod: bodySerializationMethod,
             BodyBuffered: bodyBuffered,
-            // The same header string may be declared on several interfaces in the chain (or
-            // repeated between interface and method level); send it once, first wins.
-            StaticHeaders: headersList
-                .Distinct(System.StringComparer.Ordinal)
-                .ToImmutableEquatableArray());
+            StaticHeaders: MergeStaticHeaders(methodSymbol, proxyInterface));
 
         return new ParsedHttpMethod(parameters, spec, cancellationTokenIndex);
+    }
+
+    static ImmutableEquatableArray<string> MergeStaticHeaders(
+        IMethodSymbol method, INamedTypeSymbol proxyInterface)
+    {
+        var headers = new List<string>();
+        var headerScopes = new Dictionary<string, ISymbol>(StringComparer.OrdinalIgnoreCase);
+        var emitted = new HashSet<string>(StringComparer.Ordinal);
+        var declaringInterface = method.ContainingType;
+        var symbols = SymbolEqualityComparer.Default;
+
+        AddHeaders(method);
+        AddHeaders(proxyInterface);
+        foreach (var candidate in proxyInterface.AllInterfaces)
+        {
+            // Roslyn orders derived interfaces before their bases.
+            // Keep inherited methods scoped to the hierarchy of their declaring interface.
+            if (symbols.Equals(candidate, declaringInterface)
+                || candidate.AllInterfaces.Contains(declaringInterface, symbols)
+                || declaringInterface.AllInterfaces.Contains(candidate, symbols))
+            {
+                AddHeaders(candidate);
+            }
+        }
+
+        return headers.ToImmutableEquatableArray();
+
+        void AddHeaders(ISymbol scope)
+        {
+            foreach (var attribute in scope.GetAttributes())
+            {
+                if (attribute.AttributeClass?.Name != "HeadersAttribute"
+                    || attribute.AttributeClass?.ContainingNamespace?.ToDisplayString() != "Observables.RestAPI"
+                    || attribute.ConstructorArguments is not { Length: >= 1 } arguments
+                    || arguments[0].IsNull)
+                {
+                    continue;
+                }
+
+                foreach (var value in arguments[0].Values)
+                {
+                    if (value.Value is not string header)
+                        continue;
+
+                    var colon = header.IndexOf(':');
+                    if (colon > 0)
+                    {
+                        var name = header.Substring(0, colon).Trim();
+                        if (headerScopes.TryGetValue(name, out var owner) && !symbols.Equals(scope, owner))
+                            continue;
+
+                        headerScopes[name] = scope;
+                    }
+
+                    if (emitted.Add(header))
+                        headers.Add(header);
+                }
+            }
+        }
     }
 
     static RestApiBindingModel ToBinding(ParameterClassification classification, int argIndex, string metadataName)
@@ -383,17 +425,6 @@ internal static partial class Parser
             if (attrName == "QueryAttribute" && attrNs == "Observables.RestAPI")
             {
                 result.Kind = ParameterKind.Query;
-                foreach (var namedArg in attr.NamedArguments)
-                {
-                    if (namedArg.Key == "Format" && namedArg.Value.Value is string format) result.QueryFormat = format;
-                    if (namedArg.Key == "Prefix" && namedArg.Value.Value is string prefix) result.QueryPrefix = prefix;
-                    if (namedArg.Key == "TreatAsString" && namedArg.Value.Value is bool treatAsString) result.QueryTreatAsString = treatAsString;
-                    if (namedArg.Key == "CollectionFormat" && namedArg.Value.Value is int cf)
-                    {
-                        result.QueryCollectionFormat = cf;
-                        result.QueryCollectionFormatSpecified = true;
-                    }
-                }
                 if (attr.ConstructorArguments is { Length: >= 1 } cargs)
                 {
                     if (cargs[0].Value is string delimiter) result.QueryDelimiter = delimiter;
@@ -407,6 +438,18 @@ internal static partial class Parser
                     result.QueryPrefix = prefix2;
                 if (attr.ConstructorArguments is { Length: >= 3 } cargs3 && cargs3[2].Value is string format2)
                     result.QueryFormat = format2;
+
+                foreach (var namedArg in attr.NamedArguments)
+                {
+                    if (namedArg.Key == "Format") result.QueryFormat = namedArg.Value.Value as string;
+                    if (namedArg.Key == "Prefix" && namedArg.Value.Value is string prefix) result.QueryPrefix = prefix;
+                    if (namedArg.Key == "TreatAsString" && namedArg.Value.Value is bool treatAsString) result.QueryTreatAsString = treatAsString;
+                    if (namedArg.Key == "CollectionFormat" && namedArg.Value.Value is int cf)
+                    {
+                        result.QueryCollectionFormat = cf;
+                        result.QueryCollectionFormatSpecified = true;
+                    }
+                }
                 return result;
             }
         }

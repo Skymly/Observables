@@ -91,6 +91,27 @@ internal static class DiagnosticDescriptors
             description: "A REST method may have at most one [Body] parameter.",
             helpLinkUri: DiagnosticHelpLink.For("OBS3008"));
 
+    public static readonly DiagnosticDescriptor ConflictingHttpMethods =
+        new(
+            "OBS3009",
+            "Conflicting HTTP method attributes",
+            "Method '{0}' declares more than one HTTP method attribute",
+            "Observables.RestAPI",
+            DiagnosticSeverity.Error,
+            isEnabledByDefault: true,
+            description: "A REST method must specify a single HTTP verb and path.",
+            helpLinkUri: DiagnosticHelpLink.For("OBS3009"));
+
+    public static readonly DiagnosticDescriptor MultipartBodyConflict =
+        new(
+            "OBS3010",
+            "Multipart request conflicts with a Body parameter",
+            "Multipart method '{0}' cannot also declare a [Body] parameter",
+            "Observables.RestAPI",
+            DiagnosticSeverity.Error,
+            isEnabledByDefault: true,
+            description: "A multipart request uses its part parameters to construct the request body.",
+            helpLinkUri: DiagnosticHelpLink.For("OBS3010"));
 }
 
 internal static class RestApiGeneratorStepName

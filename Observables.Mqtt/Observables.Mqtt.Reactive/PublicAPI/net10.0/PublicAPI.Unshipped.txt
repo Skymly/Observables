@@ -1,1 +1,2 @@
 #nullable enable
+static Observables.Mqtt.Reactive.SystemReactiveMqttAdapter.FromPublish(MQTTnet.Client.IMqttClient! client, string! topic, byte[]! payload, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.IObservable<System.Reactive.Unit>!

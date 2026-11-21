@@ -1,33 +1,50 @@
 # Observables.Mqtt.R3
 
-Declarative MQTT topic proxies with Roslyn source generators — annotate interfaces with `[MqttSubscribe]`/`[MqttPublish]` to generate [R3](https://github.com/Cysharp/R3) `Observable<T>` proxies for MQTTnet realtime messaging.
+Declarative MQTT topic proxies powered by Roslyn and MQTTnet. The generated proxies return [R3](https://github.com/Cysharp/R3) `Observable<T>` streams.
 
 ## Install
 
-```xml
-<PackageReference Include="Observables.Mqtt.R3" />
-<PackageReference Include="R3" Version="1.3.0" />
+```bash
+dotnet add package Observables.Mqtt.R3
 ```
 
-## Usage
+## Quick start
+
+This console example connects to an MQTT broker listening on localhost port 1883. It subscribes to the temperature topic and sends an empty ping command.
 
 ```csharp
+using System;
+using System.Threading;
+using MQTTnet;
+using MQTTnet.Client;
 using Observables.Mqtt;
 using R3;
-using MQTTnet;
 
-[Hub]
-public interface IChatHub
+using var client = new MqttFactory().CreateMqttClient();
+var options = new MqttClientOptionsBuilder()
+    .WithTcpServer("localhost", 1883)
+    .Build();
+await client.ConnectAsync(options, CancellationToken.None);
+
+var topics = MqttService.For<ISensorTopics>(client);
+using var readings = topics.Temperature.Subscribe(value => Console.WriteLine(value));
+using var ping = topics.Ping("room-1").Subscribe(_ => Console.WriteLine("Ping sent"));
+Console.ReadLine();
+
+[Mqtt]
+public interface ISensorTopics
 {
-    [HubInvoke]
-    Observable<int> GetUserCount();
+    [MqttSubscribe("/sensors/temperature")]
+    Observable<string> Temperature { get; }
 
-    [HubOn("ReceiveMessage")]
-    Observable<ChatMessage> ReceiveMessage { get; }
+    [MqttPublish("sensors/{id}/ping")]
+    Observable<Unit> Ping(string id);
 }
-
-var hub = MqttService.For<IChatHub>(connection);
 ```
+
+Generated publish methods send empty payloads. For raw bytes, subscribe to `MqttObservable.FromPublish(client, topic, payload, cancellationToken)`.
+
+Subscription attributes accept exact topic filters and standard `+` and `#` wildcards. Shared subscription filters starting with `$share/` produce `OBS5006`.
 
 ## Diagnostics
 

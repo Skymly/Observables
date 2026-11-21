@@ -245,18 +245,9 @@ internal static class Parser
             return;
         }
 
-        if (PlaceholderRegex.IsMatch(topicTemplate))
-        {
-            diagnostics.Add(
-                Diagnostic.Create(
-                    DiagnosticDescriptors.UnsupportedMqttOption,
-                    property.Locations.FirstOrDefault(),
-                    property.ContainingType.Name,
-                    property.Name));
-            return;
-        }
-
-        if (!IsValidMqttTopicLiteral(topicTemplate, allowWildcards: true))
+        if (PlaceholderRegex.IsMatch(topicTemplate)
+            || topicTemplate.StartsWith("$share/", StringComparison.Ordinal)
+            || !IsValidMqttTopicLiteral(topicTemplate, allowWildcards: true))
         {
             diagnostics.Add(
                 Diagnostic.Create(
@@ -305,28 +296,20 @@ internal static class Parser
     {
         topicParameterNames = new List<string>();
         badLocation = null;
-        var matches = PlaceholderRegex.Matches(topicTemplate);
-        foreach (Match match in matches)
+        var distinctNames = new HashSet<string>(StringComparer.Ordinal);
+        foreach (Match match in PlaceholderRegex.Matches(topicTemplate))
         {
-            topicParameterNames.Add(match.Groups[1].Value);
-        }
-
-        var methodParamNames = new HashSet<string>(
-            method.Parameters
-                .Where(static p => !IdentifierHelper.IsCancellationToken(p.Type))
-                .Select(static p => p.Name),
-            StringComparer.Ordinal);
-
-        foreach (var name in topicParameterNames)
-        {
-            if (!methodParamNames.Contains(name))
+            var name = match.Groups[1].Value;
+            if (distinctNames.Add(name))
             {
-                badLocation = method.Locations.FirstOrDefault();
-                return false;
+                topicParameterNames.Add(name);
             }
         }
 
-        if (methodParamNames.Count != topicParameterNames.Count)
+        var methodParamNames = method.Parameters
+            .Where(static p => !IdentifierHelper.IsCancellationToken(p.Type))
+            .Select(static p => p.Name);
+        if (!distinctNames.SetEquals(methodParamNames))
         {
             badLocation = method.Locations.FirstOrDefault();
             return false;
@@ -427,15 +410,15 @@ internal static class Parser
 
     static bool IsValidMqttTopicLiteral(string topic, bool allowWildcards)
     {
+        if (topic.Length == 0)
+        {
+            return false;
+        }
+
         var parts = topic.Split('/');
         for (var i = 0; i < parts.Length; i++)
         {
             var part = parts[i];
-            if (part.Length == 0)
-            {
-                return false;
-            }
-
             if (part == "+" || part == "#")
             {
                 if (!allowWildcards)

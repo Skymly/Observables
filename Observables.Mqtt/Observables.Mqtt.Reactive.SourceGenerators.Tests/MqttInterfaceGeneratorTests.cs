@@ -317,20 +317,81 @@ public sealed class MqttInterfaceGeneratorTests
         Assert.Contains(output.Diagnostics, static diagnostic => diagnostic.Id == "OBS5006");
     }
 
-    [Fact]
-    public void Mqtt_publish_empty_token_reports_OBS5006()
+    [Theory]
+    [InlineData("commands//restart")]
+    [InlineData("/commands/restart")]
+    [InlineData("commands/restart/")]
+    [InlineData("/")]
+    public void Mqtt_topics_and_filters_allow_empty_levels(string topic)
     {
-        const string userSource =
+        var output = GeneratorTestHarness.Run(
+            $$"""
+              [Mqtt]
+              public interface ISensorTopics
+              {
+                  [MqttPublish("{{topic}}")]
+                  IObservable<global::System.Reactive.Unit> Restart();
+
+                  [MqttSubscribe("{{topic}}")]
+                  IObservable<string> Notice { get; }
+              }
+              """);
+
+        Assert.DoesNotContain(output.Diagnostics, static diagnostic => diagnostic.Severity == DiagnosticSeverity.Error);
+        var snapshot = GeneratorTestHarness.ToSnapshot(output);
+        Assert.Contains($"FromPublish(_client, \"{topic}\", default)", snapshot, StringComparison.Ordinal);
+        Assert.Contains($"FromSubscribe<global::System.String>(_client, \"{topic}\")", snapshot, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Mqtt_repeated_topic_placeholder_uses_one_argument()
+    {
+        var output = GeneratorTestHarness.Run(
             """
             [Mqtt]
             public interface ISensorTopics
             {
-                [MqttPublish("commands//restart")]
-                IObservable<global::System.Reactive.Unit> Restart();
+                [MqttPublish("commands/{id}/{id}/restart")]
+                IObservable<global::System.Reactive.Unit> Restart(string id);
             }
-            """;
+            """);
 
-        var output = GeneratorTestHarness.Run(userSource);
+        Assert.DoesNotContain(output.Diagnostics, static diagnostic => diagnostic.Severity == DiagnosticSeverity.Error);
+        Assert.Contains(
+            @"MqttTopic.Format(""commands/{id}/{id}/restart"", (""id"", global::System.Convert.ToString((object?)id, global::System.Globalization.CultureInfo.InvariantCulture)))",
+            GeneratorTestHarness.ToSnapshot(output),
+            StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Mqtt_repeated_placeholder_does_not_justify_an_unused_argument()
+    {
+        var output = GeneratorTestHarness.Run(
+            """
+            [Mqtt]
+            public interface ISensorTopics
+            {
+                [MqttPublish("commands/{id}/{id}/restart")]
+                IObservable<global::System.Reactive.Unit> Restart(string id, string unused);
+            }
+            """);
+
+        Assert.Contains(output.Diagnostics, static diagnostic => diagnostic.Id == "OBS5006");
+    }
+
+    [Fact]
+    public void Mqtt_shared_filter_reports_OBS5006()
+    {
+        var output = GeneratorTestHarness.Run(
+            """
+            [Mqtt]
+            public interface ISensorTopics
+            {
+                [MqttSubscribe("$share/readers/sensors/+")]
+                IObservable<string> Notice { get; }
+            }
+            """);
+
         Assert.Contains(output.Diagnostics, static diagnostic => diagnostic.Id == "OBS5006");
     }
 

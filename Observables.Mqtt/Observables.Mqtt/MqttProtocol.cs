@@ -53,6 +53,11 @@ internal static class MqttProtocol
         Action<Exception> onError,
         CancellationToken cancellationToken)
     {
+        if (topicFilter.StartsWith("$share/", StringComparison.Ordinal))
+        {
+            throw new NotSupportedException("Shared MQTT subscription filters starting with '$share/' are not supported.");
+        }
+
         async Task Handler(MqttApplicationMessageReceivedEventArgs e)
         {
             if (!MqttTopicMatcher.Matches(topicFilter, e.ApplicationMessage.Topic))

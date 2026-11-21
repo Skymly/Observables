@@ -32,17 +32,17 @@
 
 | 项目 | 是否必需 | 角色 |
 |------|----------|------|
-| **`Observables.<Feature>`** | 按需 | **域运行时**，**后端中立**：协议、attribute、序列化、具名注册表。**不得引用 R3 或 System.Reactive**——两个包都装它。纯生成、无运行时的域（如 Events）可不建。 |
+| **`Observables.<Feature>`** | 按需 | **域运行时**包含协议、attribute、序列化与具名注册表。各后端包共用此程序集，依赖保持后端中立。纯生成域（如 Events）可省略。 |
 | **`Observables.<Feature>.R3`** | 按需 | **R3 桥接运行时**（`<Feature>Observable` 等）。R3 桥接类型放在此项目。 |
 | **`Observables.<Feature>.Reactive`** | 按需 | **System.Reactive 桥接运行时**（如 `IObservable` 适配器）。桥接类型放在此项目。 |
 | **`Observables.<Feature>.Primitives`** | 按需，未实现 | **ReactiveUI.Primitives 桥接运行时**（第三后端，ADR-005）。桥接类型放在此项目。 |
-| **`Observables.<Feature>.SourceGenerators.Shared`** | 双生成器时 | 本域共享生成器逻辑（`.projitems`），由 R3 与 Reactive 两路生成器 Import。 |
+| **`Observables.<Feature>.SourceGenerators.Shared`** | 多路生成器共用时 | 本域共享生成器逻辑（`.projitems`），由各后端生成器导入。 |
 | **`Observables.<Feature>.R3.SourceGenerators`** | 是 | R3 源生成器（`IsRoslynComponent`）。 |
 | **`Observables.<Feature>.Reactive.SourceGenerators`** | 是 | System.Reactive 源生成器。 |
 | **`Observables.<Feature>.Primitives.SourceGenerators`** | 未实现 | ReactiveUI.Primitives 源生成器（第三路，ADR-005）。 |
-| **`Observables.<Feature>.Package`** | 发布时 | **Traversal 根** + 两个可 pack 子项目（`Observables.<Feature>.R3.csproj` 等），产出 **`Observables.<Feature>.R3`** 与 **`Observables.<Feature>.Reactive`**。十个域均已有 Package（Events 到 Redis）。 |
+| **`Observables.<Feature>.Package`** | 发布时 | **Traversal 根**下为每个已启用的后端配置一个可 pack 子项目。当前十个域均发布 **`Observables.<Feature>.R3`** 与 **`Observables.<Feature>.Reactive`**。 |
 
-可选扩展（**不**算第三个消费者主包）：如 `Observables.RestAPI.HttpClientFactory`，依赖域运行时，不捆绑生成器。
+可选扩展依赖域运行时，例如 `Observables.RestAPI.HttpClientFactory` 提供依赖注入集成。
 
 ### 全库共享项目
 
@@ -50,7 +50,7 @@
 |------|------|
 | **`Observables.Core`** | 全库通用**运行时**（≥2 个 Feature 复用的 Attribute、枚举、接口等）。不引用 Roslyn。**不打包、不作为 `ProjectReference` 被引用**：域运行时 `Compile Include` 其源文件（link-compile），理由见 [`docs/design/architecture.md`](docs/design/architecture.md) §2「共享层：link-compile 而非 ProjectReference」。往这里加类型前先读那一节。 |
 | **`Observables.SourceGenerators.Shared`** | 全库通用**生成器**基础设施（`BackendTokens`、`GeneratedSourceHeader`、符号扩展、跨域可复用诊断如 Events `OBS2xxx`）。不引用 R3 / System.Reactive。 |
-| **`Observables.Analyzers`** | 独立分析器（非生成器）：全库诊断 `OBS0001`（R3/Reactive 包冲突）、各域空代理接口 `OBS4007`/`OBS5007`/`OBS6007`/`OBS7007` 等。随 `.Package` 以 analyzer 形式分发。 |
+| **`Observables.Analyzers`** | 独立分析器负责全库诊断和各域空代理接口诊断。随 `.Package` 以 analyzer 形式分发。 |
 | **`Observables.CodeFixes`** | 对应分析器/生成器诊断的 `CodeFixProvider` 与补全提供器。随 `.Package` 以 analyzer 形式分发。 |
 
 ### 反应式后端规则
@@ -61,6 +61,7 @@
 | **`Observables.<Feature>.Reactive`** | System.Reactive + 域运行时 + 本域 `.Reactive`（若有） | `*.Reactive.SourceGenerators` |
 | **`Observables.<Feature>.Primitives`**（未发布，ADR-005） | ReactiveUI.Primitives + 域运行时 + 本域 `.Primitives`（若有） | `*.Primitives.SourceGenerators` |
 
+- 设计或实施 Primitives 后端时，查阅已生效的 [ADR-005](docs/adr/ADR-005-primitives-backend-adopt.md) 和 [路线图](docs/ROADMAP.md)。ADR-005 已取代 ADR-001。Primitives 待实现和发布。
 - 三个后端包两两互斥：R3 包不引用 System.Reactive / ReactiveUI.Primitives，其余同理。这条管的是包里 **每一个** 程序集，不只是 nuspec：各包共享的域运行时因此必须后端中立。PackVerify 读 `lib/**/*.dll` 的程序集引用表来验（`PackCsprojReader.ForbiddenBackendAssemblies`），**全部 20 个包无豁免**。
 - 域运行时保持后端中立、R3 桥接单独成 `Observables.<Feature>.R3` 程序集，见 [ADR-003](docs/adr/ADR-003-backend-neutral-domain-runtime.md)。十个域已全部就位。
 - 生成器仅编译期；发布后消费者通过 **`.Package` 元包** 获得「运行时 + 对应分析器」。开发阶段用 `ProjectReference` + `OutputItemType="Analyzer"`。
@@ -76,7 +77,7 @@ IObservable 等桥接     →  Observables.<Feature>.Reactive（按需；与 Rea
 
 ### `.Package` 项目（每 Feature 一个）
 
-- **一个** `Observables.<Feature>.Package` 负责该域 **两个** NuGet 包（`PackageId` = `.R3` 与 `.Reactive`）。
+- 每域使用 **一个** `Observables.<Feature>.Package` 管理所有后端 NuGet 包。实施 Primitives 时在同一目录增加 `.Primitives` 子项目。
 - 每个包应包含：对应运行时、对应分析器 DLL、`buildTransitive` props/targets（若需要）。
 - 参考 Skymly 内 `MvvmAIO.Markup.Pack`；**不要**拆成两个 `.Package` 项目（除非日后明确变更）。
 
@@ -210,7 +211,7 @@ Observables/
 - 已落地：`eng/Observables.ProjectDefaults.props` 对非 skip 项目启用 `TreatWarningsAsErrors=true`（`nuget-smoke`、`.Package`、`_build` 等 skip 项除外）。
 - 已清零（M2/M7）：RestAPI nullable（CS86xx）；xUnit1051；Events RS1032 消息格式；域运行时 net8/9 IL trim 告警（Requires* 传播 + 生成代理 `DynamicDependency`）。
 - 标准：新增 CS / 分析器告警须在 PR 内修复；禁止无注释的全仓 `NoWarn`。
-- **Public API（M7）**：域运行时 + Reactive 桥接（18 项目）启用 `Microsoft.CodeAnalysis.PublicApiAnalyzers`；`PublicAPI.Shipped.txt` / `Unshipped.txt` 与 per-TFM 补充文件见 [`docs/design/public-api.md`](docs/design/public-api.md)。Events（纯生成器）、`.Package`、测试不在范围。发版前将 `Unshipped` 迁入 `Shipped`；破坏性变更须 major bump。
+- **Public API（M7）**：域运行时及 R3、Reactive 桥接项目启用 `Microsoft.CodeAnalysis.PublicApiAnalyzers`。修改公开 API 时按 [公开 API 维护指南](docs/design/public-api.md) 更新相应基线。发版前将 `Unshipped` 迁入 `Shipped`。破坏性变更须 major bump。
 
 ### 3. 诊断治理
 
@@ -221,7 +222,7 @@ Observables/
 
     | 段 | 域 |
     |----|----|
-    | `OBS0001`–`OBS0002` | Shared 全库（包冲突、开放泛型代理） |
+    | `OBS0001`–`OBS0003` | Shared 全库（包冲突、不受支持的泛型代理接口与方法） |
     | `OBS2xxx` | Events |
     | `OBS3xxx` | RestAPI |
     | `OBS4xxx` | SignalR |
@@ -408,7 +409,7 @@ dotnet run --project build/_build.csproj -- --target Ci --configuration Release
 Agent 行为准则——与「与用户沟通」并行生效：
 
 1. **用户表述不清楚时，立刻询问**：不要基于猜测继续工作。用聚焦的问题（而非开放式提问）澄清意图，提供 2–4 个具体选项供用户选择。
-2. **用户表述不合理时，立刻指出并给出建议**：包括但不限于——违反已有 ADR（如 [ADR-001](docs/adr/ADR-001-primitives-backend-skip.md) 引入第三反应式后端、R3 包引用 System.Reactive 或 Reactive 包引用 R3、单域产出第三个 NuGet 消费者包）、复用或改变已发布 `OBSxxxx` 诊断 ID 的语义、跳过测试（生成器 Verify 快照 / 域 E2E / `eng/nuget-smoke`）、单 PR 混合多个模块、破坏兼容基线（TFM / Roslyn 版本）、未同步三仓用户文档、新建根级 `CHANGELOG.md`（ROADMAP C3 已否决）、在生成器项目中混用 R3 与 Reactive 后端逻辑。指出问题时必须说明**为什么不合理**，并给出合理替代方案。
+2. **用户表述不合理时，立刻指出并给出建议**。按当前 ADR 和「反应式后端规则」检查方案。还要检查诊断 ID 语义、Verify 快照及域 E2E 和 `eng/nuget-smoke`、单模块 PR 边界、TFM 与 Roslyn 兼容基线、三仓文档同步和 ROADMAP C3 的发版记录约定。说明原因并给出可行的替代方案。
 3. **不要盲目执行**：即使能「做到」用户要求的事，如果认为方向有误，应先提出异议，等待用户确认后再动手。
 4. **发现矛盾时主动报告**：如果用户的新要求与已有 ADR / `AGENTS.md` 规则冲突，指出冲突点，由用户决定是否更新规则或调整需求（ADR 变更须走 Supersede 流程，见 [docs/DOCUMENTATION.md](docs/DOCUMENTATION.md)）。
 

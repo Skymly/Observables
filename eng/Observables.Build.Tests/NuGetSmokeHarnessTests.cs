@@ -49,6 +49,35 @@ public sealed class NuGetSmokeHarnessTests
         Assert.Equal(SmokeFeed.PublishedSource, (string?)source.Attribute("value"));
     }
 
+    [Theory]
+    [InlineData(SmokeFeed.PublishedSource, true)]
+    [InlineData("https://example.invalid/v3/index.json", false)]
+    public void Published_smoke_checks_the_restored_package_source(string source, bool official)
+    {
+        DirectoryInfo cache = Directory.CreateTempSubdirectory("observables-smoke-test-");
+        try
+        {
+            string package = Directory.CreateDirectory(Path.Combine(cache.FullName, "observables.test.r3", "1.0.0")).FullName;
+            File.WriteAllText(Path.Combine(package, "observables.test.r3.1.0.0.nupkg"), "package contents");
+            File.WriteAllText(Path.Combine(package, ".nupkg.metadata"), $$"""{"source":"{{source}}"}""");
+
+            if (official)
+            {
+                SmokeFeed.VerifyRestoredPackage(cache.FullName, "Observables.Test.R3", "1.0.0", localFeed: null);
+            }
+            else
+            {
+                InvalidOperationException error = Assert.Throws<InvalidOperationException>(() =>
+                    SmokeFeed.VerifyRestoredPackage(cache.FullName, "Observables.Test.R3", "1.0.0", localFeed: null));
+                Assert.Contains("was not restored from", error.Message, StringComparison.Ordinal);
+            }
+        }
+        finally
+        {
+            cache.Delete(recursive: true);
+        }
+    }
+
     [Fact]
     public void Local_smoke_rejects_stale_bytes_at_the_same_version()
     {

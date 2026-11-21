@@ -32,5 +32,14 @@
     <InternalsVisibleTo Include="Observables.CodeFixes.Tests" />
   </ItemGroup>
 
+  <Target Name="SetObservablesPackageVersionMetadata" BeforeTargets="GetAssemblyAttributes">
+    <XmlPeek XmlInputPath="$(MSBuildThisFileDirectory)../../eng/Observables.Package.props" Query="/Project/PropertyGroup/PackageVersion/text()">
+      <Output TaskParameter="Result" PropertyName="_ObservablesDefaultPackageVersion" />
+    </XmlPeek>
+    <ItemGroup>
+      <AssemblyMetadata Include="ObservablesPackageVersion" Value="$(_ObservablesDefaultPackageVersion)" />
+    </ItemGroup>
+  </Target>
+
 </Project>
 

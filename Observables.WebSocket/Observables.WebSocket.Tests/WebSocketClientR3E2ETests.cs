@@ -1,5 +1,6 @@
 using System.Net.WebSockets;
 using System.Text;
+using System.Text.Json;
 using Observables.WebSocket;
 using Observables.WebSocket.Tests.Contracts;
 using Observables.WebSocket.Tests.Infrastructure;
@@ -308,25 +309,61 @@ public sealed class WebSocketClientR3E2ETests(WebSocketTestServerFixture fixture
     }
 
     [Fact]
-    public async Task FromReceive_oversize_then_resubscribe_receives_next_message()
+    public async Task Generated_send_serializes_json_on_each_subscription()
+    {
+        using var socket = new ClientWebSocket();
+        var hub = WebSocketService.For<IE2EHub>(socket);
+        var payload = new FailingPayload();
+        var named = hub.SendNamedJson(payload);
+        var sends = new[] { hub.SendJson(payload), hub.SendMultiple(payload, 1), named, named };
+
+        Assert.Equal(0, payload.Attempts);
+        foreach (var send in sends)
+        {
+            var error = await Assert.ThrowsAsync<JsonException>(() =>
+                send.FirstAsync(TestContext.Current.CancellationToken));
+            Assert.Equal("The payload cannot be serialized.", error.Message);
+        }
+
+        Assert.Equal(sends.Length, payload.Attempts);
+    }
+
+    [Theory]
+    [InlineData(64)]
+    [InlineData(20_000)]
+    public async Task FromReceive_oversize_can_resubscribe_in_terminal_callback(int payloadBytes)
     {
         using var socket = new ClientWebSocket();
         using var cts = new CancellationTokenSource(DefaultTimeout);
         await socket.ConnectAsync(fixture.Server.Uri, cts.Token);
 
-        var observer = new RecordingObserver<string>();
-        var subscription = WebSocketObservable.FromReceive<string>(socket, maxMessageBytes: 8).Subscribe(observer);
+        var next = new TaskCompletionSource<string>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var subscribed = new TaskCompletionSource<(Exception Error, IDisposable Attachment)>(
+            TaskCreationOptions.RunContinuationsAsynchronously);
+        using var subscription = WebSocketObservable.FromReceive<string>(socket, maxMessageBytes: 8)
+            .Subscribe(_ => { }, (Result result) =>
+            {
+                if (result.Exception is not { } error)
+                {
+                    subscribed.TrySetException(new InvalidOperationException("Expected a receive failure."));
+                    return;
+                }
+
+                var attachment = WebSocketObservable.FromReceive<string>(socket)
+                    .Subscribe(value => next.TrySetResult(value));
+                subscribed.TrySetResult((error, attachment));
+            });
+
         await socket.SendAsync(
-            new ArraySegment<byte>(Encoding.UTF8.GetBytes(new string('x', 64))),
+            new ArraySegment<byte>(Encoding.UTF8.GetBytes(new string('x', payloadBytes))),
             WebSocketMessageType.Text,
             true,
             cts.Token);
-        var failed = await observer.Completed.WaitAsync(cts.Token);
-        Assert.True(failed.IsFailure);
-        subscription.Dispose();
 
-        var next = new TaskCompletionSource<string>(TaskCreationOptions.RunContinuationsAsynchronously);
-        using var nextSubscription = WebSocketObservable.FromReceive<string>(socket).Subscribe(value => next.TrySetResult(value));
+        var (failure, attachment) = await subscribed.Task.WaitAsync(cts.Token);
+        using var nextSubscription = attachment;
+        Assert.Contains("maximum size of 8 bytes", failure.Message);
+        Assert.Equal(WebSocketState.Open, socket.State);
         await socket.SendAsync(
             new ArraySegment<byte>(Encoding.UTF8.GetBytes("ok")),
             WebSocketMessageType.Text,
@@ -334,6 +371,7 @@ public sealed class WebSocketClientR3E2ETests(WebSocketTestServerFixture fixture
             cts.Token);
         Assert.Equal("ok", await next.Task.WaitAsync(cts.Token));
     }
+
     sealed class RecordingObserver<T> : Observer<T>
     {
         readonly TaskCompletionSource<Result> _completed = new(TaskCreationOptions.RunContinuationsAsynchronously);

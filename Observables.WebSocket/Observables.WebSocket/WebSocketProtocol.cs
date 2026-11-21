@@ -26,10 +26,13 @@ internal static class WebSocketProtocol
 
     internal sealed class MessageTooLargeException : InvalidOperationException
     {
-        internal MessageTooLargeException(int maxMessageBytes)
+        internal MessageTooLargeException(int maxMessageBytes, bool endOfMessage)
             : base($"WebSocket message exceeded the maximum size of {maxMessageBytes} bytes.")
         {
+            EndOfMessage = endOfMessage;
         }
+
+        internal bool EndOfMessage { get; }
     }
 #if NETSTANDARD2_0
 #else
@@ -104,7 +107,7 @@ internal static class WebSocketProtocol
             messageType = result.MessageType;
             if (ms.Length + result.Count > maxMessageBytes)
             {
-                throw new MessageTooLargeException(maxMessageBytes);
+                throw new MessageTooLargeException(maxMessageBytes, result.EndOfMessage);
             }
 
             ms.Write(buffer, 0, result.Count);
@@ -112,6 +115,23 @@ internal static class WebSocketProtocol
         while (!result.EndOfMessage);
 
         return new WebSocketReceivedMessage(ms.ToArray(), messageType);
+    }
+
+    internal static async Task<bool> DiscardRemainingMessageAsync(ClientWebSocket socket)
+    {
+        var buffer = new ArraySegment<byte>(new byte[4096]);
+        WebSocketReceiveResult result;
+        do
+        {
+            result = await socket.ReceiveAsync(buffer, CancellationToken.None).ConfigureAwait(false);
+            if (result.MessageType == WebSocketMessageType.Close)
+            {
+                return false;
+            }
+        }
+        while (!result.EndOfMessage);
+
+        return true;
     }
 
     // Reads the {"type":…,"payload":…} envelope a named send writes and deserializes payload as T. Returns

@@ -11,11 +11,13 @@
             <summary>
             订阅时发送 <paramref name="payload"/>。字节数组在调用此方法时捕获，而不是在后续订阅者到达时捕获。
             </summary>
+            <remarks>在同一个 <see cref="T:System.Net.WebSockets.ClientWebSocket"/> 上，必须等前一次发送完成再发起下一次发送。发送可以与接收并行。</remarks>
         </member>
         <member name="M:Observables.WebSocket.WebSocketObservable.FromSendText(System.Net.WebSockets.ClientWebSocket,System.String,System.Threading.CancellationToken)">
             <summary>
             订阅时发送 <paramref name="text"/>。字符串在调用此方法时捕获。string/byte[] 以外的 JSON 负载需要 net8.0 或更高版本。
             </summary>
+            <remarks>在同一个 <see cref="T:System.Net.WebSockets.ClientWebSocket"/> 上，必须等前一次发送完成再发起下一次发送。发送可以与接收并行。</remarks>
         </member>
         <member name="F:Observables.WebSocket.WebSocketObservable.DefaultMaxReceiveMessageBytes">
             <summary>默认重组接收上限（1 MiB）。超出时接收流以错误结束。</summary>
@@ -24,13 +26,16 @@
             <summary>
             从每个套接字共享的泵接收帧。Subscribe 可以发生在 Connect 之前；只要仍有接收端，泵就会等待。
             Abort 以及其他不可恢复的套接字故障只会完成一次流。
-            非正的 <paramref name="maxMessageBytes"/> 会使本次订阅立即失败。
+            为套接字启动接收泵的首个订阅设置 <paramref name="maxMessageBytes"/>，同一接收泵上的后续订阅沿用该上限。
+            非正的上限会使本次订阅立即失败。
             一个观察者抛出不会停止其他观察者。
             </summary>
         </member>
         <member name="M:Observables.WebSocket.WebSocketObservable.FromReceiveNamed``1(System.Net.WebSockets.ClientWebSocket,System.String,System.Int32)">
             <summary>
             只发出带有具名发送所写 <c>{"type":…}</c> 信封的帧。发给别的名字、以及压根不是信封的帧一律跳过，而不是当成错误。
+            为套接字启动接收泵的首个订阅设置 <paramref name="maxMessageBytes"/>，同一接收泵上的后续订阅沿用该上限。
+            非正的上限会使本次订阅立即失败。
             </summary>
         </member>
     </members>

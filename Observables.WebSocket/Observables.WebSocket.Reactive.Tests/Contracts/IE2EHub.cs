@@ -39,4 +39,27 @@ public interface IE2EHub
     /// <summary>Only the envelopes <see cref="SendChat"/> writes; the echo server bounces them back.</summary>
     [WebSocketReceive("chat")]
     IObservable<string> Chats { get; }
+
+    [WebSocketSend]
+    IObservable<Unit> SendJson(FailingPayload payload);
+
+    [WebSocketSend]
+    IObservable<Unit> SendMultiple(FailingPayload payload, int count);
+
+    [WebSocketSend("json")]
+    IObservable<Unit> SendNamedJson(FailingPayload payload);
+}
+
+public sealed class FailingPayload
+{
+    public int Attempts { get; private set; }
+
+    public string Value
+    {
+        get
+        {
+            Attempts++;
+            throw new System.Text.Json.JsonException("The payload cannot be serialized.");
+        }
+    }
 }

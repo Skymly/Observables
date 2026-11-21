@@ -35,6 +35,7 @@ internal sealed class WebSocketReceivePump
     readonly object gate = new();
     readonly List<IWebSocketReceiveSink> sinks = new();
     bool running;
+    bool discardRemainingMessage;
 
     WebSocketReceivePump(ClientWebSocket socket) => this.socket = socket;
 
@@ -90,11 +91,17 @@ internal sealed class WebSocketReceivePump
         }
     }
 
-    bool HasSinks()
+    bool TryStopIfIdle()
     {
         lock (gate)
         {
-            return sinks.Count > 0;
+            if (sinks.Count != 0)
+            {
+                return false;
+            }
+
+            running = false;
+            return true;
         }
     }
 
@@ -104,8 +111,19 @@ internal sealed class WebSocketReceivePump
         {
             if (!await WaitUntilOpenAsync().ConfigureAwait(false))
             {
-                DispatchTerminalForCurrentState();
                 return;
+            }
+
+            if (discardRemainingMessage)
+            {
+                // Resume at the next message boundary after an earlier size failure.
+                var reachedEnd = await WebSocketProtocol.DiscardRemainingMessageAsync(socket).ConfigureAwait(false);
+                discardRemainingMessage = false;
+                if (!reachedEnd)
+                {
+                    FinishForCurrentState();
+                    return;
+                }
             }
 
             while (socket.State == WebSocketState.Open)
@@ -117,26 +135,9 @@ internal sealed class WebSocketReceivePump
                         .ReceiveMessageAsync(socket, CancellationToken.None, maxMessageBytes)
                         .ConfigureAwait(false);
                 }
-                catch (OperationCanceledException ex)
-                {
-                    if (IsTerminal(socket.State))
-                    {
-                        Dispatch(sink => sink.OnFailed(ex));
-                    }
-
-                    return;
-                }
-                catch (WebSocketProtocol.MessageTooLargeException ex)
-                {
-                    Dispatch(sink => sink.OnFailed(ex));
-                    return;
-                }
-                catch (Exception ex) when (IsUnrecoverable(ex))
-                {
-                    Dispatch(sink => sink.OnFailed(ex));
-                    return;
-                }
-                catch (Exception ex)
+                catch (Exception ex) when (
+                    ex is not (OperationCanceledException or WebSocketProtocol.MessageTooLargeException) &&
+                    !IsUnrecoverable(ex))
                 {
                     Dispatch(sink => sink.OnTransientError(ex));
                     continue;
@@ -144,7 +145,7 @@ internal sealed class WebSocketReceivePump
 
                 if (message is null)
                 {
-                    Dispatch(static sink => sink.OnClosed());
+                    Finish(static sink => sink.OnClosed());
                     return;
                 }
 
@@ -152,14 +153,16 @@ internal sealed class WebSocketReceivePump
                 Dispatch(sink => sink.OnMessage(received.Payload, received.MessageType));
             }
 
-            DispatchTerminalForCurrentState();
+            FinishForCurrentState();
         }
-        finally
+        catch (WebSocketProtocol.MessageTooLargeException ex)
         {
-            lock (gate)
-            {
-                running = false;
-            }
+            discardRemainingMessage = !ex.EndOfMessage;
+            Finish(sink => sink.OnFailed(ex));
+        }
+        catch (Exception ex)
+        {
+            Finish(sink => sink.OnFailed(ex));
         }
     }
 
@@ -173,7 +176,13 @@ internal sealed class WebSocketReceivePump
                 return true;
             }
 
-            if (IsTerminal(state) || !HasSinks())
+            if (IsTerminal(state))
+            {
+                FinishForCurrentState();
+                return false;
+            }
+
+            if (TryStopIfIdle())
             {
                 return false;
             }
@@ -182,23 +191,15 @@ internal sealed class WebSocketReceivePump
         }
     }
 
-    void DispatchTerminalForCurrentState()
+    void FinishForCurrentState()
     {
-        if (!HasSinks())
-        {
-            return;
-        }
-
         if (socket.State == WebSocketState.Aborted)
         {
-            Dispatch(static sink => sink.OnFailed(
-                new WebSocketException("The WebSocket was aborted.")));
-            return;
+            Finish(static sink => sink.OnFailed(new WebSocketException("The WebSocket was aborted.")));
         }
-
-        if (IsTerminal(socket.State))
+        else
         {
-            Dispatch(static sink => sink.OnClosed());
+            Finish(static sink => sink.OnClosed());
         }
     }
 
@@ -231,6 +232,25 @@ internal sealed class WebSocketReceivePump
             snapshot = sinks.ToArray();
         }
 
+        Notify(snapshot, notification);
+    }
+
+    void Finish(Action<IWebSocketReceiveSink> notification)
+    {
+        IWebSocketReceiveSink[] snapshot;
+        lock (gate)
+        {
+            snapshot = sinks.ToArray();
+            sinks.Clear();
+            // Release ownership before callbacks can attach a sink and start another pump.
+            running = false;
+        }
+
+        Notify(snapshot, notification);
+    }
+
+    static void Notify(IWebSocketReceiveSink[] snapshot, Action<IWebSocketReceiveSink> notification)
+    {
         foreach (var sink in snapshot)
         {
             try

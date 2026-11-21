@@ -2,6 +2,7 @@ using System.Net.WebSockets;
 using System.Reactive.Linq;
 using System.Reactive.Threading.Tasks;
 using System.Text;
+using System.Text.Json;
 using Observables.WebSocket;
 using Observables.WebSocket.Reactive;
 using Observables.WebSocket.Reactive.Tests.Contracts;
@@ -288,6 +289,64 @@ public sealed class WebSocketClientReactiveE2ETests(WebSocketTestServerFixture f
 
         Assert.Equal("both", await first.Task.WaitAsync(cts.Token));
         Assert.Equal("both", await second.Task.WaitAsync(cts.Token));
+    }
+
+    [Fact]
+    public async Task Generated_send_serializes_json_on_each_subscription()
+    {
+        using var socket = new ClientWebSocket();
+        var hub = WebSocketService.For<IE2EHub>(socket);
+        var payload = new FailingPayload();
+        var named = hub.SendNamedJson(payload);
+        var sends = new[] { hub.SendJson(payload), hub.SendMultiple(payload, 1), named, named };
+
+        Assert.Equal(0, payload.Attempts);
+        foreach (var send in sends)
+        {
+            var error = await Assert.ThrowsAsync<JsonException>(() =>
+                send.FirstAsync().ToTask(TestContext.Current.CancellationToken));
+            Assert.Equal("The payload cannot be serialized.", error.Message);
+        }
+
+        Assert.Equal(sends.Length, payload.Attempts);
+    }
+
+    [Theory]
+    [InlineData(64)]
+    [InlineData(20_000)]
+    public async Task FromReceive_oversize_can_resubscribe_in_terminal_callback(int payloadBytes)
+    {
+        using var socket = new ClientWebSocket();
+        using var cts = new CancellationTokenSource(DefaultTimeout);
+        await socket.ConnectAsync(fixture.Server.Uri, cts.Token);
+
+        var next = new TaskCompletionSource<string>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var subscribed = new TaskCompletionSource<(Exception Error, IDisposable Attachment)>(
+            TaskCreationOptions.RunContinuationsAsynchronously);
+        using var subscription = SystemReactiveWebSocketAdapter.FromReceive<string>(socket, maxMessageBytes: 8)
+            .Subscribe(_ => { }, error =>
+            {
+                var attachment = SystemReactiveWebSocketAdapter.FromReceive<string>(socket)
+                    .Subscribe(value => next.TrySetResult(value));
+                subscribed.TrySetResult((error, attachment));
+            });
+
+        await socket.SendAsync(
+            new ArraySegment<byte>(Encoding.UTF8.GetBytes(new string('x', payloadBytes))),
+            WebSocketMessageType.Text,
+            true,
+            cts.Token);
+
+        var (failure, attachment) = await subscribed.Task.WaitAsync(cts.Token);
+        using var nextSubscription = attachment;
+        Assert.Contains("maximum size of 8 bytes", failure.Message);
+        Assert.Equal(WebSocketState.Open, socket.State);
+        await socket.SendAsync(
+            new ArraySegment<byte>(Encoding.UTF8.GetBytes("ok")),
+            WebSocketMessageType.Text,
+            true,
+            cts.Token);
+        Assert.Equal("ok", await next.Task.WaitAsync(cts.Token));
     }
 
     [Fact]

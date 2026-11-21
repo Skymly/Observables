@@ -5,6 +5,10 @@ namespace Observables.WebSocket;
 public sealed class WebSocketAttribute : Attribute;
 
 /// <summary>Client-to-server message send mapped to WebSocket send.</summary>
+/// <remarks>
+/// Each subscription serializes any JSON payload before sending.
+/// Wait for each send on the same socket to complete before starting the next.
+/// </remarks>
 [AttributeUsage(AttributeTargets.Method)]
 public sealed class WebSocketSendAttribute(string? messageName = null) : Attribute
 {

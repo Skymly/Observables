@@ -3,7 +3,7 @@ using Observables.Grpc.Tests.Protos;
 
 namespace Observables.Grpc.Tests.Infrastructure;
 
-public sealed class EchoServiceImpl : Echo.EchoBase
+public sealed class EchoServiceImpl(Action? onDuplexFinished = null) : Echo.EchoBase
 {
     public override Task<EchoReply> UnaryEcho(EchoRequest request, ServerCallContext context) =>
         Task.FromResult(new EchoReply { Text = request.Text });
@@ -55,11 +55,18 @@ public sealed class EchoServiceImpl : Echo.EchoBase
         IServerStreamWriter<EchoReply> responseStream,
         ServerCallContext context)
     {
-        while (await requestStream.MoveNext(context.CancellationToken).ConfigureAwait(false))
+        try
         {
-            await responseStream
-                .WriteAsync(new EchoReply { Text = requestStream.Current.Text + "-ack" })
-                .ConfigureAwait(false);
+            while (await requestStream.MoveNext(context.CancellationToken).ConfigureAwait(false))
+            {
+                await responseStream
+                    .WriteAsync(new EchoReply { Text = requestStream.Current.Text + "-ack" })
+                    .ConfigureAwait(false);
+            }
+        }
+        finally
+        {
+            onDuplexFinished?.Invoke();
         }
     }
 }

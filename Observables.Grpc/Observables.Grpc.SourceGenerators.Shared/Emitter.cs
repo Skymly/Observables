@@ -1,4 +1,4 @@
-using System.Text;
+using System.Globalization;
 using Microsoft.CodeAnalysis.Text;
 
 namespace Observables.Grpc.Generators;
@@ -26,8 +26,19 @@ internal static class Emitter
                     m.ClassName)).ToArray(),
             addSource);
     }
-    public static SourceText EmitInterface(GrpcInterfaceModel model) =>
-        ProxyClassEmitter.Emit(
+    public static SourceText EmitInterface(GrpcInterfaceModel model)
+    {
+        var members = model.Members.AsArray();
+        var reservedNames = new HashSet<string>(
+            members.Select(static member => member.MemberName.TrimStart('@')),
+            StringComparer.Ordinal)
+        {
+            model.ClassName,
+        };
+        var bindings = members.Select(member =>
+            (Member: member, FieldName: ReserveMethodFieldName(member, reservedNames))).ToArray();
+
+        return ProxyClassEmitter.Emit(
             model.Nullability,
             model.GeneratedNamespace,
             model.ClassName,
@@ -36,22 +47,36 @@ internal static class Emitter
                 "global::Grpc.Core.CallInvoker",
                 "_invoker",
                 "invoker"),
-            model.Members.AsArray(),
-            EmitMember,
+            bindings,
+            static (writer, binding) => EmitMember(writer, binding.Member, binding.FieldName),
             trim: new ProxyClassEmitter.TrimWarnings(
                 "gRPC proxy uses reflection for message marshalling and method invocation. Preserve required members when trimming.",
                 "gRPC proxy uses reflection for message marshalling and method invocation."),
             emitBeforeMembers: writer =>
             {
-                foreach (var member in model.Members.AsArray())
+                foreach (var binding in bindings)
                 {
-                    EmitMethodField(writer, member, model.ServiceName);
+                    EmitMethodField(writer, binding.Member, model.ServiceName, binding.FieldName);
                 }
 
                 writer.WriteLine(string.Empty);
             });
+    }
 
-    static void EmitMethodField(SourceWriter writer, GrpcMemberModel member, string serviceName)
+    static string ReserveMethodFieldName(GrpcMemberModel member, HashSet<string> reservedNames)
+    {
+        var baseName = member.MemberName.TrimStart('@') + "Method";
+        var name = baseName;
+        var parameterNames = member.ParameterNames.AsArray();
+        for (var suffix = 1; parameterNames.Contains(name) || !reservedNames.Add(name); suffix++)
+        {
+            name = baseName + "_" + suffix.ToString(CultureInfo.InvariantCulture);
+        }
+
+        return name;
+    }
+
+    static void EmitMethodField(SourceWriter writer, GrpcMemberModel member, string serviceName, string fieldName)
     {
         var methodType = member.BoundaryKind switch
         {
@@ -72,13 +97,13 @@ internal static class Emitter
 
         writer.WriteLine(
             $$"""
-                    private static readonly global::Grpc.Core.Method<{{requestType}}, {{responseType}}> {{member.MemberName}}Method =
+                    private static readonly global::Grpc.Core.Method<{{requestType}}, {{responseType}}> {{fieldName}} =
                         new({{methodType}}, {{FormatLiteral(serviceName)}}, {{FormatLiteral(member.RpcName)}}, {{requestMarshaller}}, {{responseMarshaller}});
 
             """);
     }
 
-    static void EmitMember(SourceWriter writer, GrpcMemberModel member)
+    static void EmitMember(SourceWriter writer, GrpcMemberModel member, string fieldName)
     {
         var cancellation = member.CancellationTokenParameterName is { } ctName ? $", {ctName}" : ", default";
         var parameterList = member.ParameterDeclarations.Count == 0
@@ -98,7 +123,7 @@ internal static class Emitter
         writer.WriteLine(
             $$"""
                     public {{member.ReturnTypeDisplay}} {{member.MemberName}}({{parameterList}}) =>
-                        {{BridgeType}}.{{bridgeMethod}}(_invoker, {{member.MemberName}}Method, {{requestArg}}{{cancellation}});
+                        {{BridgeType}}.{{bridgeMethod}}(_invoker, {{fieldName}}, {{requestArg}}{{cancellation}});
 
             """);
     }

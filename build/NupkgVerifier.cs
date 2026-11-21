@@ -1,9 +1,10 @@
 using System.IO.Compression;
 using System.Reflection.Metadata;
 using System.Reflection.PortableExecutable;
+using System.Text.RegularExpressions;
 using System.Xml.Linq;
 
-static class NupkgVerifier
+static partial class NupkgVerifier
 {
     // Keep in sync with ObservablesAnalyzerRoslynFolder in eng/Observables.Package.props.
     public const string AnalyzerFolder = "analyzers/dotnet/roslyn4.12/cs/";
@@ -44,15 +45,15 @@ static class NupkgVerifier
             errors.Add($"{request.PackageId}: missing buildTransitive/{propsFileName}");
         }
 
-        foreach (string tfm in request.RequiredLibTfms)
+        foreach ((string tfm, IReadOnlyList<string> files) in request.RequiredLibAssembliesByTfm)
         {
-            string prefix = "lib/" + tfm + "/";
-            bool hasDll = entries.Any(e =>
-                e.StartsWith(prefix, StringComparison.OrdinalIgnoreCase)
-                && e.EndsWith(".dll", StringComparison.OrdinalIgnoreCase));
-            if (!hasDll)
+            foreach (string file in files)
             {
-                errors.Add($"{request.PackageId}: missing runtime assembly under lib/{tfm}/");
+                string assemblyPath = $"lib/{tfm}/{file}";
+                if (!entries.Contains(assemblyPath))
+                {
+                    errors.Add($"{request.PackageId}: missing runtime assembly {assemblyPath}");
+                }
             }
         }
 
@@ -110,7 +111,8 @@ static class NupkgVerifier
             {
                 if (ids.Contains(forbiddenId))
                 {
-                    errors.Add($"{request.PackageId}: nuspec {tfm} group must not depend on {forbiddenId}");
+                    string scope = tfm.Length == 0 ? "nuspec dependencies" : $"nuspec {tfm} group";
+                    errors.Add($"{request.PackageId}: {scope} must not depend on {forbiddenId}");
                 }
             }
         }
@@ -174,9 +176,20 @@ static class NupkgVerifier
 
     internal static bool ReadmePinsObservablesPackageVersion(string readme)
     {
-        foreach (string line in readme.Split('\n'))
+        foreach (Match tag in PackageReferenceTag().Matches(readme))
         {
-            if (LineIncludesObservablesPackage(line) && LineHasVersionAttribute(line))
+            bool isObservables = false;
+            bool hasVersion = false;
+            foreach (Match attribute in PackageReferenceAttribute().Matches(tag.Value))
+            {
+                string name = attribute.Groups["name"].Value;
+                string value = attribute.Groups["value"].Value;
+                isObservables |= name.Equals("Include", StringComparison.OrdinalIgnoreCase)
+                    && value.StartsWith("Observables.", StringComparison.OrdinalIgnoreCase);
+                hasVersion |= name.Equals("Version", StringComparison.OrdinalIgnoreCase);
+            }
+
+            if (isObservables && hasVersion)
             {
                 return true;
             }
@@ -185,28 +198,32 @@ static class NupkgVerifier
         return false;
     }
 
-    static bool LineIncludesObservablesPackage(string line)
-    {
-        return line.Contains("Include=\"Observables.", StringComparison.OrdinalIgnoreCase)
-            || line.Contains("Include='Observables.", StringComparison.OrdinalIgnoreCase);
-    }
+    [GeneratedRegex("""<PackageReference(?=\s|/?>)(?:"[^"]*"|'[^']*'|[^'"<>])*>""", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)]
+    private static partial Regex PackageReferenceTag();
 
-    static bool LineHasVersionAttribute(string line)
-    {
-        return line.Contains("Version=", StringComparison.OrdinalIgnoreCase)
-            || line.Contains("Version =", StringComparison.OrdinalIgnoreCase);
-    }
+    [GeneratedRegex("""(?<name>[\w.:-]+)\s*=\s*(?:"(?<value>[^"]*)"|'(?<value>[^']*)')""", RegexOptions.CultureInvariant)]
+    private static partial Regex PackageReferenceAttribute();
 
     static Dictionary<string, HashSet<string>> ParseNuspecDependencyGroups(string nuspecText)
     {
         var groups = new Dictionary<string, HashSet<string>>(StringComparer.OrdinalIgnoreCase);
         XDocument doc = XDocument.Parse(nuspecText);
-        foreach (XElement group in doc.Descendants().Where(static e => e.Name.LocalName == "group"))
+        foreach (XElement dependencies in doc.Descendants().Where(static e => e.Name.LocalName == "dependencies"))
         {
-            string tfm = (string?)group.Attribute("targetFramework") ?? string.Empty;
+            AddGroup(dependencies, string.Empty);
+            foreach (XElement group in dependencies.Elements().Where(static e => e.Name.LocalName == "group"))
+            {
+                AddGroup(group, (string?)group.Attribute("targetFramework") ?? string.Empty);
+            }
+        }
+
+        return groups;
+
+        void AddGroup(XElement container, string tfm)
+        {
             HashSet<string> ids = groups.GetValueOrDefault(tfm) ?? new HashSet<string>(StringComparer.OrdinalIgnoreCase);
             groups[tfm] = ids;
-            foreach (XElement dependency in group.Elements().Where(static e => e.Name.LocalName == "dependency"))
+            foreach (XElement dependency in container.Elements().Where(static e => e.Name.LocalName == "dependency"))
             {
                 string? id = (string?)dependency.Attribute("id");
                 if (!string.IsNullOrWhiteSpace(id))
@@ -215,8 +232,6 @@ static class NupkgVerifier
                 }
             }
         }
-
-        return groups;
     }
 
     static HashSet<string> ResolveGroup(Dictionary<string, HashSet<string>> groups, string tfm)

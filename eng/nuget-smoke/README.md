@@ -17,3 +17,5 @@ dotnet run --project build/_build.csproj -- --target NuGetConsumerSmokePublished
 ```
 
 Uses only nuget.org and verifies the restored packages' source in a fresh package cache. Nuke takes the version from `eng/Observables.Package.props` or `--version`. For a manual build, pass `-p:ObservablesConsumerPackageVersion=...`.
+
+The WPF consumers require routed-event delivery. Published versions that predate the WPF delegate fix, including 0.4.1, fail that assertion.

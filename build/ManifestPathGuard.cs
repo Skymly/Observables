@@ -17,8 +17,10 @@ static class ManifestPathGuard
             Path.Combine(rootFull, relativePath.Replace('/', Path.DirectorySeparatorChar)));
         string prefix = rootFull.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar)
             + Path.DirectorySeparatorChar;
-        if (!full.StartsWith(prefix, StringComparison.OrdinalIgnoreCase)
-            && !string.Equals(full, rootFull, StringComparison.OrdinalIgnoreCase))
+        // Relative manifest paths inherit the root's spelling. A differently cased path
+        // cannot prove containment on a case-sensitive directory.
+        if (!full.StartsWith(prefix, StringComparison.Ordinal)
+            && !string.Equals(full, rootFull, StringComparison.Ordinal))
         {
             throw new InvalidOperationException($"Build manifest path escapes the repository root: {relativePath}");
         }

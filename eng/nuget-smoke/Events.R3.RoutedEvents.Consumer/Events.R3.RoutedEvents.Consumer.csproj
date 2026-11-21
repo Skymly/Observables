@@ -4,10 +4,10 @@
     <TargetFramework>net8.0-windows</TargetFramework>
     <UseWPF>true</UseWPF>
     <ObservableRoutedEvents>true</ObservableRoutedEvents>
+    <DefineConstants>$(DefineConstants);EVENTS_R3</DefineConstants>
     <RootNamespace>Observables.NuGetSmoke.Events.R3.RoutedEvents</RootNamespace>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Observables.Events.R3" Version="$(ObservablesConsumerPackageVersion)" />
-    <PackageReference Include="R3" Version="1.3.0" />
   </ItemGroup>
 </Project>

@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <ObservableRoutedEvents>true</ObservableRoutedEvents>
+    <RootNamespace>Observables.NuGetSmoke.Events.Reactive.RoutedEvents</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="..\Events.R3.RoutedEvents.Consumer\Program.cs" Link="Program.cs" />
+    <PackageReference Include="Observables.Events.Reactive" Version="$(ObservablesConsumerPackageVersion)" />
+  </ItemGroup>
+</Project>

@@ -131,6 +131,7 @@
     "eng/nuget-smoke/Events.R3.Consumer/Events.R3.Consumer.csproj",
     "eng/nuget-smoke/Events.R3.RoutedEvents.Consumer/Events.R3.RoutedEvents.Consumer.csproj",
     "eng/nuget-smoke/Events.Reactive.Consumer/Events.Reactive.Consumer.csproj",
+    "eng/nuget-smoke/Events.Reactive.RoutedEvents.Consumer/Events.Reactive.RoutedEvents.Consumer.csproj",
     "eng/nuget-smoke/RestAPI.R3.Consumer/RestAPI.R3.Consumer.csproj",
     "eng/nuget-smoke/RestAPI.Reactive.Consumer/RestAPI.Reactive.Consumer.csproj",
     "eng/nuget-smoke/SignalR.R3.Consumer/SignalR.R3.Consumer.csproj",

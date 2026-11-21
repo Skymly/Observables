@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Globalization;
 using System.Linq;
 using System.Text;
 using Microsoft.CodeAnalysis;
@@ -61,7 +62,24 @@ public sealed partial class ObservableEventsGenerator
         if (!qualified)
             return baseName;
         var prefix = TypeIdentityPrefix(t);
-        return prefix.Length == 0 ? baseName : $"{prefix}_{baseName}";
+        var qualifiedName = prefix.Length == 0 ? baseName : $"{prefix}_{baseName}";
+        return t.IsGenericType
+            ? $"{qualifiedName}_{EncodeConstraintType(t.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat))}"
+            : qualifiedName;
+    }
+
+    private static string EncodeConstraintType(string displayName)
+    {
+        var result = new StringBuilder(displayName.Length);
+        foreach (char ch in displayName)
+        {
+            if (char.IsLetterOrDigit(ch))
+                result.Append(ch);
+            else
+                result.Append('_').Append(((int)ch).ToString("X4", CultureInfo.InvariantCulture));
+        }
+
+        return result.ToString();
     }
 
     private static string GetGenericConstraintCombinedInterfaceName(

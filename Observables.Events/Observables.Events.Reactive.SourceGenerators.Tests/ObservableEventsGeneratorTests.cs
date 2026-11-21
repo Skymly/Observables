@@ -722,6 +722,8 @@ public sealed class ObservableEventsGeneratorTests
     private const string AvaloniaStubs = """
         namespace Avalonia.Interactivity
         {
+            public class Interactive { }
+
             [System.Flags]
             public enum RoutingStrategies
             {
@@ -742,7 +744,7 @@ public sealed class ObservableEventsGeneratorTests
 
         namespace Avalonia.Controls
         {
-            public class Control
+            public class Control : Avalonia.Interactivity.Interactive
             {
                 public void AddHandler<TEventArgs>(
                     Avalonia.Interactivity.RoutedEvent<TEventArgs> routedEvent,

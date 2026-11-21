@@ -24,19 +24,8 @@ public sealed partial class ObservableEventsGenerator
         bool includeXmlDocumentation = true)
     {
         property = null!;
-        if (evt.Type is not INamedTypeSymbol delegateType || delegateType.DelegateInvokeMethod is not IMethodSymbol invoke)
-        {
-            ReportInvalidDelegate(evt, reportDiagnostic, entryKind);
-            return false;
-        }
-
-        if (!invoke.ReturnsVoid)
-        {
-            ReportInvalidDelegate(evt, reportDiagnostic, entryKind);
-            return false;
-        }
-
-        if (invoke.Parameters.Any(static p => p.RefKind != RefKind.None))
+        if (evt.Type is not INamedTypeSymbol { DelegateInvokeMethod: { } invoke } delegateType
+            || !IsSupportedEventSignature(invoke))
         {
             ReportInvalidDelegate(evt, reportDiagnostic, entryKind);
             return false;
@@ -70,13 +59,8 @@ public sealed partial class ObservableEventsGenerator
         bool includeXmlDocumentation = true)
     {
         property = null!;
-        if (evt.Type is not INamedTypeSymbol delegateType || delegateType.DelegateInvokeMethod is not IMethodSymbol invoke)
-        {
-            ReportInvalidEventHandlersDelegate(evt, reportDiagnostic, entryKind);
-            return false;
-        }
-
-        if (!invoke.ReturnsVoid)
+        if (evt.Type is not INamedTypeSymbol { DelegateInvokeMethod: { } invoke } delegateType
+            || !IsSupportedEventSignature(invoke))
         {
             ReportInvalidEventHandlersDelegate(evt, reportDiagnostic, entryKind);
             return false;
@@ -126,17 +110,19 @@ public sealed partial class ObservableEventsGenerator
         return true;
     }
 
+    private static bool IsSupportedEventSignature(IMethodSymbol invoke) =>
+        invoke.ReturnsVoid && !invoke.Parameters.Any(static parameter =>
+            parameter.RefKind != RefKind.None
+            || parameter.Type.IsRefLikeType
+            || parameter.Type is ITypeParameterSymbol { AllowsRefLikeType: true }
+            || parameter.Type.TypeKind is TypeKind.Pointer or TypeKind.FunctionPointer);
+
     /// <summary>
     /// Custom <c>void (object, TSecond)</c> delegate excluding <c>System.EventHandler</c> / <c>System.EventHandler&lt;T&gt;</c> (those use <c>Observable.FromEventHandler</c>), implemented with <c>Observable.FromEvent</c>.
     /// </summary>
     private static bool IsLegacySenderReceiverDelegate(INamedTypeSymbol delegateType, IMethodSymbol invoke, Compilation compilation)
     {
         if (invoke.Parameters.Length != 2)
-        {
-            return false;
-        }
-
-        if (invoke.Parameters[0].RefKind != RefKind.None || invoke.Parameters[1].RefKind != RefKind.None)
         {
             return false;
         }

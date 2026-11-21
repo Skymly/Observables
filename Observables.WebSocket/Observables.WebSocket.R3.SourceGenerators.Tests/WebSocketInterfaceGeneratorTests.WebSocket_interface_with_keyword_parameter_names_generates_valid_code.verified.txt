@@ -26,7 +26,7 @@ namespace Observables.WebSocket.Generated
     public global::R3.Observable<global::R3.Unit> Send(global::System.String @event, global::System.Threading.CancellationToken cancellationToken = default)
     {
 #if NET8_0_OR_GREATER
-        return global::Observables.WebSocket.WebSocketObservable.FromSendText(_socket, global::System.Text.Json.JsonSerializer.Serialize(new { type = "ping", payload = @event }), cancellationToken);
+        return global::R3.Observable.Defer(() => global::Observables.WebSocket.WebSocketObservable.FromSendText(_socket, global::System.Text.Json.JsonSerializer.Serialize(new { type = "ping", payload = @event }), cancellationToken));
 #else
         throw new global::System.NotSupportedException(
             "Sending a WebSocket message that declares a message name requires net8.0 or later.");

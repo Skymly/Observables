@@ -33,6 +33,7 @@ public static class WebSocketObservable
     /// Sends <paramref name="payload"/> when the observable is subscribed. The byte array is captured when
     /// this method is called, not when a later subscriber arrives.
     /// </summary>
+    /// <remarks>Wait for each send on the same <see cref="ClientWebSocket"/> to complete before starting the next. A send may overlap a receive.</remarks>
     public static Observable<Unit> FromSend(
         ClientWebSocket socket,
         byte[] payload,
@@ -49,6 +50,7 @@ public static class WebSocketObservable
     /// Sends <paramref name="text"/> when the observable is subscribed. The string is captured when this
     /// method is called. JSON payloads other than string/byte[] require net8.0 or later.
     /// </summary>
+    /// <remarks>Wait for each send on the same <see cref="ClientWebSocket"/> to complete before starting the next. A send may overlap a receive.</remarks>
     public static Observable<Unit> FromSendText(
         ClientWebSocket socket,
         string text,
@@ -72,7 +74,9 @@ public static class WebSocketObservable
     /// <summary>
     /// Receives frames from a shared per-socket pump. Subscribe may happen before Connect; the pump waits
     /// while any sink is attached. Abort and other unrecoverable socket faults complete the stream once.
-    /// A non-positive <paramref name="maxMessageBytes"/> fails this subscription immediately.
+    /// The first subscription that starts the socket's receive pump sets <paramref name="maxMessageBytes"/>
+    /// for all subscriptions on that pump. Later subscriptions inherit that cap.
+    /// A non-positive value fails this subscription immediately.
     /// One observer throwing does not stop the others.
     /// </summary>
 #if NET8_0_OR_GREATER
@@ -104,6 +108,9 @@ public static class WebSocketObservable
     /// Emits only the frames carrying the <c>{"type":…}</c> envelope written by a send that declares
     /// <paramref name="messageName"/>. Frames addressed elsewhere, and frames that are not envelopes at all,
     /// are skipped rather than reported as errors.
+    /// The first subscription that starts the socket's receive pump sets <paramref name="maxMessageBytes"/>
+    /// for all subscriptions on that pump. Later subscriptions inherit that cap.
+    /// A non-positive value fails this subscription immediately.
     /// </summary>
 #if NET8_0_OR_GREATER
     [RequiresUnreferencedCode("JSON payload deserialization uses System.Text.Json reflection. Preserve payload type members when trimming.")]

@@ -9,6 +9,10 @@
         </member>
         <member name="T:Observables.WebSocket.WebSocketSendAttribute">
             <summary>客户端到服务器的消息发送，映射为 WebSocket send。</summary>
+            <remarks>
+            每次订阅都会在发送前序列化 JSON 负载。
+            在同一个套接字上，必须等前一次发送完成再发起下一次发送。
+            </remarks>
         </member>
         <member name="M:Observables.WebSocket.WebSocketSendAttribute.#ctor(System.String)">
             <summary>客户端到服务器的消息发送，映射为 WebSocket send。</summary>

@@ -7,8 +7,10 @@ internal static class Emitter
 {
 #if WEBSOCKET_R3
     const string BridgeType = "global::Observables.WebSocket.WebSocketObservable";
+    const string ObservableFactory = "global::R3.Observable";
 #else
     const string BridgeType = "global::Observables.WebSocket.Reactive.SystemReactiveWebSocketAdapter";
+    const string ObservableFactory = "global::System.Reactive.Linq.Observable";
 #endif
 
     public static void EmitModuleInitializers(
@@ -145,7 +147,7 @@ internal static class Emitter
                                 public {{member.ReturnTypeDisplay}} {{member.MemberName}}({{parameterList}})
                                 {
                             #if NET8_0_OR_GREATER
-                                    return {{BridgeType}}.FromSendText(_socket, global::System.Text.Json.JsonSerializer.Serialize({{paramName}}){{cancellation}});
+                                    return {{ObservableFactory}}.Defer(() => {{BridgeType}}.FromSendText(_socket, global::System.Text.Json.JsonSerializer.Serialize({{paramName}}){{cancellation}}));
                             #else
                                     throw new global::System.NotSupportedException(
                                         "Sending WebSocket payloads of types other than string or byte[] requires net8.0 or later.");
@@ -164,7 +166,7 @@ internal static class Emitter
                             public {{member.ReturnTypeDisplay}} {{member.MemberName}}({{parameterList}})
                             {
                         #if NET8_0_OR_GREATER
-                                return {{BridgeType}}.FromSendText(_socket, global::System.Text.Json.JsonSerializer.Serialize(new { {{paramNames}} }){{cancellation}});
+                                return {{ObservableFactory}}.Defer(() => {{BridgeType}}.FromSendText(_socket, global::System.Text.Json.JsonSerializer.Serialize(new { {{paramNames}} }){{cancellation}}));
                         #else
                                 throw new global::System.NotSupportedException(
                                     "Sending WebSocket payloads with multiple parameters requires net8.0 or later.");
@@ -202,7 +204,7 @@ internal static class Emitter
             public {{member.ReturnTypeDisplay}} {{member.MemberName}}({{parameterList}})
             {
         #if NET8_0_OR_GREATER
-                return {{BridgeType}}.FromSendText(_socket, global::System.Text.Json.JsonSerializer.Serialize({{envelope}}){{cancellation}});
+                return {{ObservableFactory}}.Defer(() => {{BridgeType}}.FromSendText(_socket, global::System.Text.Json.JsonSerializer.Serialize({{envelope}}){{cancellation}}));
         #else
                 throw new global::System.NotSupportedException(
                     "Sending a WebSocket message that declares a message name requires net8.0 or later.");

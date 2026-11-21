@@ -29,6 +29,8 @@ public static class SystemReactiveWebSocketAdapter
             return System.Reactive.Unit.Default;
         });
 
+    /// <summary>Sends <paramref name="payload"/> as a binary frame when subscribed.</summary>
+    /// <remarks>Wait for each send on the same <see cref="ClientWebSocket"/> to complete before starting the next. A send may overlap a receive.</remarks>
     public static IObservable<System.Reactive.Unit> FromSend(
         ClientWebSocket socket,
         byte[] payload,
@@ -41,6 +43,8 @@ public static class SystemReactiveWebSocketAdapter
             return System.Reactive.Unit.Default;
         });
 
+    /// <summary>Sends <paramref name="text"/> as a text frame when subscribed.</summary>
+    /// <remarks>Wait for each send on the same <see cref="ClientWebSocket"/> to complete before starting the next. A send may overlap a receive.</remarks>
     public static IObservable<System.Reactive.Unit> FromSendText(
         ClientWebSocket socket,
         string text,
@@ -58,6 +62,12 @@ public static class SystemReactiveWebSocketAdapter
     public static IObservable<T> FromReceive<T>(ClientWebSocket socket) =>
         FromReceive<T>(socket, WebSocketProtocol.DefaultMaxReceiveMessageBytes);
 
+    /// <summary>
+    /// Receives frames from a shared per-socket pump.
+    /// The first subscription that starts the socket's receive pump sets <paramref name="maxMessageBytes"/>
+    /// for all subscriptions on that pump. Later subscriptions inherit that cap.
+    /// A non-positive value fails this subscription immediately.
+    /// </summary>
 #if NET8_0_OR_GREATER
     [RequiresUnreferencedCode("JSON payload deserialization uses System.Text.Json reflection. Preserve payload type members when trimming.")]
     [RequiresDynamicCode("JSON payload deserialization uses System.Text.Json reflection.")]
@@ -87,6 +97,9 @@ public static class SystemReactiveWebSocketAdapter
     /// Emits only the frames carrying the <c>{"type":…}</c> envelope written by a send that declares
     /// <paramref name="messageName"/>. Frames addressed elsewhere, and frames that are not envelopes at all,
     /// are skipped rather than reported as errors.
+    /// The first subscription that starts the socket's receive pump sets <paramref name="maxMessageBytes"/>
+    /// for all subscriptions on that pump. Later subscriptions inherit that cap.
+    /// A non-positive value fails this subscription immediately.
     /// </summary>
 #if NET8_0_OR_GREATER
     [RequiresUnreferencedCode("JSON payload deserialization uses System.Text.Json reflection. Preserve payload type members when trimming.")]

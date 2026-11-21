@@ -35,7 +35,7 @@
             <summary>服务器回调，映射为 HubConnection.On。</summary>
         </member>
         <member name="T:Observables.SignalR.HubConnectionArgs">
-            <summary>使用逐参数重载调用 Hub 方法，使参数在服务器端正确绑定。</summary>
+            <summary>将各个参数传递给 Hub 方法的对应形参。</summary>
         </member>
         <member name="T:Observables.SignalR.HubService">
             <summary>创建源生成的 Hub 代理实现。</summary>

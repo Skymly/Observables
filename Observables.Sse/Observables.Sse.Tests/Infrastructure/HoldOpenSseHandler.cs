@@ -8,12 +8,9 @@ namespace Observables.Sse.Tests.Infrastructure;
 /// <summary>
 /// Serves one complete SSE event then blocks until the response stream is disposed.
 /// </summary>
-public sealed class HoldOpenSseHandler : HttpMessageHandler
+public sealed class HoldOpenSseHandler(string lineEnding) : HttpMessageHandler
 {
-    static readonly byte[] ReadyEvent = Encoding.UTF8.GetBytes(
-        "event: price\n" +
-        "data: ready\n" +
-        "\n");
+    readonly byte[] _readyEvent = Encoding.UTF8.GetBytes($"event: price{lineEnding}data: ready{lineEnding}{lineEnding}");
 
     readonly TaskCompletionSource _streamDisposed = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
@@ -23,7 +20,7 @@ public sealed class HoldOpenSseHandler : HttpMessageHandler
         HttpRequestMessage request,
         CancellationToken cancellationToken)
     {
-        var stream = new HoldOpenStream(ReadyEvent, _streamDisposed);
+        var stream = new HoldOpenStream(_readyEvent, _streamDisposed);
         var response = new HttpResponseMessage(HttpStatusCode.OK)
         {
             Content = new StreamContent(stream),

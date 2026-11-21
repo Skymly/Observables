@@ -51,10 +51,12 @@ public sealed class SseObservableCreateTests
         Assert.Equal("late", await ready.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken));
     }
 
-    [Fact]
-    public async Task FromEvent_dispose_disposes_the_response_stream()
+    [Theory]
+    [InlineData("\n")]
+    [InlineData("\r")]
+    public async Task FromEvent_dispose_disposes_the_response_stream(string lineEnding)
     {
-        var handler = new HoldOpenSseHandler();
+        var handler = new HoldOpenSseHandler(lineEnding);
         using var http = new HttpClient(handler);
         var ready = new TaskCompletionSource<string>(TaskCreationOptions.RunContinuationsAsynchronously);
 

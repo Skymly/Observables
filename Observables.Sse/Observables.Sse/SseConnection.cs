@@ -31,7 +31,7 @@ public sealed class SseConnection
     /// <summary>The SSE endpoint URI.</summary>
     public Uri Endpoint { get; }
 
-    /// <summary>Maximum UTF-8 size of one SSE line. A non-positive value fails the subscription.</summary>
+    /// <summary>Maximum UTF-8 size of one SSE line, excluding the terminator. A non-positive value fails the subscription.</summary>
     public int MaxLineBytes { get; }
 
     /// <summary>Maximum UTF-8 size of one reassembled SSE event. A non-positive value fails the subscription.</summary>

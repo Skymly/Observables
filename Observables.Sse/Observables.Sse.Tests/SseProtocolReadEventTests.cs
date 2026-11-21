@@ -82,4 +82,47 @@ public sealed class SseProtocolReadEventTests
             () => SseProtocol.ReadEventAsync(reader, maxLineBytes: 8, maxEventBytes: 1024, CancellationToken.None));
         Assert.Contains("line", ex.Message, StringComparison.OrdinalIgnoreCase);
     }
+
+    [Theory]
+    [InlineData("\n", "A", 7)]
+    [InlineData("\r", "A", 7)]
+    [InlineData("\r\n", "A", 7)]
+    [InlineData("\n", "\U0001F680", 10)]
+    [InlineData("\r", "\U0001F680", 10)]
+    [InlineData("\r\n", "\U0001F680", 10)]
+    public async Task ReadEventAsync_counts_UTF8_payload_bytes_without_the_line_ending(
+        string lineEnding, string data, int bytes)
+    {
+        string stream = $"data: {data}{lineEnding}{lineEnding}";
+        using var reader = CreateChunkedReader(stream);
+        var token = TestContext.Current.CancellationToken;
+
+        var result = await SseProtocol.ReadEventAsync(reader, bytes, bytes + 1, token);
+
+        Assert.Equal(data, Assert.NotNull(result).Data);
+
+        using var tooLong = CreateChunkedReader(stream);
+        var error = await Assert.ThrowsAsync<InvalidOperationException>(
+            () => SseProtocol.ReadEventAsync(tooLong, bytes - 1, bytes + 1, token));
+        Assert.Contains("SSE line", error.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task ReadEventAsync_does_not_treat_a_split_CRLF_as_two_terminators()
+    {
+        using var reader = CreateChunkedReader("data: first\r\ndata: second\r\n\r\ndata: next\r\n\r\n");
+
+        Assert.Equal("first\nsecond", Assert.NotNull(await SseProtocol.ReadEventAsync(reader)).Data);
+        Assert.Equal("next", Assert.NotNull(await SseProtocol.ReadEventAsync(reader)).Data);
+        Assert.Null(await SseProtocol.ReadEventAsync(reader));
+    }
+
+    static StreamReader CreateChunkedReader(string stream) =>
+        new(new OneByteAtATimeStream(Encoding.UTF8.GetBytes(stream)));
+
+    sealed class OneByteAtATimeStream(byte[] bytes) : MemoryStream(bytes)
+    {
+        public override ValueTask<int> ReadAsync(Memory<byte> buffer, CancellationToken cancellationToken = default) =>
+            base.ReadAsync(buffer[..Math.Min(1, buffer.Length)], cancellationToken);
+    }
 }

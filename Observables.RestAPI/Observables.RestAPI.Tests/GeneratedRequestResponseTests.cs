@@ -1,4 +1,6 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Net;
+using System.Reflection;
 using System.Text;
 using System.Text.Json;
 
@@ -43,6 +45,137 @@ public sealed class GeneratedRequestResponseTests
         Assert.Equal(JsonSerializer.Serialize(payload), body);
     }
 
+    [Fact]
+    public async Task Exception_factory_failure_releases_both_messages_before_returning_a_wrapper()
+    {
+        var failure = new InvalidOperationException("exception factory failed");
+        var settings = new RestApiSettings { ExceptionFactory = _ => Task.FromException<Exception?>(failure) };
+        using var requestBody = new TrackingBody("request");
+        using var responseBody = new TrackingBody("response");
+        using var client = new HttpClient(new ResponseHandler(_ => new HttpResponseMessage(HttpStatusCode.OK)
+        {
+            Content = responseBody,
+        }))
+        {
+            BaseAddress = new Uri("https://api.example.com"),
+        };
+        var api = RestService.For<IRequestApi>(client, settings);
+
+        var error = await Assert.ThrowsAsync<InvalidOperationException>(
+            () => api.GetResponse(requestBody, TestContext.Current.CancellationToken));
+
+        Assert.Same(failure, error);
+        Assert.True(requestBody.IsDisposed);
+        Assert.True(responseBody.IsDisposed);
+    }
+
+    [Fact]
+    public async Task Suppressed_http_error_may_leave_the_response_error_null()
+    {
+        var settings = new RestApiSettings { ExceptionFactory = static _ => Task.FromResult<Exception?>(null) };
+        using var requestBody = new StringContent("request");
+        using var client = new HttpClient(new ResponseHandler(static _ => new HttpResponseMessage(HttpStatusCode.NotFound)
+        {
+            Content = new StringContent("suppressed"),
+        }))
+        {
+            BaseAddress = new Uri("https://api.example.com"),
+        };
+        var api = RestService.For<IRequestApi>(client, settings);
+
+        using var response = await api.GetResponse(requestBody, TestContext.Current.CancellationToken);
+
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+        Assert.False(response.IsSuccessStatusCode);
+        Assert.False(response.IsSuccessful);
+        Assert.Null(response.Error);
+        Assert.Equal("suppressed", response.Content);
+    }
+
+    [Theory]
+    [InlineData(typeof(IApiResponse))]
+    [InlineData(typeof(IApiResponse<string>))]
+    [InlineData(typeof(ApiResponse<string>))]
+    public void Failure_status_leaves_error_nullable_in_the_public_contract(Type responseType)
+    {
+        foreach (var statusProperty in new[] { nameof(IApiResponse.IsSuccessStatusCode), nameof(IApiResponse.IsSuccessful) })
+        {
+            var property = responseType.GetProperty(statusProperty, BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly);
+            Assert.NotNull(property);
+            Assert.DoesNotContain(
+                property.GetCustomAttributes<MemberNotNullWhenAttribute>(),
+                static annotation => !annotation.ReturnValue && annotation.Members.Contains(nameof(IApiResponse.Error)));
+        }
+    }
+
+    [Fact]
+    public async Task Explicit_buffering_sets_content_length_for_result_and_no_result_requests()
+    {
+        const string body = "hello";
+        using var client = new HttpClient(new ResponseHandler(static request =>
+        {
+            if (request.Content?.Headers.ContentLength != body.Length)
+            {
+                return new HttpResponseMessage(HttpStatusCode.LengthRequired);
+            }
+
+            return new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent("saved") };
+        }))
+        {
+            BaseAddress = new Uri("https://api.example.com"),
+        };
+        var api = RestService.For<IRequestApi>(client);
+        var cancellation = TestContext.Current.CancellationToken;
+        using var valueBody = new TrackingBody(body);
+        using var noResultBody = new TrackingBody(body);
+        Assert.Null(valueBody.Headers.ContentLength);
+        Assert.Null(noResultBody.Headers.ContentLength);
+
+        Assert.Equal("saved", await api.SaveWithResult(valueBody, cancellation));
+        await api.Save(noResultBody, cancellation);
+    }
+
+    [Fact]
+    public async Task No_result_requests_honor_the_settings_default_and_an_explicit_opt_out()
+    {
+        var observedLengths = new List<long?>();
+        using var client = new HttpClient(new ResponseHandler(request =>
+        {
+            observedLengths.Add(request.Content?.Headers.ContentLength);
+            return new HttpResponseMessage(HttpStatusCode.NoContent);
+        }))
+        {
+            BaseAddress = new Uri("https://api.example.com"),
+        };
+        var api = RestService.For<IRequestApi>(client, new RestApiSettings { Buffered = true });
+        var cancellation = TestContext.Current.CancellationToken;
+        using var settingsBody = new TrackingBody("hello");
+        using var unbufferedBody = new TrackingBody("hello");
+
+        await api.SaveWithSettings(settingsBody, cancellation);
+        await api.SaveUnbuffered(unbufferedBody, cancellation);
+
+        Assert.Equal(new long?[] { 5, null }, observedLengths);
+    }
+
+    public interface IRequestApi
+    {
+        [Post("/save")]
+        Task<IApiResponse<string>> GetResponse([Body] HttpContent body, CancellationToken cancellationToken);
+
+        [Post("/save")]
+        Task<string> SaveWithResult([Body(buffered: true)] HttpContent body, CancellationToken cancellationToken);
+
+        [Post("/save")]
+        Task Save([Body(buffered: true)] HttpContent body, CancellationToken cancellationToken);
+
+        [Post("/save")]
+        Task SaveWithSettings([Body] HttpContent body, CancellationToken cancellationToken);
+
+        [Post("/save")]
+        Task SaveUnbuffered([Body(buffered: false)] HttpContent body, CancellationToken cancellationToken);
+    }
+
     public interface IArrayApi
     {
         [Post("/batch")]
@@ -62,6 +195,29 @@ public sealed class GeneratedRequestResponseTests
 
         [Get("/items")]
         Task<IApiResponse<List<string>>> GetResponseAsync(CancellationToken cancellationToken);
+    }
+
+    sealed class TrackingBody(string text) : StringContent(text)
+    {
+        public bool IsDisposed { get; private set; }
+
+        protected override bool TryComputeLength(out long length)
+        {
+            length = 0;
+            return false;
+        }
+
+        protected override void Dispose(bool disposing)
+        {
+            IsDisposed |= disposing;
+            base.Dispose(disposing);
+        }
+    }
+
+    sealed class ResponseHandler(Func<HttpRequestMessage, HttpResponseMessage> respond) : HttpMessageHandler
+    {
+        protected override Task<HttpResponseMessage> SendAsync(
+            HttpRequestMessage request, CancellationToken cancellationToken) => Task.FromResult(respond(request));
     }
 
     sealed class EchoHandler : HttpMessageHandler

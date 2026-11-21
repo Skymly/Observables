@@ -177,8 +177,9 @@ namespace Observables.RestAPI
             HttpClient client,
             HttpRequestMessage request,
             RestApiSettings settings,
+            bool bodyBuffered,
             CancellationToken cancellationToken) =>
-            RestApiBridge.SendVoidAsync(client, request, settings, cancellationToken);
+            RestApiBridge.SendVoidAsync(client, request, settings, bodyBuffered, cancellationToken);
 
         static string ToRelativePath(string path)
         {

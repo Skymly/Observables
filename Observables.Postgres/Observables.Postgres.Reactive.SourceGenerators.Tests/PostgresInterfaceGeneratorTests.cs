@@ -121,18 +121,22 @@ public sealed class PostgresInterfaceGeneratorTests
             .Select(static diagnostic => diagnostic.GetMessage()).Distinct().Count());
     }
 
-    [Fact]
-    public void Postgres_inherited_contract_keeps_explicit_listen_and_notify_channels()
+    [Theory]
+    [InlineData("wire_pg", true)]
+    [InlineData(@"wire_pg\n", false)]
+    public void Postgres_reads_and_validates_channels_in_inherited_contract_metadata(
+        string listenChannelSource,
+        bool validListenChannel)
     {
-        const string contracts =
-            """
+        var contracts =
+            $$"""
             using System;
             using System.Reactive;
             using Observables.Postgres;
 
             public interface IExternalContract
             {
-                [Listen("wire_pg")]
+                [Listen("{{listenChannelSource}}")]
                 IObservable<string> Changes { get; }
 
                 [Notify(channel: "wire_notify")]
@@ -155,8 +159,16 @@ public sealed class PostgresInterfaceGeneratorTests
             "[Postgres] public interface IChannel : IExternalContract { }",
             extraReferences: [MetadataReference.CreateFromImage(assembly.ToArray())]);
 
-        Assert.DoesNotContain(output.Diagnostics, static diagnostic => diagnostic.Severity == DiagnosticSeverity.Error);
         var snapshot = GeneratorTestHarness.ToSnapshot(output);
+        if (!validListenChannel)
+        {
+            Assert.Contains(output.Diagnostics, static diagnostic => diagnostic.Id == "OBS10006"
+                && diagnostic.GetMessage().Contains("IExternalContract.Changes", StringComparison.Ordinal));
+            Assert.DoesNotContain("FromListen(_connection, \"Changes\")", snapshot, StringComparison.Ordinal);
+            return;
+        }
+
+        Assert.DoesNotContain(output.Diagnostics, static diagnostic => diagnostic.Severity == DiagnosticSeverity.Error);
         Assert.Contains("FromListen(_connection, \"wire_pg\")", snapshot, StringComparison.Ordinal);
         Assert.Contains("FromNotify(_connection, \"wire_notify\", payload, default)", snapshot, StringComparison.Ordinal);
         Assert.Contains("FromListen(_connection, \"DefaultChannel\")", snapshot, StringComparison.Ordinal);

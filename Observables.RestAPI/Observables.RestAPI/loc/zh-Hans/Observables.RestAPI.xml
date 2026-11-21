@@ -1381,7 +1381,14 @@
         </member>
         <member name="P:Observables.RestAPI.RestApiSettings.AuthorizationHeaderValueGetter">
             <summary>
-            提供一个函数来获取授权头。如果提供了 HttpClient 实例则不起作用。
+            请求未显式提供凭据时，使用此函数生成兜底凭据。
+            <see cref="M:Observables.RestAPI.RestService.CreateHttpClient(System.String,Observables.RestAPI.RestApiSettings)" /> 和 HttpClientFactory 扩展都会应用此配置。
+            </summary>
+        </member>
+        <member name="P:Observables.RestAPI.RestApiSettings.AuthorizationHeaderOrigin">
+            <summary>
+            可将 <see cref="P:Observables.RestAPI.RestApiSettings.AuthorizationHeaderValueGetter" /> 限制到指定的 HTTP 或 HTTPS 来源。
+            内置处理器比较目标 URI 的协议、主机和有效端口。值为 <see langword="null" /> 时，应用自行选择可信来源。
             </summary>
         </member>
         <member name="P:Observables.RestAPI.RestApiSettings.HttpMessageHandlerFactory">
@@ -1819,6 +1826,11 @@
             <param name="settings">用于配置 HttpClient 的 <see cref="T:Observables.RestAPI.RestApiSettings" />。</param>
             <returns>使用提供的各种参数创建的 <see cref="T:System.Net.Http.HttpClient" />。</returns>
             <exception cref="T:System.ArgumentException"></exception>
+        </member>
+        <member name="M:Observables.RestAPI.RestService.CreateHttpMessageHandler(Observables.RestAPI.RestApiSettings)">
+            <summary>根据设置创建 HTTP 处理器链，应用已配置的授权凭据获取函数。</summary>
+            <param name="settings">用于配置处理器链的设置。</param>
+            <returns>由调用方管理生命周期的处理器。</returns>
         </member>
         <member name="T:Observables.RestAPI.SystemTextJsonContentSerializer">
             <summary>

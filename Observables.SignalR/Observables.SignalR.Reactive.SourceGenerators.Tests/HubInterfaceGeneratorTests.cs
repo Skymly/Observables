@@ -236,6 +236,74 @@ public sealed class HubInterfaceGeneratorTests
         Assert.Contains(output.Diagnostics, static diagnostic => diagnostic.Id == "OBS4005");
     }
 
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void Conflicting_and_unannotated_members_have_order_independent_diagnostics(bool conflictFirst)
+    {
+        const string conflict = "[HubInvoke, HubSend] IObservable<int> Conflict();";
+        const string missing = "IObservable<int> Missing();";
+        var userSource = $$"""
+            [Hub]
+            public interface IChat
+            {
+                {{(conflictFirst ? conflict : missing)}}
+                {{(conflictFirst ? missing : conflict)}}
+
+                [HubInvoke]
+                IObservable<int> Valid();
+            }
+            """;
+
+        var output = GeneratorTestHarness.Run(userSource);
+
+        Assert.Contains(output.Diagnostics, static diagnostic =>
+            diagnostic.Id == "OBS4009" && diagnostic.GetMessage().Contains("Conflict", StringComparison.Ordinal));
+        Assert.Contains(output.Diagnostics, static diagnostic =>
+            diagnostic.Id == "OBS4001" && diagnostic.GetMessage().Contains("Missing", StringComparison.Ordinal));
+        Assert.DoesNotContain(output.Diagnostics, static diagnostic => diagnostic.Id == "CS0535");
+    }
+
+    [Fact]
+    public void Wire_names_come_from_the_matched_signalr_attributes()
+    {
+        const string source = """
+            [Hub]
+            public interface IChat
+            {
+                [Business.HubInvoke("wrong-invoke"), HubInvoke("actual-invoke")]
+                IObservable<int> Invoke();
+
+                [Business.HubSend("wrong-send"), HubSend("actual-send")]
+                IObservable<System.Reactive.Unit> Send();
+
+                [Business.HubStream("wrong-stream"), HubStream("actual-stream")]
+                IObservable<int> Stream();
+
+                [Business.HubOn("wrong-on"), HubOn("actual-on")]
+                IObservable<int> On { get; }
+            }
+
+            namespace Business
+            {
+                public sealed class HubInvokeAttribute(string name) : System.Attribute { public string Name { get; } = name; }
+                public sealed class HubSendAttribute(string name) : System.Attribute { public string Name { get; } = name; }
+                public sealed class HubStreamAttribute(string name) : System.Attribute { public string Name { get; } = name; }
+                public sealed class HubOnAttribute(string name) : System.Attribute { public string Name { get; } = name; }
+            }
+            """;
+
+        var output = GeneratorTestHarness.Run(source);
+        var generated = string.Concat(output.GeneratedSources.Select(static generated => generated.Source));
+
+        Assert.DoesNotContain(output.Diagnostics, static diagnostic => diagnostic.Severity == DiagnosticSeverity.Error);
+        Assert.Contains("\"actual-invoke\"", generated, StringComparison.Ordinal);
+        Assert.Contains("\"actual-send\"", generated, StringComparison.Ordinal);
+        Assert.Contains("\"actual-stream\"", generated, StringComparison.Ordinal);
+        Assert.Contains("\"actual-on\"", generated, StringComparison.Ordinal);
+        Assert.DoesNotContain("\"wrong-", generated, StringComparison.Ordinal);
+    }
+
     [Fact]
     public void Multiple_boundary_attributes_report_OBS4009()
     {

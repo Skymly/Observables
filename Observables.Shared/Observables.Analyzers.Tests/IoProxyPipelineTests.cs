@@ -417,6 +417,89 @@ public sealed class IoProxyPipelineTests
     }
 
     [Fact]
+    public void GeneratedHintName_distinguishes_namespace_separators_from_underscores()
+    {
+        const string source =
+            """
+            namespace A.B { public interface IHub {} }
+            namespace A_B { public interface IHub {} }
+            """;
+
+        var (compilation, _) = CompileInterfaces(source);
+        var nestedNamespace = compilation.GetTypeByMetadataName("A.B.IHub")!;
+        var underscore = compilation.GetTypeByMetadataName("A_B.IHub")!;
+
+        Assert.NotEqual(
+            IoProxyModelAssembly.GeneratedHintName(nestedNamespace, "SignalR"),
+            IoProxyModelAssembly.GeneratedHintName(underscore, "SignalR"));
+    }
+
+    [Fact]
+    public void Parse_assigns_distinct_proxy_names_after_interface_prefix_restoration()
+    {
+        const string source =
+            """
+            using Observables.Mqtt;
+            [Mqtt] public interface IFoo { void Publish(); }
+            [Mqtt] public interface Foo { void Publish(); }
+            [Mqtt] public interface IIFoo { void Publish(); }
+            """;
+
+        var (compilation, interfaces) = CompileInterfaces(source);
+        var marker = compilation.GetTypeByMetadataName(ProxyDomainTable.Mqtt.InterfaceMarkerMetadataName)!;
+        var marked = IoProxyInterfaceWalk.Collect(compilation, interfaces, marker, CancellationToken.None);
+        var missingCore = new DiagnosticDescriptor("TEST000", "Missing core", "{0}", "Test", DiagnosticSeverity.Error, true);
+
+        var (diagnostics, names) = IoProxyModelAssembly.Parse<string, string, string[]>(
+            marked,
+            CancellationToken.None,
+            coreReferenced: true,
+            coreNotReferenced: missingCore,
+            emptyModel: static () => [],
+            tryAddMethod: static (_, method, members, _) => members.Add(method.Name),
+            tryAddProperty: null,
+            createInterface: static (_, name, _) => name,
+            createContext: static models => models.ToArray());
+
+        Assert.Empty(diagnostics);
+        Assert.Equal(3, names.Length);
+        Assert.Equal(3, names.Distinct(StringComparer.Ordinal).Count());
+    }
+
+    [Theory]
+    [InlineData("void Send(int value); void Send(ref int value);")]
+    [InlineData("void Send(ref int value); void Send(int value);")]
+    public void Walk_preserves_value_and_ref_overloads_regardless_of_order(string members)
+    {
+        var (compilation, _) = CompileInterfaces($"public interface IExample {{ {members} }}");
+        var methods = IoProxyInterfaceWalk.CollectPublicInstanceMembers(compilation.GetTypeByMetadataName("IExample")!)
+            .OfType<IMethodSymbol>()
+            .ToArray();
+
+        Assert.Equal(2, methods.Length);
+        Assert.Contains(methods, static method => method.Parameters[0].RefKind == RefKind.None);
+        Assert.Contains(methods, static method => method.Parameters[0].RefKind == RefKind.Ref);
+    }
+
+    [Fact]
+    public void Walk_preserves_method_overloads_with_distinct_generic_arity()
+    {
+        const string source =
+            """
+            public interface IBase { void Send(int value); void Send<T>(int value); }
+            public interface IExample : IBase { void Send<T1, T2>(int value); }
+            """;
+
+        var (compilation, _) = CompileInterfaces(source);
+        var arities = IoProxyInterfaceWalk.CollectPublicInstanceMembers(compilation.GetTypeByMetadataName("IExample")!)
+            .OfType<IMethodSymbol>()
+            .Select(static method => method.Arity)
+            .OrderBy(static arity => arity);
+
+        Assert.Equal([0, 1, 2], arities);
+    }
+
+    [Fact]
     public void GeneratedProxyClassName_includes_namespace_containing_type_and_arity()
     {
         const string source =

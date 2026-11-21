@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Globalization;
 using Microsoft.CodeAnalysis;
 using Observables.SourceGenerators.Shared.Extensions;
 
@@ -119,15 +120,24 @@ internal static class IoProxyModelAssembly
         }
 
         var interfaces = new List<TInterfaceModel>(pending.Count);
+        var emittedClassNames = new HashSet<string>(StringComparer.Ordinal);
         foreach (var item in pending)
         {
             var className = nameCounts[item.ClassName] > 1
                 ? GeneratedProxyClassName(item.Marked.InterfaceSymbol, keepInterfacePrefix: true)
                 : item.ClassName;
+            var uniqueName = className;
+            int suffix = 2;
+            while (!emittedClassNames.Add(uniqueName))
+            {
+                uniqueName = className + "_" + suffix.ToString(CultureInfo.InvariantCulture);
+                suffix++;
+            }
+
             interfaces.Add(
                 createInterface(
                     item.Marked,
-                    className,
+                    uniqueName,
                     item.Members.ToImmutableEquatableArray()));
         }
 

@@ -114,7 +114,7 @@ public sealed class NupkgVerifierTests
                 {
                     PackageId = GrpcR3,
                     GeneratorAssemblyFileName = GrpcGenerator,
-                    RequiredLibTfms = ["netstandard2.0", "net8.0"],
+                    RequiredLibAssembliesByTfm = RequireLib("Observables.Grpc.dll", "netstandard2.0", "net8.0"),
                     RequiredDependenciesByTfm = new Dictionary<string, IReadOnlyList<string>>(StringComparer.OrdinalIgnoreCase)
                     {
                         ["netstandard2.0"] = ["R3", "Grpc.Core.Api", "Google.Protobuf"],
@@ -159,7 +159,7 @@ public sealed class NupkgVerifierTests
                 {
                     PackageId = GrpcR3,
                     GeneratorAssemblyFileName = GrpcGenerator,
-                    RequiredLibTfms = ["netstandard2.0", "net8.0"],
+                    RequiredLibAssembliesByTfm = RequireLib("Observables.Grpc.dll", "netstandard2.0", "net8.0"),
                     RequiredDependenciesByTfm = new Dictionary<string, IReadOnlyList<string>>(StringComparer.OrdinalIgnoreCase)
                     {
                         ["net8.0"] = ["R3", "Grpc.Core.Api", "Google.Protobuf"],
@@ -203,7 +203,7 @@ public sealed class NupkgVerifierTests
                 {
                     PackageId = GrpcR3,
                     GeneratorAssemblyFileName = GrpcGenerator,
-                    RequiredLibTfms = ["netstandard2.0", "net8.0"],
+                    RequiredLibAssembliesByTfm = RequireLib("Observables.Grpc.dll", "netstandard2.0", "net8.0"),
                     RequiredDependenciesByTfm = new Dictionary<string, IReadOnlyList<string>>(StringComparer.OrdinalIgnoreCase)
                     {
                         ["netstandard2.0"] = ["R3", "Grpc.Core.Api", "Google.Protobuf"],
@@ -405,6 +405,15 @@ public sealed class NupkgVerifierTests
         return NupkgVerifier.ReadAssemblyReferences(stream).ToArray();
     }
 
+    [Theory]
+    [InlineData("<PackageReference Include = \"Observables.Events.R3\"\n    Version = '0.4.1' />", true)]
+    [InlineData("<PackageReference Version='0.4.1'\n    Include='observables.Events.Reactive' />", true)]
+    [InlineData("<PackageReference Include=\"Observables.Events.R3\" /><PackageReference Include=\"R3\" Version=\"1.3.0\" />", false)]
+    public void Readme_version_check_keeps_attributes_associated_with_their_reference(string readme, bool expected)
+    {
+        Assert.Equal(expected, NupkgVerifier.ReadmePinsObservablesPackageVersion(readme));
+    }
+
     [Fact]
     public void Pack_readme_sources_do_not_pin_observables_package_version()
     {
@@ -517,7 +526,7 @@ public sealed class NupkgVerifierTests
                 {
                     PackageId = GrpcR3,
                     GeneratorAssemblyFileName = GrpcGenerator,
-                    RequiredLibTfms = PackCsprojReader.DefaultLibTfms,
+                    RequiredLibAssembliesByTfm = RequireLib("Observables.Grpc.dll", PackCsprojReader.DefaultLibTfms),
                 });
 
             Assert.Contains(errors, static e => e.Contains("lib/net9.0/", StringComparison.Ordinal));
@@ -530,4 +539,52 @@ public sealed class NupkgVerifierTests
         }
     }
 
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void Verify_checks_every_required_assembly_under_the_tfm(bool includeBridge)
+    {
+        const string bridge = "lib/net8.0/Observables.Grpc.R3.dll";
+        string[] entries =
+        [
+            $"analyzers/dotnet/roslyn4.12/cs/{GrpcGenerator}",
+            .. SharedAnalyzerFiles,
+            "build/Observables.Grpc.R3.props",
+            "buildTransitive/Observables.Grpc.R3.props",
+            "lib/net8.0/Observables.Grpc.dll",
+            .. includeBridge ? new[] { bridge } : [],
+        ];
+        string nupkg = NupkgFixture.Create(GrpcR3, entries);
+
+        try
+        {
+            IReadOnlyList<string> errors = NupkgVerifier.Verify(
+                nupkg,
+                new NupkgVerifyRequest
+                {
+                    PackageId = GrpcR3,
+                    GeneratorAssemblyFileName = GrpcGenerator,
+                    RequiredLibAssembliesByTfm = new Dictionary<string, IReadOnlyList<string>>
+                    {
+                        ["net8.0"] = ["Observables.Grpc.dll", "Observables.Grpc.R3.dll"],
+                    },
+                });
+
+            if (includeBridge)
+            {
+                Assert.Empty(errors);
+            }
+            else
+            {
+                Assert.Contains(bridge, Assert.Single(errors), StringComparison.Ordinal);
+            }
+        }
+        finally
+        {
+            File.Delete(nupkg);
+        }
+    }
+
+    static IReadOnlyDictionary<string, IReadOnlyList<string>> RequireLib(string assembly, params string[] tfms) =>
+        tfms.ToDictionary(static tfm => tfm, _ => (IReadOnlyList<string>)[assembly], StringComparer.OrdinalIgnoreCase);
 }

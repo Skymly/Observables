@@ -1,9 +1,10 @@
 using System.IO.Compression;
 using System.Reflection.Metadata;
 using System.Reflection.PortableExecutable;
+using System.Text.RegularExpressions;
 using System.Xml.Linq;
 
-static class NupkgVerifier
+static partial class NupkgVerifier
 {
     // Keep in sync with ObservablesAnalyzerRoslynFolder in eng/Observables.Package.props.
     public const string AnalyzerFolder = "analyzers/dotnet/roslyn4.12/cs/";
@@ -44,15 +45,15 @@ static class NupkgVerifier
             errors.Add($"{request.PackageId}: missing buildTransitive/{propsFileName}");
         }
 
-        foreach (string tfm in request.RequiredLibTfms)
+        foreach ((string tfm, IReadOnlyList<string> files) in request.RequiredLibAssembliesByTfm)
         {
-            string prefix = "lib/" + tfm + "/";
-            bool hasDll = entries.Any(e =>
-                e.StartsWith(prefix, StringComparison.OrdinalIgnoreCase)
-                && e.EndsWith(".dll", StringComparison.OrdinalIgnoreCase));
-            if (!hasDll)
+            foreach (string file in files)
             {
-                errors.Add($"{request.PackageId}: missing runtime assembly under lib/{tfm}/");
+                string assemblyPath = $"lib/{tfm}/{file}";
+                if (!entries.Contains(assemblyPath))
+                {
+                    errors.Add($"{request.PackageId}: missing runtime assembly {assemblyPath}");
+                }
             }
         }
 
@@ -174,9 +175,20 @@ static class NupkgVerifier
 
     internal static bool ReadmePinsObservablesPackageVersion(string readme)
     {
-        foreach (string line in readme.Split('\n'))
+        foreach (Match tag in PackageReferenceTag().Matches(readme))
         {
-            if (LineIncludesObservablesPackage(line) && LineHasVersionAttribute(line))
+            bool isObservables = false;
+            bool hasVersion = false;
+            foreach (Match attribute in PackageReferenceAttribute().Matches(tag.Value))
+            {
+                string name = attribute.Groups["name"].Value;
+                string value = attribute.Groups["value"].Value;
+                isObservables |= name.Equals("Include", StringComparison.OrdinalIgnoreCase)
+                    && value.StartsWith("Observables.", StringComparison.OrdinalIgnoreCase);
+                hasVersion |= name.Equals("Version", StringComparison.OrdinalIgnoreCase);
+            }
+
+            if (isObservables && hasVersion)
             {
                 return true;
             }
@@ -185,17 +197,11 @@ static class NupkgVerifier
         return false;
     }
 
-    static bool LineIncludesObservablesPackage(string line)
-    {
-        return line.Contains("Include=\"Observables.", StringComparison.OrdinalIgnoreCase)
-            || line.Contains("Include='Observables.", StringComparison.OrdinalIgnoreCase);
-    }
+    [GeneratedRegex("""<PackageReference(?=\s|/?>)(?:"[^"]*"|'[^']*'|[^'"<>])*>""", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)]
+    private static partial Regex PackageReferenceTag();
 
-    static bool LineHasVersionAttribute(string line)
-    {
-        return line.Contains("Version=", StringComparison.OrdinalIgnoreCase)
-            || line.Contains("Version =", StringComparison.OrdinalIgnoreCase);
-    }
+    [GeneratedRegex("""(?<name>[\w.:-]+)\s*=\s*(?:"(?<value>[^"]*)"|'(?<value>[^']*)')""", RegexOptions.CultureInvariant)]
+    private static partial Regex PackageReferenceAttribute();
 
     static Dictionary<string, HashSet<string>> ParseNuspecDependencyGroups(string nuspecText)
     {

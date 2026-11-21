@@ -87,7 +87,7 @@ public sealed class FalseGreenCiGateTests
     [Theory]
     [InlineData("Events.R3.Consumer", "Events()")]
     [InlineData("Events.Reactive.Consumer", "Events()")]
-    [InlineData("Events.R3.RoutedEvents.Consumer", "RoutedEvents()")]
+    [InlineData("Events.R3.RoutedEvents.Consumer", "RoutedEvents(")]
     [InlineData("RestAPI.R3.Consumer", "RestService.For")]
     [InlineData("RestAPI.Reactive.Consumer", "RestService.For")]
     [InlineData("Mqtt.R3.Consumer", "MqttService.For")]

@@ -111,6 +111,7 @@ public sealed class NuGetSmokeHarnessTests
         string json = File.ReadAllText(Path.Combine(RepoRoot.Find(), "eng", "Observables.BuildManifest.json"));
 
         Assert.Contains("eng/nuget-smoke/Events.R3.RoutedEvents.Consumer/Events.R3.RoutedEvents.Consumer.csproj", json, StringComparison.Ordinal);
+        Assert.Contains("eng/nuget-smoke/Events.Reactive.RoutedEvents.Consumer/Events.Reactive.RoutedEvents.Consumer.csproj", json, StringComparison.Ordinal);
         Assert.Contains("eng/nuget-smoke/Grpc.R3.NoTransport.Consumer/Grpc.R3.NoTransport.Consumer.csproj", json, StringComparison.Ordinal);
         Assert.Contains("eng/nuget-smoke/Grpc.Reactive.NoTransport.Consumer/Grpc.Reactive.NoTransport.Consumer.csproj", json, StringComparison.Ordinal);
     }
@@ -130,15 +131,20 @@ public sealed class NuGetSmokeHarnessTests
         Assert.Contains("Observables.Grpc.Reactive", reactive, StringComparison.Ordinal);
     }
 
-    [Fact]
-    public void Events_routed_events_consumer_requires_the_msbuild_switch_and_routed_api()
+    [Theory]
+    [InlineData("R3")]
+    [InlineData("Reactive")]
+    public void Events_routed_events_consumers_enable_WPF_and_raise_a_real_event(string backend)
     {
         string root = RepoRoot.Find();
-        string csproj = File.ReadAllText(Path.Combine(root, "eng", "nuget-smoke", "Events.R3.RoutedEvents.Consumer", "Events.R3.RoutedEvents.Consumer.csproj"));
+        string consumer = $"Events.{backend}.RoutedEvents.Consumer";
+        string csproj = File.ReadAllText(Path.Combine(root, "eng", "nuget-smoke", consumer, consumer + ".csproj"));
         string program = File.ReadAllText(Path.Combine(root, "eng", "nuget-smoke", "Events.R3.RoutedEvents.Consumer", "Program.cs"));
 
         Assert.Contains("<ObservableRoutedEvents>true</ObservableRoutedEvents>", csproj, StringComparison.Ordinal);
         Assert.Contains("<UseWPF>true</UseWPF>", csproj, StringComparison.Ordinal);
-        Assert.Contains("RoutedEvents()", program, StringComparison.Ordinal);
+        Assert.Contains("RoutedEvents(", program, StringComparison.Ordinal);
+        Assert.Contains("RoutedEventHandlers(", program, StringComparison.Ordinal);
+        Assert.Contains("RaiseEvent(", program, StringComparison.Ordinal);
     }
 }

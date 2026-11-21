@@ -252,7 +252,7 @@ sealed class Build : NukeBuild
                 Assert.FileExists(nupkg, $"Expected package: {nupkg}");
 
                 string projectFile = ManifestPathGuard.RequireFile(package.PackProject, Root);
-                NupkgVerifyRequest request = PackCsprojReader.FromPackProject(projectFile);
+                NupkgVerifyRequest request = PackCsprojReader.FromPackProject(projectFile, Configuration);
                 if (!string.Equals(request.PackageId, packageId, StringComparison.OrdinalIgnoreCase))
                 {
                     throw new InvalidOperationException(

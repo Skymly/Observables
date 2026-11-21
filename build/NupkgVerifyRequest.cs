@@ -6,7 +6,8 @@ sealed class NupkgVerifyRequest
 
     public required string GeneratorAssemblyFileName { get; init; }
 
-    public IReadOnlyList<string> RequiredLibTfms { get; init; } = [];
+    public IReadOnlyDictionary<string, IReadOnlyList<string>> RequiredLibAssembliesByTfm { get; init; } =
+        new Dictionary<string, IReadOnlyList<string>>(StringComparer.OrdinalIgnoreCase);
 
     public IReadOnlyDictionary<string, IReadOnlyList<string>> RequiredDependenciesByTfm { get; init; } =
         new Dictionary<string, IReadOnlyList<string>>(StringComparer.OrdinalIgnoreCase);

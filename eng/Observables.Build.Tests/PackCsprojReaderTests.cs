@@ -21,10 +21,14 @@ public sealed class PackCsprojReaderTests
                 """,
             libCsproj: """
                 <Project Sdk="Microsoft.NET.Sdk">
+                  <PropertyGroup>
+                    <AssemblyName>Observables.Grpc.Runtime</AssemblyName>
+                  </PropertyGroup>
                   <ItemGroup>
                     <PackageReference Include="Grpc.Core.Api" />
                     <PackageReference Include="Google.Protobuf" />
                     <PackageReference Include="R3" />
+                    <PackageReference Include="ReactiveUI.Primitives" />
                   </ItemGroup>
                 </Project>
                 """);
@@ -38,10 +42,12 @@ public sealed class PackCsprojReaderTests
             Assert.Equal("Observables.Grpc.R3.SourceGenerators.dll", request.GeneratorAssemblyFileName);
             Assert.Equal(
                 ["netstandard2.0", "net8.0", "net9.0", "net10.0"],
-                request.RequiredLibTfms);
+                request.RequiredLibAssembliesByTfm.Keys);
+            Assert.All(request.RequiredLibAssembliesByTfm.Values, files => Assert.Equal(["Observables.Grpc.Runtime.dll"], files));
             Assert.Contains("Grpc.Core.Api", request.RequiredDependenciesByTfm["netstandard2.0"]);
             Assert.Contains("Google.Protobuf", request.RequiredDependenciesByTfm["netstandard2.0"]);
             Assert.Contains("R3", request.RequiredDependenciesByTfm["netstandard2.0"]);
+            Assert.DoesNotContain("ReactiveUI.Primitives", request.RequiredDependenciesByTfm["netstandard2.0"]);
             Assert.DoesNotContain("Microsoft.SourceLink.GitHub", request.RequiredDependenciesByTfm["netstandard2.0"]);
         }
         finally
@@ -74,6 +80,11 @@ public sealed class PackCsprojReaderTests
                   <ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">
                     <PackageReference Include="System.Text.Json" />
                     <PackageReference Include="System.Net.Http.Json" />
+                    <PackageReference Include="ExcludedInRelease" Condition="'$(Configuration)' != 'Release'" />
+                  </ItemGroup>
+                  <ItemGroup Condition="'$(TargetFramework)' != 'net10.0'">
+                    <PackageReference Include="Net8Only" Condition="'$(TargetFramework)' == 'net8.0'" />
+                    <PackageReference Include="NeverIncluded" Condition="false" />
                   </ItemGroup>
                 </Project>
                 """,
@@ -88,6 +99,10 @@ public sealed class PackCsprojReaderTests
             Assert.Contains("System.Net.Http.Json", request.RequiredDependenciesByTfm["netstandard2.0"]);
             Assert.DoesNotContain("System.Text.Json", request.RequiredDependenciesByTfm["net8.0"]);
             Assert.DoesNotContain("System.Net.Http.Json", request.RequiredDependenciesByTfm["net8.0"]);
+            Assert.DoesNotContain("ExcludedInRelease", request.RequiredDependenciesByTfm["netstandard2.0"]);
+            Assert.Contains("Net8Only", request.RequiredDependenciesByTfm["net8.0"]);
+            Assert.DoesNotContain("Net8Only", request.RequiredDependenciesByTfm["net9.0"]);
+            Assert.All(request.RequiredDependenciesByTfm.Values, ids => Assert.DoesNotContain("NeverIncluded", ids));
         }
         finally
         {
@@ -108,16 +123,16 @@ public sealed class PackCsprojReaderTests
     }
 
     [Theory]
-    [InlineData("Observables.Events.Reactive", "R3")]
-    [InlineData("Observables.Events.R3", "System.Reactive")]
-    [InlineData("Observables.RestAPI.Reactive", "R3")]
-    [InlineData("Observables.Grpc.Reactive", "R3")]
-    [InlineData("Observables.WebSocket.R3", "System.Reactive")]
+    [InlineData("Observables.Events.Reactive", "R3", "ReactiveUI.Primitives")]
+    [InlineData("Observables.Events.R3", "System.Reactive", "ReactiveUI.Primitives")]
+    [InlineData("Observables.RestAPI.Primitives", "R3", "System.Reactive")]
+    [InlineData("observables.grpc.reactive", "R3", "ReactiveUI.Primitives")]
     public void ForbiddenBackendAssemblies_names_the_backend_a_package_must_not_ship(
         string packageId,
-        string expected)
+        string first,
+        string second)
     {
-        Assert.Equal([expected], PackCsprojReader.ForbiddenBackendAssemblies(packageId));
+        Assert.Equal([first, second], PackCsprojReader.ForbiddenBackendAssemblies(packageId));
     }
 
     [Theory]

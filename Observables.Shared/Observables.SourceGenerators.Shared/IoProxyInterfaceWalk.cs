@@ -1,5 +1,6 @@
 using System.Linq;
 using System.Collections.Immutable;
+using System.Globalization;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -122,8 +123,9 @@ internal static class IoProxyInterfaceWalk
         {
             var parameters = string.Join(
                 ",",
-                method.Parameters.Select(static p => p.Type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)));
-            return "M:" + method.Name + "(" + parameters + ")";
+                method.Parameters.Select(static p =>
+                    p.RefKind + " " + p.Type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)));
+            return "M:" + method.Name + "`" + method.Arity.ToString(CultureInfo.InvariantCulture) + "(" + parameters + ")";
         }
 
         if (member is IPropertySymbol property)

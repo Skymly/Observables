@@ -67,6 +67,8 @@ internal static class RedisProtocol
         }
         finally
         {
+            // The pump owns the only unsubscribe attempt. Dispose cancels the local wait but
+            // SubscribeAsync can still return a queue that must be released.
             await UnsubscribeBestEffortAsync(queue, subscribeTask).ConfigureAwait(false);
         }
     }
@@ -79,6 +81,8 @@ internal static class RedisProtocol
         {
             try
             {
+                // The subscription token is already canceled on disposal. Keep observing the
+                // original task until it fails or hands ownership of the late queue to the pump.
                 queue = await subscribeTask.ConfigureAwait(false);
             }
             catch (Exception)

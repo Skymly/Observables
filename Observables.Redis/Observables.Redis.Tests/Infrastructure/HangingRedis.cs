@@ -77,40 +77,40 @@ internal static class HangingRedis
 
     public static DelayedSubscribe CreateDelayedSubscribe(IConnectionMultiplexer inner)
     {
-        var started = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var subscribed = new TaskCompletionSource<ChannelMessageQueue>(TaskCreationOptions.RunContinuationsAsynchronously);
         var release = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         var subscriber = DispatchProxy.Create<ISubscriber, DelayedSubscriberProxy>();
         var delayed = (DelayedSubscriberProxy)(object)subscriber;
         delayed.Inner = inner.GetSubscriber();
-        delayed.Started = started;
+        delayed.Subscribed = subscribed;
         delayed.Release = release;
 
         var multiplexer = DispatchProxy.Create<IConnectionMultiplexer, HangingMultiplexerProxy>();
         ((HangingMultiplexerProxy)(object)multiplexer).Subscriber = subscriber;
-        return new DelayedSubscribe(multiplexer, started.Task, release);
+        return new DelayedSubscribe(multiplexer, subscribed.Task, release);
     }
 
     public sealed class DelayedSubscribe
     {
         internal DelayedSubscribe(
             IConnectionMultiplexer multiplexer,
-            Task subscribeStarted,
+            Task<ChannelMessageQueue> subscribed,
             TaskCompletionSource release)
         {
             Multiplexer = multiplexer;
-            SubscribeStarted = subscribeStarted;
+            Subscribed = subscribed;
             Release = release;
         }
 
         public IConnectionMultiplexer Multiplexer { get; }
-        public Task SubscribeStarted { get; }
+        public Task<ChannelMessageQueue> Subscribed { get; }
         public TaskCompletionSource Release { get; }
     }
 
     public class DelayedSubscriberProxy : DispatchProxy
     {
         public ISubscriber Inner { get; set; } = null!;
-        public TaskCompletionSource Started { get; set; } = null!;
+        public TaskCompletionSource<ChannelMessageQueue> Subscribed { get; set; } = null!;
         public TaskCompletionSource Release { get; set; } = null!;
 
         protected override object? Invoke(MethodInfo? targetMethod, object?[]? args)
@@ -128,7 +128,7 @@ internal static class HangingRedis
         {
             var task = (Task<ChannelMessageQueue>)method.Invoke(Inner, args)!;
             var queue = await task.ConfigureAwait(false);
-            Started.TrySetResult();
+            Subscribed.TrySetResult(queue);
             await Release.Task.ConfigureAwait(false);
             return queue;
         }

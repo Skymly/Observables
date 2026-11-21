@@ -47,12 +47,16 @@ internal static class GeneratorTestHarness
             static () => [new RedisInterfaceStubGenerator()],
             SnapshotOptionsFactory.ForDomain("OBS11")));
 
-    internal static GeneratorRunOutput Run(string userSource, bool includeCoreReference = true) =>
+    internal static GeneratorRunOutput Run(
+        string userSource,
+        bool includeCoreReference = true,
+        IEnumerable<MetadataReference>? extraReferences = null) =>
         Harness.Run(
             userSource,
             new GeneratorHarnessRunOptions
             {
                 IncludeCoreReference = includeCoreReference,
+                ExtraReferences = extraReferences,
             });
 
     internal static GeneratorRunOutput RunWithoutReactiveAdapter(string userSource) =>

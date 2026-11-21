@@ -10,7 +10,7 @@ namespace Observables.Redis;
 /// <summary>Creates source-generated Redis Pub/Sub proxy implementations.</summary>
 public static class RedisService
 {
-    static readonly ConcurrentDictionary<string, IConnectionMultiplexer> NamedConnections =
+    static readonly ConcurrentDictionary<string, NamedConnection> NamedConnections =
         new(StringComparer.Ordinal);
 
     static readonly ConcurrentDictionary<Type, string> ProxyNames = new();
@@ -19,6 +19,10 @@ public static class RedisService
     /// Registers a multiplexer under the name an interface declares with <c>[Redis(connectionName)]</c>, making
     /// it resolvable through <see cref="For{T}()"/>. Registering the same name twice replaces the multiplexer.
     /// </summary>
+    /// <remarks>
+    /// A registration holds the multiplexer until the name is replaced or removed with
+    /// <see cref="TryUnregisterConnection"/>. The caller owns the multiplexer lifetime.
+    /// </remarks>
     public static void RegisterConnection(string name, IConnectionMultiplexer multiplexer)
     {
         if (name is null)
@@ -31,7 +35,40 @@ public static class RedisService
             throw new ArgumentNullException(nameof(multiplexer));
         }
 
-        NamedConnections[name] = multiplexer;
+        NamedConnections[name] = new NamedConnection(multiplexer);
+    }
+
+    /// <summary>Removes the name if it still refers to the supplied multiplexer instance.</summary>
+    /// <returns><see langword="true"/> when the registration was removed.</returns>
+    /// <remarks>
+    /// The multiplexer stays open. Existing proxies can continue using it for as long as the
+    /// caller keeps it alive.
+    /// </remarks>
+    public static bool TryUnregisterConnection(string name, IConnectionMultiplexer multiplexer)
+    {
+        if (name is null)
+        {
+            throw new ArgumentNullException(nameof(name));
+        }
+
+        if (multiplexer is null)
+        {
+            throw new ArgumentNullException(nameof(multiplexer));
+        }
+
+        if (!NamedConnections.TryGetValue(name, out var registration)
+            || !ReferenceEquals(registration.Multiplexer, multiplexer))
+        {
+            return false;
+        }
+
+        // Remove the exact entry that was read so a concurrent registration survives.
+        var entry = new KeyValuePair<string, NamedConnection>(name, registration);
+#if NET8_0_OR_GREATER
+        return NamedConnections.TryRemove(entry);
+#else
+        return ((ICollection<KeyValuePair<string, NamedConnection>>)NamedConnections).Remove(entry);
+#endif
     }
 
     /// <summary>Registers the name a generated proxy was declared with.</summary>
@@ -115,7 +152,7 @@ public static class RedisService
                 + "RedisService.For<T>(multiplexer).");
         }
 
-        if (!NamedConnections.TryGetValue(connectionName, out var multiplexer))
+        if (!NamedConnections.TryGetValue(connectionName, out var registration))
         {
             throw new InvalidOperationException(
                 "No Redis multiplexer is registered under \""
@@ -127,7 +164,7 @@ public static class RedisService
                 + ".");
         }
 
-        return For(redisInterfaceType, multiplexer);
+        return For(redisInterfaceType, registration.Multiplexer);
     }
 
 #if NET8_0_OR_GREATER
@@ -152,5 +189,10 @@ public static class RedisService
             redisInterfaceType.Name
             + " does not have a generated Redis proxy. Ensure the interface is marked with [Redis], "
             + "Observables.Redis source generators are referenced, and the project was rebuilt.");
+    }
+
+    sealed class NamedConnection(IConnectionMultiplexer multiplexer)
+    {
+        public IConnectionMultiplexer Multiplexer { get; } = multiplexer;
     }
 }

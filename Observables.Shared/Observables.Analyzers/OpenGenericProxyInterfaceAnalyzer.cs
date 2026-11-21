@@ -1,6 +1,7 @@
 using System.Collections.Immutable;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
+using Observables.Roslyn.Shared;
 
 namespace Observables.Analyzers;
 
@@ -8,7 +9,9 @@ namespace Observables.Analyzers;
 public sealed class OpenGenericProxyInterfaceAnalyzer : DiagnosticAnalyzer
 {
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics { get; } =
-        ImmutableArray.Create(DiagnosticDescriptors.OpenGenericProxyInterface);
+        ImmutableArray.Create(
+            DiagnosticDescriptors.OpenGenericProxyInterface,
+            DiagnosticDescriptors.GenericIoProxyMethod);
 
     public override void Initialize(AnalysisContext context)
     {
@@ -24,11 +27,6 @@ public sealed class OpenGenericProxyInterfaceAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        if (!IsOpenGeneric(interfaceSymbol))
-        {
-            return;
-        }
-
         var domain = ProxyDomainCatalog.TryGetInterfaceProxyDomain(interfaceSymbol, context.Compilation);
         if (domain is null)
         {
@@ -36,10 +34,48 @@ public sealed class OpenGenericProxyInterfaceAnalyzer : DiagnosticAnalyzer
         }
 
         var location = interfaceSymbol.Locations.FirstOrDefault() ?? Location.None;
-        context.ReportDiagnostic(Diagnostic.Create(
-            DiagnosticDescriptors.OpenGenericProxyInterface,
-            location,
-            interfaceSymbol.Name));
+        if (IsOpenGeneric(interfaceSymbol)
+            && (!domain.Definition.SupportsOpenGenericInterfaces
+                || (interfaceSymbol.ContainingType is { } container && IsOpenGeneric(container))))
+        {
+            context.ReportDiagnostic(Diagnostic.Create(
+                DiagnosticDescriptors.OpenGenericProxyInterface,
+                location,
+                interfaceSymbol.Name));
+            return;
+        }
+
+        if (!ProxyDomainTable.MemberBoundaryDomains.Contains(domain.Definition))
+        {
+            return;
+        }
+
+        foreach (var contract in new[] { interfaceSymbol }.Concat(interfaceSymbol.AllInterfaces))
+        {
+            foreach (var method in contract.GetMembers().OfType<IMethodSymbol>())
+            {
+                if (method is not
+                    {
+                        MethodKind: MethodKind.Ordinary,
+                        IsAbstract: true,
+                        IsStatic: false,
+                        DeclaredAccessibility: Accessibility.Public,
+                        Arity: > 0,
+                    })
+                {
+                    continue;
+                }
+
+                var methodLocation = SymbolEqualityComparer.Default.Equals(contract, interfaceSymbol)
+                    ? method.Locations.FirstOrDefault() ?? location
+                    : location;
+                context.ReportDiagnostic(Diagnostic.Create(
+                    DiagnosticDescriptors.GenericIoProxyMethod,
+                    methodLocation,
+                    interfaceSymbol.Name,
+                    method.ToDisplayString(SymbolDisplayFormat.CSharpErrorMessageFormat)));
+            }
+        }
     }
 
     internal static bool IsOpenGeneric(INamedTypeSymbol type)

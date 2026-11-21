@@ -11,7 +11,7 @@ internal static class ReactivePackageConflictDetection
     /// Backend presence signals for one domain: the package-declared
     /// <c>build_property.Observables&lt;Feature&gt;Backend_&lt;Backend&gt;</c> key (primary), or the
     /// dev-time symbol fallback — a referenced <c>Observables.&lt;Feature&gt;.&lt;Backend&gt;</c>
-    /// bridge assembly or a generator-emitted marker type — for
+    /// bridge assembly or a generator-emitted marker in the current assembly — for
     /// <c>ProjectReference + OutputItemType=Analyzer</c> flows where no props are imported.
     /// Independent references to the bare R3 library never count.
     /// </summary>
@@ -48,7 +48,7 @@ internal static class ReactivePackageConflictDetection
         ProxyDomainTable.BackendKind backend) =>
         HasAssemblyReference(compilation, domain.BackendAssemblyName(backend))
         || (domain.BackendMarkerMetadataName(backend) is { } marker
-            && compilation.GetTypeByMetadataName(marker) is not null);
+            && compilation.Assembly.GetTypeByMetadataName(marker) is not null);
 
     internal static bool HasAssemblyReference(Compilation compilation, string assemblyName)
     {

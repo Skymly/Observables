@@ -80,7 +80,8 @@ internal static class ProxyDomainTable
             IReadOnlyList<BoundaryAttributeSuggestion> propertyAttributes,
             string? r3MarkerMetadataName = null,
             string? reactiveMarkerMetadataName = null,
-            string? primitivesMarkerMetadataName = null)
+            string? primitivesMarkerMetadataName = null,
+            bool supportsOpenGenericInterfaces = false)
         {
             Kind = kind;
             DisplayName = displayName;
@@ -96,11 +97,14 @@ internal static class ProxyDomainTable
             R3MarkerMetadataName = r3MarkerMetadataName;
             ReactiveMarkerMetadataName = reactiveMarkerMetadataName;
             PrimitivesMarkerMetadataName = primitivesMarkerMetadataName;
+            SupportsOpenGenericInterfaces = supportsOpenGenericInterfaces;
         }
 
         internal DomainKind Kind { get; }
         internal string DisplayName { get; }
         internal string InterfaceMarkerMetadataName { get; }
+
+        internal bool SupportsOpenGenericInterfaces { get; }
         internal string ReactiveAdapterMetadataName { get; }
 
         /// <summary>Empty-interface diagnostic (OBS*007) for this domain's empty marked interfaces.</summary>
@@ -385,7 +389,8 @@ internal static class ProxyDomainTable
         // Observables.RestAPI.Implementation for both backends; the dedicated marker types are
         // the only reliable symbol-level backend signal.
         r3MarkerMetadataName: "Observables.RestAPI.Generated.R3BackendMarker",
-        reactiveMarkerMetadataName: "Observables.RestAPI.Reactive.Generated.ReactiveBackendMarker");
+        reactiveMarkerMetadataName: "Observables.RestAPI.Reactive.Generated.ReactiveBackendMarker",
+        supportsOpenGenericInterfaces: true);
 
     /// <summary>
     /// Events is generator-only (no interface-proxy marker). It still participates in OBS0001

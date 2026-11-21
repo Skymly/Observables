@@ -1,4 +1,5 @@
 using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
 
 namespace Observables.Analyzers.Tests;
 
@@ -124,6 +125,40 @@ public sealed class ReactivePackageConflictAnalyzerTests
         var message = diagnostic.GetMessage();
         Assert.Contains("Observables.Events.R3", message, StringComparison.Ordinal);
         Assert.Contains("Observables.Events.Reactive", message, StringComparison.Ordinal);
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void No_OBS0001_for_an_events_marker_in_a_referenced_assembly(bool usePackageSignal)
+    {
+        var dependency = CSharpCompilation.Create(
+            "EventLibrary",
+            [CSharpSyntaxTree.ParseText("""
+                namespace Observables.Events.R3
+                {
+                    internal static class ObservableEventsBootstrapExtensions { }
+                }
+                """, cancellationToken: TestContext.Current.CancellationToken)],
+            AnalyzerTestHarness.GetMinimalCoreReferences(),
+            new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary));
+        using var image = new MemoryStream();
+        Assert.True(dependency.Emit(image, cancellationToken: TestContext.Current.CancellationToken).Success);
+
+        var diagnostics = AnalyzerTestHarness.RunAnalyzers(
+            """
+            namespace Observables.Events.Reactive
+            {
+                internal static class ObservableEventsBootstrapExtensions { }
+            }
+            """,
+            additionalReferences: [MetadataReference.CreateFromImage(image.ToArray())],
+            globalOptions: usePackageSignal
+                ? new Dictionary<string, string> { ["build_property.ObservablesEventsBackend_Reactive"] = "true" }
+                : null,
+            new ReactivePackageConflictAnalyzer());
+
+        Assert.DoesNotContain(diagnostics, diagnostic => diagnostic.Id == "OBS0001");
     }
 
     [Fact]

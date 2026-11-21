@@ -17,6 +17,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Compile Include="..\Observables.RestAPI.Tests\GeneratedRequestResponseTests.cs" Link="GeneratedRequestResponseTests.cs" />
     <ProjectReference Include="..\Observables.RestAPI\Observables.RestAPI.csproj" />
     <ProjectReference Include="..\Observables.RestAPI.Reactive\Observables.RestAPI.Reactive.csproj" />
     <ProjectReference Include="..\Observables.RestAPI.Reactive.SourceGenerators\Observables.RestAPI.Reactive.SourceGenerators.csproj"

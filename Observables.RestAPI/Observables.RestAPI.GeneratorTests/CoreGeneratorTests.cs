@@ -140,11 +140,11 @@ public class CoreGeneratorTests
             snapshot,
             StringComparison.Ordinal);
         Assert.Contains(
-            "SendAsync<global::User, global::User>(Client, _settings, in ______spec0, ______scope, ______linked.Token, @id)",
+            "SendAsync<global::User, global::User>(Client, _settings, in ______spec0, ______scope, ______linked.Token, new object[] { @id })",
             snapshot,
             StringComparison.Ordinal);
         Assert.DoesNotContain(
-            "SendAsync<global::User, global::User>(Client, _settings, in ______spec0, ______scope, ______ct, @id)",
+            "SendAsync<global::User, global::User>(Client, _settings, in ______spec0, ______scope, ______ct, new object[] { @id })",
             snapshot,
             StringComparison.Ordinal);
         return Task.CompletedTask;
@@ -191,7 +191,7 @@ public class CoreGeneratorTests
             """);
 
         var snapshot = GeneratorTestHarness.ToSnapshot(output);
-        Assert.Contains("SendAsync<global::User, global::User>(Client, _settings, in ______spec0, ______scope, ______ct, @user)", snapshot, StringComparison.Ordinal);
+        Assert.Contains("SendAsync<global::User, global::User>(Client, _settings, in ______spec0, ______scope, ______ct, new object[] { @user })", snapshot, StringComparison.Ordinal);
         Assert.DoesNotContain("_settings.Buffered", snapshot, StringComparison.Ordinal);
         return Task.CompletedTask;
     }
@@ -783,10 +783,10 @@ public class CoreGeneratorTests
         AssertScopeIsOutside(generated, "Observable.FromAsync");
         AssertScopeIsOutside(generated, "Task.Run(");
         Assert.Contains(
-            "SendAsync<global::User, global::User>(Client, _settings, in ______spec0, ______scope, ______ct, @id)",
+            "SendAsync<global::User, global::User>(Client, _settings, in ______spec0, ______scope, ______ct, new object[] { @id })",
             generated,
             StringComparison.Ordinal);
-        Assert.Contains("______scope, ______ct, @id)", generated, StringComparison.Ordinal);
+        Assert.Contains("______scope, ______ct, new object[] { @id })", generated, StringComparison.Ordinal);
         AssertClosedOver(generated);
     }
 

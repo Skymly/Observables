@@ -307,7 +307,7 @@ public class ReactiveGeneratorTests
         Assert.DoesNotContain("RestApiCallScope.Capture()", body, StringComparison.Ordinal);
         Assert.Contains("______scope,", body, StringComparison.Ordinal);
         Assert.Contains(
-            "SendAsync<global::User, global::User>(Client, _settings, in ______spec0, ______scope, ______ct, @id)",
+            "SendAsync<global::User, global::User>(Client, _settings, in ______spec0, ______scope, ______ct, new object[] { @id })",
             generated,
             StringComparison.Ordinal);
     }

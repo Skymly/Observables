@@ -363,8 +363,10 @@ public sealed class RuntimeTests
         Assert.Equal("tok-123", handler.Request.Headers.Authorization.Parameter);
     }
 
-    [Fact]
-    public async Task Explicit_authorize_parameter_takes_precedence_over_the_settings_getter()
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task Explicit_credential_takes_precedence_over_the_settings_getter(bool useAuthorizeParameter)
     {
         var handler = new CaptureJsonHandler();
         var getterCalls = 0;
@@ -379,12 +381,21 @@ public sealed class RuntimeTests
         });
         var api = RestService.For<IUserApi>(client);
 
-        await api.GetUserWithAuthorization(1, "call-token", TestContext.Current.CancellationToken);
+        var cancellationToken = TestContext.Current.CancellationToken;
+        if (useAuthorizeParameter)
+        {
+            await api.GetUserWithAuthorization(1, "explicit-token", cancellationToken);
+        }
+        else
+        {
+            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", "explicit-token");
+            await api.GetUser(1, cancellationToken);
+        }
 
         var authorization = handler.Request?.Headers.Authorization;
         Assert.NotNull(authorization);
         Assert.Equal("Basic", authorization.Scheme);
-        Assert.Equal("call-token", authorization.Parameter);
+        Assert.Equal("explicit-token", authorization.Parameter);
         Assert.Equal(0, getterCalls);
     }
 

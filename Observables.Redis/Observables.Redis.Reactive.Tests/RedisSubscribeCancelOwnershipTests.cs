@@ -20,42 +20,25 @@ public sealed class RedisSubscribeCancelOwnershipTests(RedisTestServerFixture fi
 
         using var subscription = SystemReactiveRedisAdapter.FromSubscribe<string>(delayed.Multiplexer, channel)
             .Subscribe(_ => { });
-        await delayed.SubscribeStarted.WaitAsync(cancellation);
-
-        var receiversBefore = await publisher.PublishAsync(RedisChannel.Literal(channel), "before");
-        Assert.True(receiversBefore >= 1, $"expected an in-flight subscriber, got {receiversBefore}");
-
-        subscription.Dispose();
-        delayed.Release.TrySetResult();
-
-        var receivers = await WaitForPublishReceiversAsync(
-            publisher,
-            channel,
-            expected: 0,
-            cancellation);
-        Assert.Equal(0, receivers);
-    }
-
-    static async Task<long> WaitForPublishReceiversAsync(
-        ISubscriber publisher,
-        string channel,
-        long expected,
-        CancellationToken cancellationToken)
-    {
-        var deadline = DateTime.UtcNow + TimeSpan.FromSeconds(2);
-        long receivers = -1;
-        while (DateTime.UtcNow < deadline)
+        using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellation);
+        timeout.CancelAfter(TimeSpan.FromSeconds(10));
+        try
         {
-            cancellationToken.ThrowIfCancellationRequested();
-            receivers = await publisher.PublishAsync(RedisChannel.Literal(channel), "probe");
-            if (receivers == expected)
-            {
-                return receivers;
-            }
+            var queue = await delayed.Subscribed.WaitAsync(timeout.Token);
+            var redisChannel = RedisChannel.Literal(channel);
+            Assert.Equal(1, await publisher.PublishAsync(redisChannel, "before").WaitAsync(timeout.Token));
+            Assert.Equal("before", (string?)(await queue.ReadAsync(timeout.Token)).Message);
 
-            await Task.Delay(50, cancellationToken);
+            subscription.Dispose();
+            Assert.False(queue.Completion.IsCompleted);
+            delayed.Release.TrySetResult();
+
+            await queue.Completion.WaitAsync(timeout.Token);
+            Assert.Equal(0, await publisher.PublishAsync(redisChannel, "after").WaitAsync(timeout.Token));
         }
-
-        return receivers;
+        finally
+        {
+            delayed.Release.TrySetResult();
+        }
     }
 }

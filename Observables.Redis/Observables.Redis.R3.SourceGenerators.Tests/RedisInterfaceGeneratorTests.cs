@@ -1,4 +1,5 @@
 using Microsoft.CodeAnalysis;
+using Observables.TestSupport;
 using VerifyXunit;
 
 namespace Observables.Redis.R3.SourceGenerators.Tests;
@@ -62,6 +63,74 @@ public sealed class RedisInterfaceGeneratorTests
         var snapshot = GeneratorTestHarness.ToSnapshot(output);
 
         Assert.DoesNotContain("RegisterProxyName", snapshot, StringComparison.Ordinal);
+    }
+
+    [Theory]
+    [InlineData("Pattern = true", "Alerts")]
+    [InlineData("channel: \"news.[ab]\", Pattern = true", "news.[ab]")]
+    public void Redis_subscribe_reads_the_pattern_option_separately_from_the_channel(
+        string attributeArguments,
+        string expectedChannel)
+    {
+        var output = GeneratorTestHarness.Run(
+            $$"""
+              [Redis]
+              public interface INews
+              {
+                  [RedisSubscribe({{attributeArguments}})]
+                  Observable<string> Alerts { get; }
+              }
+              """);
+
+        Assert.DoesNotContain(output.Diagnostics, static diagnostic => diagnostic.Severity == DiagnosticSeverity.Error);
+        Assert.Contains(
+            $"FromPatternSubscribe<global::System.String>(_multiplexer, \"{expectedChannel}\")",
+            GeneratorTestHarness.ToSnapshot(output),
+            StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Redis_inherited_members_use_channel_metadata_from_the_actual_redis_attribute()
+    {
+        const string contracts =
+            """
+            using R3;
+            using Observables.Redis;
+
+            public interface IRedisContract
+            {
+                [Business.RedisSubscribe("business.alerts", Pattern = true)]
+                [RedisSubscribe("wire.redis")]
+                Observable<string> Updates { get; }
+            }
+
+            namespace Business
+            {
+                public sealed class RedisSubscribeAttribute : System.Attribute
+                {
+                    public RedisSubscribeAttribute(string name) { }
+                    public bool Pattern { get; set; }
+                }
+            }
+            """;
+        var (compilation, _) = GeneratorTestRunner.CreateHarnessCompilation(
+            contracts,
+            static source => source,
+            MetadataReferenceBuilder.Build(typeof(RedisSubscribeAttribute), typeof(global::R3.Unit)));
+
+        using var assembly = new MemoryStream();
+        var emit = compilation.WithAssemblyName("RedisContracts")
+            .Emit(assembly, cancellationToken: TestContext.Current.CancellationToken);
+        Assert.True(emit.Success, string.Join(Environment.NewLine, emit.Diagnostics));
+        var output = GeneratorTestHarness.Run(
+            "[Redis] public interface INews : IRedisContract { }",
+            extraReferences: [MetadataReference.CreateFromImage(assembly.ToArray())]);
+
+        Assert.DoesNotContain(output.Diagnostics, static diagnostic => diagnostic.Severity == DiagnosticSeverity.Error);
+        Assert.Contains(
+            "FromSubscribe<global::System.String>(_multiplexer, \"wire.redis\")",
+            GeneratorTestHarness.ToSnapshot(output),
+            StringComparison.Ordinal);
     }
 
     const string CacheTestSource =

@@ -120,8 +120,8 @@ internal static class Parser
             return;
         }
 
-        var hasPublish = publishAttribute is not null && IoProxyInterfaceWalk.HasAttribute(method, publishAttribute);
-        if (!hasPublish)
+        var publish = FindAttribute(method, publishAttribute);
+        if (publish is null)
         {
             diagnostics.Add(
                 Diagnostic.Create(
@@ -132,7 +132,7 @@ internal static class Parser
             return;
         }
 
-        if (!TryGetLiteralChannelTemplate(method, "RedisPublishAttribute", out var channelTemplate, out var location))
+        if (!TryResolveChannelTemplate(publish, method.Name, out var channelTemplate, out var location))
         {
             diagnostics.Add(
                 Diagnostic.Create(
@@ -237,7 +237,8 @@ internal static class Parser
             return;
         }
 
-        if (subscribeAttribute is null || !IoProxyInterfaceWalk.HasAttribute(property, subscribeAttribute))
+        var subscribe = FindAttribute(property, subscribeAttribute);
+        if (subscribe is null)
         {
             diagnostics.Add(
                 Diagnostic.Create(
@@ -248,7 +249,7 @@ internal static class Parser
             return;
         }
 
-        if (!TryGetLiteralChannelTemplateFromProperty(property, out var channelTemplate, out var location))
+        if (!TryResolveChannelTemplate(subscribe, property.Name, out var channelTemplate, out var location))
         {
             diagnostics.Add(
                 Diagnostic.Create(
@@ -270,7 +271,7 @@ internal static class Parser
             return;
         }
 
-        var isPattern = IsExplicitPatternSubscribe(property)
+        var isPattern = subscribe.NamedArguments.Any(static arg => arg.Key == "Pattern" && arg.Value.Value is true)
             || channelTemplate.IndexOf('*') >= 0
             || channelTemplate.IndexOf('?') >= 0;
 
@@ -311,27 +312,6 @@ internal static class Parser
                 null,
                 IsPatternSubscribe: isPattern,
                 UseEnvelope: useEnvelope));
-    }
-
-    static bool IsExplicitPatternSubscribe(IPropertySymbol property)
-    {
-        foreach (var candidate in property.GetAttributes())
-        {
-            if (candidate.AttributeClass?.Name != "RedisSubscribeAttribute")
-            {
-                continue;
-            }
-
-            foreach (var argument in candidate.NamedArguments)
-            {
-                if (argument.Key == "Pattern" && argument.Value.Value is true)
-                {
-                    return true;
-                }
-            }
-        }
-
-        return false;
     }
 
     static bool TryUnwrapRedisMessage(
@@ -415,45 +395,15 @@ internal static class Parser
 
         return true;
     }
-    static bool TryGetLiteralChannelTemplate(
-        IMethodSymbol method,
-        string attributeClassName,
-        out string channelTemplate,
-        out Location? badLocation)
-    {
-        AttributeData? attribute = null;
-        foreach (var candidate in method.GetAttributes())
-        {
-            if (candidate.AttributeClass?.Name == attributeClassName)
-            {
-                attribute = candidate;
-                break;
-            }
-        }
 
-        return TryResolveChannelTemplate(attribute, method.Name, out channelTemplate, out badLocation);
-    }
-
-    static bool TryGetLiteralChannelTemplateFromProperty(
-        IPropertySymbol property,
-        out string channelTemplate,
-        out Location? badLocation)
-    {
-        AttributeData? attribute = null;
-        foreach (var candidate in property.GetAttributes())
-        {
-            if (candidate.AttributeClass?.Name == "RedisSubscribeAttribute")
-            {
-                attribute = candidate;
-                break;
-            }
-        }
-
-        return TryResolveChannelTemplate(attribute, property.Name, out channelTemplate, out badLocation);
-    }
+    static AttributeData? FindAttribute(ISymbol member, INamedTypeSymbol? attributeType) =>
+        attributeType is null
+            ? null
+            : member.GetAttributes().FirstOrDefault(attribute =>
+                SymbolEqualityComparer.Default.Equals(attribute.AttributeClass, attributeType));
 
     static bool TryResolveChannelTemplate(
-        AttributeData? attribute,
+        AttributeData attribute,
         string fallbackName,
         out string channelTemplate,
         out Location? badLocation)
@@ -461,34 +411,29 @@ internal static class Parser
         badLocation = null;
         channelTemplate = fallbackName;
 
-        if (attribute is null)
+        // Keep the source diagnostic for non-literals. A referenced contract supplies only attribute metadata.
+        var syntax = attribute.ApplicationSyntaxReference?.GetSyntax() as AttributeSyntax;
+        var argument = syntax?.ArgumentList?.Arguments.FirstOrDefault(static arg => arg.NameEquals is null);
+        if (argument is not null
+            && (argument.Expression is not LiteralExpressionSyntax literal
+                || (!literal.Token.IsKind(SyntaxKind.StringLiteralToken) && !literal.Token.IsKind(SyntaxKind.NullKeyword))))
+        {
+            badLocation = argument.GetLocation();
+            return false;
+        }
+
+        if (attribute.ConstructorArguments.IsDefaultOrEmpty || attribute.ConstructorArguments[0].IsNull)
         {
             return true;
         }
 
-        var attributeSyntax = attribute.ApplicationSyntaxReference?.GetSyntax() as AttributeSyntax;
-        var argument = attributeSyntax?.ArgumentList?.Arguments.FirstOrDefault();
-        if (argument is null)
-        {
-            return true;
-        }
-
-        if (argument.Expression is LiteralExpressionSyntax literal
-            && literal.Token.IsKind(SyntaxKind.StringLiteralToken)
-            && literal.Token.Value is string text
-            && !string.IsNullOrWhiteSpace(text))
+        if (attribute.ConstructorArguments[0].Value is string text && !string.IsNullOrWhiteSpace(text))
         {
             channelTemplate = text;
             return true;
         }
 
-        if (argument.Expression is LiteralExpressionSyntax nullLiteral
-            && nullLiteral.Token.IsKind(SyntaxKind.NullKeyword))
-        {
-            return true;
-        }
-
-        badLocation = argument.GetLocation();
+        badLocation = argument?.GetLocation();
         return false;
     }
 

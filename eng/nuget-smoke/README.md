@@ -2,13 +2,13 @@
 
 Minimal console apps that reference **only** published or locally packed Observables packages (no sibling project references).
 
-## Local feed (after pack)
+## Local feed
 
 ```powershell
 dotnet run --project build/_build.csproj -- --target NuGetConsumerSmoke --configuration Release
 ```
 
-Uses `nuget.config.local` with `packageSourceMapping` (`Observables.*` → local feed only) via `RestoreConfigFile` / `--configfile`. Local packages are packed as `{PackageVersion}-ci.{gitSha}` so they cannot collide with nuget.org `0.2.2`.
+Builds packages as `{PackageVersion}-ci.{gitSha}` and uses `nuget.config.local` to map `Observables.*` to the local feed. Each run restores into a fresh package cache and compares the restored package hashes with the packages it built.
 
 ## Published feed (nuget.org)
 
@@ -16,4 +16,4 @@ Uses `nuget.config.local` with `packageSourceMapping` (`Observables.*` → local
 dotnet run --project build/_build.csproj -- --target NuGetConsumerSmokePublished --configuration Release
 ```
 
-Uses the default NuGet.org source. `ObservablesConsumerPackageVersion` is **required** (Nuke injects `PackageVersion` from `eng/Observables.Package.props`; a manual build must pass `-p:ObservablesConsumerPackageVersion=...`).
+Uses only nuget.org and verifies the restored packages' source in a fresh package cache. Nuke takes the version from `eng/Observables.Package.props` or `--version`. For a manual build, pass `-p:ObservablesConsumerPackageVersion=...`.

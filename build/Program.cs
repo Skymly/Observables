@@ -9,6 +9,7 @@ using Nuke.Common;
 using Nuke.Common.Execution;
 using Nuke.Common.IO;
 using Nuke.Common.Tools.DotNet;
+using NuGet.Versioning;
 using static Nuke.Common.Tools.DotNet.DotNetTasks;
 
 [UnsetVisualStudioEnvironmentVariables]
@@ -47,6 +48,7 @@ sealed class Build : NukeBuild
     AbsolutePath PackageOutputDirectory => Root / "artifacts" / "package";
     AbsolutePath NuGetSmokeDirectory => Root / "eng" / "nuget-smoke";
     AbsolutePath NuGetSmokeLocalConfig => NuGetSmokeDirectory / "nuget.config.local";
+    AbsolutePath NuGetSmokePublishedConfig => NuGetSmokeDirectory / "nuget.config";
     AbsolutePath BuildManifestFile => Root / "eng" / "Observables.BuildManifest.json";
     AbsolutePath PackagePropsFile => Root / "eng" / "Observables.Package.props";
 
@@ -57,12 +59,9 @@ sealed class Build : NukeBuild
             ? PackageVersionReader.ReadFromProps(PackagePropsFile)
             : Version;
 
-    bool DomainFilterActive => PackDomains.Length > 0;
-
-    IEnumerable<BuildManifest.PackageEntry> FilteredPackages =>
-        DomainFilterActive
-            ? Manifest.Packages.Where(p => PackDomains.Any(d => p.PackageId.StartsWith($"Observables.{d}.", StringComparison.OrdinalIgnoreCase)))
-            : Manifest.Packages;
+    BuildManifest.PackageEntry[] FilteredPackages =>
+        DomainFilter.Select(Manifest.Packages, PackDomains, "--pack-domains", (package, domain) =>
+            package.PackageId.StartsWith($"Observables.{domain}.", StringComparison.OrdinalIgnoreCase));
 
     int EffectiveTestParallelism =>
         TestParallelism switch
@@ -116,14 +115,11 @@ sealed class Build : NukeBuild
         .DependsOn(Compile)
         .Executes(() =>
         {
-            IEnumerable<string> projects = TestDomains.Length == 0
-                ? Manifest.TestProjects
-                : Manifest.TestProjects.Where(p =>
-                    TestDomains.Any(d => p.StartsWith($"Observables.{d}/", StringComparison.OrdinalIgnoreCase))
-                    || TestDomains.Contains("shared", StringComparer.OrdinalIgnoreCase)
-                        && (p.StartsWith("Observables.Shared/", StringComparison.OrdinalIgnoreCase)
-                            || p.StartsWith("eng/", StringComparison.OrdinalIgnoreCase)
-                            || p.StartsWith("build/", StringComparison.OrdinalIgnoreCase)));
+            string[] projects = DomainFilter.Select(Manifest.TestProjects, TestDomains, "--test-domains", (path, domain) =>
+                path.StartsWith($"Observables.{domain}/", StringComparison.OrdinalIgnoreCase)
+                || domain.Equals("shared", StringComparison.OrdinalIgnoreCase)
+                    && (path.StartsWith("eng/", StringComparison.OrdinalIgnoreCase)
+                        || path.StartsWith("build/", StringComparison.OrdinalIgnoreCase)));
 
             var testProjects = projects
                 .Select(relativePath =>
@@ -274,65 +270,66 @@ sealed class Build : NukeBuild
     Target NuGetConsumerSmoke => _ => _
         .DependsOn(ConsumerFeed == NuGetConsumerFeed.Local ? Restore : null)
         .DependsOn(ConsumerFeed == NuGetConsumerFeed.Local ? Test : null)
-        .Executes(() =>
+        .Executes(() => RunConsumerSmoke(ConsumerFeed));
+
+    void RunConsumerSmoke(NuGetConsumerFeed feed)
+    {
+        BuildManifest manifest = Manifest;
+        bool local = feed == NuGetConsumerFeed.Local;
+        string version = local
+            ? SmokeFeed.LocalPackageVersion(EffectivePackageVersion, ResolveShortGitSha())
+            : EffectivePackageVersion;
+        string packageVersion = NuGetVersion.Parse(version).ToNormalizedString();
+        AbsolutePath configFile = local ? NuGetSmokeLocalConfig : NuGetSmokePublishedConfig;
+
+        if (local)
         {
-            string packageVersion = ConsumerFeed == NuGetConsumerFeed.Local
-                ? SmokeFeed.LocalPackageVersion(EffectivePackageVersion, ResolveShortGitSha())
-                : EffectivePackageVersion;
+            PackPackages(manifest.Packages, packageVersion);
+        }
 
-            if (ConsumerFeed == NuGetConsumerFeed.Local)
+        // A separate cache forces NuGet to resolve the selected source even on a rerun of the same SHA.
+        DirectoryInfo packageCache = Directory.CreateTempSubdirectory("observables-smoke-");
+        try
+        {
+            foreach (string relativePath in manifest.SmokeConsumers)
             {
-                PackPackages(Manifest.Packages, packageVersion);
+                string projectFile = ManifestPathGuard.RequireFile(relativePath, Root);
+
+                DotNetRestore(s => s
+                    .SetProjectFile(projectFile)
+                    .SetConfigFile(configFile)
+                    .SetPackageDirectory(packageCache.FullName)
+                    .EnableForce()
+                    .SetProperty("ObservablesConsumerPackageVersion", packageVersion));
+
+                DotNetBuild(s => s
+                    .SetProjectFile(projectFile)
+                    .SetConfiguration(Configuration)
+                    .EnableNoRestore()
+                    .SetProperty("ObservablesConsumerPackageVersion", packageVersion));
+
+                DotNetRun(s => s
+                    .SetProjectFile(projectFile)
+                    .SetConfiguration(Configuration)
+                    .EnableNoBuild()
+                    .EnableNoRestore()
+                    .SetProperty("ObservablesConsumerPackageVersion", packageVersion));
             }
 
-            foreach (string relativePath in Manifest.SmokeConsumers)
+            foreach (BuildManifest.PackageEntry package in manifest.Packages)
             {
-                AbsolutePath projectFile = Root / relativePath;
-                Assert.FileExists(projectFile, $"Consumer project not found: {projectFile}");
-
-                if (ConsumerFeed == NuGetConsumerFeed.Local)
-                {
-                    DotNetRestore(s => s
-                        .SetProjectFile(projectFile)
-                        .SetConfigFile(NuGetSmokeLocalConfig)
-                        .SetProperty("ObservablesConsumerPackageVersion", packageVersion)
-                        .SetProperty("RestoreConfigFile", NuGetSmokeLocalConfig));
-                }
-
-                DotNetBuild(s =>
-                {
-                    s = s
-                        .SetProjectFile(projectFile)
-                        .SetConfiguration(Configuration)
-                        .SetProperty("ObservablesConsumerPackageVersion", packageVersion);
-
-                    if (ConsumerFeed == NuGetConsumerFeed.Local)
-                    {
-                        s = s
-                            .EnableNoRestore()
-                            .SetProperty("RestoreConfigFile", NuGetSmokeLocalConfig);
-                    }
-
-                    return s;
-                });
-
-                DotNetRun(s =>
-                {
-                    s = s
-                        .SetProjectFile(projectFile)
-                        .SetConfiguration(Configuration)
-                        .EnableNoBuild()
-                        .SetProperty("ObservablesConsumerPackageVersion", packageVersion);
-
-                    if (ConsumerFeed == NuGetConsumerFeed.Local)
-                    {
-                        s = s.SetProperty("RestoreConfigFile", NuGetSmokeLocalConfig);
-                    }
-
-                    return s;
-                });
+                SmokeFeed.VerifyRestoredPackage(packageCache.FullName, package.PackageId, packageVersion,
+                    local ? PackageOutputDirectory.ToString() : null);
             }
-        });
+
+            Serilog.Log.Information("Ran {ConsumerCount} {Feed} NuGet smoke consumers and verified {PackageCount} restored packages",
+                manifest.SmokeConsumers.Length, feed, manifest.Packages.Length);
+        }
+        finally
+        {
+            packageCache.Delete(recursive: true);
+        }
+    }
 
     string ResolveShortGitSha()
     {
@@ -438,8 +435,7 @@ sealed class Build : NukeBuild
         .OnlyWhenStatic(() => ConsumerFeed == NuGetConsumerFeed.Local);
 
     Target NuGetConsumerSmokePublished => _ => _
-        .DependsOn(NuGetConsumerSmoke)
-        .OnlyWhenStatic(() => ConsumerFeed == NuGetConsumerFeed.Published);
+        .Executes(() => RunConsumerSmoke(NuGetConsumerFeed.Published));
 }
 
 enum NuGetConsumerFeed

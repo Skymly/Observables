@@ -39,14 +39,70 @@ public sealed class NuGetSmokeHarnessTests
     }
 
     [Fact]
-    public void Nuke_smoke_target_passes_RestoreConfigFile_and_does_not_set_NUGET_CONFIG()
+    public void Published_config_only_lists_nuget_org()
     {
-        string program = File.ReadAllText(Path.Combine(RepoRoot.Find(), "build", "Program.cs"));
+        string configPath = Path.Combine(RepoRoot.Find(), "eng", "nuget-smoke", "nuget.config");
+        XElement sources = Assert.Single(XDocument.Load(configPath).Descendants("packageSources"));
 
-        Assert.DoesNotContain("SetEnvironmentVariable(\"NUGET_CONFIG\"", program, StringComparison.Ordinal);
-        Assert.Contains("RestoreConfigFile", program, StringComparison.Ordinal);
-        Assert.Contains("SmokeFeed.LocalPackageVersion", program, StringComparison.Ordinal);
-        Assert.Contains("SetProperty(\"PackageVersion\"", program, StringComparison.Ordinal);
+        Assert.NotNull(sources.Element("clear"));
+        XElement source = Assert.Single(sources.Elements("add"));
+        Assert.Equal(SmokeFeed.PublishedSource, (string?)source.Attribute("value"));
+    }
+
+    [Theory]
+    [InlineData(SmokeFeed.PublishedSource, true)]
+    [InlineData("https://example.invalid/v3/index.json", false)]
+    public void Published_smoke_checks_the_restored_package_source(string source, bool official)
+    {
+        DirectoryInfo cache = Directory.CreateTempSubdirectory("observables-smoke-test-");
+        try
+        {
+            string package = Directory.CreateDirectory(Path.Combine(cache.FullName, "observables.test.r3", "1.0.0")).FullName;
+            File.WriteAllText(Path.Combine(package, "observables.test.r3.1.0.0.nupkg"), "package contents");
+            File.WriteAllText(Path.Combine(package, ".nupkg.metadata"), $$"""{"source":"{{source}}"}""");
+
+            if (official)
+            {
+                SmokeFeed.VerifyRestoredPackage(cache.FullName, "Observables.Test.R3", "1.0.0", localFeed: null);
+            }
+            else
+            {
+                InvalidOperationException error = Assert.Throws<InvalidOperationException>(() =>
+                    SmokeFeed.VerifyRestoredPackage(cache.FullName, "Observables.Test.R3", "1.0.0", localFeed: null));
+                Assert.Contains("was not restored from", error.Message, StringComparison.Ordinal);
+            }
+        }
+        finally
+        {
+            cache.Delete(recursive: true);
+        }
+    }
+
+    [Fact]
+    public void Local_smoke_rejects_stale_bytes_at_the_same_version()
+    {
+        DirectoryInfo fixture = Directory.CreateTempSubdirectory("observables-smoke-test-");
+        try
+        {
+            string cache = Path.Combine(fixture.FullName, "cache");
+            string feed = Path.Combine(fixture.FullName, "feed");
+            string restored = Directory.CreateDirectory(Path.Combine(cache, "observables.test.r3", "1.0.0")).FullName;
+            Directory.CreateDirectory(feed);
+            File.WriteAllText(Path.Combine(restored, "observables.test.r3.1.0.0.nupkg"), "original contents");
+            string packed = Path.Combine(feed, "Observables.Test.R3.1.0.0.nupkg");
+            File.WriteAllText(packed, "original contents");
+            SmokeFeed.VerifyRestoredPackage(cache, "Observables.Test.R3", "1.0.0", feed);
+
+            File.WriteAllText(packed, "new contents");
+            InvalidOperationException error = Assert.Throws<InvalidOperationException>(() =>
+                SmokeFeed.VerifyRestoredPackage(cache, "Observables.Test.R3", "1.0.0", feed));
+
+            Assert.Contains("does not match", error.Message, StringComparison.Ordinal);
+        }
+        finally
+        {
+            fixture.Delete(recursive: true);
+        }
     }
 
     [Fact]

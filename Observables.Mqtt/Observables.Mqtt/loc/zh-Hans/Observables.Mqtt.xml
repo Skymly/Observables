@@ -93,6 +93,9 @@
         <member name="M:Observables.Mqtt.MqttPayloadSerializers.Register``1(System.Func{System.Byte[],``0},System.Func{``0,System.Byte[]})">
             <summary>通过委托注册类型化序列化器（<paramref name="deserialize"/> 接收已复制的负载缓冲区）。</summary>
         </member>
+        <member name="M:Observables.Mqtt.MqttPayloadSerializers.RegisterJson``1(System.Text.Json.Serialization.Metadata.JsonTypeInfo{``0})">
+            <summary>使用源生成 JSON 元数据注册负载序列化器。对该 <typeparamref name="T"/> 优先于 <see cref="P:Observables.Mqtt.MqttPayloadSerializers.Current"/>。</summary>
+        </member>
         <member name="M:Observables.Mqtt.MqttPayloadSerializers.Unregister``1">
             <summary>移除类型化注册（若存在）。</summary>
         </member>
@@ -111,7 +114,7 @@
         <member name="T:Observables.Mqtt.MqttService">
             <summary>创建源生成的 MQTT 主题代理实现。</summary>
         </member>
-        <member name="M:Observables.Mqtt.MqttService.RegisterClient(System.String,MQTTnet.Client.IMqttClient)">
+        <member name="M:Observables.Mqtt.MqttService.RegisterClient(System.String,Observables.Mqtt.IMqttTransport)">
             <summary>
             以接口在 <c>[Mqtt(clientName)]</c> 上声明的名字注册一个客户端，使其可通过 <see cref="M:Observables.Mqtt.MqttService.For``1"/> 解析。
             同名重复注册会替换原客户端。
@@ -120,7 +123,7 @@
         <member name="M:Observables.Mqtt.MqttService.RegisterProxyName(System.Type,System.String)">
             <summary>注册生成代理所声明的名字。</summary>
         </member>
-        <member name="M:Observables.Mqtt.MqttService.RegisterGeneratedFactory(System.Type,System.Func{MQTTnet.Client.IMqttClient,System.Object})">
+        <member name="M:Observables.Mqtt.MqttService.RegisterGeneratedFactory(System.Type,System.Func{Observables.Mqtt.IMqttTransport,System.Object})">
             <summary>注册源生成的主题代理工厂。</summary>
         </member>
         <member name="M:Observables.Mqtt.MqttService.For``1">
@@ -137,6 +140,33 @@
         </member>
             <member name="T:Observables.GeneratedProxyFactoryRegistry`1">
             <summary>各 Feature *Service.For 共用的生成代理工厂登记表。</summary>
+        </member>
+        <member name="T:Observables.Mqtt.MqttTransportCapabilities">
+            <summary>表示当前 MQTT 传输可用的可选功能。</summary>
+        </member>
+        <member name="F:Observables.Mqtt.MqttTransportCapabilities.None">
+            <summary>传输支持基本发布和订阅。</summary>
+        </member>
+        <member name="F:Observables.Mqtt.MqttTransportCapabilities.RequestResponse">
+            <summary>连接支持 MQTT 5 响应主题与关联数据。</summary>
+        </member>
+        <member name="T:Observables.Mqtt.IMqttTransport">
+            <summary>提供生成的 MQTT 代理所需的 broker 操作。</summary>
+        </member>
+        <member name="P:Observables.Mqtt.IMqttTransport.Capabilities">
+            <summary>获取当前连接可用的可选功能。</summary>
+        </member>
+        <member name="E:Observables.Mqtt.IMqttTransport.MessageReceived">
+            <summary>通知订阅者收到的主题与载荷。载荷在回调完成前有效。</summary>
+        </member>
+        <member name="M:Observables.Mqtt.IMqttTransport.SubscribeAsync(System.String,System.Threading.CancellationToken)">
+            <summary>以 QoS 0 订阅主题过滤器。</summary>
+        </member>
+        <member name="M:Observables.Mqtt.IMqttTransport.UnsubscribeAsync(System.String,System.Threading.CancellationToken)">
+            <summary>取消 broker 上的主题过滤器订阅。</summary>
+        </member>
+        <member name="M:Observables.Mqtt.IMqttTransport.PublishAsync(System.String,System.ReadOnlyMemory{System.Byte},System.Threading.CancellationToken)">
+            <summary>以 QoS 1 发布载荷。</summary>
         </member>
     </members>
 </doc>

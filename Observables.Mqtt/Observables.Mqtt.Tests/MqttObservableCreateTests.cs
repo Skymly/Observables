@@ -11,7 +11,7 @@ public sealed class MqttObservableCreateTests
     {
         var proxy = FakeMqtt.Create();
         var observer = new RecordingObserver<string>();
-        using var subscription = MqttObservable.FromSubscribe<string>(proxy.AsClient(), "$share/readers/sensors/+")
+        using var subscription = MqttObservable.FromSubscribe<string>(proxy.AsTransport(), "$share/readers/sensors/+")
             .Subscribe(observer);
 
         var result = await observer.Completed.WaitAsync(TimeSpan.FromSeconds(2), TestContext.Current.CancellationToken);
@@ -28,7 +28,7 @@ public sealed class MqttObservableCreateTests
         var proxy = FakeMqtt.Create(rejectSubscribe: true);
         var observer = new RecordingObserver<string>();
 
-        using var subscription = MqttObservable.FromSubscribe<string>(proxy.AsClient(), "orders").Subscribe(observer);
+        using var subscription = MqttObservable.FromSubscribe<string>(proxy.AsTransport(), "orders").Subscribe(observer);
 
         var result = await observer.Completed.WaitAsync(TimeSpan.FromSeconds(2), TestContext.Current.CancellationToken);
 
@@ -43,11 +43,11 @@ public sealed class MqttObservableCreateTests
         var proxy = FakeMqtt.Create();
         var remaining = new TaskCompletionSource<string>(TaskCreationOptions.RunContinuationsAsynchronously);
 
-        using var first = MqttObservable.FromSubscribe<string>(proxy.AsClient(), "orders").Subscribe(_ => { });
-        using var second = MqttObservable.FromSubscribe<string>(proxy.AsClient(), "orders")
+        using var first = MqttObservable.FromSubscribe<string>(proxy.AsTransport(), "orders").Subscribe(_ => { });
+        using var second = MqttObservable.FromSubscribe<string>(proxy.AsTransport(), "orders")
             .Subscribe(value => remaining.TrySetResult(value));
 
-        await WaitForHandlers(proxy, 2);
+        await WaitUntil(() => proxy.HasFilter("orders"), "subscribed");
         first.Dispose();
 
         await proxy.RaiseAsync("orders", "hello");
@@ -61,7 +61,7 @@ public sealed class MqttObservableCreateTests
     {
         var proxy = FakeMqtt.Create();
         proxy.SubscribeDelayMilliseconds = 200;
-        var subscription = MqttObservable.FromSubscribe<string>(proxy.AsClient(), "orders").Subscribe(_ => { });
+        var subscription = MqttObservable.FromSubscribe<string>(proxy.AsTransport(), "orders").Subscribe(_ => { });
         try
         {
             await WaitUntil(
@@ -94,7 +94,7 @@ public sealed class MqttObservableCreateTests
     {
         var proxy = FakeMqtt.Create();
         proxy.ThrowOnUnsubscribe = true;
-        var subscription = MqttObservable.FromSubscribe<string>(proxy.AsClient(), "orders").Subscribe(_ => { });
+        var subscription = MqttObservable.FromSubscribe<string>(proxy.AsTransport(), "orders").Subscribe(_ => { });
         await WaitUntil(() => Volatile.Read(ref proxy.SubscribeCalls) >= 1, "SubscribeCalls");
         subscription.Dispose();
         await WaitUntil(() => Volatile.Read(ref proxy.UnsubscribeCalls) >= 1, "UnsubscribeCalls");
@@ -108,12 +108,12 @@ public sealed class MqttObservableCreateTests
         proxy.UnsubscribeDelayMilliseconds = 200;
         var received = new TaskCompletionSource<string>(TaskCreationOptions.RunContinuationsAsynchronously);
 
-        var first = MqttObservable.FromSubscribe<string>(proxy.AsClient(), "orders").Subscribe(_ => { });
+        var first = MqttObservable.FromSubscribe<string>(proxy.AsTransport(), "orders").Subscribe(_ => { });
         await WaitUntil(() => Volatile.Read(ref proxy.SubscribeCalls) >= 1, "first subscribe");
         first.Dispose();
         await WaitUntil(() => Volatile.Read(ref proxy.UnsubscribeCalls) >= 1, "unsubscribe started");
 
-        using var second = MqttObservable.FromSubscribe<string>(proxy.AsClient(), "orders")
+        using var second = MqttObservable.FromSubscribe<string>(proxy.AsTransport(), "orders")
             .Subscribe(value => received.TrySetResult(value));
         await Task.Delay(proxy.UnsubscribeDelayMilliseconds + 150, TestContext.Current.CancellationToken);
         Assert.True(proxy.HasFilter("orders"));
@@ -130,7 +130,7 @@ public sealed class MqttObservableCreateTests
         proxy.PublishReasonCode = MqttClientPublishReasonCode.NotAuthorized;
         var observer = new RecordingObserver<Unit>();
 
-        using var subscription = MqttObservable.FromPublish(proxy.AsClient(), "orders", TestContext.Current.CancellationToken).Subscribe(observer);
+        using var subscription = MqttObservable.FromPublish(proxy.AsTransport(), "orders", TestContext.Current.CancellationToken).Subscribe(observer);
         var result = await observer.Completed.WaitAsync(TimeSpan.FromSeconds(2), TestContext.Current.CancellationToken);
 
         Assert.True(result.IsFailure);
@@ -145,7 +145,7 @@ public sealed class MqttObservableCreateTests
         proxy.PublishReasonCode = MqttClientPublishReasonCode.NoMatchingSubscribers;
         var observer = new RecordingObserver<Unit>();
 
-        using var subscription = MqttObservable.FromPublish(proxy.AsClient(), "orders", TestContext.Current.CancellationToken).Subscribe(observer);
+        using var subscription = MqttObservable.FromPublish(proxy.AsTransport(), "orders", TestContext.Current.CancellationToken).Subscribe(observer);
         var result = await observer.Completed.WaitAsync(TimeSpan.FromSeconds(2), TestContext.Current.CancellationToken);
 
         Assert.True(result.IsSuccess);
@@ -157,7 +157,7 @@ public sealed class MqttObservableCreateTests
         var proxy = FakeMqtt.Create();
         var observer = new RecordingObserver<Unit>();
 
-        using var subscription = MqttObservable.FromPublish(proxy.AsClient(), "orders", TestContext.Current.CancellationToken).Subscribe(observer);
+        using var subscription = MqttObservable.FromPublish(proxy.AsTransport(), "orders", TestContext.Current.CancellationToken).Subscribe(observer);
         var result = await observer.Completed.WaitAsync(TimeSpan.FromSeconds(2), TestContext.Current.CancellationToken);
 
         Assert.True(result.IsSuccess);
@@ -170,12 +170,12 @@ public sealed class MqttObservableCreateTests
         var exact = new TaskCompletionSource<string>(TaskCreationOptions.RunContinuationsAsynchronously);
         var wildcard = new TaskCompletionSource<string>(TaskCreationOptions.RunContinuationsAsynchronously);
 
-        using var exactSub = MqttObservable.FromSubscribe<string>(proxy.AsClient(), "$SYS/uptime")
+        using var exactSub = MqttObservable.FromSubscribe<string>(proxy.AsTransport(), "$SYS/uptime")
             .Subscribe(value => exact.TrySetResult(value));
-        using var wildSub = MqttObservable.FromSubscribe<string>(proxy.AsClient(), "#")
+        using var wildSub = MqttObservable.FromSubscribe<string>(proxy.AsTransport(), "#")
             .Subscribe(value => wildcard.TrySetResult(value));
 
-        await WaitForHandlers(proxy, 2);
+        await WaitUntil(() => proxy.FilterCount == 2, "both filters");
         await proxy.RaiseAsync("$SYS/uptime", "1");
 
         Assert.Equal("1", await exact.Task.WaitAsync(TimeSpan.FromSeconds(2), TestContext.Current.CancellationToken));
@@ -190,7 +190,7 @@ public sealed class MqttObservableCreateTests
         var errors = new List<Exception>();
         var received = new TaskCompletionSource<int>(TaskCreationOptions.RunContinuationsAsynchronously);
 
-        using var subscription = MqttObservable.FromSubscribe<int>(proxy.AsClient(), "orders")
+        using var subscription = MqttObservable.FromSubscribe<int>(proxy.AsTransport(), "orders")
             .Subscribe(
                 value =>
                 {
@@ -208,9 +208,6 @@ public sealed class MqttObservableCreateTests
         Assert.Equal(new[] { 7 }, values);
         Assert.NotEmpty(errors);
     }
-
-    static Task WaitForHandlers(FakeMqttClientProxy proxy, int count) =>
-        WaitUntil(() => Volatile.Read(ref proxy.HandlerCount) >= count, "Handlers");
 
     static async Task WaitUntil(Func<bool> condition, string name)
     {

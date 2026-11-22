@@ -1,0 +1,3 @@
+#nullable enable
+Observables.Mqtt.MQTTnet4.MqttNetTransport
+static Observables.Mqtt.MQTTnet4.MqttNetTransport.Wrap(MQTTnet.Client.IMqttClient! client) -> Observables.Mqtt.IMqttTransport!

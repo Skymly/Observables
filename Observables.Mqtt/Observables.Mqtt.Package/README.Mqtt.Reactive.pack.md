@@ -6,6 +6,7 @@ Declarative MQTT topic proxies powered by Roslyn and MQTTnet. The generated prox
 
 ```bash
 dotnet add package Observables.Mqtt.Reactive
+dotnet add package Observables.Mqtt.MQTTnet4
 ```
 
 ## Quick start
@@ -18,6 +19,7 @@ using System.Threading;
 using MQTTnet;
 using MQTTnet.Client;
 using Observables.Mqtt;
+using Observables.Mqtt.MQTTnet4;
 using System.Reactive;
 
 using var client = new MqttFactory().CreateMqttClient();
@@ -26,7 +28,7 @@ var options = new MqttClientOptionsBuilder()
     .Build();
 await client.ConnectAsync(options, CancellationToken.None);
 
-var topics = MqttService.For<ISensorTopics>(client);
+var topics = MqttService.For<ISensorTopics>(MqttNetTransport.Wrap(client));
 using var readings = topics.Temperature.Subscribe(value => Console.WriteLine(value));
 using var ping = topics.Ping("room-1").Subscribe(_ => Console.WriteLine("Ping sent"));
 Console.ReadLine();
@@ -42,7 +44,7 @@ public interface ISensorTopics
 }
 ```
 
-Generated publish methods send empty payloads. For raw bytes, subscribe to `SystemReactiveMqttAdapter.FromPublish(client, topic, payload, cancellationToken)`. The adapter is in `Observables.Mqtt.Reactive`.
+Generated publish methods send empty payloads. For raw bytes, subscribe to `SystemReactiveMqttAdapter.FromPublish(MqttNetTransport.Wrap(client), topic, payload, cancellationToken)`. The adapter is in `Observables.Mqtt.Reactive`.
 
 Subscription attributes accept exact topic filters and standard `+` and `#` wildcards. Shared subscription filters starting with `$share/` produce `OBS5006`.
 

@@ -82,14 +82,11 @@ internal static class Emitter
             model.ClassName,
             model.InterfaceDisplayName,
             new ProxyClassEmitter.ClientField(
-                "global::MQTTnet.Client.IMqttClient",
+                "global::Observables.Mqtt.IMqttTransport",
                 "_client",
                 "client"),
             model.Members.AsArray(),
-            EmitMember,
-            trim: new ProxyClassEmitter.TrimWarnings(
-                "MQTT payload serialization uses reflection. Preserve payload type members when trimming.",
-                "MQTT payload serialization uses reflection."));
+            EmitMember);
 
     static void EmitMember(SourceWriter writer, MqttMemberModel member)
     {

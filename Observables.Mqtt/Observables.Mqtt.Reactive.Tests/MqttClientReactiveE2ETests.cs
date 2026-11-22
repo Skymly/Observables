@@ -18,7 +18,7 @@ public sealed class MqttClientReactiveE2ETests(MqttTestBrokerFixture fixture)
     public async Task MqttSubscribe_Ping_receives_broker_message()
     {
         await using var session = await fixture.Broker.ConnectAsync(TestContext.Current.CancellationToken);
-        var hub = MqttService.For<IE2EHub>(session.Client);
+        var hub = MqttService.For<IE2EHub>(session.Transport);
 
         using var cts = new CancellationTokenSource(DefaultTimeout);
         var waitSubscription = fixture.Broker.WaitForSubscriptionAsync(
@@ -41,8 +41,8 @@ public sealed class MqttClientReactiveE2ETests(MqttTestBrokerFixture fixture)
     {
         await using var subscriber = await fixture.Broker.ConnectAsync(TestContext.Current.CancellationToken);
         await using var publisher = await fixture.Broker.ConnectAsync(TestContext.Current.CancellationToken);
-        var subHub = MqttService.For<IE2EHub>(subscriber.Client);
-        var pubHub = MqttService.For<IE2EHub>(publisher.Client);
+        var subHub = MqttService.For<IE2EHub>(subscriber.Transport);
+        var pubHub = MqttService.For<IE2EHub>(publisher.Transport);
 
         using var cts = new CancellationTokenSource(DefaultTimeout);
         var waitSubscription = fixture.Broker.WaitForSubscriptionAsync(
@@ -67,12 +67,12 @@ public sealed class MqttClientReactiveE2ETests(MqttTestBrokerFixture fixture)
         using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         timeout.CancelAfter(DefaultTimeout);
         var subscribed = fixture.Broker.WaitForSubscriptionAsync(subscriber.ClientId, topic, timeout.Token);
-        var received = SystemReactiveMqttAdapter.FromSubscribe<byte[]>(subscriber.Client, topic)
+        var received = SystemReactiveMqttAdapter.FromSubscribe<byte[]>(subscriber.Transport, topic)
             .FirstAsync().ToTask(timeout.Token);
         await subscribed;
 
         byte[] payload = [0, 0xFF, 0x7F];
-        await SystemReactiveMqttAdapter.FromPublish(publisher.Client, topic, payload, timeout.Token)
+        await SystemReactiveMqttAdapter.FromPublish(publisher.Transport, topic, payload, timeout.Token)
             .FirstAsync().ToTask(timeout.Token);
 
         Assert.Equal(payload, await received);
@@ -89,7 +89,7 @@ public sealed class MqttClientReactiveE2ETests(MqttTestBrokerFixture fixture)
             session.ClientId,
             topicFilter,
             cts.Token);
-        var receive = SystemReactiveMqttAdapter.FromSubscribe<string>(session.Client, topicFilter)
+        var receive = SystemReactiveMqttAdapter.FromSubscribe<string>(session.Transport, topicFilter)
             .Timeout(DefaultTimeout)
             .FirstAsync()
             .ToTask();
@@ -114,7 +114,7 @@ public sealed class MqttClientReactiveE2ETests(MqttTestBrokerFixture fixture)
             session.ClientId,
             topicFilter,
             cts.Token);
-        var subscription = SystemReactiveMqttAdapter.FromSubscribe<string>(session.Client, topicFilter)
+        var subscription = SystemReactiveMqttAdapter.FromSubscribe<string>(session.Transport, topicFilter)
             .Subscribe(_ => { });
         try
         {
@@ -144,7 +144,7 @@ public sealed class MqttClientReactiveE2ETests(MqttTestBrokerFixture fixture)
             "e2e/ping",
             cts.Token);
         var received = new TaskCompletionSource<string>(TaskCreationOptions.RunContinuationsAsynchronously);
-        using var subscription = SystemReactiveMqttAdapter.FromSubscribe<string>(session.Client, "e2e/ping")
+        using var subscription = SystemReactiveMqttAdapter.FromSubscribe<string>(session.Transport, "e2e/ping")
             .Subscribe(value => received.TrySetResult(value));
         await waitSubscription;
 

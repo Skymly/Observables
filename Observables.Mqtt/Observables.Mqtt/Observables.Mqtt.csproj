@@ -1,9 +1,14 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
+  <Import Project="..\..\eng\Observables.Package.props" />
+
   <PropertyGroup>
     <RootNamespace>Observables.Mqtt</RootNamespace>
     <AssemblyName>Observables.Mqtt</AssemblyName>
-    <Description>MQTT client runtime, backend-neutral: R3 bridges live in Observables.Mqtt.R3.</Description>
+    <PackageId>Observables.Mqtt</PackageId>
+    <IsPackable>true</IsPackable>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <Description>Transport-neutral runtime and attributes for generated Observables MQTT proxies.</Description>
   </PropertyGroup>
 
 
@@ -16,10 +21,6 @@
     <InternalsVisibleTo Include="Observables.Mqtt.Tests" />
   </ItemGroup>
 
-  <ItemGroup>
-    <PackageReference Include="MQTTnet" />
-  </ItemGroup>
-
   <ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">
     <PackageReference Include="System.Memory" />
   </ItemGroup>
@@ -27,5 +28,14 @@
 
   <ItemGroup>
     <Compile Include="..\..\Observables.Shared\Observables.Core\GeneratedProxyFactoryRegistry.cs" Link="Shared/GeneratedProxyFactoryRegistry.cs" />
+    <None Include="..\Observables.Mqtt.Package\README.Mqtt.Transport.pack.md" Pack="true" PackagePath="README.md" />
+    <None Include="loc\zh-Hans\Observables.Mqtt.xml"
+          Pack="true"
+          PackagePath="lib\netstandard2.0\zh-Hans\;lib\net8.0\zh-Hans\;lib\net9.0\zh-Hans\;lib\net10.0\zh-Hans\"
+          Visible="false" />
   </ItemGroup>
+  <ItemGroup Condition="'$(TargetFramework)' != 'netstandard2.0'">
+    <Compile Include="..\..\Observables.Shared\Observables.Core\SourceGeneratedJson.cs" Link="Shared\SourceGeneratedJson.cs" />
+  </ItemGroup>
+
 </Project>

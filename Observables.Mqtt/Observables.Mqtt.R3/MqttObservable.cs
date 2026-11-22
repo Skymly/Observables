@@ -1,9 +1,4 @@
-using MQTTnet.Client;
 using R3;
-#if NET8_0_OR_GREATER
-using System.Diagnostics.CodeAnalysis;
-#endif
-
 namespace Observables.Mqtt;
 
 /// <summary>Bridges MQTT client APIs to R3 <see cref="Observable{T}"/>.</summary>
@@ -14,7 +9,7 @@ public static class MqttObservable
     /// A rejected PUBACK (any reason other than Success or NoMatchingSubscribers) fails the observable.
     /// </summary>
     public static Observable<Unit> FromPublish(
-        IMqttClient client,
+        IMqttTransport client,
         string topic,
         CancellationToken cancellationToken = default) =>
         FromPublish(client, topic, Array.Empty<byte>(), cancellationToken);
@@ -24,7 +19,7 @@ public static class MqttObservable
     /// A rejected PUBACK (any reason other than Success or NoMatchingSubscribers) fails the observable.
     /// </summary>
     public static Observable<Unit> FromPublish(
-        IMqttClient client,
+        IMqttTransport client,
         string topic,
         byte[] payload,
         CancellationToken cancellationToken = default) =>
@@ -40,11 +35,7 @@ public static class MqttObservable
     /// OnErrorResume and the subscription keeps receiving later messages.
     /// This library does not re-issue <c>SubscribeAsync</c> after the client reconnects.
     /// </summary>
-#if NET8_0_OR_GREATER
-    [RequiresUnreferencedCode("JSON payload serialization uses System.Text.Json reflection. Preserve payload type members when trimming.")]
-    [RequiresDynamicCode("JSON payload serialization uses System.Text.Json reflection.")]
-#endif
-    public static Observable<T> FromSubscribe<T>(IMqttClient client, string topicFilter) =>
+    public static Observable<T> FromSubscribe<T>(IMqttTransport client, string topicFilter) =>
         R3AsyncCreate.Create<T>(async (observer, ct) =>
         {
             await MqttProtocol

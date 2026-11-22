@@ -1,53 +1,20 @@
 using System.Collections.Concurrent;
-using MQTTnet;
-using MQTTnet.Client;
-using MQTTnet.Protocol;
-#if NET8_0_OR_GREATER
-using System.Diagnostics.CodeAnalysis;
-#endif
-
+using System.Runtime.CompilerServices;
 namespace Observables.Mqtt;
 
 internal static class MqttProtocol
 {
-    static readonly ConcurrentDictionary<FilterKey, FilterGate> Filters = new();
+    static readonly ConditionalWeakTable<IMqttTransport, ConcurrentDictionary<string, FilterGate>> Filters = new();
 
-    internal static async Task PublishAsync(
-        IMqttClient client,
+    internal static Task PublishAsync(
+        IMqttTransport client,
         string topic,
         byte[] payload,
-        CancellationToken cancellationToken)
-    {
-        var message = new MqttApplicationMessageBuilder()
-            .WithTopic(topic)
-            .WithPayload(payload ?? Array.Empty<byte>())
-            .WithQualityOfServiceLevel(MqttQualityOfServiceLevel.AtLeastOnce)
-            .Build();
-        var result = await client.PublishAsync(message, cancellationToken).ConfigureAwait(false);
-        if (!result.IsSuccess)
-        {
-            throw new InvalidOperationException($"MQTT publish rejected: {result.ReasonCode}");
-        }
-    }
+        CancellationToken cancellationToken) =>
+        client.PublishAsync(topic, payload ?? Array.Empty<byte>(), cancellationToken);
 
-#if NET8_0_OR_GREATER
-    [RequiresUnreferencedCode("JSON payload serialization uses System.Text.Json reflection. Preserve payload type members when trimming.")]
-    [RequiresDynamicCode("JSON payload serialization uses System.Text.Json reflection.")]
-#endif
-    internal static T DeserializePayload<T>(MqttApplicationMessageReceivedEventArgs e)
-    {
-        var payload = e.ApplicationMessage.PayloadSegment.Count == 0
-            ? Array.Empty<byte>()
-            : e.ApplicationMessage.PayloadSegment.ToArray();
-        return MqttPayloadSerializers.Deserialize<T>(payload);
-    }
-
-#if NET8_0_OR_GREATER
-    [RequiresUnreferencedCode("JSON payload serialization uses System.Text.Json reflection. Preserve payload type members when trimming.")]
-    [RequiresDynamicCode("JSON payload serialization uses System.Text.Json reflection.")]
-#endif
     internal static async Task SubscribeAsync<T>(
-        IMqttClient client,
+        IMqttTransport client,
         string topicFilter,
         Action<T> onNext,
         Action<Exception> onError,
@@ -58,44 +25,47 @@ internal static class MqttProtocol
             throw new NotSupportedException("Shared MQTT subscription filters starting with '$share/' are not supported.");
         }
 
-        async Task Handler(MqttApplicationMessageReceivedEventArgs e)
+        Task Handler(string topic, ReadOnlyMemory<byte> payload)
         {
-            if (!MqttTopicMatcher.Matches(topicFilter, e.ApplicationMessage.Topic))
+            if (cancellationToken.IsCancellationRequested || !MqttTopicMatcher.Matches(topicFilter, topic))
             {
-                return;
+                return Task.CompletedTask;
             }
 
             try
             {
-                onNext(DeserializePayload<T>(e));
+                onNext(MqttPayloadSerializers.Deserialize<T>(payload.ToArray()));
             }
             catch (Exception ex)
             {
                 onError(ex);
             }
 
-            await Task.CompletedTask.ConfigureAwait(false);
+            return Task.CompletedTask;
         }
 
-        var key = new FilterKey(client, topicFilter);
-        client.ApplicationMessageReceivedAsync += Handler;
+        var filters = Filters.GetValue(client, static _ => new ConcurrentDictionary<string, FilterGate>(StringComparer.Ordinal));
+        client.MessageReceived += Handler;
         try
         {
-            await AddSubscriberAsync(key, client, topicFilter).ConfigureAwait(false);
+            await AddSubscriberAsync(filters, client, topicFilter).ConfigureAwait(false);
             await Task.Delay(Timeout.Infinite, cancellationToken).ConfigureAwait(false);
         }
         finally
         {
-            client.ApplicationMessageReceivedAsync -= Handler;
-            await RemoveSubscriberAsync(key, client, topicFilter).ConfigureAwait(false);
+            client.MessageReceived -= Handler;
+            await RemoveSubscriberAsync(filters, client, topicFilter).ConfigureAwait(false);
         }
     }
 
-    static Task AddSubscriberAsync(FilterKey key, IMqttClient client, string topicFilter)
+    static Task AddSubscriberAsync(
+        ConcurrentDictionary<string, FilterGate> filters,
+        IMqttTransport client,
+        string topicFilter)
     {
         while (true)
         {
-            var gate = Filters.GetOrAdd(key, static _ => new FilterGate());
+            var gate = filters.GetOrAdd(topicFilter, static _ => new FilterGate());
             lock (gate.Sync)
             {
                 if (gate.Removed)
@@ -114,9 +84,12 @@ internal static class MqttProtocol
         }
     }
 
-    static Task RemoveSubscriberAsync(FilterKey key, IMqttClient client, string topicFilter)
+    static Task RemoveSubscriberAsync(
+        ConcurrentDictionary<string, FilterGate> filters,
+        IMqttTransport client,
+        string topicFilter)
     {
-        if (!Filters.TryGetValue(key, out var gate))
+        if (!filters.TryGetValue(topicFilter, out var gate))
         {
             return Task.CompletedTask;
         }
@@ -130,12 +103,12 @@ internal static class MqttProtocol
             }
 
             gate.Count = 0;
-            gate.BrokerWork = ContinueUnsubscribe(gate.BrokerWork, client, topicFilter, key, gate);
+            gate.BrokerWork = ContinueUnsubscribe(gate.BrokerWork, client, topicFilter, filters, gate);
             return gate.BrokerWork;
         }
     }
 
-    static async Task ContinueSubscribe(Task previous, IMqttClient client, string topicFilter)
+    static async Task ContinueSubscribe(Task previous, IMqttTransport client, string topicFilter)
     {
         try
         {
@@ -146,14 +119,14 @@ internal static class MqttProtocol
             // A failed previous generation must not block a new subscribe.
         }
 
-        await SubscribeBrokerAsync(client, topicFilter, CancellationToken.None).ConfigureAwait(false);
+        await client.SubscribeAsync(topicFilter, CancellationToken.None).ConfigureAwait(false);
     }
 
     static async Task ContinueUnsubscribe(
         Task previous,
-        IMqttClient client,
+        IMqttTransport client,
         string topicFilter,
-        FilterKey key,
+        ConcurrentDictionary<string, FilterGate> filters,
         FilterGate gate)
     {
         try
@@ -189,39 +162,11 @@ internal static class MqttProtocol
                 if (gate.Count == 0)
                 {
                     gate.Removed = true;
-                    Filters.TryRemove(key, out _);
+                    filters.TryRemove(topicFilter, out _);
                 }
             }
         }
     }
-
-    static async Task SubscribeBrokerAsync(
-        IMqttClient client,
-        string topicFilter,
-        CancellationToken cancellationToken)
-    {
-        var options = new MqttClientSubscribeOptionsBuilder()
-            .WithTopicFilter(new MqttTopicFilterBuilder().WithTopic(topicFilter).Build())
-            .Build();
-        var result = await client.SubscribeAsync(options, cancellationToken).ConfigureAwait(false);
-        EnsureGranted(result);
-    }
-
-    static void EnsureGranted(MqttClientSubscribeResult result)
-    {
-        foreach (var item in result.Items)
-        {
-            if (item.ResultCode is not (
-                MqttClientSubscribeResultCode.GrantedQoS0 or
-                MqttClientSubscribeResultCode.GrantedQoS1 or
-                MqttClientSubscribeResultCode.GrantedQoS2))
-            {
-                throw new InvalidOperationException($"MQTT subscribe rejected: {item.ResultCode}");
-            }
-        }
-    }
-
-    readonly record struct FilterKey(IMqttClient Client, string TopicFilter);
 
     sealed class FilterGate
     {

@@ -16,8 +16,7 @@ internal static class GeneratorTestHarness
                 "System",
                 "System.Threading",
                 "R3",
-                "Observables.Mqtt",
-                "MQTTnet.Client"),
+                "Observables.Mqtt"),
             options => MetadataReferenceBuilder.Build(
                 options.IncludeCoreReference ? null : "Observables.Mqtt.dll",
                 typeof(global::R3.Unit),
@@ -26,8 +25,7 @@ internal static class GeneratorTestHarness
                     : null,
                 options.IncludeCoreReference
                     ? typeof(global::Observables.Mqtt.MqttObservable)
-                    : null,
-                typeof(global::MQTTnet.MqttFactory)),
+                    : null),
             static () => [new MqttInterfaceStubGenerator()],
             SnapshotOptionsFactory.ForDomain("OBS5")));
 

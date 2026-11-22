@@ -8,7 +8,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Observables.Mqtt\Observables.Mqtt.csproj" />
-    <PackageReference Include="MQTTnet" />
     <PackageReference Include="System.Reactive" />
   </ItemGroup>
 

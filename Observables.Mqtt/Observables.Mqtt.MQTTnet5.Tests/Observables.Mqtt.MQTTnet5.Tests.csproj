@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <DefineConstants>$(DefineConstants);MQTTNET5</DefineConstants>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Using Include="Xunit" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="MQTTnet.Server" />
+    <PackageReference Include="xunit.v3" />
+    <PackageReference Include="xunit.runner.visualstudio" PrivateAssets="all" />
+    <ProjectReference Include="..\Observables.Mqtt.MQTTnet5\Observables.Mqtt.MQTTnet5.csproj" />
+    <ProjectReference Include="..\Observables.Mqtt.R3\Observables.Mqtt.R3.csproj" />
+    <ProjectReference Include="..\Observables.Mqtt.R3.SourceGenerators\Observables.Mqtt.R3.SourceGenerators.csproj"
+                      OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Include="..\Observables.Mqtt.Tests\Contracts\IE2EHub.cs" Link="Contracts\IE2EHub.cs" />
+    <Compile Include="..\Observables.Mqtt.Tests\Infrastructure\MqttTestBroker.cs" Link="Infrastructure\MqttTestBroker.cs" />
+    <Compile Include="..\Observables.Mqtt.Tests\Infrastructure\MqttTestBrokerFixture.cs" Link="Infrastructure\MqttTestBrokerFixture.cs" />
+    <Compile Include="..\Observables.Mqtt.Tests\MqttClientR3E2ETests.cs" Link="MqttClientR3E2ETests.cs" />
+  </ItemGroup>
+
+</Project>

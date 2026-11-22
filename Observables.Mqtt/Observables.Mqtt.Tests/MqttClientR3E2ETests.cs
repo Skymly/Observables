@@ -1,5 +1,7 @@
 using MQTTnet;
+#if !MQTTNET5
 using MQTTnet.Client;
+#endif
 using Observables.Mqtt;
 using Observables.Mqtt.Tests.Contracts;
 using Observables.Mqtt.Tests.Infrastructure;
@@ -16,7 +18,7 @@ public sealed class MqttClientR3E2ETests(MqttTestBrokerFixture fixture)
     public async Task MqttSubscribe_Ping_receives_broker_message()
     {
         await using var session = await fixture.Broker.ConnectAsync(TestContext.Current.CancellationToken);
-        var hub = MqttService.For<IE2EHub>(session.Client);
+        var hub = MqttService.For<IE2EHub>(session.Transport);
 
         using var cts = new CancellationTokenSource(DefaultTimeout);
         var waitSubscription = fixture.Broker.WaitForSubscriptionAsync(
@@ -39,8 +41,8 @@ public sealed class MqttClientR3E2ETests(MqttTestBrokerFixture fixture)
     {
         await using var subscriber = await fixture.Broker.ConnectAsync(TestContext.Current.CancellationToken);
         await using var publisher = await fixture.Broker.ConnectAsync(TestContext.Current.CancellationToken);
-        var subHub = MqttService.For<IE2EHub>(subscriber.Client);
-        var pubHub = MqttService.For<IE2EHub>(publisher.Client);
+        var subHub = MqttService.For<IE2EHub>(subscriber.Transport);
+        var pubHub = MqttService.For<IE2EHub>(publisher.Transport);
 
         using var cts = new CancellationTokenSource(DefaultTimeout);
         var waitSubscription = fixture.Broker.WaitForSubscriptionAsync(
@@ -65,7 +67,7 @@ public sealed class MqttClientR3E2ETests(MqttTestBrokerFixture fixture)
             session.ClientId,
             topicFilter,
             cts.Token);
-        var receive = MqttObservable.FromSubscribe<string>(session.Client, topicFilter).FirstAsync(cts.Token);
+        var receive = MqttObservable.FromSubscribe<string>(session.Transport, topicFilter).FirstAsync(cts.Token);
         await waitSubscription;
         var message = new MqttApplicationMessageBuilder()
             .WithTopic("e2e/hash")
@@ -87,7 +89,7 @@ public sealed class MqttClientR3E2ETests(MqttTestBrokerFixture fixture)
             session.ClientId,
             topicFilter,
             cts.Token);
-        var subscription = MqttObservable.FromSubscribe<string>(session.Client, topicFilter).Subscribe(_ => { });
+        var subscription = MqttObservable.FromSubscribe<string>(session.Transport, topicFilter).Subscribe(_ => { });
         try
         {
             await waitSubscription;
@@ -116,7 +118,7 @@ public sealed class MqttClientR3E2ETests(MqttTestBrokerFixture fixture)
             "e2e/ping",
             cts.Token);
         var received = new TaskCompletionSource<string>(TaskCreationOptions.RunContinuationsAsynchronously);
-        using var subscription = MqttObservable.FromSubscribe<string>(session.Client, "e2e/ping")
+        using var subscription = MqttObservable.FromSubscribe<string>(session.Transport, "e2e/ping")
             .Subscribe(value => received.TrySetResult(value));
         await waitSubscription;
 

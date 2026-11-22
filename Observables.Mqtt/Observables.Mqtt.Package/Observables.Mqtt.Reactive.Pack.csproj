@@ -21,24 +21,14 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ObservablesPackLibProjectReference Include="..\Observables.Mqtt\Observables.Mqtt.csproj" />
+    <ProjectReference Include="..\Observables.Mqtt\Observables.Mqtt.csproj" />
     <ObservablesPackLibProjectReference Include="..\Observables.Mqtt.Reactive\Observables.Mqtt.Reactive.csproj" />
     <PackageReference Include="System.Reactive" />
-    <PackageReference Include="MQTTnet" />
     <None Include="README.Mqtt.Reactive.pack.md" Pack="true" PackagePath="README.md" Visible="false" />
-    <None Include="..\Observables.Mqtt\loc\zh-Hans\Observables.Mqtt.xml"
-          Pack="true"
-          PackagePath="lib\netstandard2.0\zh-Hans\;lib\net8.0\zh-Hans\;lib\net9.0\zh-Hans\;lib\net10.0\zh-Hans\"
-          Visible="false" />
     <None Include="..\Observables.Mqtt.Reactive\loc\zh-Hans\Observables.Mqtt.Reactive.xml"
           Pack="true"
           PackagePath="lib\netstandard2.0\zh-Hans\;lib\net8.0\zh-Hans\;lib\net9.0\zh-Hans\;lib\net10.0\zh-Hans\"
           Visible="false" />
-  </ItemGroup>
-
-  <!-- Span<T> for the netstandard2.0 runtime assembly; it used to arrive through the R3 reference. -->
-  <ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">
-    <PackageReference Include="System.Memory" />
   </ItemGroup>
 
 </Project>

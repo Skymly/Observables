@@ -7,7 +7,6 @@
   <ItemGroup>
     <Using Include="Xunit" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" />
-    <PackageReference Include="MQTTnet" />
     <PackageReference Include="System.Reactive" />
     <PackageReference Include="xunit.v3" />
     <PackageReference Include="xunit.runner.visualstudio">
@@ -17,6 +16,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\Observables.Mqtt.MQTTnet4\Observables.Mqtt.MQTTnet4.csproj" />
     <ProjectReference Include="..\Observables.Mqtt.Reactive\Observables.Mqtt.Reactive.csproj" />
     <ProjectReference Include="..\Observables.Mqtt.Reactive.SourceGenerators\Observables.Mqtt.Reactive.SourceGenerators.csproj"
                       OutputItemType="Analyzer" ReferenceOutputAssembly="false" />

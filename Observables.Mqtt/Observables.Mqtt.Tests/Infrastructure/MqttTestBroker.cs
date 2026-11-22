@@ -1,8 +1,17 @@
 using System.Net;
 using System.Net.Sockets;
 using MQTTnet;
-using MQTTnet.Client;
 using MQTTnet.Server;
+#if MQTTNET5
+using Observables.Mqtt.MQTTnet5;
+using ClientFactory = MQTTnet.MqttClientFactory;
+using ServerFactory = MQTTnet.Server.MqttServerFactory;
+#else
+using MQTTnet.Client;
+using Observables.Mqtt.MQTTnet4;
+using ClientFactory = MQTTnet.MqttFactory;
+using ServerFactory = MQTTnet.MqttFactory;
+#endif
 
 namespace Observables.Mqtt.Tests.Infrastructure;
 
@@ -10,15 +19,13 @@ namespace Observables.Mqtt.Tests.Infrastructure;
 public sealed class MqttTestBroker : IAsyncDisposable
 {
     readonly MqttServer server;
-    readonly MqttFactory factory;
     readonly object gate = new();
     readonly HashSet<(string ClientId, string Topic)> activeSubscriptions = new();
     readonly List<SubscriptionWaiter> waiters = [];
 
-    MqttTestBroker(MqttServer server, MqttFactory factory, int port)
+    MqttTestBroker(MqttServer server, int port)
     {
         this.server = server;
-        this.factory = factory;
         Port = port;
         server.ClientSubscribedTopicAsync += OnClientSubscribedAsync;
         server.ClientUnsubscribedTopicAsync += OnClientUnsubscribedAsync;
@@ -29,7 +36,7 @@ public sealed class MqttTestBroker : IAsyncDisposable
 
     public static async Task<MqttTestBroker> StartAsync(CancellationToken cancellationToken = default)
     {
-        var factory = new MqttFactory();
+        var factory = new ServerFactory();
         var port = ReserveFreeTcpPort();
         var options = factory
             .CreateServerOptionsBuilder()
@@ -39,7 +46,7 @@ public sealed class MqttTestBroker : IAsyncDisposable
         var server = factory.CreateMqttServer(options);
 
         await server.StartAsync().ConfigureAwait(false);
-        return new MqttTestBroker(server, factory, port);
+        return new MqttTestBroker(server, port);
     }
 
     static int ReserveFreeTcpPort()
@@ -170,7 +177,7 @@ public sealed class MqttTestBroker : IAsyncDisposable
     public async Task<MqttClientSession> ConnectAsync(CancellationToken cancellationToken = default)
     {
         var clientId = Guid.NewGuid().ToString("N");
-        var client = factory.CreateMqttClient();
+        var client = new ClientFactory().CreateMqttClient();
         var result = await client
             .ConnectAsync(
                 new MqttClientOptionsBuilder()
@@ -200,6 +207,8 @@ public sealed class MqttTestBroker : IAsyncDisposable
     public sealed class MqttClientSession(IMqttClient client, string clientId) : IAsyncDisposable
     {
         public IMqttClient Client { get; } = client;
+
+        public IMqttTransport Transport { get; } = MqttNetTransport.Wrap(client);
 
         public string ClientId { get; } = clientId;
 

@@ -15,7 +15,7 @@ public sealed class MqttNamedClientE2ETests(MqttTestBrokerFixture fixture)
     public async Task Name_on_the_attribute_resolves_the_registered_client()
     {
         await using var session = await fixture.Broker.ConnectAsync(TestContext.Current.CancellationToken);
-        MqttService.RegisterClient("e2e-named", session.Client);
+        MqttService.RegisterClient("e2e-named", session.Transport);
 
         var hub = MqttService.For<IE2ENamedHub>();
 

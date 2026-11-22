@@ -1,4 +1,4 @@
-﻿Diagnostics:
+Diagnostics:
   <none>
 
 Generated Sources:
@@ -10,15 +10,11 @@ namespace Observables.Mqtt.Generated
 {
     [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
     [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-#if NET8_0_OR_GREATER
-    [global::System.Diagnostics.CodeAnalysis.RequiresUnreferencedCode("MQTT payload serialization uses reflection. Preserve payload type members when trimming.")]
-    [global::System.Diagnostics.CodeAnalysis.RequiresDynamicCode("MQTT payload serialization uses reflection.")]
-#endif
     internal sealed class KeywordTopicsGeneratedProxy : global::IKeywordTopics
     {
-        private readonly global::MQTTnet.Client.IMqttClient _client;
+        private readonly global::Observables.Mqtt.IMqttTransport _client;
 
-        public KeywordTopicsGeneratedProxy(global::MQTTnet.Client.IMqttClient client)
+        public KeywordTopicsGeneratedProxy(global::Observables.Mqtt.IMqttTransport client)
         {
             _client = client;
         }

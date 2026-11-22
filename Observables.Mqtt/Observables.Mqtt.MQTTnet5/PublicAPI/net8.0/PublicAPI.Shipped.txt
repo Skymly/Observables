@@ -1,0 +1,3 @@
+#nullable enable
+Observables.Mqtt.MQTTnet5.MqttNetTransport
+static Observables.Mqtt.MQTTnet5.MqttNetTransport.Wrap(MQTTnet.IMqttClient! client) -> Observables.Mqtt.IMqttTransport!

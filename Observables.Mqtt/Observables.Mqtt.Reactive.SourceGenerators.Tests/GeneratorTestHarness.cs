@@ -14,8 +14,7 @@ internal static class GeneratorTestHarness
         new GeneratorHarnessDefinition(
             HarnessDocumentBuilder.Create(
                 "System",
-                "Observables.Mqtt",
-                "MQTTnet.Client"),
+                "Observables.Mqtt"),
             options => MetadataReferenceBuilder.Build(
                 options.IncludeCoreReference ? null : "Observables.Mqtt.dll",
                 typeof(global::System.Reactive.Unit),
@@ -24,8 +23,7 @@ internal static class GeneratorTestHarness
                     : null,
                 options.IncludeCoreReference
                     ? typeof(global::Observables.Mqtt.Reactive.SystemReactiveMqttAdapter)
-                    : null,
-                typeof(global::MQTTnet.MqttFactory)),
+                    : null),
             static () => [new MqttInterfaceStubGenerator()],
             new SnapshotOptions(
                 "OBS5",
@@ -37,13 +35,11 @@ internal static class GeneratorTestHarness
         new GeneratorHarnessDefinition(
             HarnessDocumentBuilder.Create(
                 "System",
-                "Observables.Mqtt",
-                "MQTTnet.Client"),
+                "Observables.Mqtt"),
             _ => MetadataReferenceBuilder.Build(
                 "Observables.Mqtt.Reactive.dll",
                 typeof(global::System.Reactive.Unit),
-                typeof(global::Observables.Mqtt.MqttService),
-                typeof(global::MQTTnet.MqttFactory)),
+                typeof(global::Observables.Mqtt.MqttService)),
             static () => [new MqttInterfaceStubGenerator()],
             new SnapshotOptions(
                 "OBS5",

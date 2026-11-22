@@ -15,7 +15,7 @@ public sealed class MqttAdapterCreateTests
         var proxy = FakeMqtt.Create();
 
         await Assert.ThrowsAsync<NotSupportedException>(() => SystemReactiveMqttAdapter
-            .FromSubscribe<string>(proxy.AsClient(), "$share/readers/sensors/+")
+            .FromSubscribe<string>(proxy.AsTransport(), "$share/readers/sensors/+")
             .Timeout(TimeSpan.FromSeconds(2))
             .FirstAsync()
             .ToTask(TestContext.Current.CancellationToken));
@@ -38,7 +38,7 @@ public sealed class MqttAdapterCreateTests
     {
         var proxy = FakeMqtt.Create();
         proxy.ThrowOnUnsubscribe = true;
-        var subscription = SystemReactiveMqttAdapter.FromSubscribe<string>(proxy.AsClient(), "orders").Subscribe(_ => { });
+        var subscription = SystemReactiveMqttAdapter.FromSubscribe<string>(proxy.AsTransport(), "orders").Subscribe(_ => { });
         await WaitUntil(() => Volatile.Read(ref proxy.SubscribeCalls) >= 1, "SubscribeCalls");
         subscription.Dispose();
         await WaitUntil(() => Volatile.Read(ref proxy.UnsubscribeCalls) >= 1, "UnsubscribeCalls");
@@ -52,12 +52,12 @@ public sealed class MqttAdapterCreateTests
         proxy.UnsubscribeDelayMilliseconds = 200;
         var received = new TaskCompletionSource<string>(TaskCreationOptions.RunContinuationsAsynchronously);
 
-        var first = SystemReactiveMqttAdapter.FromSubscribe<string>(proxy.AsClient(), "orders").Subscribe(_ => { });
+        var first = SystemReactiveMqttAdapter.FromSubscribe<string>(proxy.AsTransport(), "orders").Subscribe(_ => { });
         await WaitUntil(() => Volatile.Read(ref proxy.SubscribeCalls) >= 1, "first subscribe");
         first.Dispose();
         await WaitUntil(() => Volatile.Read(ref proxy.UnsubscribeCalls) >= 1, "unsubscribe started");
 
-        using var second = SystemReactiveMqttAdapter.FromSubscribe<string>(proxy.AsClient(), "orders")
+        using var second = SystemReactiveMqttAdapter.FromSubscribe<string>(proxy.AsTransport(), "orders")
             .Subscribe(value => received.TrySetResult(value));
         await Task.Delay(proxy.UnsubscribeDelayMilliseconds + 150, TestContext.Current.CancellationToken);
         Assert.True(proxy.HasFilter("orders"));
@@ -74,7 +74,7 @@ public sealed class MqttAdapterCreateTests
         proxy.PublishReasonCode = MqttClientPublishReasonCode.NotAuthorized;
         var error = new TaskCompletionSource<Exception>(TaskCreationOptions.RunContinuationsAsynchronously);
 
-        using var subscription = SystemReactiveMqttAdapter.FromPublish(proxy.AsClient(), "orders", TestContext.Current.CancellationToken)
+        using var subscription = SystemReactiveMqttAdapter.FromPublish(proxy.AsTransport(), "orders", TestContext.Current.CancellationToken)
             .Subscribe(_ => { }, ex => error.TrySetResult(ex));
 
         var ex = await error.Task.WaitAsync(TimeSpan.FromSeconds(2), TestContext.Current.CancellationToken);
@@ -88,7 +88,7 @@ public sealed class MqttAdapterCreateTests
         var proxy = FakeMqtt.Create();
         proxy.PublishReasonCode = MqttClientPublishReasonCode.NoMatchingSubscribers;
 
-        await SystemReactiveMqttAdapter.FromPublish(proxy.AsClient(), "orders", TestContext.Current.CancellationToken)
+        await SystemReactiveMqttAdapter.FromPublish(proxy.AsTransport(), "orders", TestContext.Current.CancellationToken)
             .Timeout(TimeSpan.FromSeconds(2))
             .FirstAsync()
             .ToTask();
@@ -98,7 +98,7 @@ public sealed class MqttAdapterCreateTests
     public async Task FromPublish_success_completes_with_unit()
     {
         var proxy = FakeMqtt.Create();
-        await SystemReactiveMqttAdapter.FromPublish(proxy.AsClient(), "orders", TestContext.Current.CancellationToken)
+        await SystemReactiveMqttAdapter.FromPublish(proxy.AsTransport(), "orders", TestContext.Current.CancellationToken)
             .Timeout(TimeSpan.FromSeconds(2))
             .FirstAsync()
             .ToTask();
@@ -111,12 +111,12 @@ public sealed class MqttAdapterCreateTests
         var exact = new TaskCompletionSource<string>(TaskCreationOptions.RunContinuationsAsynchronously);
         var wildcard = new TaskCompletionSource<string>(TaskCreationOptions.RunContinuationsAsynchronously);
 
-        using var exactSub = SystemReactiveMqttAdapter.FromSubscribe<string>(proxy.AsClient(), "$SYS/uptime")
+        using var exactSub = SystemReactiveMqttAdapter.FromSubscribe<string>(proxy.AsTransport(), "$SYS/uptime")
             .Subscribe(value => exact.TrySetResult(value));
-        using var wildSub = SystemReactiveMqttAdapter.FromSubscribe<string>(proxy.AsClient(), "#")
+        using var wildSub = SystemReactiveMqttAdapter.FromSubscribe<string>(proxy.AsTransport(), "#")
             .Subscribe(value => wildcard.TrySetResult(value));
 
-        await WaitUntil(() => Volatile.Read(ref proxy.HandlerCount) >= 2, "Handlers");
+        await WaitUntil(() => proxy.FilterCount == 2, "both filters");
         await proxy.RaiseAsync("$SYS/uptime", "1");
 
         Assert.Equal("1", await exact.Task.WaitAsync(TimeSpan.FromSeconds(2), TestContext.Current.CancellationToken));
@@ -130,7 +130,7 @@ public sealed class MqttAdapterCreateTests
         var error = new TaskCompletionSource<Exception>(TaskCreationOptions.RunContinuationsAsynchronously);
         var values = new List<int>();
 
-        using var subscription = SystemReactiveMqttAdapter.FromSubscribe<int>(proxy.AsClient(), "orders")
+        using var subscription = SystemReactiveMqttAdapter.FromSubscribe<int>(proxy.AsTransport(), "orders")
             .Subscribe(value => values.Add(value), ex => error.TrySetResult(ex));
 
         await WaitUntil(() => proxy.HasFilter("orders"), "subscribed");

@@ -1,12 +1,15 @@
 <Project Sdk="Microsoft.Build.Traversal/4.1.82">
 
   <PropertyGroup>
-    <Description>Traversal root for Observables.Mqtt.R3 and Observables.Mqtt.Reactive NuGet packages.</Description>
+    <Description>Traversal root for the Observables MQTT runtime, reactive backends, and MQTTnet adapters.</Description>
   </PropertyGroup>
 
   <ItemGroup>
     <ProjectReference Include="Observables.Mqtt.R3.Pack.csproj" />
     <ProjectReference Include="Observables.Mqtt.Reactive.Pack.csproj" />
+    <ProjectReference Include="..\Observables.Mqtt\Observables.Mqtt.csproj" />
+    <ProjectReference Include="..\Observables.Mqtt.MQTTnet4\Observables.Mqtt.MQTTnet4.csproj" />
+    <ProjectReference Include="..\Observables.Mqtt.MQTTnet5\Observables.Mqtt.MQTTnet5.csproj" />
   </ItemGroup>
 
 </Project>

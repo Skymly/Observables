@@ -71,7 +71,7 @@ internal static class Parser
 
     /// <summary>
     /// Reads the name off <c>[Mqtt(clientName)]</c>. A null or blank name means the interface opts out of
-    /// named resolution and stays reachable only through <c>MqttService.For&lt;T&gt;(IMqttClient)</c>.
+    /// named resolution and stays reachable only through <c>MqttService.For&lt;T&gt;(IMqttTransport)</c>.
     /// </summary>
     static string? GetClientName(INamedTypeSymbol interfaceSymbol, INamedTypeSymbol? mqttAttribute)
     {

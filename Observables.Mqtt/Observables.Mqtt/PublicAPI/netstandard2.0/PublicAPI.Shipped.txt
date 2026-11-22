@@ -40,14 +40,23 @@ static Observables.Mqtt.MqttPayloadSerializers.Register<T>(System.Func<byte[]!, 
 static Observables.Mqtt.MqttPayloadSerializers.Serialize(System.Type! payloadType, object? value) -> byte[]!
 static Observables.Mqtt.MqttPayloadSerializers.Serialize<T>(T value) -> byte[]!
 static Observables.Mqtt.MqttPayloadSerializers.Unregister<T>() -> bool
-static Observables.Mqtt.MqttService.For(System.Type! mqttInterfaceType, MQTTnet.Client.IMqttClient! client) -> object!
-static Observables.Mqtt.MqttService.For<T>(MQTTnet.Client.IMqttClient! client) -> T
-static Observables.Mqtt.MqttService.RegisterGeneratedFactory(System.Type! mqttInterfaceType, System.Func<MQTTnet.Client.IMqttClient!, object!>! factory) -> void
 static Observables.Mqtt.MqttTopic.Format(string! template, params (string! Name, string? Value)[]! parameters) -> string!
 static Observables.Mqtt.PrimitiveMqttPayloadSerializer.Instance.get -> Observables.Mqtt.PrimitiveMqttPayloadSerializer!
 Observables.Mqtt.MqttAttribute.MqttAttribute(string? clientName = null) -> void
 Observables.Mqtt.MqttAttribute.ClientName.get -> string?
 static Observables.Mqtt.MqttService.For(System.Type! mqttInterfaceType) -> object!
 static Observables.Mqtt.MqttService.For<T>() -> T
-static Observables.Mqtt.MqttService.RegisterClient(string! name, MQTTnet.Client.IMqttClient! client) -> void
 static Observables.Mqtt.MqttService.RegisterProxyName(System.Type! mqttInterfaceType, string! clientName) -> void
+Observables.Mqtt.IMqttTransport
+Observables.Mqtt.IMqttTransport.Capabilities.get -> Observables.Mqtt.MqttTransportCapabilities
+Observables.Mqtt.IMqttTransport.MessageReceived -> System.Func<string!, System.ReadOnlyMemory<byte>, System.Threading.Tasks.Task!>?
+Observables.Mqtt.IMqttTransport.PublishAsync(string! topic, System.ReadOnlyMemory<byte> payload, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task!
+Observables.Mqtt.IMqttTransport.SubscribeAsync(string! topicFilter, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task!
+Observables.Mqtt.IMqttTransport.UnsubscribeAsync(string! topicFilter, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task!
+Observables.Mqtt.MqttTransportCapabilities
+Observables.Mqtt.MqttTransportCapabilities.None = 0 -> Observables.Mqtt.MqttTransportCapabilities
+Observables.Mqtt.MqttTransportCapabilities.RequestResponse = 1 -> Observables.Mqtt.MqttTransportCapabilities
+static Observables.Mqtt.MqttService.For(System.Type! mqttInterfaceType, Observables.Mqtt.IMqttTransport! client) -> object!
+static Observables.Mqtt.MqttService.For<T>(Observables.Mqtt.IMqttTransport! client) -> T
+static Observables.Mqtt.MqttService.RegisterClient(string! name, Observables.Mqtt.IMqttTransport! client) -> void
+static Observables.Mqtt.MqttService.RegisterGeneratedFactory(System.Type! mqttInterfaceType, System.Func<Observables.Mqtt.IMqttTransport!, object!>! factory) -> void

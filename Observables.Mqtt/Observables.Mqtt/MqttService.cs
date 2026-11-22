@@ -1,6 +1,5 @@
 using System.Collections.Concurrent;
 using System.ComponentModel;
-using MQTTnet.Client;
 #if NET8_0_OR_GREATER
 using System.Diagnostics.CodeAnalysis;
 #endif
@@ -10,7 +9,7 @@ namespace Observables.Mqtt;
 /// <summary>Creates source-generated MQTT topic proxy implementations.</summary>
 public static class MqttService
 {
-    static readonly ConcurrentDictionary<string, IMqttClient> NamedClients = new(StringComparer.Ordinal);
+    static readonly ConcurrentDictionary<string, IMqttTransport> NamedClients = new(StringComparer.Ordinal);
 
     static readonly ConcurrentDictionary<Type, string> ProxyNames = new();
 
@@ -20,7 +19,7 @@ public static class MqttService
     /// without disposing the previous instance. The table is process-wide for this load context; there
     /// is no Unregister API.
     /// </summary>
-    public static void RegisterClient(string name, IMqttClient client)
+    public static void RegisterClient(string name, IMqttTransport client)
     {
         if (name is null)
         {
@@ -59,20 +58,20 @@ public static class MqttService
         [DynamicallyAccessedMembers(
             DynamicallyAccessedMemberTypes.PublicMethods | DynamicallyAccessedMemberTypes.PublicProperties
         )] Type mqttInterfaceType,
-        Func<IMqttClient, object> factory) =>
-        global::Observables.GeneratedProxyFactoryRegistry<IMqttClient>.Register(mqttInterfaceType, factory);
+        Func<IMqttTransport, object> factory) =>
+        global::Observables.GeneratedProxyFactoryRegistry<IMqttTransport>.Register(mqttInterfaceType, factory);
 #else
-    public static void RegisterGeneratedFactory(Type mqttInterfaceType, Func<IMqttClient, object> factory) =>
-        global::Observables.GeneratedProxyFactoryRegistry<IMqttClient>.Register(mqttInterfaceType, factory);
+    public static void RegisterGeneratedFactory(Type mqttInterfaceType, Func<IMqttTransport, object> factory) =>
+        global::Observables.GeneratedProxyFactoryRegistry<IMqttTransport>.Register(mqttInterfaceType, factory);
 #endif
 
 #if NET8_0_OR_GREATER
     public static T For<
         [DynamicallyAccessedMembers(
             DynamicallyAccessedMemberTypes.PublicMethods | DynamicallyAccessedMemberTypes.PublicProperties
-        )] T>(IMqttClient client) => (T)For(typeof(T), client);
+        )] T>(IMqttTransport client) => (T)For(typeof(T), client);
 #else
-    public static T For<T>(IMqttClient client) => (T)For(typeof(T), client);
+    public static T For<T>(IMqttTransport client) => (T)For(typeof(T), client);
 #endif
 
     /// <summary>
@@ -135,10 +134,10 @@ public static class MqttService
         [DynamicallyAccessedMembers(
             DynamicallyAccessedMemberTypes.PublicMethods | DynamicallyAccessedMemberTypes.PublicProperties
         )] Type mqttInterfaceType,
-        IMqttClient client
+        IMqttTransport client
     )
 #else
-    public static object For(Type mqttInterfaceType, IMqttClient client)
+    public static object For(Type mqttInterfaceType, IMqttTransport client)
 #endif
     {
         if (mqttInterfaceType is null)
@@ -146,7 +145,7 @@ public static class MqttService
             throw new ArgumentNullException(nameof(mqttInterfaceType));
         }
 
-        return global::Observables.GeneratedProxyFactoryRegistry<IMqttClient>.Create(
+        return global::Observables.GeneratedProxyFactoryRegistry<IMqttTransport>.Create(
             mqttInterfaceType,
             client,
             mqttInterfaceType.Name

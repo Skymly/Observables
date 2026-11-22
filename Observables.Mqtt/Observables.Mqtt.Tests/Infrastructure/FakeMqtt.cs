@@ -2,6 +2,7 @@ using System.Reflection;
 using MQTTnet;
 using MQTTnet.Client;
 using MQTTnet.Packets;
+using Observables.Mqtt.MQTTnet4;
 
 namespace Observables.Mqtt.Tests.Infrastructure;
 
@@ -14,6 +15,8 @@ internal static class FakeMqtt
         proxy.RejectSubscribe = rejectSubscribe;
         return proxy;
     }
+
+    public static IMqttTransport AsTransport(this FakeMqttClientProxy proxy) => MqttNetTransport.Wrap(proxy.AsClient());
 
     public static IMqttClient AsClient(this FakeMqttClientProxy proxy) => (IMqttClient)(object)proxy;
 }

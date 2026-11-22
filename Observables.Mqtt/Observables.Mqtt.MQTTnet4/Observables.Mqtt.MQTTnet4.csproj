@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <Import Project="..\..\eng\Observables.Package.props" />
+
+  <PropertyGroup>
+    <PackageId>Observables.Mqtt.MQTTnet4</PackageId>
+    <IsPackable>true</IsPackable>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <Description>MQTTnet 4 transport for Observables MQTT proxies.</Description>
+    <DefineConstants>$(DefineConstants);MQTTNET4</DefineConstants>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Observables.Mqtt\Observables.Mqtt.csproj" />
+    <PackageReference Include="MQTTnet" />
+    <None Include="..\Observables.Mqtt.Package\README.Mqtt.Transport.pack.md" Pack="true" PackagePath="README.md" />
+  </ItemGroup>
+
+</Project>

@@ -51,10 +51,13 @@ function Get-DocMemberNames {
     }
 
     [xml]$doc = Get-Content -Path $XmlPath -Encoding UTF8
+    # System.Text.Json emits XML comments for members of internal generated contexts as well.
     $names = @(
         $doc.doc.members.member |
             ForEach-Object { $_.name } |
-            Where-Object { $_ } |
+            Where-Object {
+                $_ -and $_ -notmatch '^[MP]:Observables\.RestAPI\.ProblemDetailsJsonContext\.'
+            } |
             Sort-Object -Unique
     )
     return ,$names

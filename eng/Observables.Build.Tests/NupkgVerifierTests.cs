@@ -14,6 +14,49 @@ public sealed class NupkgVerifierTests
         "README.md",
     ];
 
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void Verify_mqtt_adapter_uses_shared_runtime_dependency(bool bundlesRuntime)
+    {
+        const string adapter = "Observables.Mqtt.MQTTnet5";
+        var files = new List<string> { "README.md", $"lib/net8.0/{adapter}.dll" };
+        if (bundlesRuntime)
+        {
+            files.Add("lib/net8.0/Observables.Mqtt.dll");
+        }
+
+        var dependencies = new Dictionary<string, IReadOnlyList<string>>
+        {
+            ["net8.0"] = ["Observables.Mqtt", "MQTTnet"],
+        };
+        string nupkg = NupkgFixture.Create(adapter, files, dependencies);
+        try
+        {
+            IReadOnlyList<string> errors = NupkgVerifier.Verify(nupkg, new NupkgVerifyRequest
+            {
+                PackageId = adapter,
+                GeneratorAssemblyFileName = null,
+                RequiredLibAssembliesByTfm = RequireLib(adapter + ".dll", "net8.0"),
+                RequiredDependenciesByTfm = dependencies,
+                ForbiddenLibAssemblyFileNames = ["Observables.Mqtt.dll"],
+            });
+
+            if (bundlesRuntime)
+            {
+                Assert.Contains("lib/ must not bundle Observables.Mqtt.dll", Assert.Single(errors), StringComparison.Ordinal);
+            }
+            else
+            {
+                Assert.Empty(errors);
+            }
+        }
+        finally
+        {
+            File.Delete(nupkg);
+        }
+    }
+
     [Fact]
     public void Verify_fails_when_events_package_only_has_legacy_observables_events_props()
     {

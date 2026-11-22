@@ -4,12 +4,11 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
-
+using NuGet.Versioning;
 using Nuke.Common;
 using Nuke.Common.Execution;
 using Nuke.Common.IO;
 using Nuke.Common.Tools.DotNet;
-using NuGet.Versioning;
 using static Nuke.Common.Tools.DotNet.DotNetTasks;
 
 [UnsetVisualStudioEnvironmentVariables]
@@ -61,6 +60,7 @@ sealed class Build : NukeBuild
 
     BuildManifest.PackageEntry[] FilteredPackages =>
         DomainFilter.Select(Manifest.Packages, PackDomains, "--pack-domains", (package, domain) =>
+            package.PackageId.Equals($"Observables.{domain}", StringComparison.OrdinalIgnoreCase) ||
             package.PackageId.StartsWith($"Observables.{domain}.", StringComparison.OrdinalIgnoreCase));
 
     int EffectiveTestParallelism =>

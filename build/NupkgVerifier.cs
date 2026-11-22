@@ -18,31 +18,47 @@ static partial class NupkgVerifier
             .Select(static e => e.FullName.Replace('\\', '/'))
             .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
-        string generatorPath = AnalyzerFolder + request.GeneratorAssemblyFileName;
-        if (!entries.Contains(generatorPath))
+        if (request.GeneratorAssemblyFileName is { } generator)
         {
-            errors.Add($"{request.PackageId}: missing generator DLL {generatorPath}");
+            string generatorPath = AnalyzerFolder + generator;
+            if (!entries.Contains(generatorPath))
+            {
+                errors.Add($"{request.PackageId}: missing generator DLL {generatorPath}");
+            }
+
+            if (!entries.Contains(AnalyzerFolder + "Observables.CodeFixes.dll"))
+            {
+                errors.Add($"{request.PackageId}: missing Observables.CodeFixes.dll under {AnalyzerFolder}");
+            }
+
+            if (!entries.Contains(AnalyzerFolder + "Observables.Analyzers.dll"))
+            {
+                errors.Add($"{request.PackageId}: missing Observables.Analyzers.dll under {AnalyzerFolder}");
+            }
+
+            string propsFileName = request.PackageId + ".props";
+            if (!entries.Contains("build/" + propsFileName))
+            {
+                errors.Add($"{request.PackageId}: missing build/{propsFileName}");
+            }
+
+            if (!entries.Contains("buildTransitive/" + propsFileName))
+            {
+                errors.Add($"{request.PackageId}: missing buildTransitive/{propsFileName}");
+            }
+        }
+        else if (entries.Any(static entry => entry.StartsWith("analyzers/", StringComparison.OrdinalIgnoreCase)))
+        {
+            errors.Add($"{request.PackageId}: runtime-only packages must not include analyzers");
         }
 
-        if (!entries.Contains(AnalyzerFolder + "Observables.CodeFixes.dll"))
+        foreach (string file in request.ForbiddenLibAssemblyFileNames)
         {
-            errors.Add($"{request.PackageId}: missing Observables.CodeFixes.dll under {AnalyzerFolder}");
-        }
-
-        if (!entries.Contains(AnalyzerFolder + "Observables.Analyzers.dll"))
-        {
-            errors.Add($"{request.PackageId}: missing Observables.Analyzers.dll under {AnalyzerFolder}");
-        }
-
-        string propsFileName = request.PackageId + ".props";
-        if (!entries.Contains("build/" + propsFileName))
-        {
-            errors.Add($"{request.PackageId}: missing build/{propsFileName}");
-        }
-
-        if (!entries.Contains("buildTransitive/" + propsFileName))
-        {
-            errors.Add($"{request.PackageId}: missing buildTransitive/{propsFileName}");
+            if (entries.Any(entry => entry.StartsWith("lib/", StringComparison.OrdinalIgnoreCase) &&
+                string.Equals(Path.GetFileName(entry), file, StringComparison.OrdinalIgnoreCase)))
+            {
+                errors.Add($"{request.PackageId}: lib/ must not bundle {file}");
+            }
         }
 
         foreach ((string tfm, IReadOnlyList<string> files) in request.RequiredLibAssembliesByTfm)

@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <JsonSerializerIsReflectionEnabledByDefault>false</JsonSerializerIsReflectionEnabledByDefault>
+    <EnableTrimAnalyzer>true</EnableTrimAnalyzer>
+    <EnableAotAnalyzer>true</EnableAotAnalyzer>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Observables.RestAPI.R3" Version="$(ObservablesConsumerPackageVersion)" />
+    <PackageReference Include="Observables.Mqtt.R3" Version="$(ObservablesConsumerPackageVersion)" />
+    <PackageReference Include="Observables.Redis.R3" Version="$(ObservablesConsumerPackageVersion)" />
+  </ItemGroup>
+
+</Project>

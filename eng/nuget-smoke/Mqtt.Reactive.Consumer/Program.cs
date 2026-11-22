@@ -1,7 +1,11 @@
-using MQTTnet;
-using MQTTnet.Client;
+#if MQTTNET5
+using Observables.Mqtt.MQTTnet5;
+using ClientFactory = MQTTnet.MqttClientFactory;
+#else
+using Observables.Mqtt.MQTTnet4;
+using ClientFactory = MQTTnet.MqttFactory;
+#endif
 using Observables.Mqtt;
-using System.Reactive;
 
 namespace Observables.NuGetSmoke.Mqtt.Reactive;
 
@@ -16,11 +20,11 @@ public static class Program
 {
     public static void Main()
     {
-        IMqttClient client = new MqttFactory().CreateMqttClient();
-        ISmokeTopics hub = MqttService.For<ISmokeTopics>(client);
-        if (hub is null)
+        using var client = new ClientFactory().CreateMqttClient();
+        ISmokeTopics hub = MqttService.For<ISmokeTopics>(MqttNetTransport.Wrap(client));
+        if (hub.Temperature is null)
         {
-            throw new InvalidOperationException("Mqtt Reactive generated proxy was not created.");
+            throw new InvalidOperationException("Mqtt Reactive generated proxy did not create the temperature observable.");
         }
 
         Console.WriteLine("Observables.Mqtt.Reactive consumer smoke OK");

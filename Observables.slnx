@@ -160,6 +160,8 @@
     <Project Path="Observables.Mqtt/Observables.Mqtt.Package/Observables.Mqtt.Package.csproj" />
 
     <Project Path="Observables.Mqtt/Observables.Mqtt/Observables.Mqtt.csproj" />
+    <Project Path="Observables.Mqtt/Observables.Mqtt.MQTTnet4/Observables.Mqtt.MQTTnet4.csproj" />
+    <Project Path="Observables.Mqtt/Observables.Mqtt.MQTTnet5/Observables.Mqtt.MQTTnet5.csproj" />
 
     <Project Path="Observables.Mqtt/Observables.Mqtt.R3/Observables.Mqtt.R3.csproj" />
 
@@ -178,6 +180,7 @@
       <Project Path="Observables.Mqtt/Observables.Mqtt.Tests/Observables.Mqtt.Tests.csproj" />
 
       <Project Path="Observables.Mqtt/Observables.Mqtt.Reactive.Tests/Observables.Mqtt.Reactive.Tests.csproj" />
+      <Project Path="Observables.Mqtt/Observables.Mqtt.MQTTnet5.Tests/Observables.Mqtt.MQTTnet5.Tests.csproj" />
 
     </Folder>
 

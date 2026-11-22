@@ -44,7 +44,9 @@ System.Reactive 路径将 `Observables.Events.R3` 换为 `Observables.Events.Rea
 
 ## 功能域
 
-十域均已在主仓提供运行时（按需）、双路源生成器与测试；当前稳定版 **`0.4.1`**（**20 包**，含 **Redis**）已发至 nuget.org。共享层另有 `Observables.Core`、`Observables.Analyzers`、`Observables.CodeFixes`。
+十个功能域均提供双路源生成器与测试，并按需提供运行时。共享层另有 `Observables.Core`、`Observables.Analyzers`、`Observables.CodeFixes`。
+
+`0.5.0` 增加 MQTTnet 4/5 适配包和中立 MQTT 运行时，合计 **23 个包**。RestAPI、MQTT、Redis 在 .NET 8 或更高版本上支持源生成的 JSON 元数据。
 
 | 域 | 说明 |
 |----|------|
@@ -193,7 +195,7 @@ using var d = hub.ReceiveMessage.Subscribe(msg => Console.WriteLine(msg.Text));
 
 ## Mqtt
 
-在 `[Mqtt]` 接口上用 `[MqttSubscribe]` 标注属性（订阅热流）、`[MqttPublish]` 标注方法（发布冷流），生成器产出 MQTT 主题代理。
+在 `[Mqtt]` 接口上用 `[MqttSubscribe]` 标注订阅属性、`[MqttPublish]` 标注发布方法。从 0.5.0 起，按客户端主版本安装 `Observables.Mqtt.MQTTnet4` 或 `Observables.Mqtt.MQTTnet5`，导入对应命名空间。
 
 ```csharp
 [Mqtt]
@@ -206,11 +208,11 @@ public interface ISensorHub
     Observable<Unit> Reboot(string deviceId);
 }
 
-var hub = MqttService.For<ISensorHub>(mqttClient);
+var hub = MqttService.For<ISensorHub>(MqttNetTransport.Wrap(mqttClient));
 using var d = hub.Temperature.Subscribe(data => Console.WriteLine(data.Value));
 ```
 
-依赖 [MQTTnet](https://www.nuget.org/packages/MQTTnet)。
+MQTTnet 5 适配包要求 .NET 8 或更高。应用负责连接和处置客户端。[MQTT 设计与迁移说明](docs/design/mqtt.md)
 
 ## WebSocket
 

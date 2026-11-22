@@ -86,12 +86,13 @@ Stable packages are published to [nuget.org](https://www.nuget.org/profiles/Skym
 | **0.3.1** | Patch — OBS9002/OBS10002/OBS11002 name consumer package ids (`Observables.<Feature>.R3` / `.Reactive`); RestAPI sync proxies no longer deadlock on single-thread SynchronizationContext; setters and ref/out/in parameters report each domain's existing OBS*004 instead of silent CS0535; still **20** packages. |
 | **0.4.0** | Minor — RestAPI `RestApiCallScope` snapshots per-invocation `HttpRequestMessage` options at proxy entry (precedence: `RestApiSettings.HttpRequestMessageOptions` → entry snapshot → `[Property]`); dependency bumps past October 2026 NuGet advisories (SignalR.Client 8.0.32, System.Text.Json 8.0.6, Cryptography.Xml 10.0.13); still **20** packages. |
 | **0.4.1** | Patch — engineering-debt ledger: Events generator accessibility/nameability gating, generic receiver constraints, attached-routed type parameters, and OBS2006 on multi-parent conflicting events; RestAPI dead-code removal, flags-enum formatter crash fix, and duplicate `[Headers]` dedup; `RestApiCallScope` clears null options on netstandard2.0 and unlinks out-of-order disposes; OBS0001 detects conflicts across three backend slots via package-declared `Observables<Feature>Backend_*` keys plus marker/symbol fallback (ADR-005); still **20** packages. |
+| **0.5.0** | MQTT transport abstraction, separate MQTTnet 4 and 5 adapters, and a standalone MQTT runtime bring the total to **23** packages. Adds source-generated JSON for RestAPI, MQTT, and Redis and updates R3 to 1.3.1. MQTT applications upgrading from 0.4.x select an adapter and wrap their client before binding a proxy. [MQTT migration](docs/design/mqtt.md#33-传输接口与-mqttnet-适配) |
 
 Preview builds (`0.1.0-preview*`, `0.1.1-preview*`) were published to NuGet with tags only (no GitHub Release). Details and milestone planning: [docs/ROADMAP.md](docs/ROADMAP.md).
 
 ### Package set
 
-**nuget.org (`0.4.1`)**: twenty packages — ten domains, each as `Observables.<Feature>.R3` and `Observables.<Feature>.Reactive`.
+Version `0.5.0` includes 23 packages across ten domains. Each domain has an R3 and a Reactive package.
 
 | Package ID | Domain |
 |------------|--------|
@@ -99,6 +100,8 @@ Preview builds (`0.1.0-preview*`, `0.1.1-preview*`) were published to NuGet with
 | `Observables.RestAPI.R3` / `.Reactive` | Declarative HTTP client |
 | `Observables.SignalR.R3` / `.Reactive` | SignalR hub proxy |
 | `Observables.Mqtt.R3` / `.Reactive` | MQTT topic proxy |
+| `Observables.Mqtt` | Backend-neutral MQTT runtime |
+| `Observables.Mqtt.MQTTnet4` / `Observables.Mqtt.MQTTnet5` | MQTT transport adapters |
 | `Observables.WebSocket.R3` / `.Reactive` | WebSocket client proxy |
 | `Observables.Grpc.R3` / `.Reactive` | gRPC `CallInvoker` proxy |
 | `Observables.Sse.R3` / `.Reactive` | Server-Sent Events (`text/event-stream`) |
@@ -107,6 +110,12 @@ Preview builds (`0.1.0-preview*`, `0.1.1-preview*`) were published to NuGet with
 | `Observables.Redis.R3` / `.Reactive` | Classic Redis Pub/Sub channel proxy |
 
 Version source of truth: `eng/Observables.Package.props` (`PackageVersion` / `Version`).
+
+### Compatibility from 1.0.0
+
+Observables follows [Semantic Versioning](https://semver.org/) starting with 1.0.0. The 1.x compatibility surface covers public APIs in the NuGet runtime assemblies, documented proxy contracts for supported interfaces, package IDs, and the meaning of published diagnostic IDs.
+
+Minor releases may add compatible APIs, proxy shapes, packages, and diagnostics. Patch releases may correct behavior to match the documented contract. Removing or renaming a public API, invalidating a supported proxy shape, relocating a package under a different ID, or reassigning a published diagnostic ID requires a new major version.
 
 ## Maintainer publishing
 

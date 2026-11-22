@@ -46,7 +46,7 @@
 
 | 段 | 域 |
 |----|----|
-| `OBS0001`–`OBS0002` | Shared 全库（包冲突、开放泛型代理） |
+| `OBS0001`–`OBS0003` | Shared 全库（包冲突、不受支持的泛型代理接口与方法） |
 | `OBS2xxx` | Events |
 | `OBS3xxx` | RestAPI |
 | `OBS4xxx` | SignalR |

@@ -186,7 +186,7 @@ R3 包不引用 System.Reactive，反之亦然（约定）。
 | `Observables.SignalR.R3` | `SignalRObservable`（R3 桥接 helper） | 仅 `Observables.SignalR.R3`（`lib/`） |
 | `Observables.SignalR.Reactive` | `SystemReactiveSignalRAdapter`（`IObservable` 桥接） | 仅 `Observables.SignalR.Reactive`（`lib/`） |
 
-三个程序集的命名空间都是 `Observables.SignalR`，[ADR-003](../adr/ADR-003-backend-neutral-domain-runtime.md) 的拆分对消费者源码不可见；`SignalRProtocol` 等 internal 类型留在中立运行时，两个桥接项目通过 `InternalsVisibleTo` 取用。
+使用 `HubService` 和 R3 的 `SignalRObservable` 时导入 `using Observables.SignalR;`。直接调用 System.Reactive 桥 `SystemReactiveSignalRAdapter` 时导入 `using Observables.SignalR.Reactive;`。两个桥接项目通过 `InternalsVisibleTo` 共享中立运行时的 `SignalRProtocol`。
 
 - `FromInvoke/FromSend` ≈ `Observable.FromAsync`（冷、单元素）；`FromStream` 桥接 `IAsyncEnumerable<T>`（R3 `Observable.Create` + `await foreach`）；`FromOn` 为引用计数多播（首订阅 `connection.On`，末订阅 `Dispose`）。
 - `Microsoft.AspNetCore.SignalR.Client` 作为运行时包的 **public 依赖**（消费者通过 `HubConnection` 传参，必须可见）。

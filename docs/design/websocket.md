@@ -23,7 +23,7 @@
 | `Observables.WebSocket.R3`（`WebSocketObservable`） | 上面那个 + R3 | 仅 `Observables.WebSocket.R3` |
 | `Observables.WebSocket.Reactive`（`SystemReactiveWebSocketAdapter`） | 上面第一个 + System.Reactive | 仅 `Observables.WebSocket.Reactive` |
 
-命名空间都是 `Observables.WebSocket`，拆分对消费者源码不可见。接收泵是 internal 且后端中立，留在第一个程序集里，两个桥接项目通过 `InternalsVisibleTo` 共用同一张 per-socket 表——这正是 §7 那条「每 socket 一个泵」得以跨后端成立的前提。
+使用 `WebSocketService` 和 R3 的 `WebSocketObservable` 时导入 `using Observables.WebSocket;`。直接调用 System.Reactive 桥 `SystemReactiveWebSocketAdapter` 时导入 `using Observables.WebSocket.Reactive;`。两个桥接项目通过 `InternalsVisibleTo` 共用中立运行时中的接收泵及其 per-socket 表，见 §7。
 
 两个包均包含运行时（`Observables.WebSocket`）、适配层以及对应的 Roslyn 源生成器。
 
@@ -70,7 +70,8 @@ Observable<Unit> SendMessage(string message);
 ```
 
 - 支持的参数类型：无（空载荷）、`string`（UTF-8 文本）、`byte[]`（二进制）。
-- 对于其他类型，载荷以 JSON 序列化（仅 net8+）。
+- 对于其他类型，载荷在每次订阅时进行 JSON 序列化（仅 net8+）。序列化失败通过该订阅的错误通道报告。
+- 同一个 `ClientWebSocket` 上，先等待当前发送完成，再发起下一次发送。发送可以与接收并行。 [ClientWebSocket.SendAsync](https://learn.microsoft.com/dotnet/api/system.net.websockets.clientwebsocket.sendasync)
 - 写了 `messageName` 时（上例的 `"ping"`），名字是它唯一能去的地方——WebSocket 没有 subject / topic 可绑，只有报文本身。此时该方法改发 JSON 信封文本帧 `{"type":"<messageName>","payload":<参数>}`，无参数时省略 `payload`，多参数时 `payload` 为参数组成的对象。信封走 JSON，因此和其他 JSON 发送一样仅 net8+，netstandard2.0 上抛 `NotSupportedException`；`byte[]` 参数在信封里会变成 base64 字符串而不再是二进制帧。没写名字的发送不受影响。
 
 ### 4.4 Receive
@@ -86,6 +87,7 @@ Observable<string> Messages { get; }
 - 当服务器发送 Close 帧时完成。
 - 重组后的单条消息默认上限 **1 MiB**（`WebSocketObservable.DefaultMaxReceiveMessageBytes`）。`FromReceive(socket, maxMessageBytes)` 可覆盖。超出则接收流以错误完成，避免无界缓冲。
 - 每个 `ClientWebSocket` 只有一个接收循环（`WebSocketReceivePump`），多个 `[WebSocketReceive]` 成员、多个订阅者共用它，各自反序列化自己的 `T`。上限由启动该循环的那次订阅决定，后来者沿用。
+- 接收循环在发出终止通知前释放接收权。连接仍打开时，可以在终止回调内订阅并启动下一轮接收。若前一条消息因超限只读到部分内容，新循环会丢弃它的剩余片段，再读取下一条完整消息。
 - 写了 `messageName` 时（上例的 `"message"`），该成员改走 `FromReceiveNamed`：只认 §4.3 具名发送写出的那个 JSON 信封，`type` 对得上才把 `payload` 反序列化为 `T` 发出去。名字对不上、或者压根不是信封的帧，直接跳过而不是报错——同一个 socket 上别的成员还要用它们。信封走 JSON，因此和具名发送一样仅 net8+，netstandard2.0 上抛 `NotSupportedException`；`payload` 恒按 JSON 解，所以 `string` 也走序列化器、`byte[]` 收的是 base64，正好和发送端对称。没写名字的接收拿到的仍是原始帧。
 - 具名发送不带参数时信封里没有 `payload`，此时具名接收无从构造 `T`，抛 `InvalidOperationException`。要观察这类纯信号，用不具名接收看原始帧。
 

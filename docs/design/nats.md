@@ -129,7 +129,7 @@ Observables.Nats/
 | `Observables.Nats.R3`（`NatsObservable`） | 上面那个 + R3 | 仅 `Observables.Nats.R3` |
 | `Observables.Nats.Reactive`（`SystemReactiveNatsAdapter`） | 上面第一个 + System.Reactive | 仅 `Observables.Nats.Reactive` |
 
-命名空间都是 `Observables.Nats`，拆分对消费者源码不可见。`NatsProtocol`、`NatsPayloadSerializerBridge` 等 internal 类型留在中立运行时，两个桥接项目通过 `InternalsVisibleTo` 取用。
+使用 `NatsService` 和 R3 的 `NatsObservable` 时导入 `using Observables.Nats;`。直接调用 System.Reactive 桥 `SystemReactiveNatsAdapter` 时导入 `using Observables.Nats.Reactive;`。两个桥接项目通过 `InternalsVisibleTo` 共享中立运行时的 `NatsProtocol` 和 `NatsPayloadSerializerBridge`。
 
 ## 8. 测试
 

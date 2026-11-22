@@ -108,7 +108,7 @@ flowchart LR
 | `Observables.CodeFixes` | CodeFix / 补全 | 同上 |
 | 域生成器诊断 | 各 `*.SourceGenerators` | 同上 |
 
-共享诊断：`OBS0001`（同一功能域同时引用 Observables `.R3` 与 `.Reactive` 包；不计独立 `R3` 程序集）、`OBS0002`（开放泛型代理接口）、`OBS*007`（空代理接口，按域分类）。
+共享诊断包括 `OBS0001`（同域后端包冲突）、`OBS0002`（当前生成器无法实现的泛型接口）、`OBS0003`（IO 代理接口声明或继承了抽象泛型方法）以及按域分配的 `OBS*007`（空代理接口）。RestAPI 支持可按具体类型构造的泛型接口。
 
 ## 6. 构建与 CI
 

@@ -1,17 +1,26 @@
 # Public API baseline (M7)
 
-Observables locks the **NuGet `lib/` runtime surface** with [`Microsoft.CodeAnalysis.PublicApiAnalyzers`](https://www.nuget.org/packages/Microsoft.CodeAnalysis.PublicApiAnalyzers) (`3.3.2`, pinned in [`Directory.Packages.props`](../Directory.Packages.props)).
+Observables locks the **NuGet `lib/` runtime surface** with [`Microsoft.CodeAnalysis.PublicApiAnalyzers`](https://www.nuget.org/packages/Microsoft.CodeAnalysis.PublicApiAnalyzers) (`3.3.2`, pinned in [`Directory.Packages.props`](../../Directory.Packages.props)).
 
 ## Scope
 
 | Included | Excluded |
 |----------|----------|
 | 9 domain runtimes (`Observables.<Feature>/Observables.<Feature>/`) | Events packages (DevelopmentDependency; no consumer `lib/`) |
+| 8 R3 bridges (`Observables.<Feature>.R3/`) | |
 | 9 Reactive bridges (`Observables.<Feature>.Reactive/`) | Source generators, Analyzers, CodeFixes, tests |
 | Attributes, services, adapters shipped in meta-packages | `.Package` traversal/pack projects, `nuget-smoke` |
 | | `Observables.RestAPI.HttpClientFactory` (optional; not in 20-pack manifest) |
 
-Enforcement is wired in [`eng/Observables.PublicApi.props`](../eng/Observables.PublicApi.props) and imported from [`eng/Observables.ProjectDefaults.props`](../eng/Observables.ProjectDefaults.props) when `_ObsIsDomainRuntimeProject=true`.
+The 26 projects are identified by their checked-in `PublicAPI/<tfm>/PublicAPI.Shipped.txt` files. List the project directories from the repository root with this command.
+
+```powershell
+git ls-files -- ':(glob)**/PublicAPI/*/PublicAPI.Shipped.txt' |
+    ForEach-Object { $_ -replace '/PublicAPI/.*', '' } |
+    Sort-Object -Unique
+```
+
+Enforcement is wired in [`eng/Observables.PublicApi.props`](../../eng/Observables.PublicApi.props) and imported from [`eng/Observables.ProjectDefaults.props`](../../eng/Observables.ProjectDefaults.props) when `_ObsIsDomainRuntimeProject=true`.
 
 Each project keeps:
 
@@ -22,7 +31,7 @@ Both files start with `#nullable enable` so nullable annotations appear in the b
 
 ## Multi-targeting
 
-Domain runtimes target `netstandard2.0;net8.0;net9.0;net10.0`.
+All 26 covered projects target `net8.0`, `net9.0`, and `net10.0`. The 23 projects that also target `netstandard2.0` keep a baseline for that TFM. The three Postgres projects target modern .NET only.
 
 PublicApiAnalyzers **3.3.x** expects a **complete** public API list **per TFM** (it does not merge a root file with TFM-specific supplements). Each runtime project therefore keeps:
 
@@ -40,8 +49,8 @@ Some members exist only on newer TFMs (for example `JsonNatsPayloadSerializer`, 
 ## Regenerating a baseline (maintainers)
 
 1. Ensure packages restore (`dotnet restore`).
-2. Run [`eng/scripts/bootstrap-public-api.ps1`](../eng/scripts/bootstrap-public-api.ps1) (all 18 runtime projects) or pass `-ProjectRelativePaths` for a subset.
-3. The script seeds `PublicAPI/<tfm>/` files, runs `dotnet format analyzers --framework <tfm> --diagnostics RS0016` for each TFM, then moves everything into `Shipped` (M7 freeze semantics).
+2. Run [`eng/scripts/bootstrap-public-api.ps1`](../../eng/scripts/bootstrap-public-api.ps1) from the repository root. It discovers projects and TFMs from the `PublicAPI/` directory trees. Pass `-ProjectRelativePaths` to select a subset.
+3. The script seeds the per-TFM baseline files and runs `dotnet format analyzers --diagnostics RS0016` for each project. It moves the resulting API lists into `Shipped` for the baseline freeze.
 4. Verify: `dotnet run --project build/_build.csproj -- --target Ci` and `--target CiPack`.
 
 ## Day-to-day contributor workflow (post-1.0)
@@ -58,5 +67,5 @@ Some members exist only on newer TFMs (for example `JsonNatsPayloadSerializer`, 
 
 ## Related
 
-- Roadmap: [`ROADMAP.md`](ROADMAP.md) M7
-- Agent rules: [`AGENTS.md`](../AGENTS.md) § Public API freeze
+- [Roadmap](../ROADMAP.md) M7
+- [Agent rules](../../AGENTS.md) under the public API warning policy

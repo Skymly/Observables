@@ -128,12 +128,13 @@ Observables.Postgres/
 | `Observables.Postgres.R3`（`PostgresObservable`） | 上面那个 + R3 | 仅 `Observables.Postgres.R3` |
 | `Observables.Postgres.Reactive`（`SystemReactivePostgresAdapter`） | 上面第一个 + System.Reactive | 仅 `Observables.Postgres.Reactive` |
 
-命名空间都是 `Observables.Postgres`，拆分对消费者源码不可见。§4 那条「LISTEN 期间禁止 NOTIFY」的计数器是 internal 且留在中立运行时，两个桥接项目通过 `InternalsVisibleTo` 共用同一份，否则两个后端会各数各的。
+使用 `PostgresService` 和 R3 的 `PostgresObservable` 时导入 `using Observables.Postgres;`。直接调用 System.Reactive 桥 `SystemReactivePostgresAdapter` 时导入 `using Observables.Postgres.Reactive;`。两个桥接项目通过 `InternalsVisibleTo` 共用中立运行时的 LISTEN 计数器，见 §4。
 
 ## 8. 测试
 
 - 生成器 Verify + OBS10xxx 诊断断言（R3 + Reactive）
 - E2E：B-tier 可移植 PostgreSQL 子进程（非 Docker 默认）；Listen 收跨会话 NOTIFY、Notify 被第二 LISTEN 观察到；typed JSON / 自定义序列化器往返
+- PostgreSQL 测试夹具按平台校验缓存的 Zonky JAR 的固定 SHA-256，从已验证的归档在独立临时目录解包，并在夹具结束时清理工具目录。
 - nuget-smoke：`Postgres.{R3,Reactive}.Consumer`
 
 ## 9. 非目标（v1 显式排除）

@@ -31,6 +31,9 @@ namespace Observables.Redis;
 public static class RedisService
 {
     public static T For<T>(IConnectionMultiplexer multiplexer);
+    public static T For<T>();
+    public static void RegisterConnection(string name, IConnectionMultiplexer multiplexer);
+    public static bool TryUnregisterConnection(string name, IConnectionMultiplexer multiplexer);
 }
 ```
 
@@ -60,9 +63,11 @@ Reactive 路径：成员返回 `IObservable<T>`，引用 `Observables.Redis.Reac
 
 具名连接：`[Redis(connectionName)]` 上的名字由 Parser 读出、随 `RegisterProxyName(Type, string)` 一起发到模块初始化器（生成物 `RedisProxyNames.g.cs`），`RedisService.For<T>()` 这个不带 multiplexer 参数的重载据此查 `RegisterConnection(name, multiplexer)` 注册的连接。名字走生成代码而不是运行期读特性，是因为域运行时要对 trim / AOT 分析器零告警。未写名字的接口仍只能走 `For<T>(IConnectionMultiplexer)`；解析未命名接口、或名字没注册过 multiplexer，都抛 `InvalidOperationException` 并在消息里点名缺的是哪一个。
 
+`TryUnregisterConnection(name, multiplexer)` 在名称仍指向给定实例时移除该注册并返回 `true`。如果其他调用已替换注册，新连接保留。已创建的代理继续使用原实例，multiplexer 由调用方管理。
+
 ## 3. Channel / Pattern 规则
 
-- **Subscribe**：字面量 Channel 或 Pattern。若字符串含 `*` 或 `?` → `PSUBSCRIBE`（Pattern）；否则 → `SUBSCRIBE`（exact）。**禁止** `{param}` 占位符（OBS11006）。
+- **Subscribe** 支持字面量 Channel 或 Pattern。`[RedisSubscribe("news", Pattern = true)]` 显式使用 `PSUBSCRIBE`，即使名称没有通配符。未设 `Pattern = true` 时，含 `*` 或 `?` 的名称走 `PSUBSCRIBE`，其余走 `SUBSCRIBE`。`Pattern = false` 仍使用这条通配符规则。订阅模板含 `{param}` 会报 OBS11006。
 - **Publish**：exact Channel only；模板支持 `{param}` 绑定方法参数名（`RedisChannelTemplate`）。**禁止** Pattern 元字符 `*` / `?`（OBS11006）。可选末尾 `CancellationToken`。该 token 只取消本地等待：StackExchange.Redis 2.8.x 的 `ISubscriber.PublishAsync` 没有 `CancellationToken` 重载，已发出的 `PUBLISH` 不会被客户端中止。
 - 未指定 Channel / 模板时回退为成员名（与 Nats/Mqtt 同惯例）。
 
@@ -140,7 +145,7 @@ Observables.Redis/
 | `Observables.Redis.R3`（`RedisObservable`） | 上面那个 + R3 | 仅 `Observables.Redis.R3` |
 | `Observables.Redis.Reactive`（`SystemReactiveRedisAdapter`） | 上面第一个 + System.Reactive | 仅 `Observables.Redis.Reactive` |
 
-命名空间都是 `Observables.Redis`，拆分对消费者源码不可见。本域不用 `InternalsVisibleTo`：两个桥接项目都 `Compile Include` 链接 `RedisProtocol.cs` / `RedisTrimAnnotations.cs`（Reactive 侧原本就这么做）。`RedisProtocol` 只有静态纯函数，连接复用由 StackExchange.Redis 的 multiplexer 负责，所以重复编译无副作用。
+使用 `RedisService` 和 R3 的 `RedisObservable` 时导入 `using Observables.Redis;`。直接调用 System.Reactive 桥 `SystemReactiveRedisAdapter` 时导入 `using Observables.Redis.Reactive;`。两个桥接项目通过 `Compile Include` 链接各自使用的 `RedisProtocol.cs` 和 `RedisTrimAnnotations.cs`。连接由 StackExchange.Redis 的 multiplexer 复用。
 
 ## 10. 测试
 

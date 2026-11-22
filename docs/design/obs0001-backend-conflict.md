@@ -31,7 +31,7 @@
 1. 每个 `Observables.<F>.<Backend>` 包的 `buildTransitive` props 写入唯一键，例如
    `ObservablesRestAPIBackend_R3=true`、`..._Reactive=true`、`..._Primitives=true`。
 2. 分析器读 `build_property.*`（与现有 `ObservableRoutedEvents` 同通道），同域命中 ≥2 键 → OBS0001，消息列出具体包名。
-3. 开发期 `ProjectReference + OutputItemType=Analyzer`（无 props 流）保留一条符号兜底：检查生成 bootstrap 类型 `Observables.<F>.*.ObservableEventsBootstrapExtensions` 的存在性——三后端下该类型命名需带后端维度（见 §4）。
+3. 开发期 `ProjectReference + OutputItemType=Analyzer` 可通过桥接程序集引用或当前编译中生成的后端标记识别后端。生成标记须属于当前程序集。例如依赖库私有的 Events bootstrap 类型不会成为宿主的后端信号。
 
 ## 4. 三后端接缝要求
 

@@ -1,4 +1,4 @@
-﻿Diagnostics:
+Diagnostics:
   <none>
 
 Generated Sources:
@@ -24,9 +24,6 @@ namespace Observables.RestAPI.Implementation
     [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
     internal static partial class Generated
     {
-#if NET5_0_OR_GREATER
-        [global::System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessage("ILLink", "IL2026", Justification = "Factory registration only; the proxy is invoked by user code that declares RequiresUnreferencedCode.")]
-#endif
         [global::System.Runtime.CompilerServices.ModuleInitializer]
         public static void Initialize()
         {
@@ -61,10 +58,6 @@ namespace Observables.RestAPI.Implementation
     [global::System.Diagnostics.DebuggerNonUserCode]
     [global::System.Reflection.Obfuscation(Exclude=true)]
     [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-#if NET8_0_OR_GREATER
-    [global::System.Diagnostics.CodeAnalysis.RequiresUnreferencedCode("RestAPI uses reflection on interface methods and DTO types. Preserve required members when trimming.")]
-    [global::System.Diagnostics.CodeAnalysis.RequiresDynamicCode("RestAPI uses MakeGenericMethod and reflection at runtime.")]
-#endif
     partial class IUserApi
         : global::IUserApi
     {

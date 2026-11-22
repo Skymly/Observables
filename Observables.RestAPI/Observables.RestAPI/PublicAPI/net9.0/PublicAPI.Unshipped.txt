@@ -1,4 +1,1 @@
 #nullable enable
-Observables.RestAPI.RestApiSettings.AuthorizationHeaderOrigin.get -> System.Uri?
-Observables.RestAPI.RestApiSettings.AuthorizationHeaderOrigin.set -> void
-static Observables.RestAPI.RestService.CreateHttpMessageHandler(Observables.RestAPI.RestApiSettings? settings) -> System.Net.Http.HttpMessageHandler!

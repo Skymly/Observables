@@ -6,337 +6,332 @@ using System.Runtime.CompilerServices;
 using System.Diagnostics.CodeAnalysis;
 #endif
 
-namespace Observables.RestAPI
+namespace Observables.RestAPI;
+
+/// <summary>
+/// Creates REST API client implementations for declarative HTTP interfaces.
+/// </summary>
+public static class RestService
 {
+    static readonly ConcurrentDictionary<Type, Func<Type, HttpClient, RestApiSettings?, object>> GeneratedFactories = new();
+    static readonly ConditionalWeakTable<HttpClient, object> OwnedHttpClients = new();
+    static readonly object OwnedHttpClientSentinel = new();
+
     /// <summary>
-    /// Creates REST API client implementations for declarative HTTP interfaces.
+    /// Registers a source-generated REST API client implementation factory.
     /// </summary>
+    /// <param name="interfaceType">The REST API interface type.</param>
+    /// <param name="factory">The generated implementation factory.</param>
+    [EditorBrowsable(EditorBrowsableState.Never)]
 #if NET8_0_OR_GREATER
-    [RequiresUnreferencedCode(RestTrimAnnotations.Reflection)]
-    [RequiresDynamicCode(RestTrimAnnotations.Dynamic)]
+    public static void RegisterGeneratedFactory(
+        [DynamicallyAccessedMembers(
+            DynamicallyAccessedMemberTypes.PublicMethods |
+            DynamicallyAccessedMemberTypes.PublicProperties
+        )] Type interfaceType,
+        Func<HttpClient, RestApiSettings?, object> factory
+    )
+#else
+    public static void RegisterGeneratedFactory(
+        Type interfaceType,
+        Func<HttpClient, RestApiSettings?, object> factory
+    )
 #endif
-    public static class RestService
     {
-        static readonly ConcurrentDictionary<Type, Func<Type, HttpClient, RestApiSettings?, object>> GeneratedFactories = new();
-        static readonly ConditionalWeakTable<HttpClient, object> OwnedHttpClients = new();
-        static readonly object OwnedHttpClientSentinel = new();
+        if (interfaceType is null)
+            throw new ArgumentNullException(nameof(interfaceType));
+        if (factory is null)
+            throw new ArgumentNullException(nameof(factory));
 
-        /// <summary>
-        /// Registers a source-generated REST API client implementation factory.
-        /// </summary>
-        /// <param name="interfaceType">The REST API interface type.</param>
-        /// <param name="factory">The generated implementation factory.</param>
-        [EditorBrowsable(EditorBrowsableState.Never)]
-#if NET8_0_OR_GREATER
-        public static void RegisterGeneratedFactory(
-            [DynamicallyAccessedMembers(
-                DynamicallyAccessedMemberTypes.PublicMethods |
-                DynamicallyAccessedMemberTypes.PublicProperties
-            )] Type interfaceType,
-            Func<HttpClient, RestApiSettings?, object> factory
-        )
-#else
-        public static void RegisterGeneratedFactory(
-            Type interfaceType,
-            Func<HttpClient, RestApiSettings?, object> factory
-        )
-#endif
-        {
-            if (interfaceType is null)
-                throw new ArgumentNullException(nameof(interfaceType));
-            if (factory is null)
-                throw new ArgumentNullException(nameof(factory));
-
-            GeneratedFactories[interfaceType] = (_, client, settings) => factory(client, settings);
-        }
-
-        /// <summary>
-        /// Registers a source-generated factory that can close open generic interface types.
-        /// </summary>
-        [EditorBrowsable(EditorBrowsableState.Never)]
-#if NET8_0_OR_GREATER
-        public static void RegisterGeneratedFactory(
-            [DynamicallyAccessedMembers(
-                DynamicallyAccessedMemberTypes.PublicMethods |
-                DynamicallyAccessedMemberTypes.PublicProperties
-            )] Type interfaceType,
-            Func<Type, HttpClient, RestApiSettings?, object> factory
-        )
-#else
-        public static void RegisterGeneratedFactory(
-            Type interfaceType,
-            Func<Type, HttpClient, RestApiSettings?, object> factory
-        )
-#endif
-        {
-            if (interfaceType is null)
-                throw new ArgumentNullException(nameof(interfaceType));
-            if (factory is null)
-                throw new ArgumentNullException(nameof(factory));
-
-            GeneratedFactories[interfaceType] = factory;
-        }
-
-        /// <summary>
-        /// True when <paramref name="client"/> was created by <see cref="For{T}(string)"/> / host-url overloads.
-        /// Generated <see cref="IDisposable"/> proxies dispose the client only in that case.
-        /// </summary>
-        [EditorBrowsable(EditorBrowsableState.Never)]
-        public static bool OwnsHttpClient(HttpClient client)
-        {
-            if (client is null)
-                throw new ArgumentNullException(nameof(client));
-
-            return OwnedHttpClients.TryGetValue(client, out _);
-        }
-
-        static void MarkHttpClientOwned(HttpClient client) =>
-            OwnedHttpClients.Add(client, OwnedHttpClientSentinel);
-
-        /// <summary>
-        /// Generate a REST API client implementation of the specified interface.
-        /// </summary>
-        /// <typeparam name="T">Interface to create the implementation for.</typeparam>
-        /// <param name="client">The <see cref="HttpClient"/> the implementation will use to send requests.</param>
-        /// <param name="settings"><see cref="RestApiSettings"/> to use to configure the HttpClient.</param>
-        /// <returns>An instance that implements <typeparamref name="T"/>.</returns>
-#if NET8_0_OR_GREATER
-        public static T For<
-            [DynamicallyAccessedMembers(
-                DynamicallyAccessedMemberTypes.PublicMethods |
-                DynamicallyAccessedMemberTypes.PublicProperties
-            )] T>(HttpClient client, RestApiSettings? settings)
-#else
-        public static T For<T>(HttpClient client, RestApiSettings? settings)
-#endif
-            => (T)For(typeof(T), client, settings);
-
-        /// <summary>
-        /// Generate a REST API client implementation of the specified interface.
-        /// </summary>
-        /// <typeparam name="T">Interface to create the implementation for.</typeparam>
-        /// <param name="client">The <see cref="HttpClient"/> the implementation will use to send requests.</param>
-        /// <returns>An instance that implements <typeparamref name="T"/>.</returns>
-#if NET8_0_OR_GREATER
-        public static T For<
-            [DynamicallyAccessedMembers(
-                DynamicallyAccessedMemberTypes.PublicMethods |
-                DynamicallyAccessedMemberTypes.PublicProperties
-            )] T>(HttpClient client) => For<T>(client, (RestApiSettings?)null);
-#else
-        public static T For<T>(HttpClient client) => For<T>(client, (RestApiSettings?)null);
-#endif
-
-        /// <summary>
-        /// Generate a REST API client implementation of the specified interface.
-        /// </summary>
-        /// <typeparam name="T">Interface to create the implementation for.</typeparam>
-        /// <param name="hostUrl">Base address the implementation will use.</param>
-        /// <param name="settings"><see cref="RestApiSettings"/> to use to configure the HttpClient.</param>
-        /// <returns>An instance that implements <typeparamref name="T"/>.</returns>
-#if NET8_0_OR_GREATER
-        public static T For<
-            [DynamicallyAccessedMembers(
-                DynamicallyAccessedMemberTypes.PublicMethods |
-                DynamicallyAccessedMemberTypes.PublicProperties
-            )] T>(string hostUrl, RestApiSettings? settings)
-#else
-        public static T For<T>(string hostUrl, RestApiSettings? settings)
-#endif
-        {
-            var client = CreateHttpClient(hostUrl, settings);
-            MarkHttpClientOwned(client);
-            try
-            {
-                return For<T>(client, settings);
-            }
-            catch
-            {
-                client.Dispose();
-                throw;
-            }
-        }
-
-        /// <summary>
-        /// Generate a REST API client implementation of the specified interface.
-        /// </summary>
-        /// <typeparam name="T">Interface to create the implementation for.</typeparam>
-        /// <param name="hostUrl">Base address the implementation will use.</param>
-        /// <returns>An instance that implements <typeparamref name="T"/>.</returns>
-#if NET8_0_OR_GREATER
-        public static T For<
-            [DynamicallyAccessedMembers(
-                DynamicallyAccessedMemberTypes.PublicMethods |
-                DynamicallyAccessedMemberTypes.PublicProperties
-            )] T>(string hostUrl) => For<T>(hostUrl, null);
-#else
-        public static T For<T>(string hostUrl) => For<T>(hostUrl, null);
-#endif
-
-        /// <summary>
-        /// Generate a REST API client implementation of the specified interface.
-        /// </summary>
-        /// <param name="interfaceType">Interface to create the implementation for.</param>
-        /// <param name="client">The <see cref="HttpClient"/> the implementation will use to send requests.</param>
-        /// <param name="settings"><see cref="RestApiSettings"/> to use to configure the HttpClient.</param>
-        /// <returns>An instance that implements <paramref name="interfaceType"/>.</returns>
-#if NET8_0_OR_GREATER
-        public static object For(
-            [DynamicallyAccessedMembers(
-                DynamicallyAccessedMemberTypes.PublicMethods |
-                DynamicallyAccessedMemberTypes.PublicProperties
-            )] Type interfaceType,
-            HttpClient client,
-            RestApiSettings? settings
-        )
-#else
-        public static object For(
-            Type interfaceType,
-            HttpClient client,
-            RestApiSettings? settings
-        )
-#endif
-        {
-            if (TryGetGeneratedFactory(interfaceType, out var factory))
-            {
-                return factory(interfaceType, client, settings);
-            }
-
-            throw new InvalidOperationException(
-                interfaceType.Name
-                + " does not have a generated REST API client. Ensure the interface has at least one "
-                + "method with a Rest API HTTP method attribute, Observables.RestAPI source generators "
-                + "are referenced, and the project was rebuilt.");
-        }
-
-        static bool TryGetGeneratedFactory(
-            Type interfaceType,
-            out Func<Type, HttpClient, RestApiSettings?, object> factory)
-        {
-            if (GeneratedFactories.TryGetValue(interfaceType, out factory!))
-            {
-                return true;
-            }
-
-            if (interfaceType.IsGenericType)
-            {
-                return GeneratedFactories.TryGetValue(interfaceType.GetGenericTypeDefinition(), out factory!);
-            }
-
-            factory = null!;
-            return false;
-        }
-
-        /// <summary>
-        /// Generate a REST API client implementation of the specified interface.
-        /// </summary>
-        /// <param name="interfaceType">Interface to create the implementation for.</param>
-        /// <param name="client">The <see cref="HttpClient"/> the implementation will use to send requests.</param>
-        /// <returns>An instance that implements <paramref name="interfaceType"/>.</returns>
-#if NET8_0_OR_GREATER
-        public static object For(
-            [DynamicallyAccessedMembers(
-                DynamicallyAccessedMemberTypes.PublicMethods |
-                DynamicallyAccessedMemberTypes.PublicProperties
-            )] Type interfaceType,
-            HttpClient client
-        ) => For(interfaceType, client, (RestApiSettings?)null);
-#else
-        public static object For(Type interfaceType, HttpClient client) =>
-            For(interfaceType, client, (RestApiSettings?)null);
-#endif
-
-        /// <summary>
-        /// Generate a REST API client implementation of the specified interface.
-        /// </summary>
-        /// <param name="interfaceType">Interface to create the implementation for.</param>
-        /// <param name="hostUrl">Base address the implementation will use.</param>
-        /// <param name="settings"><see cref="RestApiSettings"/> to use to configure the HttpClient.</param>
-        /// <returns>An instance that implements <paramref name="interfaceType"/>.</returns>
-#if NET8_0_OR_GREATER
-        public static object For(
-            [DynamicallyAccessedMembers(
-                DynamicallyAccessedMemberTypes.PublicMethods |
-                DynamicallyAccessedMemberTypes.PublicProperties
-            )] Type interfaceType,
-            string hostUrl,
-            RestApiSettings? settings
-        )
-#else
-        public static object For(Type interfaceType, string hostUrl, RestApiSettings? settings)
-#endif
-        {
-            var client = CreateHttpClient(hostUrl, settings);
-            MarkHttpClientOwned(client);
-            try
-            {
-                return For(interfaceType, client, settings);
-            }
-            catch
-            {
-                client.Dispose();
-                throw;
-            }
-        }
-
-        /// <summary>
-        /// Generate a REST API client implementation of the specified interface.
-        /// </summary>
-        /// <param name="interfaceType">Interface to create the implementation for.</param>
-        /// <param name="hostUrl">Base address the implementation will use.</param>
-        /// <returns>An instance that implements <paramref name="interfaceType"/>.</returns>
-#if NET8_0_OR_GREATER
-        public static object For(
-            [DynamicallyAccessedMembers(
-                DynamicallyAccessedMemberTypes.PublicMethods |
-                DynamicallyAccessedMemberTypes.PublicProperties
-            )] Type interfaceType,
-            string hostUrl
-        ) => For(interfaceType, hostUrl, null);
-#else
-        public static object For(Type interfaceType, string hostUrl) =>
-            For(interfaceType, hostUrl, null);
-#endif
-
-        /// <summary>
-        /// Create an <see cref="HttpClient"/> with <paramref name="hostUrl"/> as the base address.
-        /// </summary>
-        /// <param name="hostUrl">Base address.</param>
-        /// <param name="settings"><see cref="RestApiSettings"/> to use to configure the HttpClient.</param>
-        /// <returns>A <see cref="HttpClient"/> with the various parameters provided.</returns>
-        /// <exception cref="ArgumentException"></exception>
-        public static HttpClient CreateHttpClient(string hostUrl, RestApiSettings? settings)
-        {
-            if (string.IsNullOrWhiteSpace(hostUrl))
-            {
-                throw new ArgumentException(
-                    $"`{nameof(hostUrl)}` must not be null or whitespace.",
-                    nameof(hostUrl)
-                );
-            }
-
-            return new HttpClient(CreateHttpMessageHandler(settings))
-            {
-                BaseAddress = new Uri(EnsureTrailingSlash(hostUrl.Trim()))
-            };
-        }
-
-        /// <summary>
-        /// Creates the HTTP handler chain for the supplied settings, including any authorization getter.
-        /// </summary>
-        /// <param name="settings">The settings used to configure the handler chain.</param>
-        /// <returns>A handler owned by the caller.</returns>
-        public static HttpMessageHandler CreateHttpMessageHandler(RestApiSettings? settings)
-        {
-            var innerHandler = settings?.HttpMessageHandlerFactory?.Invoke();
-            var getToken = settings?.AuthorizationHeaderValueGetter;
-            return getToken is null
-                ? innerHandler ?? new HttpClientHandler()
-                : new AuthenticatedHttpClientHandler(getToken, innerHandler, settings?.AuthorizationHeaderOrigin);
-        }
-
-        static string EnsureTrailingSlash(string hostUrl) =>
-            hostUrl.EndsWith("/", StringComparison.Ordinal) ? hostUrl : hostUrl + "/";
-
+        GeneratedFactories[interfaceType] = (_, client, settings) => factory(client, settings);
     }
+
+    /// <summary>
+    /// Registers a source-generated factory that can close open generic interface types.
+    /// </summary>
+    [EditorBrowsable(EditorBrowsableState.Never)]
+#if NET8_0_OR_GREATER
+    public static void RegisterGeneratedFactory(
+        [DynamicallyAccessedMembers(
+            DynamicallyAccessedMemberTypes.PublicMethods |
+            DynamicallyAccessedMemberTypes.PublicProperties
+        )] Type interfaceType,
+        Func<Type, HttpClient, RestApiSettings?, object> factory
+    )
+#else
+    public static void RegisterGeneratedFactory(
+        Type interfaceType,
+        Func<Type, HttpClient, RestApiSettings?, object> factory
+    )
+#endif
+    {
+        if (interfaceType is null)
+            throw new ArgumentNullException(nameof(interfaceType));
+        if (factory is null)
+            throw new ArgumentNullException(nameof(factory));
+
+        GeneratedFactories[interfaceType] = factory;
+    }
+
+    /// <summary>
+    /// True when <paramref name="client"/> was created by <see cref="For{T}(string)"/> / host-url overloads.
+    /// Generated <see cref="IDisposable"/> proxies dispose the client only in that case.
+    /// </summary>
+    [EditorBrowsable(EditorBrowsableState.Never)]
+    public static bool OwnsHttpClient(HttpClient client)
+    {
+        if (client is null)
+            throw new ArgumentNullException(nameof(client));
+
+        return OwnedHttpClients.TryGetValue(client, out _);
+    }
+
+    static void MarkHttpClientOwned(HttpClient client) =>
+        OwnedHttpClients.Add(client, OwnedHttpClientSentinel);
+
+    /// <summary>
+    /// Generate a REST API client implementation of the specified interface.
+    /// </summary>
+    /// <typeparam name="T">Interface to create the implementation for.</typeparam>
+    /// <param name="client">The <see cref="HttpClient"/> the implementation will use to send requests.</param>
+    /// <param name="settings"><see cref="RestApiSettings"/> to use to configure the HttpClient.</param>
+    /// <returns>An instance that implements <typeparamref name="T"/>.</returns>
+#if NET8_0_OR_GREATER
+    public static T For<
+        [DynamicallyAccessedMembers(
+            DynamicallyAccessedMemberTypes.PublicMethods |
+            DynamicallyAccessedMemberTypes.PublicProperties
+        )] T>(HttpClient client, RestApiSettings? settings)
+#else
+    public static T For<T>(HttpClient client, RestApiSettings? settings)
+#endif
+        => (T)For(typeof(T), client, settings);
+
+    /// <summary>
+    /// Generate a REST API client implementation of the specified interface.
+    /// </summary>
+    /// <typeparam name="T">Interface to create the implementation for.</typeparam>
+    /// <param name="client">The <see cref="HttpClient"/> the implementation will use to send requests.</param>
+    /// <returns>An instance that implements <typeparamref name="T"/>.</returns>
+#if NET8_0_OR_GREATER
+    public static T For<
+        [DynamicallyAccessedMembers(
+            DynamicallyAccessedMemberTypes.PublicMethods |
+            DynamicallyAccessedMemberTypes.PublicProperties
+        )] T>(HttpClient client) => For<T>(client, (RestApiSettings?)null);
+#else
+    public static T For<T>(HttpClient client) => For<T>(client, (RestApiSettings?)null);
+#endif
+
+    /// <summary>
+    /// Generate a REST API client implementation of the specified interface.
+    /// </summary>
+    /// <typeparam name="T">Interface to create the implementation for.</typeparam>
+    /// <param name="hostUrl">Base address the implementation will use.</param>
+    /// <param name="settings"><see cref="RestApiSettings"/> to use to configure the HttpClient.</param>
+    /// <returns>An instance that implements <typeparamref name="T"/>.</returns>
+#if NET8_0_OR_GREATER
+    public static T For<
+        [DynamicallyAccessedMembers(
+            DynamicallyAccessedMemberTypes.PublicMethods |
+            DynamicallyAccessedMemberTypes.PublicProperties
+        )] T>(string hostUrl, RestApiSettings? settings)
+#else
+    public static T For<T>(string hostUrl, RestApiSettings? settings)
+#endif
+    {
+        var client = CreateHttpClient(hostUrl, settings);
+        MarkHttpClientOwned(client);
+        try
+        {
+            return For<T>(client, settings);
+        }
+        catch
+        {
+            client.Dispose();
+            throw;
+        }
+    }
+
+    /// <summary>
+    /// Generate a REST API client implementation of the specified interface.
+    /// </summary>
+    /// <typeparam name="T">Interface to create the implementation for.</typeparam>
+    /// <param name="hostUrl">Base address the implementation will use.</param>
+    /// <returns>An instance that implements <typeparamref name="T"/>.</returns>
+#if NET8_0_OR_GREATER
+    public static T For<
+        [DynamicallyAccessedMembers(
+            DynamicallyAccessedMemberTypes.PublicMethods |
+            DynamicallyAccessedMemberTypes.PublicProperties
+        )] T>(string hostUrl) => For<T>(hostUrl, null);
+#else
+    public static T For<T>(string hostUrl) => For<T>(hostUrl, null);
+#endif
+
+    /// <summary>
+    /// Generate a REST API client implementation of the specified interface.
+    /// </summary>
+    /// <param name="interfaceType">Interface to create the implementation for.</param>
+    /// <param name="client">The <see cref="HttpClient"/> the implementation will use to send requests.</param>
+    /// <param name="settings"><see cref="RestApiSettings"/> to use to configure the HttpClient.</param>
+    /// <returns>An instance that implements <paramref name="interfaceType"/>.</returns>
+#if NET8_0_OR_GREATER
+    public static object For(
+        [DynamicallyAccessedMembers(
+            DynamicallyAccessedMemberTypes.PublicMethods |
+            DynamicallyAccessedMemberTypes.PublicProperties
+        )] Type interfaceType,
+        HttpClient client,
+        RestApiSettings? settings
+    )
+#else
+    public static object For(
+        Type interfaceType,
+        HttpClient client,
+        RestApiSettings? settings
+    )
+#endif
+    {
+        if (TryGetGeneratedFactory(interfaceType, out var factory))
+        {
+            return factory(interfaceType, client, settings);
+        }
+
+        throw new InvalidOperationException(
+            interfaceType.Name
+            + " does not have a generated REST API client. Ensure the interface has at least one "
+            + "method with a Rest API HTTP method attribute, Observables.RestAPI source generators "
+            + "are referenced, and the project was rebuilt.");
+    }
+
+    static bool TryGetGeneratedFactory(
+        Type interfaceType,
+        out Func<Type, HttpClient, RestApiSettings?, object> factory)
+    {
+        if (GeneratedFactories.TryGetValue(interfaceType, out factory!))
+        {
+            return true;
+        }
+
+        if (interfaceType.IsGenericType)
+        {
+            return GeneratedFactories.TryGetValue(interfaceType.GetGenericTypeDefinition(), out factory!);
+        }
+
+        factory = null!;
+        return false;
+    }
+
+    /// <summary>
+    /// Generate a REST API client implementation of the specified interface.
+    /// </summary>
+    /// <param name="interfaceType">Interface to create the implementation for.</param>
+    /// <param name="client">The <see cref="HttpClient"/> the implementation will use to send requests.</param>
+    /// <returns>An instance that implements <paramref name="interfaceType"/>.</returns>
+#if NET8_0_OR_GREATER
+    public static object For(
+        [DynamicallyAccessedMembers(
+            DynamicallyAccessedMemberTypes.PublicMethods |
+            DynamicallyAccessedMemberTypes.PublicProperties
+        )] Type interfaceType,
+        HttpClient client
+    ) => For(interfaceType, client, (RestApiSettings?)null);
+#else
+    public static object For(Type interfaceType, HttpClient client) =>
+        For(interfaceType, client, (RestApiSettings?)null);
+#endif
+
+    /// <summary>
+    /// Generate a REST API client implementation of the specified interface.
+    /// </summary>
+    /// <param name="interfaceType">Interface to create the implementation for.</param>
+    /// <param name="hostUrl">Base address the implementation will use.</param>
+    /// <param name="settings"><see cref="RestApiSettings"/> to use to configure the HttpClient.</param>
+    /// <returns>An instance that implements <paramref name="interfaceType"/>.</returns>
+#if NET8_0_OR_GREATER
+    public static object For(
+        [DynamicallyAccessedMembers(
+            DynamicallyAccessedMemberTypes.PublicMethods |
+            DynamicallyAccessedMemberTypes.PublicProperties
+        )] Type interfaceType,
+        string hostUrl,
+        RestApiSettings? settings
+    )
+#else
+    public static object For(Type interfaceType, string hostUrl, RestApiSettings? settings)
+#endif
+    {
+        var client = CreateHttpClient(hostUrl, settings);
+        MarkHttpClientOwned(client);
+        try
+        {
+            return For(interfaceType, client, settings);
+        }
+        catch
+        {
+            client.Dispose();
+            throw;
+        }
+    }
+
+    /// <summary>
+    /// Generate a REST API client implementation of the specified interface.
+    /// </summary>
+    /// <param name="interfaceType">Interface to create the implementation for.</param>
+    /// <param name="hostUrl">Base address the implementation will use.</param>
+    /// <returns>An instance that implements <paramref name="interfaceType"/>.</returns>
+#if NET8_0_OR_GREATER
+    public static object For(
+        [DynamicallyAccessedMembers(
+            DynamicallyAccessedMemberTypes.PublicMethods |
+            DynamicallyAccessedMemberTypes.PublicProperties
+        )] Type interfaceType,
+        string hostUrl
+    ) => For(interfaceType, hostUrl, null);
+#else
+    public static object For(Type interfaceType, string hostUrl) =>
+        For(interfaceType, hostUrl, null);
+#endif
+
+    /// <summary>
+    /// Create an <see cref="HttpClient"/> with <paramref name="hostUrl"/> as the base address.
+    /// </summary>
+    /// <param name="hostUrl">Base address.</param>
+    /// <param name="settings"><see cref="RestApiSettings"/> to use to configure the HttpClient.</param>
+    /// <returns>A <see cref="HttpClient"/> with the various parameters provided.</returns>
+    /// <exception cref="ArgumentException"></exception>
+    public static HttpClient CreateHttpClient(string hostUrl, RestApiSettings? settings)
+    {
+        if (string.IsNullOrWhiteSpace(hostUrl))
+        {
+            throw new ArgumentException(
+                $"`{nameof(hostUrl)}` must not be null or whitespace.",
+                nameof(hostUrl)
+            );
+        }
+
+        return new HttpClient(CreateHttpMessageHandler(settings))
+        {
+            BaseAddress = new Uri(EnsureTrailingSlash(hostUrl.Trim()))
+        };
+    }
+
+    /// <summary>
+    /// Creates the HTTP handler chain for the supplied settings, including any authorization getter.
+    /// </summary>
+    /// <param name="settings">The settings used to configure the handler chain.</param>
+    /// <returns>A handler owned by the caller.</returns>
+    public static HttpMessageHandler CreateHttpMessageHandler(RestApiSettings? settings)
+    {
+        var innerHandler = settings?.HttpMessageHandlerFactory?.Invoke();
+        var getToken = settings?.AuthorizationHeaderValueGetter;
+        return getToken is null
+            ? innerHandler ?? new HttpClientHandler()
+            : new AuthenticatedHttpClientHandler(getToken, innerHandler, settings?.AuthorizationHeaderOrigin);
+    }
+
+    static string EnsureTrailingSlash(string hostUrl) =>
+        hostUrl.EndsWith("/", StringComparison.Ordinal) ? hostUrl : hostUrl + "/";
+
 }

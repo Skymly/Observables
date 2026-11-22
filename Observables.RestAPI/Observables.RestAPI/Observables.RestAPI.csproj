@@ -16,4 +16,8 @@
     <PackageReference Include="System.Net.Http.Json" />
   </ItemGroup>
 
+  <ItemGroup Condition="'$(TargetFramework)' != 'netstandard2.0'">
+    <Compile Include="..\..\Observables.Shared\Observables.Core\SourceGeneratedJson.cs" Link="Shared\SourceGeneratedJson.cs" />
+  </ItemGroup>
+
 </Project>

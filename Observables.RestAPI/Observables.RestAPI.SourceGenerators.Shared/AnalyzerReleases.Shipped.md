@@ -25,3 +25,12 @@ OBS3006 | Observables.RestAPI | Error | Internal source generator error
 Rule ID | Category | Severity | Notes
 --------|----------|----------|-------
 OBS3008 | Observables.RestAPI | Error | Duplicate Body parameter
+
+## Release 0.5.0
+
+### New Rules
+
+Rule ID | Category | Severity | Notes
+--------|----------|----------|-------
+OBS3009 | Observables.RestAPI | Error | Conflicting HTTP method attributes
+OBS3010 | Observables.RestAPI | Error | Multipart request conflicts with a Body parameter

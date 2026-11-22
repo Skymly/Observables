@@ -6,7 +6,7 @@ Declarative gRPC client proxies with Roslyn source generators — annotate inter
 
 ```xml
 <PackageReference Include="Observables.Grpc.R3" />
-<PackageReference Include="R3" Version="1.3.0" />
+<PackageReference Include="R3" Version="1.3.1" />
 <PackageReference Include="Grpc.Net.Client" Version="2.67.0" />
 ```
 

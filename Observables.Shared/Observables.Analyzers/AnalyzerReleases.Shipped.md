@@ -22,3 +22,11 @@ OBS11007 | Observables.Redis | Warning | Empty Redis proxy interface
 Rule ID | Category | Severity | Notes
 --------|----------|----------|-------
 OBS0002 | Observables | Error | Open generic proxy interfaces are not supported
+
+## Release 0.5.0
+
+### New Rules
+
+Rule ID | Category | Severity | Notes
+--------|----------|----------|-------
+OBS0003 | Observables | Error | Generic IO proxy method is not supported

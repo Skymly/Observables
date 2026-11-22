@@ -48,6 +48,9 @@ internal static class Emitter
             "\n",
             model.Interfaces.Select(FormatFactoryRegistration)
         );
+        var openGenericFactory = model.Interfaces.Any(static item => item.ClassDeclaration.Contains("<"))
+            ? "\n" + OpenGenericFactory
+            : string.Empty;
 
         addSource(
             "Generated.g.cs",
@@ -63,14 +66,11 @@ internal static class Emitter
                     [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
                     internal static partial class Generated
                     {
-                #if NET5_0_OR_GREATER
-                        [global::System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessage("ILLink", "IL2026", Justification = "Factory registration only; the proxy is invoked by user code that declares RequiresUnreferencedCode.")]
-                #endif
                         [global::System.Runtime.CompilerServices.ModuleInitializer]
                         public static void Initialize()
                         {
                 {{generatedFactoryRegistrations}}
-                        }
+                        }{{openGenericFactory}}
                     }
                 }
 
@@ -104,10 +104,6 @@ internal static class Emitter
                 [global::System.Diagnostics.DebuggerNonUserCode]
                 [global::System.Reflection.Obfuscation(Exclude=true)]
                 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-            #if NET8_0_OR_GREATER
-                [global::System.Diagnostics.CodeAnalysis.RequiresUnreferencedCode("RestAPI uses reflection on interface methods and DTO types. Preserve required members when trimming.")]
-                [global::System.Diagnostics.CodeAnalysis.RequiresDynamicCode("RestAPI uses MakeGenericMethod and reflection at runtime.")]
-            #endif
                 partial class {{model.Ns}}{{model.ClassDeclaration}}
                     : {{model.InterfaceDisplayName}}
             """
@@ -178,8 +174,32 @@ internal static class Emitter
 
         var unboundInterface = ToUnboundGeneric(interfaceModel.InterfaceDisplayName);
         var unboundImplementation = $"{implementationType}{UnboundGenericAritySuffix(interfaceModel.ClassDeclaration)}";
-        return $"                        global::Observables.RestAPI.RestService.RegisterGeneratedFactory(typeof({unboundInterface}), static (type, client, settings) => global::System.Activator.CreateInstance(typeof({unboundImplementation}).MakeGenericType(type.GetGenericArguments()), client, settings)!);";
+        return $"                        global::Observables.RestAPI.RestService.RegisterGeneratedFactory(typeof({unboundInterface}), static (type, client, settings) => CreateOpenGenericProxy(typeof({unboundImplementation}), type, client, settings));";
     }
+
+    const string OpenGenericFactory =
+        """
+        #if NET8_0_OR_GREATER
+            [global::System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessage("Trimming", "IL2055", Justification = "Only the JIT path closes open generic proxies. The implementation's constructors are preserved.")]
+            [global::System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessage("Trimming", "IL2067", Justification = "The closed proxy's constructors come from the preserved open implementation.")]
+            [global::System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessage("AOT", "IL3050", Justification = "Open generic proxy activation is guarded by RuntimeFeature.IsDynamicCodeSupported.")]
+        #endif
+            private static object CreateOpenGenericProxy(
+        #if NET8_0_OR_GREATER
+                [global::System.Diagnostics.CodeAnalysis.DynamicallyAccessedMembers(global::System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.PublicConstructors)]
+        #endif
+                global::System.Type implementation,
+                global::System.Type contract,
+                global::System.Net.Http.HttpClient client,
+                global::Observables.RestAPI.RestApiSettings? settings)
+            {
+        #if NET8_0_OR_GREATER
+                if (!global::System.Runtime.CompilerServices.RuntimeFeature.IsDynamicCodeSupported)
+                    throw new global::System.PlatformNotSupportedException("Open generic REST API proxies require a runtime that supports dynamic code.");
+        #endif
+                return global::System.Activator.CreateInstance(implementation.MakeGenericType(contract.GetGenericArguments()), client, settings)!;
+            }
+        """;
 
     static string ToUnboundGeneric(string fullyQualified)
     {

@@ -1845,24 +1845,21 @@
             <summary>
             使用 System.Text.Json API 实现 <see cref="T:Observables.RestAPI.IHttpContentSerializer" /> 的<see langword="class" />。
             </summary>
-            <remarks>
-            使用指定参数创建新的 <see cref="T:Observables.RestAPI.SystemTextJsonContentSerializer" /> 实例。
-            </remarks>
-            <param name="jsonSerializerOptions">用于当前实例的序列化选项。</param>
         </member>
         <member name="M:Observables.RestAPI.SystemTextJsonContentSerializer.#ctor(System.Text.Json.JsonSerializerOptions)">
             <summary>
-            使用 System.Text.Json API 实现 <see cref="T:Observables.RestAPI.IHttpContentSerializer" /> 的<see langword="class" />。
-            </summary>
-            <remarks>
             使用指定参数创建新的 <see cref="T:Observables.RestAPI.SystemTextJsonContentSerializer" /> 实例。
-            </remarks>
+            </summary>
             <param name="jsonSerializerOptions">用于当前实例的序列化选项。</param>
         </member>
         <member name="M:Observables.RestAPI.SystemTextJsonContentSerializer.#ctor">
             <summary>
             创建新的 <see cref="T:Observables.RestAPI.SystemTextJsonContentSerializer" /> 实例。
             </summary>
+        </member>
+        <member name="M:Observables.RestAPI.SystemTextJsonContentSerializer.FromContext(System.Text.Json.Serialization.JsonSerializerContext)">
+            <summary>创建仅使用源生成 JSON 元数据的序列化器。请在上下文中注册所有请求体和响应体类型。</summary>
+            <param name="context">提供源生成类型元数据的 JSON 上下文。</param>
         </member>
         <member name="M:Observables.RestAPI.SystemTextJsonContentSerializer.ToHttpContent``1(``0)">
             <inheritdoc />

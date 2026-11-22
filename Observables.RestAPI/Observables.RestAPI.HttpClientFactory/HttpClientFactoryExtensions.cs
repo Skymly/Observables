@@ -1,8 +1,8 @@
 using System;
 using System.Net.Http;
-using Observables.RestAPI;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Http;
+using Observables.RestAPI;
 
 namespace Observables.RestAPI.HttpClientFactory;
 

@@ -343,3 +343,6 @@ static Observables.RestAPI.RestApiCallScope.Capture() -> System.Collections.Gene
 static Observables.RestAPI.RestApiCallScope.Push(System.Collections.Generic.IReadOnlyDictionary<string!, object?>! options) -> System.IDisposable!
 static Observables.RestAPI.RestApiBridge.SendAsync<T, TBody>(System.Net.Http.HttpClient! client, Observables.RestAPI.RestApiSettings! settings, in Observables.RestAPI.RestApiBridge.MethodSpec spec, System.Collections.Generic.IReadOnlyDictionary<string!, object?>? callOptions, System.Threading.CancellationToken cancellationToken, params object?[]! args) -> System.Threading.Tasks.Task<T?>!
 static Observables.RestAPI.RestApiBridge.SendVoidAsync(System.Net.Http.HttpClient! client, Observables.RestAPI.RestApiSettings! settings, in Observables.RestAPI.RestApiBridge.MethodSpec spec, System.Collections.Generic.IReadOnlyDictionary<string!, object?>? callOptions, System.Threading.CancellationToken cancellationToken, params object?[]! args) -> System.Threading.Tasks.Task!
+Observables.RestAPI.RestApiSettings.AuthorizationHeaderOrigin.get -> System.Uri?
+Observables.RestAPI.RestApiSettings.AuthorizationHeaderOrigin.set -> void
+static Observables.RestAPI.RestService.CreateHttpMessageHandler(Observables.RestAPI.RestApiSettings? settings) -> System.Net.Http.HttpMessageHandler!

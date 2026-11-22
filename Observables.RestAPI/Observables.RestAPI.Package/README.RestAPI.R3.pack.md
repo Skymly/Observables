@@ -6,7 +6,7 @@ Declarative type-safe HTTP client with Roslyn source generators — annotate int
 
 ```xml
 <PackageReference Include="Observables.RestAPI.R3" />
-<PackageReference Include="R3" Version="1.3.0" />
+<PackageReference Include="R3" Version="1.3.1" />
 ```
 
 ## Usage

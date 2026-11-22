@@ -392,7 +392,7 @@ Observables.RestAPI/
 
 ## 11. 后续（v1 之外）
 
-- `JsonSerializerContext` source-gen 进一步改善 AOT/trim（当前 `SystemTextJsonContentSerializer` 仍用反射式序列化）。
+- 在 .NET 8 或更高版本上，可用 `new RestApiSettings(SystemTextJsonContentSerializer.FromContext(MyJsonContext.Default))`，让生成代理从该上下文解析请求和响应的 `JsonTypeInfo`。上下文缺少 DTO 时会明确报错。HTTP 验证错误的 ProblemDetails 使用库内生成的元数据。Native AOT 的 JSON 路径支持闭合代理，URL 编码表单可用字符串或字典。需要自定义枚举线值时，通过 settings 配置格式化器。
 - `DynamicallyAccessedMemberTypes` 精细化（Path B 已显著收敛，但 `RestService.For` 各重载仍带 `PublicMethods | PublicProperties`，比 `TryGetGeneratedFactory` 查表实际需要的宽）。
 - 流式响应（`IAsyncEnumerable<T>`）支持。
 - 多部分上传的 `Stream` 优化（当前 `AddMultipartItem` 对 `Stream` 走 `StreamContent`）。

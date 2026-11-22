@@ -9,10 +9,11 @@ Observables locks the **NuGet `lib/` runtime surface** with [`Microsoft.CodeAnal
 | 9 domain runtimes (`Observables.<Feature>/Observables.<Feature>/`) | Events packages (DevelopmentDependency; no consumer `lib/`) |
 | 8 R3 bridges (`Observables.<Feature>.R3/`) | |
 | 9 Reactive bridges (`Observables.<Feature>.Reactive/`) | Source generators, Analyzers, CodeFixes, tests |
+| 2 MQTTnet transport adapters (`Observables.Mqtt.MQTTnet4/`, `Observables.Mqtt.MQTTnet5/`) | |
 | Attributes, services, adapters shipped in meta-packages | `.Package` traversal/pack projects, `nuget-smoke` |
 | | `Observables.RestAPI.HttpClientFactory` (optional; not in 20-pack manifest) |
 
-The 26 projects are identified by their checked-in `PublicAPI/<tfm>/PublicAPI.Shipped.txt` files. List the project directories from the repository root with this command.
+The 28 projects are identified by their checked-in `PublicAPI/<tfm>/PublicAPI.Shipped.txt` files. List the project directories from the repository root with this command.
 
 ```powershell
 git ls-files -- ':(glob)**/PublicAPI/*/PublicAPI.Shipped.txt' |
@@ -31,7 +32,7 @@ Both files start with `#nullable enable` so nullable annotations appear in the b
 
 ## Multi-targeting
 
-All 26 covered projects target `net8.0`, `net9.0`, and `net10.0`. The 23 projects that also target `netstandard2.0` keep a baseline for that TFM. The three Postgres projects target modern .NET only.
+All 28 covered projects target `net8.0`, `net9.0`, and `net10.0`. The 24 projects that also target `netstandard2.0` keep a baseline for that TFM. The three Postgres projects and the MQTTnet 5 adapter target .NET 8 and later.
 
 PublicApiAnalyzers **3.3.x** expects a **complete** public API list **per TFM** (it does not merge a root file with TFM-specific supplements). Each runtime project therefore keeps:
 
@@ -53,7 +54,7 @@ Some members exist only on newer TFMs (for example `JsonNatsPayloadSerializer`, 
 3. The script seeds the per-TFM baseline files and runs `dotnet format analyzers --diagnostics RS0016` for each project. It moves the resulting API lists into `Shipped` for the baseline freeze.
 4. Verify: `dotnet run --project build/_build.csproj -- --target Ci` and `--target CiPack`.
 
-## Day-to-day contributor workflow (post-1.0)
+## Day-to-day contributor workflow
 
 1. **New public member** → add a line to `PublicAPI.Unshipped.txt` only (IDE code-fix “Add public API to Unshipped.txt” on RS0016).
 2. **Before release** → move all `Unshipped` lines into `Shipped`; leave `Unshipped` with only `#nullable enable`.

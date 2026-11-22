@@ -5,7 +5,7 @@
 
 ## 1. 目标与定位
 
-将 **MQTT 客户端**（[MQTTnet](https://github.com/dotnet/MQTTnet) `IMqttClient`）的发布/订阅边界，通过 Roslyn 源生成器桥接为反应式流：
+将 **MQTT 传输接口**（`IMqttTransport`）的发布/订阅边界，通过 Roslyn 源生成器桥接为反应式流：
 
 | 边界 | 方向 | 典型客户端 API | 对应已实现范本 |
 |------|------|----------------|----------------|
@@ -52,16 +52,16 @@ public interface ISensorHub
 获取实现：
 
 ```csharp
-var client = new MqttFactory().CreateMqttClient();
+using var client = new MqttFactory().CreateMqttClient();
 await client.ConnectAsync(options);
 
-ISensorHub hub = MqttService.For<ISensorHub>(client);
+ISensorHub hub = MqttService.For<ISensorHub>(MqttNetTransport.Wrap(client));
 ```
 
 设计要点：
 
-- **入口对齐 SignalR / RestAPI**：`MqttService.For<T>(IMqttClient)` + `RegisterGeneratedFactory`（模块初始化器，无反射，AOT 友好）。
-- **具名客户端**：`[Mqtt(clientName)]` 上的名字由 Parser 读出、随 `RegisterProxyName(Type, string)` 一起发到模块初始化器（生成物 `MqttProxyNames.g.cs`），`MqttService.For<T>()` 这个不带客户端参数的重载据此查 `RegisterClient(name, client)` 注册的客户端。名字走生成代码而不是运行期读特性，是因为域运行时要对 trim / AOT 分析器零告警。未写名字的接口仍只能走 `For<T>(IMqttClient)`；解析未命名接口、或名字没注册过客户端，都抛 `InvalidOperationException` 并在消息里点名缺的是哪一个。
+- **入口对齐 SignalR / RestAPI**：`MqttService.For<T>(IMqttTransport)` + `RegisterGeneratedFactory`（模块初始化器，无反射，AOT 友好）。
+- **具名客户端**：`[Mqtt(clientName)]` 上的名字由 Parser 读出、随 `RegisterProxyName(Type, string)` 一起发到模块初始化器（生成物 `MqttProxyNames.g.cs`），`MqttService.For<T>()` 这个不带客户端参数的重载据此查 `RegisterClient(name, client)` 注册的客户端。名字走生成代码而不是运行期读特性，是因为域运行时要对 trim / AOT 分析器零告警。未写名字的接口仍只能走 `For<T>(IMqttTransport)`；解析未命名接口、或名字没注册过客户端，都抛 `InvalidOperationException` 并在消息里点名缺的是哪一个。
 - **订阅**用只读属性声明 MQTT 主题过滤器，支持标准 `+` / `#` 通配符和空层级。带 `{param}` 或以 `$share/` 开头的过滤器会报 OBS5006。
 - **发布**用方法声明 topic 模板。`{param}` 与方法参数名绑定，每个普通参数都必须被引用，同一个占位符可以重复出现。发布 topic 使用普通主题名，`+` 和 `#` 会报 OBS5006。
 - **载荷**：`MqttPayloadSerializers`（默认 `DefaultMqttPayloadSerializer`：`string`/`byte[]` 原始 UTF-8，net8+ 其余类型走 STJ JSON）。可 `Register<T>` 或替换 `Current`（`IMqttPayloadSerializer` / `IMqttPayloadSerializer<T>`）；netstandard2.0 仅原始类型。
@@ -70,16 +70,13 @@ ISensorHub hub = MqttService.For<ISensorHub>(client);
 
 对不声明接口、仅按 topic 字符串订阅的场景：`MqttObservable.FromSubscribe` / `FromPublish`（见运行时）。
 
-### 3.3 依赖：MQTTnet 4.x（用户文档）
+### 3.3 传输接口与 MQTTnet 适配
 
-**Observables.Mqtt** 元包传递依赖 **[MQTTnet 4.3.7.1207](https://www.nuget.org/packages/MQTTnet/4.3.7.1207)**（4.x 线），**未**采用 MQTTnet 5.x。原因摘要（用户向全文见 [Observables.Docs `mqtt.md`](https://github.com/Skymly/Observables.Docs/blob/main/docs/mqtt.md)）：
+按 [ADR-004](../adr/ADR-004-mqtt-transport-adapters.md)，`IMqttTransport` 提供订阅、退订、发布和消息回调。MQTTnet 4 / 5 适配器分别实现接口，由应用选择一套。代理与桥接共用中立运行时。
 
-| 因素 | 说明 |
-|------|------|
-| TFM | 元包含 `netstandard2.0`；MQTTnet 5 仅 .NET 8+ |
-| API | 运行时基于 `IMqttClient` / `MqttFactory` 等 4.x 公共面；升 5 为 Mqtt 域 breaking 迁移 |
-| 范围 | 首版 pub/sub；MQTTnet 5 + MQTT 5 高级特性为 follow-up |
-| 协议 | 线协议 3.1.1 / 5.0 由应用 `ConnectAsync` 配置；Observables 不依赖 MQTT-5-only 线特性 |
+从 0.4.x 升级时，按 MQTTnet 主版本安装 `Observables.Mqtt.MQTTnet4` 或 `Observables.Mqtt.MQTTnet5`，并导入同名命名空间。把 `MqttNetTransport.Wrap(client)` 传给 `MqttService.For<T>`、`RegisterClient` 或直接调用的桥接方法。MQTTnet 4 适配器保留 `netstandard2.0`，MQTTnet 5 适配器要求 .NET 8 或更高。应用负责连接、选择协议版本及处置客户端。
+
+`MqttProtocol` 按传输实例和主题过滤器计数。首次订阅向 broker 注册过滤器，最后一次取消时退订。`Wrap` 为同一 MQTTnet 客户端返回同一个传输实例。包装和取消订阅不会断开 MQTTnet 客户端。
 
 ## 4. 诊断（OBS5xxx）
 
@@ -100,13 +97,14 @@ ISensorHub hub = MqttService.For<ISensorHub>(client);
 
 对齐 SignalR：`Observables.Mqtt`、`Observables.Mqtt.R3`、`Observables.Mqtt.Reactive`、`SourceGenerators.Shared`、双路生成器、`Observables.Mqtt.Package`、Nuke PackVerify + `eng/nuget-smoke`。
 
-三个运行时程序集按后端分层（[ADR-003](../adr/ADR-003-backend-neutral-domain-runtime.md)）：
+包布局见 [ADR-004](../adr/ADR-004-mqtt-transport-adapters.md)。
 
 | 程序集 | 依赖 | 进哪个包 |
 |--------|------|----------|
-| `Observables.Mqtt` | MQTTnet（ns2.0 上另加 System.Memory） | 两个包都进 |
+| `Observables.Mqtt` | ns2.0 使用 System.Memory | `Observables.Mqtt` 中立运行时包 |
 | `Observables.Mqtt.R3`（`MqttObservable`） | 上面那个 + R3 | 仅 `Observables.Mqtt.R3` |
 | `Observables.Mqtt.Reactive`（`SystemReactiveMqttAdapter`） | 上面第一个 + System.Reactive | 仅 `Observables.Mqtt.Reactive` |
+| `Observables.Mqtt.MQTTnet4` / `.MQTTnet5` | 中立运行时 + 各自 MQTTnet 主版本 | 同名的适配包 |
 
 使用 `MqttService` 和 R3 的 `MqttObservable` 时导入 `using Observables.Mqtt;`。直接调用 System.Reactive 桥 `SystemReactiveMqttAdapter` 时导入 `using Observables.Mqtt.Reactive;`。`MqttProtocol` 等内部类型由两个桥接项目通过 `InternalsVisibleTo` 共享。
 
@@ -115,7 +113,9 @@ ISensorHub hub = MqttService.For<ISensorHub>(client);
 | 项目 | 说明 |
 |------|------|
 | `*.R3.SourceGenerators.Tests` / `*.Reactive.SourceGenerators.Tests` | Verify 快照 |
-| `Observables.Mqtt.Tests` / `Observables.Mqtt.Reactive.Tests` | 进程内 `MqttTestBroker`（MQTTnet），Publish/Subscribe E2E |
+| `Observables.Mqtt.Tests` / `Observables.Mqtt.Reactive.Tests` | 进程内 MQTTnet 4 broker 的发布、订阅与退订测试 |
+| `Observables.Mqtt.MQTTnet5.Tests` | 进程内 MQTTnet 5 broker 的发布、订阅与退订测试 |
+| `eng/nuget-smoke` | 两种 MQTTnet 适配包与两种反应式包的四种组合 |
 
 ## 7. 建议实施链
 
@@ -126,7 +126,8 @@ ISensorHub hub = MqttService.For<ISensorHub>(client);
 5. ~~进程内 Broker E2E~~ ✅（PR [#54](https://github.com/Skymly/Observables/pull/54)）
 6. ~~用户文档（Observables.Docs）~~ ✅
 7. ~~Samples.Mqtt~~ ✅（Observables.Samples）
-8. **follow-up**：MQTTnet 5 迁移、MQTT 5 请求-响应、断开重连策略、JSON sourcegen for AOT
+8. .NET 8 或更高版本可用 `MqttPayloadSerializers.RegisterJson(MyJsonContext.Default.Reading)` 注册生成的 JSON 元数据。普通代理订阅使用同一注册表。关闭反射时，原始字符串和字节数组仍直接处理，未注册的复杂载荷会报错。
+9. **后续**：MQTT 5 请求-响应、断开重连策略。
 
 ## 8. 非目标
 

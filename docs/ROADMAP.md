@@ -4,21 +4,21 @@
 
 > 版本号、tag、发版均须维护者明确批准；本文件中的版本号为规划占位，不构成自动发版授权。
 
-## 现状基线（2026-10）
+## 现状基线（0.5.0）
 
 | 维度 | 现状 |
 |------|------|
 | 已实现域 | **Events**、**RestAPI**、**SignalR**、**Mqtt**、**WebSocket**、**Grpc**、**Sse**、**Nats**、**Postgres**、**Redis**（运行时 + 双路生成器 + 测试） |
-| nuget.org | **`0.4.1`**（**20 包** + 20 snupkg） |
-| 诊断 | **82** 个已发布唯一 ID（以各 `AnalyzerReleases.Shipped.md` 为准） |
-| 质量 | Windows + Ubuntu CI；`337d576` 上 1550 测试全绿；`PackVerify` + 23 个 `eng/nuget-smoke` 消费者 |
-| 对外文档 | Observables.Docs / Samples 已追到 **`0.4.1`**（版本 bump 直推；R1-1 单点版本见 [Docs#29](https://github.com/Skymly/Observables.Docs/pull/29)）。nuget.org `0.2.2` Reactive 包的未声明 R3 引用仍在；维护者决定暂不 deprecate（R0-5） |
+| 发版产物 | **`0.5.0`**（**23 包** + 23 snupkg） |
+| 诊断 | 已发布规则见各 `AnalyzerReleases.Shipped.md` |
+| 质量 | Windows 和 Ubuntu CI，覆盖 .NET 8、9、10；`PackVerify` 和 28 个本地 NuGet 消费者 |
+| 对外文档 | 稳定包发布后通过独立 PR 同步 Observables.Docs 和 Observables.Samples。nuget.org `0.2.2` Reactive 包的未声明 R3 引用仍在，暂缓 deprecate（R0-5）。 |
 | 需求信号 | Issue 全部来自维护者；真实消费方仅 [GitPulse](https://github.com/Skymly/GitPulse)。无外部反馈 |
-| 依赖 | MQTTnet `4.3.7`（上游 5.x）；System.Reactive `6.0.1`（上游 7.0）；R3 `1.3.0` |
+| 依赖 | 分别提供 MQTTnet 4 和 5 适配包。System.Reactive 最低版本为 `6.0.1`，已验证 7.0。R3 为 `1.3.1`。 |
 
 ### 方向判断
 
-1. **对外一致性优先于新功能**：R0 已把 Docs / Samples 追到 `0.3.1`；三仓仍靠手工同步，流程修复留在 R1。
+1. **对外一致性优先于新功能**：R1 已建立 Docs 和 Samples 的稳定版跟版流程。
 2. **审计驱动加固已到收益递减点**：近期多个探针 issue 结论为「未复现」（#606 / #609 / #610）。不再主动开审计 / 探针批次，转向深化既有域（R3）。
 3. **扩域暂停**：无外部需求时，每个新域都是 2 包 + 测试矩阵 + 两仓文档的长期成本（R5）。
 4. **正式发 `1.0.0`**：结束「post-1.0 维护期 / 实际 0.x」的版本叙事歧义（R4）。
@@ -57,7 +57,7 @@ R1 与 R2 可并行。R4 依赖 R1、R2 出口满足，且 R3 至少完成 R3-1�
 
 | # | 行动项 | 说明 |
 |---|--------|------|
-| R1-1 | Docs 单点版本 | VitePress 全局变量承载当前版本；页面与 nuget 链接引用变量，不再硬编码 |
+| R1-1 | ✅ Docs 单点版本 | VitePress 页面通过同一个变量引用版本。见 [Docs#29](https://github.com/Skymly/Observables.Docs/pull/29)。 |
 | R1-2 | ✅ Samples / Docs 自动跟版 | `release.yml` 稳定版 `Publish` 成功后自动向 Observables.Docs / Observables.Samples 开 bump PR（[#644](https://github.com/Skymly/Observables/pull/644)）；两仓 `scripts/sync-observables-version.ps1` 覆盖全部版本字面量（[Docs#30](https://github.com/Skymly/Observables.Docs/pull/30) / [Samples#23](https://github.com/Skymly/Observables.Samples/pull/23)）。**须配置 `SYNC_TOKEN` secret**（fine-grained PAT，两仓 Contents + PR 写权限） |
 | R1-3 | ✅ 跨仓漂移检查 | 两仓 `version-drift.yml`（PR + push + 每周 schedule）：断言引用版本 = nuget.org 最新稳定版，并扫描旧稳定版字面量残留（同 PR） |
 | R1-4 | ✅ 发版门槛对齐 | `Publish` 已内置 `Test` → `PackVerify`；门槛清单改为「Publish 内 PackVerify 通过」，不再要求 HEAD 上另跑 `CiPack` |
@@ -77,19 +77,19 @@ R1 与 R2 可并行。R4 依赖 R1、R2 出口满足，且 R3 至少完成 R3-1�
 
 | # | 行动项 | 说明 |
 |---|--------|------|
-| R2-A1 | ADR-004（先于代码） | 定：传输抽象形状（subscribe / unsubscribe / publish / 能力位，供 MQTT 5 请求-响应）；适配包 ID（暂拟 `Observables.Mqtt.MQTTnet4` / `Observables.Mqtt.MQTTnet5`）；R3 / Reactive 主包是否默认依赖某个适配包；`MqttService.For<T>` 新入口与旧 `IMqttClient` 重载的去留；4.x 冻结的触发条件与版本。须明确放宽 AGENTS「每域仅两个消费者包」——适配包为后端中立的可选扩展，不是第三个消费者主包 |
-| R2-A2 | 运行时 + 生成器改造 | `Observables.Mqtt` 去除 MQTTnet 引用；`MqttProtocol` / 协议桥改走抽象；生成代码不再出现 `MQTTnet.*` 类型 |
-| R2-A3 | 两个适配包 | 各自 E2E（进程内 broker 分别用 MQTTnet 4 / 5）；登记 BuildManifest；PackVerify 支持「单包、后端中立」包形态（禁止引用 R3 / System.Reactive） |
-| R2-A4 | 迁移文档 | Docs Mqtt 页 + 0.4.x → 0.5.0 迁移说明；Samples Mqtt 改用适配包 |
+| R2-A1 | ✅ MQTT 传输决策 | [ADR-004](adr/ADR-004-mqtt-transport-adapters.md) 定义了传输接口、包组合、迁移方式与 MQTTnet 4 维护模式。 |
+| R2-A2 | ✅ 运行时与生成器改造 | `Observables.Mqtt` 与生成代理使用 `IMqttTransport`。 |
+| R2-A3 | ✅ 两个适配包 | MQTTnet 4 / 5 各有进程内 broker E2E。本地 PackVerify 校验中立运行时和两个适配包。 |
+| R2-A4 | ✅ 迁移文档 | Docs 中英文 MQTT 页面和 Samples 两个后端的示例已在各自的发版工作树更新。 |
 
 #### R2-B 其它
 
 | # | 行动项 | 说明 |
 |---|--------|------|
-| R2-B1 | JSON source-gen（AOT） | RestAPI / Mqtt / Redis 设计文档均列为 follow-up；做成全库统一的 `JsonTypeInfo` 序列化入口，而非各域各做 |
-| R2-B2 | System.Reactive 7 兼容 | 加钉 Rx 7 的 smoke 消费者；据结果决定下限是否上调 |
-| R2-B3 | R3 `1.3.x` 补丁升级 | 常规依赖跟进 |
-| R2-B4 | 清理 | `OBS7004` 无触发分支：删除（`AnalyzerReleases` 登记 Removed）或补语义；解决 IDE0161 后启用 `dotnet format style` |
+| R2-B1 | ✅ JSON 源生成（AOT） | RestAPI、Mqtt、Redis 共用 `JsonTypeInfo` 实现。Windows x64 Native AOT 消费测试关闭 JSON 反射并验证 HTTP 请求、错误响应、MQTT 订阅和 Redis 载荷。 |
+| R2-B2 | ✅ System.Reactive 7 兼容 | MQTT 消费测试固定 Rx 7。包的最低依赖仍为 6.0.1。 |
+| R2-B3 | ✅ R3 `1.3.x` 补丁升级 | `0.5.0` 将 R3 依赖更新至 `1.3.1`。 |
+| R2-B4 | ✅ 遗留诊断 | `OBS7004` 由 [#498](https://github.com/Skymly/Observables/pull/498) 接上触发分支，双后端测试覆盖属性和事件。修复 `IDE0161` 后，CI 校验警告级别的代码样式。 |
 
 **出口**：`0.5.0` 发版；Mqtt 公共 API 不含 `MQTTnet.*`；两个适配包 E2E 绿；PublicAPI 破坏性变更全部登记。
 
@@ -113,7 +113,7 @@ R1 与 R2 可并行。R4 依赖 R1、R2 出口满足，且 R3 至少完成 R3-1�
 | R4-1 | SemVer 承诺 | 写清 1.x 内公共 API、诊断 ID 语义、包 ID 的兼容边界；破坏性变更须 2.0 |
 | R4-2 | Public API 冻结 | 全部 `Unshipped` 迁入 `Shipped`；复核 PublicAPI 基线覆盖面 |
 | R4-3 | 叙事统一 | README / AGENTS / Docs 去除「post-1.0 维护期」等 0.x 期措辞 |
-| R4-4 | MQTTnet 4 适配包冻结点 | 按 ADR-004 确定是否在 1.0.0 冻结 |
+| R4-4 | MQTTnet 4 适配包冻结点 | 在两种适配包的验证全部通过后，按 [ADR-004](adr/ADR-004-mqtt-transport-adapters.md) 于 1.0.0 进入维护模式。 |
 
 **前提**：R1、R2 出口满足；R3 至少完成 R3-1。
 
@@ -141,7 +141,7 @@ R1 与 R2 可并行。R4 依赖 R1、R2 出口满足，且 R3 至少完成 R3-1�
 | `OBS4001`–`OBS4999` | SignalR | 4001–4009（4008 为内部 fail-safe） |
 | `OBS5001`–`OBS5999` | Mqtt | 5001–5008（5008 为内部 fail-safe） |
 | `OBS6001`–`OBS6999` | WebSocket | 6001–6008（6008 为内部 fail-safe） |
-| `OBS7001`–`OBS7999` | Grpc | 7001–7010（7008 为内部 fail-safe；7004 无触发分支，见 R2-B4） |
+| `OBS7001`–`OBS7999` | Grpc | 7001–7010（7008 为内部 fail-safe；7004 检查 gRPC 方法边界特性的成员形态） |
 | `OBS8001`–`OBS8999` | SSE | 8001–8007（8006 为内部 fail-safe） |
 | `OBS9001`–`OBS9999` | NATS | 9001–9008（9008 为内部 fail-safe） |
 | `OBS10001`–`OBS10999` | Postgres | 10001–10008（10008 为内部 fail-safe；10007 空接口，Shared Analyzer） |

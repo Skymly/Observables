@@ -1,7 +1,7 @@
 using System.Collections.Immutable;
 using Microsoft.CodeAnalysis;
-using Observables.SourceGenerators.Shared;
 using Observables.Roslyn.Shared;
+using Observables.SourceGenerators.Shared;
 using Observables.WebSocket.Generators;
 
 namespace Observables.WebSocket.Reactive.SourceGenerators;

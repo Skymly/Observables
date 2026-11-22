@@ -16,8 +16,8 @@ using System.Diagnostics.CodeAnalysis;
 using System.Net.WebSockets;
 using Grpc.Core;
 using Microsoft.AspNetCore.SignalR.Client;
-using MQTTnet.Client;
 using NATS.Client.Core;
+using Npgsql;
 using Observables.Grpc;
 using Observables.Mqtt;
 using Observables.Nats;
@@ -27,7 +27,6 @@ using Observables.RestAPI;
 using Observables.SignalR;
 using Observables.Sse;
 using Observables.WebSocket;
-using Npgsql;
 using R3;
 using StackExchange.Redis;
 

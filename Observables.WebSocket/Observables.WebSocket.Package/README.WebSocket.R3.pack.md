@@ -6,7 +6,7 @@ Declarative WebSocket client proxies with Roslyn source generators — annotate 
 
 ```xml
 <PackageReference Include="Observables.WebSocket.R3" />
-<PackageReference Include="R3" Version="1.3.0" />
+<PackageReference Include="R3" Version="1.3.1" />
 ```
 
 ## Usage

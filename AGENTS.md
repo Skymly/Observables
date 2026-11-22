@@ -6,8 +6,8 @@
 
 - **类型**：个人项目（Skymly 工作区）
 - **远端**：https://github.com/Skymly/Observables（公开）；文件夹名 `Observables` = 仓库名；同步状态以 `git status` 为准
-- **阶段**：**Events**、**RestAPI**、**SignalR**、**Mqtt**、**WebSocket**、**Grpc**、**Sse**、**Nats**、**Postgres**、**Redis** 已实现（运行时 + 双路生成器 + 测试）；共享层另含 `Observables.CodeFixes` 与 `Observables.Analyzers`；**nuget.org 已发** `0.4.1`（**20 包**）。nuget.org `0.2.2` Reactive 域 DLL 可能未声明地引用 R3，勿覆盖重发。Nuke `PackVerify` + `eng/nuget-smoke` 覆盖 manifest 包清单
-- **下一里程碑**：R1 发版同步自动化 / R2 `0.5.0`（Mqtt 传输抽象 + MQTTnet 4/5 适配包，先 ADR-004；可与 R1 并行）→ R3 `0.6.0` 深化既有域 → R4 `1.0.0`；扩域暂停（R5）。R0（`0.3.1` + Docs / Samples 追平）已完成，R0-5（deprecate `0.2.2`）暂缓。版本历史：`0.1.9` = Redis，`0.2.0` = Shared IO 生成器加深，`0.2.1` / `0.2.2` = patch，`0.3.0` = 后端中立运行时 + 具名连接，`0.3.1` = patch，`0.4.0` = RestAPI RestApiCallScope 每次调用选项 + NuGet advisories 依赖升级，`0.4.1` = patch（engineering-debt 台账：Events / RestAPI 生成器修复 + OBS0001 三后端冲突检测）
+- **阶段**：**Events**、**RestAPI**、**SignalR**、**Mqtt**、**WebSocket**、**Grpc**、**Sse**、**Nats**、**Postgres**、**Redis** 已实现（运行时 + 双路生成器 + 测试）；共享层另含 `Observables.CodeFixes` 与 `Observables.Analyzers`；**稳定版 `0.5.0`**（**23 包**）。nuget.org `0.2.2` Reactive 域 DLL 可能未声明地引用 R3，勿覆盖重发。Nuke `PackVerify` + `eng/nuget-smoke` 覆盖 manifest 包清单
+- **下一里程碑**：R3 `0.6.0` 深化既有域，R4 `1.0.0` 承诺 SemVer。R5 扩域暂停。阶段出口与版本历史见路线图和 `CONTRIBUTING.md`。
 - **路线图**：阶段与出口条件见 [`docs/ROADMAP.md`](docs/ROADMAP.md)（R0–R5；旧 M1–M7 / E1–E13 编号保留在其「历史」索引）
 - **结构约定**：下文「仓库结构」与命名约定为权威；**工程治理**（包管理、警告、诊断、版本来源）见下文同名章节
 
@@ -42,7 +42,7 @@
 | **`Observables.<Feature>.Primitives.SourceGenerators`** | 未实现 | ReactiveUI.Primitives 源生成器（第三路，ADR-005）。 |
 | **`Observables.<Feature>.Package`** | 发布时 | **Traversal 根**下为每个已启用的后端配置一个可 pack 子项目。十个域均已有 Package，当前发布 **`Observables.<Feature>.R3`** 与 **`Observables.<Feature>.Reactive`**。 |
 
-可选扩展依赖域运行时，例如 `Observables.RestAPI.HttpClientFactory` 提供依赖注入集成。
+维护 MQTT 运行时、适配器或打包时查阅 [ADR-004](docs/adr/ADR-004-mqtt-transport-adapters.md)。两个反应式包依赖单独发布的中立运行时包 `Observables.Mqtt`，MQTTnet 4 / 5 适配包也依赖该运行时包。可选扩展如 `Observables.RestAPI.HttpClientFactory` 依赖其域运行时。
 
 ### 全库共享项目
 
@@ -195,7 +195,7 @@ Observables/
 
 - **中央包管理（CPM）**
   - 已落地：[`Directory.Packages.props`](Directory.Packages.props) 集中 36 个包版本；主树 csproj/props 已去除 `Version` 属性。`eng/nuget-smoke/` 通过本地 `Directory.Packages.props`（`ManagePackageVersionsCentrally=false`）保持动态/显式版本，模拟真实消费者。
-  - 标准：新增依赖先写入 `Directory.Packages.props`；csproj 仅写 `<PackageReference Include="…" />` 不带 `Version`。同一依赖**全仓单一版本**（含 Roslyn `4.12.0`、analyzer roslyn 文件夹 `roslyn4.12`）。
+  - 标准：新增依赖先写入 `Directory.Packages.props`。csproj 的 `PackageReference` 省略 `Version`。同一依赖全仓使用单一版本。依 ADR-004，MQTTnet 4 与 5 适配器及其测试在独立依赖图中使用各自主版本。
 - **公共属性归位**
   - 已落地：[`Directory.Build.props`](Directory.Build.props) 导入 [`eng/Observables.ProjectDefaults.props`](eng/Observables.ProjectDefaults.props)，按项目类型自动设置 TFM、`IsPackable`、AOT 标记；`Nullable`/`LangVersion`/`ImplicitUsings` 在仓库根统一声明，各 csproj 已去除重复。
   - **Package 子目录链式导入**：`Observables.<Feature>.Package/Directory.Build.props` 须 `Import` 仓库根 `Directory.Build.props`（MSBuild 只自动导入最近一层）；否则 pack 子项目拿不到 CPM 与 ProjectDefaults。
@@ -211,7 +211,7 @@ Observables/
 - 已落地：`eng/Observables.ProjectDefaults.props` 对非 skip 项目启用 `TreatWarningsAsErrors=true`（`nuget-smoke`、`.Package`、`_build` 等 skip 项除外）。
 - 已清零（M2/M7）：RestAPI nullable（CS86xx）；xUnit1051；Events RS1032 消息格式；域运行时 net8/9 IL trim 告警（Requires* 传播 + 生成代理 `DynamicDependency`）。
 - 标准：新增 CS / 分析器告警须在 PR 内修复；禁止无注释的全仓 `NoWarn`。
-- **Public API（M7）**：域运行时及 R3、Reactive 桥接项目启用 `Microsoft.CodeAnalysis.PublicApiAnalyzers`。修改公开 API 时按 [公开 API 维护指南](docs/design/public-api.md) 更新相应基线。发版前将 `Unshipped` 迁入 `Shipped`。破坏性变更须 major bump。
+- **Public API**：域运行时、反应式桥接和 MQTT 适配器启用 `Microsoft.CodeAnalysis.PublicApiAnalyzers`。修改公开 API 或冻结发版基线时查阅 [公开 API 覆盖范围与流程](docs/design/public-api.md)。破坏性变更须 major bump。
 
 ### 3. 诊断治理
 
@@ -358,7 +358,7 @@ dotnet run --project build/_build.csproj -- --target Ci --configuration Release
 | **Test** | 同 `Ci`（`Compile` + `UnitTest`）；可附加 `--test-domains <逗号分隔>` 过滤测试项目（例如 `--test-domains mqtt,shared`） |
 | **Pack** | 打包 pack 子项目 → `artifacts/package/`（**不**依赖 UnitTest）；可附加 `--pack-domains <逗号分隔>` 过滤包（按 `PackageId` 前缀 `Observables.<d>.` 匹配） |
 | **PackOnly** | `Pack` + `PackVerify`（**不**跑 UnitTest） |
-| **PackVerify** | 断言 nupkg 含 analyzer、Events Observables.Events.*.props（不是源树 observables.events.props）、RestAPI/SignalR/Mqtt/WebSocket/Sse/Grpc/Nats/Postgres/Redis lib/（manifest 当前 **20** 包） |
+| **PackVerify** | 按 manifest 校验后端包的分析器、props、运行时及依赖。按 ADR-004 校验中立 MQTT 包的运行时及依赖。 |
 | **CiPack** | CI 完整流水线：`Test` + `PackOnly` + `NuGetConsumerSmoke`（本地包）；保留供本地或 release.yml 全链路调试 |
 | **Publish** | 推送到 nuget.org（`NUGET_API_KEY`）与 GitHub Packages（`GITHUB_TOKEN`，`packages:write`）；`DependsOn(Test, PackVerify)` 确保发版前测试已通过 |
 

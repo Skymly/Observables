@@ -4,7 +4,8 @@ sealed class NupkgVerifyRequest
 {
     public required string PackageId { get; init; }
 
-    public required string GeneratorAssemblyFileName { get; init; }
+    public required string? GeneratorAssemblyFileName { get; init; }
+    public IReadOnlyList<string> ForbiddenLibAssemblyFileNames { get; init; } = [];
 
     public IReadOnlyDictionary<string, IReadOnlyList<string>> RequiredLibAssembliesByTfm { get; init; } =
         new Dictionary<string, IReadOnlyList<string>>(StringComparer.OrdinalIgnoreCase);

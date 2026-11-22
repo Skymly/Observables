@@ -1,7 +1,5 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-  <Import Project="..\Directory.Build.props" />
-
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFramework>net8.0</TargetFramework>
@@ -11,6 +9,7 @@
 
   <ItemGroup>
     <PackageReference Include="Observables.Mqtt.Reactive" Version="$(ObservablesConsumerPackageVersion)" />
+    <PackageReference Include="Observables.Mqtt.MQTTnet4" Version="$(ObservablesConsumerPackageVersion)" />
     <PackageReference Include="System.Reactive" Version="6.0.1" />
   </ItemGroup>
 

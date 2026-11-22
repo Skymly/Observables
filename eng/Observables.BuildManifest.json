@@ -33,6 +33,18 @@
       "packageId": "Observables.Mqtt.Reactive"
     },
     {
+      "packProject": "Observables.Mqtt/Observables.Mqtt/Observables.Mqtt.csproj",
+      "packageId": "Observables.Mqtt"
+    },
+    {
+      "packProject": "Observables.Mqtt/Observables.Mqtt.MQTTnet4/Observables.Mqtt.MQTTnet4.csproj",
+      "packageId": "Observables.Mqtt.MQTTnet4"
+    },
+    {
+      "packProject": "Observables.Mqtt/Observables.Mqtt.MQTTnet5/Observables.Mqtt.MQTTnet5.csproj",
+      "packageId": "Observables.Mqtt.MQTTnet5"
+    },
+    {
       "packProject": "Observables.WebSocket/Observables.WebSocket.Package/Observables.WebSocket.R3.Pack.csproj",
       "packageId": "Observables.WebSocket.R3"
     },
@@ -97,6 +109,7 @@
     "Observables.Mqtt/Observables.Mqtt.Reactive.SourceGenerators.Tests/Observables.Mqtt.Reactive.SourceGenerators.Tests.csproj",
     "Observables.Mqtt/Observables.Mqtt.Tests/Observables.Mqtt.Tests.csproj",
     "Observables.Mqtt/Observables.Mqtt.Reactive.Tests/Observables.Mqtt.Reactive.Tests.csproj",
+    "Observables.Mqtt/Observables.Mqtt.MQTTnet5.Tests/Observables.Mqtt.MQTTnet5.Tests.csproj",
     "Observables.WebSocket/Observables.WebSocket.R3.SourceGenerators.Tests/Observables.WebSocket.R3.SourceGenerators.Tests.csproj",
     "Observables.WebSocket/Observables.WebSocket.Reactive.SourceGenerators.Tests/Observables.WebSocket.Reactive.SourceGenerators.Tests.csproj",
     "Observables.WebSocket/Observables.WebSocket.Tests/Observables.WebSocket.Tests.csproj",
@@ -138,6 +151,10 @@
     "eng/nuget-smoke/SignalR.Reactive.Consumer/SignalR.Reactive.Consumer.csproj",
     "eng/nuget-smoke/Mqtt.R3.Consumer/Mqtt.R3.Consumer.csproj",
     "eng/nuget-smoke/Mqtt.Reactive.Consumer/Mqtt.Reactive.Consumer.csproj",
+    "eng/nuget-smoke/Mqtt.R3.MQTTnet5.Consumer/Mqtt.R3.MQTTnet5.Consumer.csproj",
+    "eng/nuget-smoke/Mqtt.Reactive.MQTTnet5.Consumer/Mqtt.Reactive.MQTTnet5.Consumer.csproj",
+    "eng/nuget-smoke/Mqtt.Reactive.Rx7.Consumer/Mqtt.Reactive.Rx7.Consumer.csproj",
+    "eng/nuget-smoke/Json.Aot.Consumer/Json.Aot.Consumer.csproj",
     "eng/nuget-smoke/WebSocket.R3.Consumer/WebSocket.R3.Consumer.csproj",
     "eng/nuget-smoke/WebSocket.Reactive.Consumer/WebSocket.Reactive.Consumer.csproj",
     "eng/nuget-smoke/Grpc.R3.Consumer/Grpc.R3.Consumer.csproj",

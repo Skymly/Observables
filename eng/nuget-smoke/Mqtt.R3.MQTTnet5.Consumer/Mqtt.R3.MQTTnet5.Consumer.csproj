@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <DefineConstants>$(DefineConstants);MQTTNET5</DefineConstants>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Observables.Mqtt.R3" Version="$(ObservablesConsumerPackageVersion)" />
+    <PackageReference Include="Observables.Mqtt.MQTTnet5" Version="$(ObservablesConsumerPackageVersion)" />
+    <PackageReference Include="R3" Version="1.3.1" />
+    <Compile Include="..\Mqtt.R3.Consumer\Program.cs" Link="Program.cs" />
+  </ItemGroup>
+
+</Project>

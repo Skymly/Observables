@@ -26,13 +26,21 @@ static class PackCsprojReader
             ?? throw new InvalidOperationException($"Pack project has no directory: {packCsprojPath}");
 
         string packageId = RequiredProperty(pack, "PackageId", packCsprojPath);
-        string generatorAssembly = RequiredProperty(pack, "ObservablesPackGeneratorAssemblyName", packCsprojPath);
+        bool mqttRuntime = packageId.Equals("Observables.Mqtt", StringComparison.OrdinalIgnoreCase);
+        bool mqttPackage = mqttRuntime || packageId.StartsWith("Observables.Mqtt.", StringComparison.OrdinalIgnoreCase);
+        bool mqttAdapter = packageId.Equals("Observables.Mqtt.MQTTnet4", StringComparison.OrdinalIgnoreCase)
+            || packageId.Equals("Observables.Mqtt.MQTTnet5", StringComparison.OrdinalIgnoreCase);
+        string? generatorAssembly = mqttRuntime || mqttAdapter
+            ? null
+            : RequiredProperty(pack, "ObservablesPackGeneratorAssemblyName", packCsprojPath);
 
-        LibProject[] libProjects = pack.Descendants("ObservablesPackLibProjectReference")
-            .Select(static e => (string?)e.Attribute("Include"))
-            .Where(static include => !string.IsNullOrWhiteSpace(include))
-            .Select(include => ReadLibProject(ResolveIncludePath(packDir, include!)))
-            .ToArray();
+        LibProject[] libProjects = generatorAssembly is null
+            ? [ReadLibProject(packCsprojPath)]
+            : pack.Descendants("ObservablesPackLibProjectReference")
+                .Select(static e => (string?)e.Attribute("Include"))
+                .Where(static include => !string.IsNullOrWhiteSpace(include))
+                .Select(include => ReadLibProject(ResolveIncludePath(packDir, include!)))
+                .ToArray();
 
         var libsByTfm = new Dictionary<string, IReadOnlyList<string>>(StringComparer.OrdinalIgnoreCase);
         var depsByTfm = new Dictionary<string, IReadOnlyList<string>>(StringComparer.OrdinalIgnoreCase);
@@ -47,8 +55,18 @@ static class PackCsprojReader
                 .ToArray();
             foreach (LibProject lib in matchingLibraries)
             {
+                if (lib.Path == packCsprojPath)
+                {
+                    continue;
+                }
+
                 dependencies.UnionWith(ReadPackageReferences(lib.Path, tfm, configuration)
                     .Where(id => !BackendPackageIds.Contains(id)));
+            }
+
+            if (mqttPackage && !mqttRuntime)
+            {
+                dependencies.Add("Observables.Mqtt");
             }
 
             if (matchingLibraries.Length > 0)
@@ -59,16 +77,27 @@ static class PackCsprojReader
             depsByTfm.Add(tfm, dependencies.ToArray());
         }
 
-        string[] forbiddenBackends = ForbiddenBackendAssemblies(packageId);
+        string[] forbidden = ForbiddenBackendAssemblies(packageId);
+        if (mqttRuntime || mqttAdapter)
+        {
+            forbidden = BackendPackageIds.ToArray();
+        }
+
+        if (mqttPackage && !mqttAdapter)
+        {
+            forbidden = [.. forbidden, "MQTTnet"];
+        }
+
         return new NupkgVerifyRequest
         {
             PackageId = packageId,
             GeneratorAssemblyFileName = generatorAssembly,
             RequiredLibAssembliesByTfm = libsByTfm,
             RequiredDependenciesByTfm = depsByTfm,
+            ForbiddenLibAssemblyFileNames = mqttPackage && !mqttRuntime ? ["Observables.Mqtt.dll"] : [],
             ForbiddenNuspecSubstrings = packageId.StartsWith("Observables.Redis.", StringComparison.Ordinal) ? ["Garnet"] : [],
-            ForbiddenNuspecDependencyIds = forbiddenBackends,
-            ForbiddenLibAssemblyReferences = forbiddenBackends,
+            ForbiddenNuspecDependencyIds = forbidden,
+            ForbiddenLibAssemblyReferences = forbidden,
         };
     }
 

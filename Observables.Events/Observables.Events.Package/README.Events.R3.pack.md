@@ -6,7 +6,7 @@ Roslyn source generator bridging classic .NET events to [R3](https://github.com/
 
 ```xml
 <PackageReference Include="Observables.Events.R3" />
-<PackageReference Include="R3" Version="1.3.0" />
+<PackageReference Include="R3" Version="1.3.1" />
 ```
 
 ## Usage

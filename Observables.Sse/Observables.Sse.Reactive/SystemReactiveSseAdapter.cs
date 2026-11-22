@@ -1,5 +1,5 @@
-using System.Reactive.Linq;
 using System.Net.Http;
+using System.Reactive.Linq;
 using Observables.Sse;
 #if NET8_0_OR_GREATER
 using System.Diagnostics.CodeAnalysis;

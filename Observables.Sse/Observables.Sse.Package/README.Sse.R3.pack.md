@@ -6,7 +6,7 @@ Declarative Server-Sent Events (SSE) client proxies with Roslyn source generator
 
 ```xml
 <PackageReference Include="Observables.Sse.R3" />
-<PackageReference Include="R3" Version="1.3.0" />
+<PackageReference Include="R3" Version="1.3.1" />
 ```
 
 ## Usage

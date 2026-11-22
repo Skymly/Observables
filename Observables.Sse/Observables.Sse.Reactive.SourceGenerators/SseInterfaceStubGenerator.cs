@@ -1,7 +1,7 @@
 using System.Collections.Immutable;
 using Microsoft.CodeAnalysis;
-using Observables.SourceGenerators.Shared;
 using Observables.Roslyn.Shared;
+using Observables.SourceGenerators.Shared;
 using Observables.Sse.Generators;
 
 namespace Observables.Sse.Reactive.SourceGenerators;

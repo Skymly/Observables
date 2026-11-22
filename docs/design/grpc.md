@@ -128,7 +128,7 @@ CallInvoker → remote gRPC service
 | OBS7001 | Warning | 成员无 gRPC 边界特性 |
 | OBS7002 | Error | 未引用消费者包 `Observables.Grpc.R3` / `Observables.Grpc.Reactive`（按生成器后端） |
 | OBS7003 | Error | 不支持的返回类型 |
-| OBS7004 | Error | 成员形态与边界特性不匹配 |
+| OBS7004 | Error | gRPC 方法边界特性标在属性、事件或其他非方法成员上 |
 | OBS7005 | Error | `IObservable<T>` 但未引用 `Observables.Grpc.Reactive` |
 | OBS7006 | Error | 不支持的参数组合 |
 | OBS7007 | Warning | 空 `[Grpc]` 接口（`Observables.Analyzers`） |

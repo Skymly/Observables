@@ -95,7 +95,7 @@ Reactive：`SystemReactiveRedisAdapter` 同名方法，返回 `IObservable<T>`�
 | 其它 `T` | 默认 `System.Text.Json`（支持 TFM） |
 | 自定义 | `RedisPayloadSerializers.Register<T>(…)` |
 
-trim/AOT：JSON 反射路径带 `RequiresUnreferencedCode` / `RequiresDynamicCode`（与兄弟 IO 域一致）。
+在 .NET 8 或更高版本上，用 `RedisPayloadSerializers.RegisterJson(MyJsonContext.Default.Reading)` 注册生成的 JSON 元数据。发布、订阅和 `RedisMessage<T>` 共用该注册。关闭反射时，原始字符串和字节数组仍直接处理，未注册的复杂载荷会报错。
 
 ## 7. 分发
 
@@ -168,7 +168,6 @@ Observables.Redis/
 - ✅ `v0.1.9` 已发
 - ✅ Observables.Docs Redis 页 + `diagnostics.md` OBS11xxx（[#14](https://github.com/Skymly/Observables.Docs/issues/14) / PR [#15](https://github.com/Skymly/Observables.Docs/pull/15)）
 - ✅ Observables.Samples.Redis（[#11](https://github.com/Skymly/Observables.Samples/issues/11) / PR [#12](https://github.com/Skymly/Observables.Samples/pull/12)）
-- JSON sourcegen / 更严格 AOT 友好载荷路径（可选）
 
 ## 13. 参考
 

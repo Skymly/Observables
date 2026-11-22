@@ -16,4 +16,8 @@
   <ItemGroup>
     <Compile Include="..\..\Observables.Shared\Observables.Core\GeneratedProxyFactoryRegistry.cs" Link="Shared/GeneratedProxyFactoryRegistry.cs" />
   </ItemGroup>
+  <ItemGroup Condition="'$(TargetFramework)' != 'netstandard2.0'">
+    <Compile Include="..\..\Observables.Shared\Observables.Core\SourceGeneratedJson.cs" Link="Shared\SourceGeneratedJson.cs" />
+  </ItemGroup>
+
 </Project>

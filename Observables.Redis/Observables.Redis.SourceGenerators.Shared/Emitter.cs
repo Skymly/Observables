@@ -86,10 +86,7 @@ internal static class Emitter
                 "_multiplexer",
                 "multiplexer"),
             model.Members.AsArray(),
-            EmitMember,
-            trim: new ProxyClassEmitter.TrimWarnings(
-                "Redis payload serialization uses reflection. Preserve payload type members when trimming.",
-                "Redis payload serialization uses reflection."));
+            EmitMember);
 
     static void EmitMember(SourceWriter writer, RedisMemberModel member)
     {

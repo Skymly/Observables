@@ -1,4 +1,4 @@
-﻿Diagnostics:
+Diagnostics:
   <none>
 
 Generated Sources:
@@ -10,10 +10,6 @@ namespace Observables.Redis.Generated
 {
     [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
     [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-#if NET8_0_OR_GREATER
-    [global::System.Diagnostics.CodeAnalysis.RequiresUnreferencedCode("Redis payload serialization uses reflection. Preserve payload type members when trimming.")]
-    [global::System.Diagnostics.CodeAnalysis.RequiresDynamicCode("Redis payload serialization uses reflection.")]
-#endif
     internal sealed class NewsHubGeneratedProxy : global::INewsHub
     {
         private readonly global::StackExchange.Redis.IConnectionMultiplexer _multiplexer;

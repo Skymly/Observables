@@ -1,8 +1,4 @@
 using StackExchange.Redis;
-#if NET8_0_OR_GREATER
-using System.Diagnostics.CodeAnalysis;
-#endif
-
 namespace Observables.Redis;
 
 internal static class RedisProtocol
@@ -23,24 +19,12 @@ internal static class RedisProtocol
             .ConfigureAwait(false);
     }
 
-#if NET8_0_OR_GREATER
-    [RequiresUnreferencedCode(RedisTrimAnnotations.JsonPayload)]
-    [RequiresDynamicCode(RedisTrimAnnotations.JsonPayload)]
-#endif
     internal static T DeserializePayload<T>(ChannelMessage message) =>
         RedisPayloadSerializers.Deserialize<T>((byte[]?)message.Message ?? Array.Empty<byte>());
 
-#if NET8_0_OR_GREATER
-    [RequiresUnreferencedCode(RedisTrimAnnotations.JsonPayload)]
-    [RequiresDynamicCode(RedisTrimAnnotations.JsonPayload)]
-#endif
     internal static RedisMessage<T> ToRedisMessage<T>(ChannelMessage message) =>
         new(message.Channel.ToString(), DeserializePayload<T>(message));
 
-#if NET8_0_OR_GREATER
-    [RequiresUnreferencedCode(RedisTrimAnnotations.JsonPayload)]
-    [RequiresDynamicCode(RedisTrimAnnotations.JsonPayload)]
-#endif
     internal static async Task SubscribeAsync<T>(
         IConnectionMultiplexer multiplexer,
         RedisChannel channel,

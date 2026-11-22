@@ -1,9 +1,5 @@
 using R3;
 using StackExchange.Redis;
-#if NET8_0_OR_GREATER
-using System.Diagnostics.CodeAnalysis;
-#endif
-
 namespace Observables.Redis;
 
 /// <summary>Bridges StackExchange.Redis Pub/Sub APIs to R3 <see cref="Observable{T}"/>.</summary>
@@ -41,10 +37,6 @@ public static class RedisObservable
     /// publish task. <c>ISubscriber.PublishAsync</c> has no cancellation-token overload in 2.8.x,
     /// so an in-flight <c>PUBLISH</c> is not aborted.
     /// </remarks>
-#if NET8_0_OR_GREATER
-    [RequiresUnreferencedCode(RedisTrimAnnotations.JsonPayload)]
-    [RequiresDynamicCode(RedisTrimAnnotations.JsonPayload)]
-#endif
     public static Observable<Unit> FromPublish<T>(
         IConnectionMultiplexer multiplexer,
         string channel,
@@ -52,24 +44,12 @@ public static class RedisObservable
         CancellationToken cancellationToken = default) =>
         FromPublish(multiplexer, channel, RedisPayloadSerializers.Serialize(payload), cancellationToken);
 
-#if NET8_0_OR_GREATER
-    [RequiresUnreferencedCode(RedisTrimAnnotations.JsonPayload)]
-    [RequiresDynamicCode(RedisTrimAnnotations.JsonPayload)]
-#endif
     public static Observable<T> FromSubscribe<T>(IConnectionMultiplexer multiplexer, string channel) =>
         CreateSubscribe(multiplexer, RedisChannel.Literal(channel), static message => RedisProtocol.DeserializePayload<T>(message));
 
-#if NET8_0_OR_GREATER
-    [RequiresUnreferencedCode(RedisTrimAnnotations.JsonPayload)]
-    [RequiresDynamicCode(RedisTrimAnnotations.JsonPayload)]
-#endif
     public static Observable<T> FromPatternSubscribe<T>(IConnectionMultiplexer multiplexer, string pattern) =>
         CreateSubscribe(multiplexer, RedisChannel.Pattern(pattern), static message => RedisProtocol.DeserializePayload<T>(message));
 
-#if NET8_0_OR_GREATER
-    [RequiresUnreferencedCode(RedisTrimAnnotations.JsonPayload)]
-    [RequiresDynamicCode(RedisTrimAnnotations.JsonPayload)]
-#endif
     public static Observable<RedisMessage<T>> FromSubscribeMessage<T>(
         IConnectionMultiplexer multiplexer,
         string channel) =>
@@ -78,10 +58,6 @@ public static class RedisObservable
             RedisChannel.Literal(channel),
             static message => RedisProtocol.ToRedisMessage<T>(message));
 
-#if NET8_0_OR_GREATER
-    [RequiresUnreferencedCode(RedisTrimAnnotations.JsonPayload)]
-    [RequiresDynamicCode(RedisTrimAnnotations.JsonPayload)]
-#endif
     public static Observable<RedisMessage<T>> FromPatternSubscribeMessage<T>(
         IConnectionMultiplexer multiplexer,
         string pattern) =>
@@ -90,10 +66,6 @@ public static class RedisObservable
             RedisChannel.Pattern(pattern),
             static message => RedisProtocol.ToRedisMessage<T>(message));
 
-#if NET8_0_OR_GREATER
-    [RequiresUnreferencedCode(RedisTrimAnnotations.JsonPayload)]
-    [RequiresDynamicCode(RedisTrimAnnotations.JsonPayload)]
-#endif
     static Observable<T> CreateSubscribe<T>(
         IConnectionMultiplexer multiplexer,
         RedisChannel channel,

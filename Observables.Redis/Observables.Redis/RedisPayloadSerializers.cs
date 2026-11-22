@@ -1,21 +1,25 @@
 using System.Diagnostics.CodeAnalysis;
+#if NET8_0_OR_GREATER
+using System.Text.Json;
+using System.Text.Json.Serialization.Metadata;
+#endif
 
 namespace Observables.Redis;
 
 /// <summary>Global Redis payload serializer used by the backend bridges and generated proxies.</summary>
-#if NET8_0_OR_GREATER
-[RequiresUnreferencedCode(RedisTrimAnnotations.JsonPayload)]
-[RequiresDynamicCode(RedisTrimAnnotations.JsonPayload)]
-#endif
 public static class RedisPayloadSerializers
 {
-    static IRedisPayloadSerializer s_current = DefaultRedisPayloadSerializer.Instance;
+    static IRedisPayloadSerializer? s_current;
     static readonly System.Collections.Concurrent.ConcurrentDictionary<Type, object> s_typed = new();
 
     /// <summary>Fallback serializer when no typed registration exists for the requested payload type.</summary>
     public static IRedisPayloadSerializer Current
     {
-        get => s_current;
+#if NET8_0_OR_GREATER
+        [RequiresUnreferencedCode(RedisTrimAnnotations.JsonPayload)]
+        [RequiresDynamicCode(RedisTrimAnnotations.JsonPayload)]
+#endif
+        get => s_current ?? DefaultRedisPayloadSerializer.Instance;
         set => s_current = value ?? throw new ArgumentNullException(nameof(value));
     }
 
@@ -23,7 +27,22 @@ public static class RedisPayloadSerializers
     public static void Register<T>(IRedisPayloadSerializer<T> serializer) =>
         s_typed[typeof(T)] = serializer ?? throw new ArgumentNullException(nameof(serializer));
 
+#if NET8_0_OR_GREATER
+    /// <summary>Registers source-generated JSON metadata for the typed payload.</summary>
+    public static void RegisterJson<T>(JsonTypeInfo<T> typeInfo)
+    {
+        ArgumentNullException.ThrowIfNull(typeInfo);
+        Register<T>(
+            payload => SourceGeneratedJson.DeserializePayload(payload, typeInfo),
+            value => SourceGeneratedJson.SerializePayload(value, typeInfo));
+    }
+#endif
+
     /// <summary>Registers <typeparamref name="T"/> using a non-generic <see cref="IRedisPayloadSerializer"/>.</summary>
+#if NET8_0_OR_GREATER
+    [RequiresUnreferencedCode(RedisTrimAnnotations.JsonPayload)]
+    [RequiresDynamicCode(RedisTrimAnnotations.JsonPayload)]
+#endif
     public static void Register<
 #if NET8_0_OR_GREATER
         [DynamicallyAccessedMembers(
@@ -66,8 +85,8 @@ public static class RedisPayloadSerializers
         Current.Deserialize(payloadType, payload);
 
 #if NET8_0_OR_GREATER
-    [RequiresUnreferencedCode("JSON payload serialization uses System.Text.Json reflection. Preserve payload type members when trimming.")]
-    [RequiresDynamicCode("JSON payload serialization uses System.Text.Json reflection.")]
+    [UnconditionalSuppressMessage("Trimming", "IL2026", Justification = "The framework JSON reflection switch guards the built-in fallback. An explicitly installed custom serializer owns its trimming requirements.")]
+    [UnconditionalSuppressMessage("AOT", "IL3050", Justification = "The framework JSON reflection switch guards the built-in fallback. An explicitly installed custom serializer owns its trimming requirements.")]
 #endif
     public static T Deserialize<T>(ReadOnlySpan<byte> payload)
     {
@@ -76,13 +95,18 @@ public static class RedisPayloadSerializers
             return typed.Deserialize(payload);
         }
 
+#if NET8_0_OR_GREATER
+        if (!JsonSerializer.IsReflectionEnabledByDefault)
+        {
+            var serializer = s_current;
+            return serializer is null
+                ? SourceGeneratedJson.DeserializeRawPayload<T>(payload, nameof(RedisPayloadSerializers) + "." + nameof(RegisterJson))
+                : serializer.Deserialize<T>(payload);
+        }
+#endif
         return Current.Deserialize<T>(payload);
     }
 
-#if NET8_0_OR_GREATER
-    [RequiresUnreferencedCode(RedisTrimAnnotations.JsonPayload)]
-    [RequiresDynamicCode(RedisTrimAnnotations.JsonPayload)]
-#endif
     public static T Deserialize<T>(byte[] payload) =>
         Deserialize<T>((ReadOnlySpan<byte>)payload);
 
@@ -99,8 +123,8 @@ public static class RedisPayloadSerializers
         Current.Serialize(payloadType, value);
 
 #if NET8_0_OR_GREATER
-    [RequiresUnreferencedCode("JSON payload serialization uses System.Text.Json reflection. Preserve payload type members when trimming.")]
-    [RequiresDynamicCode("JSON payload serialization uses System.Text.Json reflection.")]
+    [UnconditionalSuppressMessage("Trimming", "IL2026", Justification = "The framework JSON reflection switch guards the built-in fallback. An explicitly installed custom serializer owns its trimming requirements.")]
+    [UnconditionalSuppressMessage("AOT", "IL3050", Justification = "The framework JSON reflection switch guards the built-in fallback. An explicitly installed custom serializer owns its trimming requirements.")]
 #endif
     public static byte[] Serialize<T>(T value)
     {
@@ -109,6 +133,15 @@ public static class RedisPayloadSerializers
             return typed.Serialize(value!);
         }
 
+#if NET8_0_OR_GREATER
+        if (!JsonSerializer.IsReflectionEnabledByDefault)
+        {
+            var serializer = s_current;
+            return serializer is null
+                ? SourceGeneratedJson.SerializeRawPayload(value, nameof(RedisPayloadSerializers) + "." + nameof(RegisterJson))
+                : serializer.Serialize<T>(value);
+        }
+#endif
         return Current.Serialize<T>(value);
     }
 

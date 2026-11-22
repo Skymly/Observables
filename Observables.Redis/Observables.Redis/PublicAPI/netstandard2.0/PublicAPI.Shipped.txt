@@ -57,3 +57,4 @@ static Observables.Redis.RedisService.RegisterConnection(string! name, StackExch
 static Observables.Redis.RedisService.RegisterProxyName(System.Type! redisInterfaceType, string! connectionName) -> void
 Observables.Redis.RedisSubscribeAttribute.Pattern.get -> bool
 Observables.Redis.RedisSubscribeAttribute.Pattern.set -> void
+static Observables.Redis.RedisService.TryUnregisterConnection(string! name, StackExchange.Redis.IConnectionMultiplexer! multiplexer) -> bool

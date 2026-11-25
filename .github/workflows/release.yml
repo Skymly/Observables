@@ -26,6 +26,10 @@ jobs:
     # Do not gate with job-level `if:` — a false condition skips silently
     # (0.1.8); fail the job instead so the miss is visible.
     runs-on: windows-latest
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
     outputs:
       version: ${{ steps.resolve.outputs.version }}
 
@@ -90,15 +94,31 @@ jobs:
           echo "VERSION=${VERSION}" >> "$GITHUB_ENV"
           echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
 
-      - name: Pack, verify, and publish via Nuke
+      - name: Test, pack, and verify via Nuke
         shell: pwsh
         env:
           VERSION: ${{ env.VERSION }}
-          NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          dotnet run --project build/_build.csproj -- --target PreparePublish --configuration Release 2>&1 | Tee-Object -FilePath publish.log
+
+      # Trusted Publishing keys expire after one hour. Login only after the
+      # potentially long test/pack phase, immediately before pushing.
+      - name: NuGet login (OIDC)
+        id: nuget-login
+        uses: NuGet/login@8d196754b4036150537f80ac539e15c2f1028841  # v1.2.0
+        with:
+          user: Skym
+
+      - name: Push packages via Nuke
+        shell: pwsh
+        env:
+          VERSION: ${{ env.VERSION }}
+          NUGET_API_KEY: ${{ steps.nuget-login.outputs.NUGET_API_KEY }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           $ErrorActionPreference = 'Stop'
-          dotnet run --project build/_build.csproj -- --target Publish --configuration Release 2>&1 | Tee-Object -FilePath publish.log
+          dotnet run --project build/_build.csproj -- --target PushPackages --configuration Release 2>&1 | Tee-Object -FilePath publish.log -Append
 
       - name: Upload publish log
         if: always()

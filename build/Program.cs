@@ -360,12 +360,17 @@ sealed class Build : NukeBuild
         return sha;
     }
 
-    Target Publish => _ => _
-        .DependsOn(Test, PackVerify)
+    Target PreparePublish => _ => _
+        .DependsOn(Test, PackVerify);
+
+    Target PushPackages => _ => _
+        .After(PreparePublish)
         .Requires(() => !string.IsNullOrWhiteSpace(NuGetApiKey))
         .Requires(() => !string.IsNullOrWhiteSpace(GitHubToken))
         .Executes(() =>
         {
+            AssertExpectedPackagesExist();
+
             AbsolutePath packages = PackageOutputDirectory / "*.nupkg";
 
             DotNetNuGetPush(s => s
@@ -380,6 +385,24 @@ sealed class Build : NukeBuild
                 .SetSource("https://nuget.pkg.github.com/Skymly/index.json")
                 .EnableSkipDuplicate());
         });
+
+    Target Publish => _ => _
+        .DependsOn(PreparePublish, PushPackages);
+
+    void AssertExpectedPackagesExist()
+    {
+        string packageVersion = EffectivePackageVersion;
+        var missing = FilteredPackages
+            .Select(package => PackageOutputDirectory / $"{package.PackageId}.{packageVersion}.nupkg")
+            .Where(nupkg => !nupkg.FileExists())
+            .ToArray();
+
+        if (missing.Length > 0)
+        {
+            throw new InvalidOperationException(
+                "Missing expected packages: " + string.Join(", ", missing));
+        }
+    }
 
     Target FormatWhitespace => _ => _
         .DependsOn(Restore)

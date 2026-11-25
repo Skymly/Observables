@@ -4,12 +4,12 @@
 
 > 版本号、tag、发版均须维护者明确批准；本文件中的版本号为规划占位，不构成自动发版授权。
 
-## 现状基线（0.5.0）
+## 现状基线（0.5.1）
 
 | 维度 | 现状 |
 |------|------|
 | 已实现域 | **Events**、**RestAPI**、**SignalR**、**Mqtt**、**WebSocket**、**Grpc**、**Sse**、**Nats**、**Postgres**、**Redis**（运行时 + 双路生成器 + 测试） |
-| 发版产物 | **`0.5.0`**（**23 包** + 23 snupkg） |
+| 发版产物 | **`0.5.1`**（**23 包** + 23 snupkg） |
 | 诊断 | 已发布规则见各 `AnalyzerReleases.Shipped.md` |
 | 质量 | Windows 和 Ubuntu CI，覆盖 .NET 8、9、10；`PackVerify` 和 28 个本地 NuGet 消费者 |
 | 对外文档 | 稳定包发布后通过独立 PR 同步 Observables.Docs 和 Observables.Samples。nuget.org `0.2.2` Reactive 包的未声明 R3 引用仍在，暂缓 deprecate（R0-5）。 |
@@ -28,7 +28,7 @@
 ```mermaid
 graph LR
     R0[R0 · 0.3.1<br/>止血与对外同步] --> R1[R1 · 发版同步自动化]
-    R0 --> R2[R2 · 0.5.0<br/>Mqtt 传输抽象 · AOT · 依赖]
+    R0 --> R2[R2 · 0.5.1<br/>Mqtt 传输抽象 · AOT · 依赖]
     R2 --> R3[R3 · 0.6.0<br/>深化既有域]
     R1 --> R4[R4 · 1.0.0]
     R3 --> R4
@@ -51,7 +51,7 @@ R1 与 R2 可并行。R4 依赖 R1、R2 出口满足，且 R3 至少完成 R3-1�
 
 **出口**：nuget.org `0.3.1` 20 包可见；Docs / Samples 无 `0.2.2` 当前版本引用。
 
-### R1 — 发版同步自动化（0.3.x 期间，不需发包）
+### R1 — 发版同步自动化（0.3.x 期间，不需发包）✅
 
 **目标**：发版后 Docs / Samples 不再依赖人工同步。
 
@@ -63,9 +63,9 @@ R1 与 R2 可并行。R4 依赖 R1、R2 出口满足，且 R3 至少完成 R3-1�
 | R1-4 | ✅ 发版门槛对齐 | `Publish` 已内置 `Test` → `PackVerify`；门槛清单改为「Publish 内 PackVerify 通过」，不再要求 HEAD 上另跑 `CiPack` |
 | R1-5 | ✅ 测试隔离：全局序列化注册表 | 修改 `*PayloadSerializers` 的测试未禁止并行，会污染同程序集其它测试（Mqtt 已在 CI 偶发失败）。Mqtt [#630](https://github.com/Skymly/Observables/issues/630)；Redis / Nats / Postgres（潜在）[#631](https://github.com/Skymly/Observables/issues/631) / [#632](https://github.com/Skymly/Observables/issues/632) / [#633](https://github.com/Skymly/Observables/issues/633)。仅改测试 |
 
-**出口**：下一次发版（`0.5.0`）三仓同步不含手工改版本号步骤；#630–#633 关闭。
+**出口**：✅ `0.5.1` 发版三仓同步无手工改版本号步骤（`release.yml` 自动开出 Docs / Samples sync PR 并已合并）；#630–#633 已关闭。
 
-### R2 — `0.5.0`：Mqtt 传输抽象、AOT、依赖升级
+### R2 — `0.5.1`：Mqtt 传输抽象、AOT、依赖升级 ✅
 
 **目标**：容纳破坏性变更的 minor 版本。
 
@@ -80,7 +80,7 @@ R1 与 R2 可并行。R4 依赖 R1、R2 出口满足，且 R3 至少完成 R3-1�
 | R2-A1 | ✅ MQTT 传输决策 | [ADR-004](adr/ADR-004-mqtt-transport-adapters.md) 定义了传输接口、包组合、迁移方式与 MQTTnet 4 维护模式。 |
 | R2-A2 | ✅ 运行时与生成器改造 | `Observables.Mqtt` 与生成代理使用 `IMqttTransport`。 |
 | R2-A3 | ✅ 两个适配包 | MQTTnet 4 / 5 各有进程内 broker E2E。本地 PackVerify 校验中立运行时和两个适配包。 |
-| R2-A4 | ✅ 迁移文档 | Docs 中英文 MQTT 页面和 Samples 两个后端的示例已在各自的发版工作树更新。 |
+| R2-A4 | ✅ 迁移文档 | Docs 中英文 MQTT 页面和 Samples 两个后端的示例已更新，并随 `0.5.1` 自动同步 PR 合并。 |
 
 #### R2-B 其它
 
@@ -88,10 +88,10 @@ R1 与 R2 可并行。R4 依赖 R1、R2 出口满足，且 R3 至少完成 R3-1�
 |---|--------|------|
 | R2-B1 | ✅ JSON 源生成（AOT） | RestAPI、Mqtt、Redis 共用 `JsonTypeInfo` 实现。Windows x64 Native AOT 消费测试关闭 JSON 反射并验证 HTTP 请求、错误响应、MQTT 订阅和 Redis 载荷。 |
 | R2-B2 | ✅ System.Reactive 7 兼容 | MQTT 消费测试固定 Rx 7。包的最低依赖仍为 6.0.1。 |
-| R2-B3 | ✅ R3 `1.3.x` 补丁升级 | `0.5.0` 将 R3 依赖更新至 `1.3.1`。 |
+| R2-B3 | ✅ R3 `1.3.x` 补丁升级 | `0.5.1` 的 R3 依赖为 `1.3.1`。 |
 | R2-B4 | ✅ 遗留诊断 | `OBS7004` 由 [#498](https://github.com/Skymly/Observables/pull/498) 接上触发分支，双后端测试覆盖属性和事件。修复 `IDE0161` 后，CI 校验警告级别的代码样式。 |
 
-**出口**：`0.5.0` 发版；Mqtt 公共 API 不含 `MQTTnet.*`；两个适配包 E2E 绿；PublicAPI 破坏性变更全部登记。
+**出口**：✅ `0.5.1` 已发版（`v0.5.0` tag 的首次发布因密钥过期未到达 nuget.org，内容相同）；Mqtt 公共 API 不含 `MQTTnet.*`；两个适配包 E2E 绿；PublicAPI 破坏性变更全部登记。
 
 ### R3 — `0.6.0`：深化既有域
 

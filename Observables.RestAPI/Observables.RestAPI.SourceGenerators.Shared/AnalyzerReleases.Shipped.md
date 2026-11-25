@@ -26,7 +26,7 @@ Rule ID | Category | Severity | Notes
 --------|----------|----------|-------
 OBS3008 | Observables.RestAPI | Error | Duplicate Body parameter
 
-## Release 0.5.0
+## Release 0.5.1
 
 ### New Rules
 

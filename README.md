@@ -2,7 +2,7 @@
 
 > **Roslyn source generators bridging events & IO boundaries to R3 / System.Reactive.** Declarative interface-driven proxies for HTTP, SignalR, MQTT, WebSocket, gRPC, SSE, NATS, PostgreSQL LISTEN/NOTIFY, and Redis Pub/Sub — write the interface, get the `Observable<T>`.
 
-[![NuGet](https://img.shields.io/nuget/v/Observables.Events.R3.svg?label=NuGet&logo=nuget)](https://www.nuget.org/profiles/Skymly)
+[![NuGet](https://img.shields.io/nuget/v/Observables.Events.R3.svg?label=NuGet&logo=nuget)](https://www.nuget.org/profiles/Skym)
 [![CI](https://img.shields.io/github/actions/workflow/status/Skymly/Observables/ci.yml?branch=main&label=CI&logo=github)](https://github.com/Skymly/Observables/actions/workflows/ci.yml)
 [![License](https://img.shields.io/github/license/Skymly/Observables.svg?label=License&logo=opensourcehardware)](LICENSE)
 
@@ -14,7 +14,7 @@
 | 用户文档 | [Observables.Docs](https://skymly.github.io/Observables.Docs/) |
 | 真实应用 Showcase | [GitPulse](https://github.com/Skymly/GitPulse)（.NET MAUI · `Observables.RestAPI.R3` + `Observables.Events.R3`） |
 | 示例应用 | [Observables.Samples](https://github.com/Skymly/Observables.Samples) |
-| NuGet | [nuget.org/profiles/Skymly](https://www.nuget.org/profiles/Skymly) |
+| NuGet | [nuget.org/profiles/Skym](https://www.nuget.org/profiles/Skym) |
 | 贡献与发版 | [CONTRIBUTING.md](./CONTRIBUTING.md) |
 | 安全模型 | [SECURITY_MODEL.md](./SECURITY_MODEL.md) |
 
@@ -31,7 +31,7 @@
 
 ## 快速开始
 
-在 [NuGet](https://www.nuget.org/profiles/Skymly) 安装对应域的包（当前稳定版见 [CONTRIBUTING.md](./CONTRIBUTING.md#releases-and-versioning)），并单独引用反应式后端：
+在 [NuGet](https://www.nuget.org/profiles/Skym) 安装对应域的包（当前稳定版见 [CONTRIBUTING.md](./CONTRIBUTING.md#releases-and-versioning)），并单独引用反应式后端：
 
 ```powershell
 dotnet add package Observables.Events.R3
@@ -46,7 +46,7 @@ System.Reactive 路径将 `Observables.Events.R3` 换为 `Observables.Events.Rea
 
 十个功能域均提供双路源生成器与测试，并按需提供运行时。共享层另有 `Observables.Core`、`Observables.Analyzers`、`Observables.CodeFixes`。
 
-`0.5.0` 增加 MQTTnet 4/5 适配包和中立 MQTT 运行时，合计 **23 个包**。RestAPI、MQTT、Redis 在 .NET 8 或更高版本上支持源生成的 JSON 元数据。
+`0.5.1` 增加 MQTTnet 4/5 适配包和中立 MQTT 运行时，合计 **23 个包**。RestAPI、MQTT、Redis 在 .NET 8 或更高版本上支持源生成的 JSON 元数据。
 
 | 域 | 说明 |
 |----|------|
@@ -195,7 +195,7 @@ using var d = hub.ReceiveMessage.Subscribe(msg => Console.WriteLine(msg.Text));
 
 ## Mqtt
 
-在 `[Mqtt]` 接口上用 `[MqttSubscribe]` 标注订阅属性、`[MqttPublish]` 标注发布方法。从 0.5.0 起，按客户端主版本安装 `Observables.Mqtt.MQTTnet4` 或 `Observables.Mqtt.MQTTnet5`，导入对应命名空间。
+在 `[Mqtt]` 接口上用 `[MqttSubscribe]` 标注订阅属性、`[MqttPublish]` 标注发布方法。从 0.5.1 起，按客户端主版本安装 `Observables.Mqtt.MQTTnet4` 或 `Observables.Mqtt.MQTTnet5`，导入对应命名空间。
 
 ```csharp
 [Mqtt]

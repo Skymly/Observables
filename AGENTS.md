@@ -332,7 +332,7 @@ Observables/
 ### 维护者发版（tag 触发，对齐 MvvmAIO.Markup）
 
 1. 在 `main` 上确认 `eng/Observables.Package.props` 中的 **`PackageVersion` 与 tag 一致**（tag 为 `v` + 版本号，如 `v0.1.0-preview1`）。
-2. 配置仓库 Secrets：`NUGET_API_KEY`；`GITHUB_TOKEN`（或 PAT，`packages:write`，用于 GitHub Packages）。
+2. nuget.org 使用 Trusted Publishing（GitHub Actions policy：`Skymly/Observables` + `release.yml`），不配置长期 `NUGET_API_KEY` secret；GitHub Packages 仍使用 `GITHUB_TOKEN`（或 PAT，`packages:write`）。
 3. 推送 **annotated tag**（须 `v` 前缀）：
 
 ```powershell
@@ -360,12 +360,14 @@ dotnet run --project build/_build.csproj -- --target Ci --configuration Release
 | **PackOnly** | `Pack` + `PackVerify`（**不**跑 UnitTest） |
 | **PackVerify** | 按 manifest 校验后端包的分析器、props、运行时及依赖。按 ADR-004 校验中立 MQTT 包的运行时及依赖。 |
 | **CiPack** | CI 完整流水线：`Test` + `PackOnly` + `NuGetConsumerSmoke`（本地包）；保留供本地或 release.yml 全链路调试 |
-| **Publish** | 推送到 nuget.org（`NUGET_API_KEY`）与 GitHub Packages（`GITHUB_TOKEN`，`packages:write`）；`DependsOn(Test, PackVerify)` 确保发版前测试已通过 |
+| **PreparePublish** | 发布前准备：`Test` + `PackVerify` 聚合目标，不推送；release.yml 在请求 NuGet Trusted Publishing 临时 key 前运行 |
+| **PushPackages** | 推送 `artifacts/package/*.nupkg` 到 nuget.org（`NUGET_API_KEY`）与 GitHub Packages（`GITHUB_TOKEN`，`packages:write`）；release.yml 在 `NuGet/login` 成功后立即运行 |
+| **Publish** | 本机/紧急完整发布：`PreparePublish` → `PushPackages`；仍要求调用方提供 `NUGET_API_KEY` 与 `GITHUB_TOKEN` |
 
 | Workflow | 触发 | 作用 |
 |----------|------|------|
 | [`ci.yml`](.github/workflows/ci.yml) | PR / push `main` | **changes** job（`dorny/paths-filter`）→ 域 `test-domain` 矩阵（含 postgres / redis；**Shared 改动 → 全域跑**）+ `test-shared`（仅 Shared 改动时跑）+ 域 `pack-domain` 矩阵（push main / PR 带 `pack` label，且域命中）；各 job **完全并行**，未命中的域整列跳过。**`ci-full` always runs** (Windows/Ubuntu). Incremental pack/test follows domain **or** shared; shared includes root `Observables.SourceGenerators*.props`. |
-| [`release.yml`](.github/workflows/release.yml) | push tag `v*` / `workflow_dispatch` | **Publish**（须 Secrets + 维护者 `actor`/`triggering_actor`；内部 `Test` → `PackVerify` → push） |
+| [`release.yml`](.github/workflows/release.yml) | push tag `v*` / `workflow_dispatch` | **PreparePublish** → NuGet Trusted Publishing OIDC login → **PushPackages**（须维护者 `actor`/`triggering_actor`；nuget.org 不再使用长期 API key secret） |
 
 ## 工作约定
 

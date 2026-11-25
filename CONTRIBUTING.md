@@ -62,7 +62,7 @@ Maintainer and agent-oriented rules (version guards, module boundaries, Nuke tar
 
 **Compatibility (0.2.2):** nuget.org `0.2.2` Reactive packages may ship domain DLLs that reference R3 without declaring it (verified on Mqtt.Reactive). Do **not** overwrite 0.2.2. **0.3.0** is backend-neutral.
 
-Stable packages are published to [nuget.org](https://www.nuget.org/profiles/Skymly) and [GitHub Packages](https://github.com/orgs/Skymly/packages). Install the latest stable version from NuGet; see package readmes for backend-specific dependencies (R3 or System.Reactive).
+Stable packages are published to [nuget.org](https://www.nuget.org/profiles/Skym) and [GitHub Packages](https://github.com/orgs/Skymly/packages). Install the latest stable version from NuGet; see package readmes for backend-specific dependencies (R3 or System.Reactive).
 
 ### Release history (stable)
 
@@ -86,13 +86,15 @@ Stable packages are published to [nuget.org](https://www.nuget.org/profiles/Skym
 | **0.3.1** | Patch — OBS9002/OBS10002/OBS11002 name consumer package ids (`Observables.<Feature>.R3` / `.Reactive`); RestAPI sync proxies no longer deadlock on single-thread SynchronizationContext; setters and ref/out/in parameters report each domain's existing OBS*004 instead of silent CS0535; still **20** packages. |
 | **0.4.0** | Minor — RestAPI `RestApiCallScope` snapshots per-invocation `HttpRequestMessage` options at proxy entry (precedence: `RestApiSettings.HttpRequestMessageOptions` → entry snapshot → `[Property]`); dependency bumps past October 2026 NuGet advisories (SignalR.Client 8.0.32, System.Text.Json 8.0.6, Cryptography.Xml 10.0.13); still **20** packages. |
 | **0.4.1** | Patch — engineering-debt ledger: Events generator accessibility/nameability gating, generic receiver constraints, attached-routed type parameters, and OBS2006 on multi-parent conflicting events; RestAPI dead-code removal, flags-enum formatter crash fix, and duplicate `[Headers]` dedup; `RestApiCallScope` clears null options on netstandard2.0 and unlinks out-of-order disposes; OBS0001 detects conflicts across three backend slots via package-declared `Observables<Feature>Backend_*` keys plus marker/symbol fallback (ADR-005); still **20** packages. |
-| **0.5.0** | MQTT transport abstraction, separate MQTTnet 4 and 5 adapters, and a standalone MQTT runtime bring the total to **23** packages. Adds source-generated JSON for RestAPI, MQTT, and Redis and updates R3 to 1.3.1. MQTT applications upgrading from 0.4.x select an adapter and wrap their client before binding a proxy. [MQTT migration](docs/design/mqtt.md#33-传输接口与-mqttnet-适配) |
+| **0.5.1** | MQTT transport abstraction, separate MQTTnet 4 and 5 adapters, and a standalone MQTT runtime bring the total to **23** packages. Adds source-generated JSON for RestAPI, MQTT, and Redis and updates R3 to 1.3.1. MQTT applications upgrading from 0.4.x select an adapter and wrap their client before binding a proxy. [MQTT migration](docs/design/mqtt.md#33-传输接口与-mqttnet-适配) |
+
+The `v0.5.0` tag exists, but its original publish failed before packages reached nuget.org; `0.5.1` is the first published revision of the 0.5.x feature set.
 
 Preview builds (`0.1.0-preview*`, `0.1.1-preview*`) were published to NuGet with tags only (no GitHub Release). Details and milestone planning: [docs/ROADMAP.md](docs/ROADMAP.md).
 
 ### Package set
 
-Version `0.5.0` includes 23 packages across ten domains. Each domain has an R3 and a Reactive package.
+Version `0.5.1` includes 23 packages across ten domains. Each domain has an R3 and a Reactive package.
 
 | Package ID | Domain |
 |------------|--------|
@@ -129,7 +131,7 @@ Publishing is **tag-triggered** (aligned with [MvvmAIO.Markup](https://github.co
 ### Steps
 
 1. On `main`, set `eng/Observables.Package.props` **`PackageVersion`** to match the intended tag (`v` + version, e.g. `v0.1.1`).
-2. Ensure repository secrets: `NUGET_API_KEY`, `GITHUB_TOKEN` (or PAT with `packages:write`).
+2. Ensure nuget.org Trusted Publishing is configured for repository owner `Skymly`, repository `Observables`, workflow `release.yml`, and policy creator user `Skym`. GitHub Packages uses the workflow token with `packages:write`; no long-lived `NUGET_API_KEY` repository secret is required.
 3. Push an annotated tag:
 
    ```powershell
@@ -137,7 +139,7 @@ Publishing is **tag-triggered** (aligned with [MvvmAIO.Markup](https://github.co
    git push origin v0.1.1
    ```
 
-4. [`.github/workflows/release.yml`](.github/workflows/release.yml) runs Nuke **`Publish`** on `push` of `v*` tags (`Test` → `PackVerify` → nuget.org + GitHub Packages). Authorized when `github.actor` **or** `github.triggering_actor` is a maintainer (`Skymly` / `wys0610`) — covers maintainer-driven agent tag pushes; unauthorized runs **fail** (not silent skip). Does **not** create a GitHub Release automatically.
+4. [`.github/workflows/release.yml`](.github/workflows/release.yml) runs Nuke **`PreparePublish`** on `push` of `v*` tags (test, pack, and `PackVerify`), exchanges a GitHub OIDC token through NuGet Trusted Publishing, then runs **`PushPackages`** for nuget.org + GitHub Packages. Authorized when `github.actor` **or** `github.triggering_actor` is a maintainer (`Skymly` / `wys0610`) — covers maintainer-driven agent tag pushes; unauthorized runs **fail** (not silent skip). Does **not** create a GitHub Release automatically.
 5. For stable releases, create a GitHub Release separately if desired. Emergency republish: `workflow_dispatch` with manual `version` (same authorization).
 
 ### Local pack and verify

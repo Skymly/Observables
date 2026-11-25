@@ -23,7 +23,7 @@ Rule ID | Category | Severity | Notes
 --------|----------|----------|-------
 OBS0002 | Observables | Error | Open generic proxy interfaces are not supported
 
-## Release 0.5.0
+## Release 0.5.1
 
 ### New Rules
 

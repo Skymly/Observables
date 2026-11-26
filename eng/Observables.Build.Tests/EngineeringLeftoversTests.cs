@@ -38,9 +38,9 @@ public sealed class EngineeringLeftoversTests
     {
         string agents = File.ReadAllText(Path.Combine(RepoRoot.Find(), "AGENTS.md"));
         Assert.DoesNotContain("Observables（私有）", agents, StringComparison.Ordinal);
-        Assert.Contains("Observables（公开）", agents, StringComparison.Ordinal);
-        Assert.Contains("Observables.Events.R3.props", agents, StringComparison.Ordinal);
-        Assert.Contains("十个域均已有 Package", agents, StringComparison.Ordinal);
+        Assert.Contains("https://github.com/Skymly/Observables.Docs", agents, StringComparison.Ordinal);
+        Assert.Contains("Observables.<Feature>.Package", agents, StringComparison.Ordinal);
+        Assert.Contains("eng/Observables.BuildManifest.json", agents, StringComparison.Ordinal);
     }
 
     [Fact]

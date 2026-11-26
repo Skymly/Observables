@@ -17,3 +17,7 @@ BenchmarkDotNet.Artifacts/
 ## Local scratch (see ../../../AGENTS.md § `.Local`)
 .Local/
 *.VerifyTests/
+
+# Local scratch directories
+.scratch/
+.Temp/

@@ -1,106 +1,108 @@
 # Observables
 
+**English** | [简体中文](README.zh-CN.md) | [繁體中文](README.zh-TW.md) | [日本語](README.ja.md)
+
 > **Roslyn source generators bridging events & IO boundaries to R3 / System.Reactive.** Declarative interface-driven proxies for HTTP, SignalR, MQTT, WebSocket, gRPC, SSE, NATS, PostgreSQL LISTEN/NOTIFY, and Redis Pub/Sub — write the interface, get the `Observable<T>`.
 
 [![NuGet](https://img.shields.io/nuget/v/Observables.Events.R3.svg?label=NuGet&logo=nuget)](https://www.nuget.org/profiles/Skym)
 [![CI](https://img.shields.io/github/actions/workflow/status/Skymly/Observables/ci.yml?branch=main&label=CI&logo=github)](https://github.com/Skymly/Observables/actions/workflows/ci.yml)
 [![License](https://img.shields.io/github/license/Skymly/Observables.svg?label=License&logo=opensourcehardware)](LICENSE)
 
-面向 **反应式编程（Rx）** 的 Roslyn 源生成器套件：用声明式接口把 .NET 事件、HTTP、SignalR、MQTT、WebSocket、gRPC、SSE、NATS、PostgreSQL LISTEN/NOTIFY、Redis Pub/Sub 等边界桥接到 **R3** 或 **System.Reactive**。
+A Roslyn source-generator suite for **reactive programming (Rx)**: declaratively bridge .NET events, HTTP, SignalR, MQTT, WebSocket, gRPC, SSE, NATS, PostgreSQL LISTEN/NOTIFY, and Redis Pub/Sub boundaries into **R3** or **System.Reactive**.
 
-| 资源 | 链接 |
-|------|------|
-| 源码 | [github.com/Skymly/Observables](https://github.com/Skymly/Observables) |
-| 用户文档 | [Observables.Docs](https://skymly.github.io/Observables.Docs/) |
-| 真实应用 Showcase | [GitPulse](https://github.com/Skymly/GitPulse)（.NET MAUI · `Observables.RestAPI.R3` + `Observables.Events.R3`） |
-| 示例应用 | [Observables.Samples](https://github.com/Skymly/Observables.Samples) |
+| Resource | Link |
+|----------|------|
+| Source | [github.com/Skymly/Observables](https://github.com/Skymly/Observables) |
+| Documentation | [Observables.Docs](https://skymly.github.io/Observables.Docs/) |
+| Production Showcase | [GitPulse](https://github.com/Skymly/GitPulse) (.NET MAUI · `Observables.RestAPI.R3` + `Observables.Events.R3`) |
+| Sample Apps | [Observables.Samples](https://github.com/Skymly/Observables.Samples) |
 | NuGet | [nuget.org/profiles/Skym](https://www.nuget.org/profiles/Skym) |
-| 贡献与发版 | [CONTRIBUTING.md](./CONTRIBUTING.md) |
-| 安全模型 | [SECURITY_MODEL.md](./SECURITY_MODEL.md) |
+| Contributing & Releases | [CONTRIBUTING.md](./CONTRIBUTING.md) |
+| Security Model | [SECURITY_MODEL.md](./SECURITY_MODEL.md) |
 
-## 运行时与包名
+## Runtimes and Package Names
 
-每个功能域成对发布，**R3** 与 **System.Reactive** 互不混用依赖：
+Each feature domain ships in pairs, keeping **R3** and **System.Reactive** dependencies strictly isolated:
 
-| NuGet 包 ID | 运行时 |
-|-------------|--------|
+| NuGet Package ID | Runtime |
+|------------------|---------|
 | `Observables.<Feature>.R3` | [R3](https://github.com/Cysharp/R3) |
-| `Observables.<Feature>.Reactive` | [System.Reactive](https://github.com/dotnet/reactive)（`IObservable<T>` 等） |
+| `Observables.<Feature>.Reactive` | [System.Reactive](https://github.com/dotnet/reactive) (`IObservable<T>`, etc.) |
 
-开发与测试阶段用解决方案内项目（如 `Observables.Events.R3.SourceGenerators`）通过 `ProjectReference` + `OutputItemType="Analyzer"` 引用。
+During in-solution development and testing, reference the generator project directly (for example `Observables.Events.R3.SourceGenerators`) via `ProjectReference` with `OutputItemType="Analyzer"`.
 
-## 快速开始
+## Quick Start
 
-在 [NuGet](https://www.nuget.org/profiles/Skym) 安装对应域的包（当前稳定版见 [CONTRIBUTING.md](./CONTRIBUTING.md#releases-and-versioning)），并单独引用反应式后端：
+Install the desired domain package from [NuGet](https://www.nuget.org/profiles/Skym) (see [CONTRIBUTING.md](./CONTRIBUTING.md#releases-and-versioning) for the current stable version), and add the reactive backend package separately:
 
 ```powershell
 dotnet add package Observables.Events.R3
 dotnet add package R3
 ```
 
-System.Reactive 路径将 `Observables.Events.R3` 换为 `Observables.Events.Reactive`，并添加 `System.Reactive` 包。
+For the System.Reactive path, swap `Observables.Events.R3` for `Observables.Events.Reactive` and add the `System.Reactive` package.
 
-从 GitHub Packages 安装或贡献、发版流程见 [CONTRIBUTING.md](./CONTRIBUTING.md)。
+See [CONTRIBUTING.md](./CONTRIBUTING.md) for GitHub Packages installation, contributing guidelines, and the release workflow.
 
-## 功能域
+## Feature Domains
 
-十个功能域均提供双路源生成器与测试，并按需提供运行时。共享层另有 `Observables.Core`、`Observables.Analyzers`、`Observables.CodeFixes`。
+All ten feature domains provide dual-backend source generators and tests, plus runtimes where needed. The shared layer also includes `Observables.Core`, `Observables.Analyzers`, and `Observables.CodeFixes`.
 
-`0.5.1` 增加 MQTTnet 4/5 适配包和中立 MQTT 运行时，合计 **23 个包**。RestAPI、MQTT、Redis 在 .NET 8 或更高版本上支持源生成的 JSON 元数据。
+Version `0.5.1` adds the MQTTnet 4/5 adapter packages and a neutral MQTT runtime, bringing the total to **23 packages**. RestAPI, MQTT, and Redis support source-generated JSON metadata on .NET 8 and later.
 
-| 域 | 说明 |
-|----|------|
-| **Events** | 经典与路由 .NET 事件 → `Observable` / `IObservable` |
-| **RestAPI** | 声明式类型安全 HTTP 客户端 |
-| **SignalR** | Hub 成员代理 |
-| **Mqtt** | MQTT 主题代理 |
-| **WebSocket** | WebSocket 客户端代理 |
-| **Grpc** | `CallInvoker` 代理 |
-| **Sse** | `text/event-stream` 事件流 |
-| **Nats** | Core NATS subject 代理（v1 不含 JetStream） |
-| **Postgres** | PostgreSQL LISTEN/NOTIFY 通道代理（专用非池化连接；推荐 keepalive） |
-| **Redis** | Redis 经典 Pub/Sub 通道代理（exact Channel + Pattern；`RedisMessage<T>` 信封） |
+| Domain | Description |
+|--------|-------------|
+| **Events** | Classic and routed .NET events → `Observable` / `IObservable` |
+| **RestAPI** | Declarative type-safe HTTP client |
+| **SignalR** | Hub member proxies |
+| **Mqtt** | MQTT topic proxies |
+| **WebSocket** | WebSocket client proxies |
+| **Grpc** | `CallInvoker` proxies |
+| **Sse** | `text/event-stream` event streams |
+| **Nats** | Core NATS subject proxies (v1 excludes JetStream) |
+| **Postgres** | PostgreSQL LISTEN/NOTIFY channel proxies (dedicated unpooled connection; `Keepalive` recommended) |
+| **Redis** | Redis classic Pub/Sub channel proxies (exact Channel + Pattern; `RedisMessage<T>` envelope) |
 
-设计稿见 [`docs/`](docs/README.md)（文档体系见 [`docs/DOCUMENTATION.md`](docs/DOCUMENTATION.md)）。路由事件生成默认关闭；在消费者项目中设置 `<ObservableRoutedEvents>true</ObservableRoutedEvents>`（见 `Observables.Events/Observables.Events/targets/observables.events.props`）。
+See design docs in [`docs/`](docs/README.md) (documentation map in [`docs/DOCUMENTATION.md`](docs/DOCUMENTATION.md)). Routed-event generation is disabled by default; set `<ObservableRoutedEvents>true</ObservableRoutedEvents>` in the consumer project (see `Observables.Events/Observables.Events/targets/observables.events.props`).
 
-### 仓库结构（摘要）
+### Repository Structure (Summary)
 
-| 层级 | 说明 |
-|------|------|
-| **`Observables.Core`** | 全库通用运行时 |
-| **`Observables.SourceGenerators.Shared`** | 全库通用生成器基础设施（link-compile 共享源码） |
-| **`Observables.<Feature>`** | 域运行时（按需；纯生成域如 Events 可不建） |
-| **`Observables.<Feature>.Reactive`** | System.Reactive 桥接运行时（按需） |
-| **`Observables.<Feature>.R3.SourceGenerators`** / **`.Reactive.SourceGenerators`** | 双路源生成器 |
-| **`Observables.<Feature>.Package`** | 发布打包，产出上述两个 NuGet 包 |
+| Layer | Purpose |
+|-------|---------|
+| **`Observables.Core`** | Solution-wide runtime |
+| **`Observables.SourceGenerators.Shared`** | Solution-wide generator infrastructure (link-compiled shared source) |
+| **`Observables.<Feature>`** | Domain runtime (when needed; pure generator domains like Events omit this) |
+| **`Observables.<Feature>.Reactive`** | System.Reactive bridge runtime (when needed) |
+| **`Observables.<Feature>.R3.SourceGenerators`** / **`.Reactive.SourceGenerators`** | Dual-backend source generators |
+| **`Observables.<Feature>.Package`** | Packing project producing the two NuGet packages above |
 
 ## Events
 
-经典 .NET 事件 → `Observable<T>` / `IObservable<T>`。无需定义接口——对任何含 `event` 成员的类型调用 `.Events()` 扩展方法，生成器自动为每个事件产出对应的 Observable 属性。
+Classic .NET events → `Observable<T>` / `IObservable<T>`. No interface definition required — call `.Events()` on any type with `event` members, and the generator produces an Observable property for each event.
 
-### 基本用法
+### Basic Usage
 
 ```csharp
-// 任何含 event 的类或接口都可以使用
+// Works with any class or interface that declares events
 public class Button
 {
     public event EventHandler? Clicked;
     public event Action<string>? TextChanged;
 }
 
-// R3 路径
+// R3 path
 var btn = new Button();
 using var d1 = btn.Events().Clicked.Subscribe(_ => Console.WriteLine("Clicked!"));
 using var d2 = btn.Events().TextChanged.Subscribe(text => Console.WriteLine(text));
 
-// System.Reactive 路径
+// System.Reactive path
 using var d3 = btn.Events().Clicked.Subscribe(_ => Console.WriteLine("Clicked!"));
 ```
 
 ### Events vs EventHandlers
 
-- **`.Events()`** — 将事件参数直接映射为 `Observable<(T1, T2)>` 元组（去掉 `sender`），适合只关心载荷的场景。
-- **`.EventHandlers()`** — 保留 `(sender, EventArgs)` 元组形状，适合需要 sender 的场景。
+- **`.Events()`** — Projects event arguments directly into `Observable<(T1, T2)>` tuples (omitting `sender`), ideal when you only care about the payload.
+- **`.EventHandlers()`** — Preserves the `(sender, EventArgs)` tuple shape for cases where `sender` is needed.
 
 ```csharp
 public interface INotifyPropertyChanged
@@ -115,24 +117,24 @@ _ = obj.Events().PropertyChanged.Subscribe(e => Console.WriteLine(e.PropertyName
 _ = obj.EventHandlers().PropertyChanged.Subscribe(t => Console.WriteLine(t.e.PropertyName));
 ```
 
-### 路由事件（WPF / Avalonia）
+### Routed Events (WPF / Avalonia)
 
-默认关闭。在消费者项目中设置 `<ObservableRoutedEvents>true</ObservableRoutedEvents>` 启用，生成器会为路由事件产出 `.RoutedEvents()` / `.RoutedEventHandlers()` 扩展方法。详见 `Observables.Events/Observables.Events/targets/observables.events.props`。
+Disabled by default. Enable it in the consumer project with `<ObservableRoutedEvents>true</ObservableRoutedEvents>` so the generator emits `.RoutedEvents()` / `.RoutedEventHandlers()` extension methods for routed events. See `Observables.Events/Observables.Events/targets/observables.events.props`.
 
-设计稿见 `docs/design/events.md`。
+See design doc `docs/design/events.md`.
 
 ## RestAPI
 
-声明式类型安全 HTTP 客户端。用 `[Get]` / `[Post]` / `[Put]` / `[Delete]` / `[Patch]` 等特性标注接口方法，生成器自动产出 `HttpClient` 代理实现。支持路径模板 `{param}`、JSON 序列化。返回类型随所选包而定：`Observables.RestAPI.R3` 使用 `Observable<T>` / `Task<T>`（R3 生成器拒绝 `IObservable<T>`）；`Observables.RestAPI.Reactive` 使用 `IObservable<T>` / `Task<T>`。
+Declarative type-safe HTTP client. Annotate interface methods with `[Get]`, `[Post]`, `[Put]`, `[Delete]`, `[Patch]`, etc., and the generator emits an `HttpClient` proxy implementation. Supports `{param}` route templates and JSON serialization. Return types depend on the chosen package: `Observables.RestAPI.R3` uses `Observable<T>` / `Task<T>` (the R3 generator rejects `IObservable<T>`); `Observables.RestAPI.Reactive` uses `IObservable<T>` / `Task<T>`.
 
-### 基本用法
+### Basic Usage
 
 ```csharp
-// 定义接口 — 无需手写 HttpClient 调用
+// Define the interface — no boilerplate HttpClient calls
 public interface IUserApi
 {
     [Get("/users/{id}")]
-    Observable<User> GetUser(int id);          // R3 路径
+    Observable<User> GetUser(int id);          // R3 path
 
     [Post("/users")]
     Observable<User> CreateUser([Body] User user);
@@ -141,14 +143,14 @@ public interface IUserApi
     Observable<Unit> DeleteUser(int id);
 }
 
-// 创建代理
+// Create the proxy
 var api = RestService.For<IUserApi>("https://api.example.com");
 using var d = api.GetUser(42).Subscribe(u => Console.WriteLine(u.Name));
 ```
 
-### System.Reactive 路径
+### System.Reactive Path
 
-将 `Observable<T>` 换为 `IObservable<T>`，并引用 `Observables.RestAPI.Reactive` 包：
+Replace `Observable<T>` with `IObservable<T>` and reference the `Observables.RestAPI.Reactive` package:
 
 ```csharp
 public interface IUserApi
@@ -161,20 +163,20 @@ var api = RestService.For<IUserApi>("https://api.example.com");
 api.GetUser(42).Subscribe(u => Console.WriteLine(u.Name));
 ```
 
-### NuGet 安装
+### NuGet Installation
 
-按反应式后端选择一个 NuGet 包。两个包都包含 `RestService` 和 `HttpClient` 代理所需的运行时。
+Choose a NuGet package for your reactive backend. Both packages bundle the runtime needed by `RestService` and the `HttpClient` proxy.
 
-| NuGet 包 ID | 随包交付的运行时程序集 | 源生成器 |
-|-------------|------------------------|----------|
+| NuGet Package ID | Bundled Runtime Assemblies | Source Generator |
+|------------------|----------------------------|------------------|
 | [`Observables.RestAPI.R3`](https://www.nuget.org/packages/Observables.RestAPI.R3) | `Observables.RestAPI.dll` | R3 |
-| [`Observables.RestAPI.Reactive`](https://www.nuget.org/packages/Observables.RestAPI.Reactive) | `Observables.RestAPI.dll`、`Observables.RestAPI.Reactive.dll` | System.Reactive |
+| [`Observables.RestAPI.Reactive`](https://www.nuget.org/packages/Observables.RestAPI.Reactive) | `Observables.RestAPI.dll`, `Observables.RestAPI.Reactive.dll` | System.Reactive |
 
-该域的运行时部分包含由 [Refit](https://github.com/reactiveui/refit) 适配而来的代码，许可信息见 [NOTICE.md](NOTICE.md)。
+The runtime portion of this domain incorporates code adapted from [Refit](https://github.com/reactiveui/refit); see [NOTICE.md](NOTICE.md) for license attributions.
 
 ## SignalR
 
-在 `[Hub]` 接口上用 `[HubInvoke]` / `[HubOn]` / `[HubSend]` / `[HubStream]` 标注成员，生成器产出 SignalR Hub 代理。`HubInvoke` 映射方法调用，`HubOn` 映射服务器推送事件。
+Annotate members on a `[Hub]` interface with `[HubInvoke]`, `[HubOn]`, `[HubSend]`, or `[HubStream]`, and the generator produces a SignalR Hub proxy. `HubInvoke` maps method calls and `HubOn` maps server-pushed events.
 
 ```csharp
 [Hub]
@@ -191,11 +193,11 @@ var hub = HubService.For<IChatHub>(hubConnection);
 using var d = hub.ReceiveMessage.Subscribe(msg => Console.WriteLine(msg.Text));
 ```
 
-依赖 [Microsoft.AspNetCore.SignalR.Client](https://www.nuget.org/packages/Microsoft.AspNetCore.SignalR.Client)。
+Depends on [Microsoft.AspNetCore.SignalR.Client](https://www.nuget.org/packages/Microsoft.AspNetCore.SignalR.Client).
 
 ## Mqtt
 
-在 `[Mqtt]` 接口上用 `[MqttSubscribe]` 标注订阅属性、`[MqttPublish]` 标注发布方法。从 0.5.1 起，按客户端主版本安装 `Observables.Mqtt.MQTTnet4` 或 `Observables.Mqtt.MQTTnet5`，导入对应命名空间。
+Annotate subscription properties with `[MqttSubscribe]` and publish methods with `[MqttPublish]` on an `[Mqtt]` interface. Starting with 0.5.1, install either `Observables.Mqtt.MQTTnet4` or `Observables.Mqtt.MQTTnet5` to match your MQTTnet client major version and import its namespace.
 
 ```csharp
 [Mqtt]
@@ -212,11 +214,11 @@ var hub = MqttService.For<ISensorHub>(MqttNetTransport.Wrap(mqttClient));
 using var d = hub.Temperature.Subscribe(data => Console.WriteLine(data.Value));
 ```
 
-MQTTnet 5 适配包要求 .NET 8 或更高。应用负责连接和处置客户端。[MQTT 设计与迁移说明](docs/design/mqtt.md)
+The MQTTnet 5 adapter package requires .NET 8 or later. The application remains responsible for connecting and disposing the client. [MQTT design & migration notes](docs/design/mqtt.md).
 
 ## WebSocket
 
-在 `[WebSocket]` 接口上用 `[WebSocketReceive]` 标注属性（接收消息）、`[WebSocketSend]` / `[WebSocketConnect]` / `[WebSocketClose]` 标注方法，生成器产出 WebSocket 代理。
+Annotate receive properties with `[WebSocketReceive]` and control/send methods with `[WebSocketSend]`, `[WebSocketConnect]`, or `[WebSocketClose]` on a `[WebSocket]` interface, and the generator produces a WebSocket proxy.
 
 ```csharp
 [WebSocket]
@@ -235,7 +237,7 @@ using var d = hub.Ticks.Subscribe(tick => Console.WriteLine(tick.Price));
 
 ## Grpc
 
-在 `[Grpc]` 接口上用 `[GrpcUnary]` / `[GrpcServerStream]` / `[GrpcClientStream]` / `[GrpcDuplex]` 标注方法，生成器产出 `CallInvoker` 代理。
+Annotate methods on a `[Grpc]` interface with `[GrpcUnary]`, `[GrpcServerStream]`, `[GrpcClientStream]`, or `[GrpcDuplex]`, and the generator produces a `CallInvoker` proxy.
 
 ```csharp
 [Grpc("echo.Echo")]
@@ -252,11 +254,11 @@ var svc = GrpcService.For<IEchoService>(callInvoker);
 using var d = svc.UnaryEcho("hello").Subscribe(reply => Console.WriteLine(reply));
 ```
 
-两个 gRPC 后端包均依赖 `Grpc.Core.Api`。上例使用应用传入的 `CallInvoker`，传输由应用选择。若使用 `GrpcChannel.ForAddress(...).CreateCallInvoker()` 创建 invoker，请安装 [Grpc.Net.Client](https://www.nuget.org/packages/Grpc.Net.Client)。
+Both gRPC backend packages depend on `Grpc.Core.Api`. The example above takes an application-supplied `CallInvoker`, leaving transport choice to the application. When creating an invoker via `GrpcChannel.ForAddress(...).CreateCallInvoker()`, install [Grpc.Net.Client](https://www.nuget.org/packages/Grpc.Net.Client).
 
-## Sse（Server-Sent Events）
+## Sse (Server-Sent Events)
 
-在 `[Sse]` 接口上用 `[SseEvent("名称")]` 标注属性，生成器产出按事件名过滤、自动反序列化的 `Observable<T>` / `IObservable<T>` 代理。`[SseEvent]` 不带参数时映射默认 `message` 事件。
+Annotate properties on an `[Sse]` interface with `[SseEvent("name")]`, and the generator emits an `Observable<T>` / `IObservable<T>` proxy that filters by event name and deserializes payloads automatically. `[SseEvent]` without arguments maps the default `message` event.
 
 ```csharp
 [Sse]
@@ -273,11 +275,11 @@ var feed = SseService.For<IPriceFeed>(new SseConnection(httpClient, endpoint));
 using var d = feed.Prices.Subscribe(tick => Console.WriteLine(tick));
 ```
 
-每次 `Subscribe` 发起一次 SSE 连接；`string` 直接透传，其它类型按 `System.Text.Json` 反序列化。
+Each `Subscribe` opens an SSE connection; `string` passes through directly, while other types are deserialized with `System.Text.Json`.
 
-## Nats（Core NATS）
+## Nats (Core NATS)
 
-在 `[Nats]` 接口上用 `[NatsSubscribe]` / `[NatsPublish]` / `[NatsRequest]` 标注成员，生成器产出订阅热流、发布冷流与请求-响应单值流。
+Annotate members on a `[Nats]` interface with `[NatsSubscribe]`, `[NatsPublish]`, or `[NatsRequest]`, and the generator produces hot subscription streams, cold publish streams, and single-value request-reply streams.
 
 ```csharp
 [Nats]
@@ -297,11 +299,11 @@ await using var nats = new NatsConnection(new NatsOpts { Url = "nats://127.0.0.1
 var hub = NatsService.For<IOrderHub>(nats);
 ```
 
-依赖 [NATS.Client.Core](https://www.nuget.org/packages/NATS.Client.Core)。
+Depends on [NATS.Client.Core](https://www.nuget.org/packages/NATS.Client.Core).
 
-## Postgres（LISTEN/NOTIFY）
+## Postgres (LISTEN/NOTIFY)
 
-在 `[Postgres]` 接口上用 `[Listen]` / `[Notify]` 标注成员，生成器产出 LISTEN 热流与 NOTIFY 冷流。`PostgresService.For<T>` 接受**专用、非池化**的 `NpgsqlConnection`（勿从连接池借连接做长生命周期 `Wait`）；Listen 连接建议 `Pooling=false` 并设置 Npgsql **`Keepalive`**。
+Annotate members on a `[Postgres]` interface with `[Listen]` or `[Notify]`, and the generator produces hot LISTEN streams and cold NOTIFY streams. `PostgresService.For<T>` accepts a **dedicated, unpooled** `NpgsqlConnection` (never borrow a pooled connection for long-lived `Wait` loops); set `Pooling=false` and configure Npgsql **`Keepalive`** on the LISTEN connection.
 
 ```csharp
 [Postgres]
@@ -320,11 +322,11 @@ await connection.OpenAsync();
 var hub = PostgresService.For<IOrderHub>(connection);
 ```
 
-依赖 [Npgsql](https://www.nuget.org/packages/Npgsql)。维护者设计说明见 [`docs/design/postgres.md`](docs/design/postgres.md)。
+Depends on [Npgsql](https://www.nuget.org/packages/Npgsql). See maintainer design notes at [`docs/design/postgres.md`](docs/design/postgres.md).
 
-## Redis（Pub/Sub）
+## Redis (Pub/Sub)
 
-在 `[Redis]` 接口上用 `[RedisSubscribe]` / `[RedisPublish]` 标注成员，生成器产出 Subscribe 热流与 Publish 冷流。含 `*` / `?` 的 Channel 走 Pattern（`PSUBSCRIBE`）；返回 `Observable<RedisMessage<T>>` 时附带具体 Channel。`RedisService.For<T>` 接受 `IConnectionMultiplexer`。
+Annotate members on a `[Redis]` interface with `[RedisSubscribe]` or `[RedisPublish]`, and the generator produces hot Subscribe streams and cold Publish streams. Channels containing `*` or `?` use pattern subscriptions (`PSUBSCRIBE`); returning `Observable<RedisMessage<T>>` includes the matched channel name. `RedisService.For<T>` accepts an `IConnectionMultiplexer`.
 
 ```csharp
 [Redis]
@@ -344,19 +346,19 @@ await using var mux = await ConnectionMultiplexer.ConnectAsync("localhost:6379")
 var hub = RedisService.For<INewsHub>(mux);
 ```
 
-依赖 [StackExchange.Redis](https://www.nuget.org/packages/StackExchange.Redis)。维护者设计说明见 [`docs/design/redis.md`](docs/design/redis.md)。v1 **不含** Streams / keyspace / sharded Pub/Sub。
+Depends on [StackExchange.Redis](https://www.nuget.org/packages/StackExchange.Redis). See maintainer design notes at [`docs/design/redis.md`](docs/design/redis.md). v1 **excludes** Streams, keyspace notifications, and sharded Pub/Sub.
 
-## 构建
+## Build
 
 ```powershell
 cd Observables
 dotnet build Observables.slnx
 
-# 完整 CI（Nuke，与 GitHub Actions 一致）
+# Full CI (Nuke, matching GitHub Actions)
 dotnet run --project build/_build.csproj -- --target Ci --configuration Release
 ```
 
-完整 Nuke `Ci` 需要同时安装 **.NET 8、.NET 9 和 .NET 10 SDK** 以及对应 runtime / testhost。`global.json` 将 Nuke `build/` 钉在 **.NET 10 SDK**（`rollForward` 仅为同 major 的 `latestFeature`）。库目标为 **netstandard2.0** / **net8.0** / **net9.0** / **net10.0**；运行时 E2E 默认在 **net8.0、net9.0、net10.0** 上执行，因此 **.NET 9 testhost 是显式要求**——只装 8+10 不够。跨 major 的 `DOTNET_ROLL_FORWARD` **不能**代替原生 net9 测试。这是贡献者本机契约，不是库安装失败。本地打包、发版与贡献规范见 [CONTRIBUTING.md](./CONTRIBUTING.md)。
+The full Nuke `Ci` target requires **.NET 8, .NET 9, and .NET 10 SDKs** along with their runtimes / testhosts. `global.json` pins Nuke `build/` to the **.NET 10 SDK** (`rollForward` is `latestFeature` within the same major version only). Libraries target **netstandard2.0** / **net8.0** / **net9.0** / **net10.0**; runtime E2E tests execute against **net8.0, net9.0, and net10.0** by default, making the **.NET 9 testhost an explicit requirement** — installing only 8 + 10 is not sufficient, and cross-major `DOTNET_ROLL_FORWARD` **cannot** substitute for native net9 tests. This is a contributor local environment contract, not a library packaging bug. See [CONTRIBUTING.md](./CONTRIBUTING.md) for local packing, release workflow, and contribution guidelines.
 
 ## License
 

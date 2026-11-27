@@ -48,7 +48,7 @@ GitHub Packages からのインストールやコントリビュート・リリ�
 
 10 個の機能ドメインすべてに両バックエンド向けのソースジェネレーターとテストがあり、必要に応じてランタイムも提供されます。共有層には `Observables.Core`、`Observables.Analyzers`、`Observables.CodeFixes` があります。
 
-`0.5.1` では MQTTnet 4/5 アダプターパッケージと中立 MQTT ランタイムが追加され、合計 **23 パッケージ** となりました。RestAPI、MQTT、Redis は .NET 8 以降でソース生成による JSON メタデータに対応しています。
+MQTT ドメインは MQTTnet 4/5 アダプターパッケージと中立 MQTT ランタイムを提供します。RestAPI、MQTT、Redis は .NET 8 以降でソース生成による JSON メタデータに対応しています。
 
 | ドメイン | 説明 |
 |----------|------|
@@ -197,7 +197,7 @@ using var d = hub.ReceiveMessage.Subscribe(msg => Console.WriteLine(msg.Text));
 
 ## Mqtt
 
-`[Mqtt]` インターフェースの購読プロパティに `[MqttSubscribe]`、公開メソッドに `[MqttPublish]` を付与します。0.5.1 以降はクライアントのメジャーバージョンに合わせて `Observables.Mqtt.MQTTnet4` または `Observables.Mqtt.MQTTnet5` をインストールし、対応する名前空間をインポートしてください。
+`[Mqtt]` インターフェースの購読プロパティに `[MqttSubscribe]`、公開メソッドに `[MqttPublish]` を付与します。クライアントのメジャーバージョンに合わせて `Observables.Mqtt.MQTTnet4` または `Observables.Mqtt.MQTTnet5` をインストールし、対応する名前空間をインポートしてください。
 
 ```csharp
 [Mqtt]

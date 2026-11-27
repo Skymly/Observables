@@ -48,7 +48,7 @@ See [CONTRIBUTING.md](./CONTRIBUTING.md) for GitHub Packages installation, contr
 
 All ten feature domains provide dual-backend source generators and tests, plus runtimes where needed. The shared layer also includes `Observables.Core`, `Observables.Analyzers`, and `Observables.CodeFixes`.
 
-Version `0.5.1` adds the MQTTnet 4/5 adapter packages and a neutral MQTT runtime, bringing the total to **23 packages**. RestAPI, MQTT, and Redis support source-generated JSON metadata on .NET 8 and later.
+The MQTT domain ships with MQTTnet 4/5 adapter packages and a neutral MQTT runtime. RestAPI, MQTT, and Redis support source-generated JSON metadata on .NET 8 and later.
 
 | Domain | Description |
 |--------|-------------|
@@ -197,7 +197,7 @@ Depends on [Microsoft.AspNetCore.SignalR.Client](https://www.nuget.org/packages/
 
 ## Mqtt
 
-Annotate subscription properties with `[MqttSubscribe]` and publish methods with `[MqttPublish]` on an `[Mqtt]` interface. Starting with 0.5.1, install either `Observables.Mqtt.MQTTnet4` or `Observables.Mqtt.MQTTnet5` to match your MQTTnet client major version and import its namespace.
+Annotate subscription properties with `[MqttSubscribe]` and publish methods with `[MqttPublish]` on an `[Mqtt]` interface. Install either `Observables.Mqtt.MQTTnet4` or `Observables.Mqtt.MQTTnet5` to match your MQTTnet client major version and import its namespace.
 
 ```csharp
 [Mqtt]

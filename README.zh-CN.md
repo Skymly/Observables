@@ -48,7 +48,7 @@ System.Reactive 路径将 `Observables.Events.R3` 换为 `Observables.Events.Rea
 
 十个功能域均提供双路源生成器与测试，并按需提供运行时。共享层另有 `Observables.Core`、`Observables.Analyzers`、`Observables.CodeFixes`。
 
-`0.5.1` 增加 MQTTnet 4/5 适配包和中立 MQTT 运行时，合计 **23 个包**。RestAPI、MQTT、Redis 在 .NET 8 或更高版本上支持源生成的 JSON 元数据。
+MQTT 域提供 MQTTnet 4/5 适配包与中立 MQTT 运行时；RestAPI、MQTT、Redis 在 .NET 8 或更高版本上支持源生成的 JSON 元数据。
 
 | 域 | 说明 |
 |----|------|
@@ -197,7 +197,7 @@ using var d = hub.ReceiveMessage.Subscribe(msg => Console.WriteLine(msg.Text));
 
 ## Mqtt
 
-在 `[Mqtt]` 接口上用 `[MqttSubscribe]` 标注订阅属性、`[MqttPublish]` 标注发布方法。从 0.5.1 起，按客户端主版本安装 `Observables.Mqtt.MQTTnet4` 或 `Observables.Mqtt.MQTTnet5`，导入对应命名空间。
+在 `[Mqtt]` 接口上用 `[MqttSubscribe]` 标注订阅属性、`[MqttPublish]` 标注发布方法。按客户端主版本安装 `Observables.Mqtt.MQTTnet4` 或 `Observables.Mqtt.MQTTnet5`，并导入对应命名空间。
 
 ```csharp
 [Mqtt]

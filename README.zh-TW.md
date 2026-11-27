@@ -48,7 +48,7 @@ dotnet add package R3
 
 十個功能域皆提供雙後端原始碼產生器與測試，並視需求提供執行階段。共用層另包含 `Observables.Core`、`Observables.Analyzers` 與 `Observables.CodeFixes`。
 
-`0.5.1` 新增 MQTTnet 4/5 轉接套件與中立 MQTT 執行階段，合計共 **23 個套件**。RestAPI、MQTT 與 Redis 於 .NET 8 或更新版本支援原始碼產生的 JSON 中繼資料。
+MQTT 領域提供 MQTTnet 4/5 轉接套件與中立 MQTT 執行階段；RestAPI、MQTT 與 Redis 於 .NET 8 或更新版本支援原始碼產生的 JSON 中繼資料。
 
 | 領域 | 說明 |
 |------|------|
@@ -197,7 +197,7 @@ using var d = hub.ReceiveMessage.Subscribe(msg => Console.WriteLine(msg.Text));
 
 ## Mqtt
 
-於 `[Mqtt]` 介面上以 `[MqttSubscribe]` 標註訂閱屬性、以 `[MqttPublish]` 標註發布方法。自 0.5.1 起，依用戶端主版本安裝 `Observables.Mqtt.MQTTnet4` 或 `Observables.Mqtt.MQTTnet5`，並匯入對應命名空間。
+於 `[Mqtt]` 介面上以 `[MqttSubscribe]` 標註訂閱屬性、以 `[MqttPublish]` 標註發布方法。依用戶端主版本安裝 `Observables.Mqtt.MQTTnet4` 或 `Observables.Mqtt.MQTTnet5`，並匯入對應命名空間。
 
 ```csharp
 [Mqtt]
